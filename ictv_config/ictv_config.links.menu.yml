@@ -1,0 +1,7 @@
+ictv_config.admin:
+  title: 'ICTV Configuration'
+  description: 'Manage ICTV configuration'
+  parent: system.admin_config_system
+  # menu_name: main
+  route_name: ictv_config.form
+  weight: 1

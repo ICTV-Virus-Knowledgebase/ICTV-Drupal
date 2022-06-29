@@ -1,0 +1,8 @@
+name: ICTV Release History Taxonomy Browser
+type: module
+description: 'A custom module to display the ICTV Release History Taxonomy Browser'
+package: ICTV
+configure: ictv_release_history_taxonomy_browser.settings
+core_version_requirement: ^8 || ^9
+dependencies:
+  - drupal:block

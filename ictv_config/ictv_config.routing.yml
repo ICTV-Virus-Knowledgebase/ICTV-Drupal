@@ -1,0 +1,7 @@
+ictv_config.form:
+ path: '/admin/config/ictv_config'
+ defaults:
+   _title: 'ICTV Configuration'
+   _form: '\Drupal\ictv_config\Form\ConfigForm'
+ requirements:
+   _permission: 'access content'
