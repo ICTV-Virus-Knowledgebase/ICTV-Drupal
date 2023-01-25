@@ -1,0 +1,103 @@
+<?php
+
+namespace Drupal\ictv_d3_taxonomy_visualization\Plugin\Block;
+
+use Drupal\Core\Block\BlockBase;
+
+/**
+ * 
+ * @Block(
+ *   id = "ictv_d3_taxonomy_visualization_block",
+ *   admin_label = @Translation("ICTV D3 Taxonomy Visualization block"),
+ *   category = @Translation("ICTV"),
+ * )
+ */
+class IctvD3TaxonomyVisualizationBlock extends BlockBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build() {
+
+    // Use the module path to create a path for the module's asset directory.
+    $modulePath = \Drupal::service('extension.list.module')->getPath('ictv_d3_taxonomy_visualization');
+    $assetPath = $modulePath."/assets";
+
+    // Use the default database instance.
+    $database = \Drupal::database();
+
+    // Get all ictv_settings
+    // TODO: centralize this code somewhere else!
+    $query = $database->query("SELECT
+        (
+            SELECT ictv_settings.value
+            FROM {ictv_settings}
+            WHERE ictv_settings.name = 'applicationURL'
+        ) AS applicationURL,
+        (
+            SELECT ictv_settings.value
+            FROM {ictv_settings}
+            WHERE ictv_settings.name = 'baseWebServiceURL'
+        ) AS baseWebServiceURL,
+        (
+            SELECT ictv_settings.value
+            FROM {ictv_settings}
+            WHERE ictv_settings.name = 'currentMslRelease'
+        ) AS currentMslRelease,
+        (
+            SELECT ictv_settings.value
+            FROM {ictv_settings}
+            WHERE ictv_settings.name = 'releaseProposalsURL'
+        ) AS releaseProposalsURL,
+        (
+            SELECT ictv_settings.value
+            FROM {ictv_settings}
+            WHERE ictv_settings.name = 'taxonHistoryPage'
+        ) AS taxonHistoryPage ");
+
+    $result = $query->fetchAll();
+    // TODO: validate result!
+
+    // Store the results in local variables.
+    $applicationURL = $result[0]->applicationURL;
+    $baseWebServiceURL = $result[0]->baseWebServiceURL;
+    $currentMslRelease = $result[0]->currentMslRelease;
+    $releaseProposalsURL = $result[0]->releaseProposalsURL;
+    $taxonHistoryPage = $result[0]->taxonHistoryPage;
+
+    $build = [
+        '#markup' => $this->t("<div id='d3_taxonomy_vis_container' class='ictv-custom'>
+            <div class='color'>
+                <div class='years'></div>
+                <div class='legend'></div>
+            </div>
+            <div class='space'></div>
+            <div class='species light-bg'></div>
+        </div>"),
+        '#attached' => [
+            'library' => [
+                'ictv_d3_taxonomy_visualization/ICTV',
+            ],
+            'library' => [
+              'ictv_d3_taxonomy_visualization/script',
+            ],
+            'library' => [
+                'ictv_d3_taxonomy_visualization/d3TaxonomyVisualization',
+            ],
+        ],
+    ];
+
+    // Include the asset path in Drupal settings.
+    $build['#attached']['drupalSettings']['assetPath'] = $assetPath;
+
+    // Include the ICTV config settings from the database.
+    $build['#attached']['drupalSettings']['applicationURL'] = $applicationURL;
+    $build['#attached']['drupalSettings']['baseWebServiceURL'] = $baseWebServiceURL;
+    $build['#attached']['drupalSettings']['currentMslRelease'] = $currentMslRelease;
+    $build['#attached']['drupalSettings']['releaseProposalsURL'] = $releaseProposalsURL;
+    $build['#attached']['drupalSettings']['taxonHistoryPage'] = $taxonHistoryPage;
+
+    return $build;
+  }
+
+}

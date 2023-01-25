@@ -1,0 +1,160 @@
+#d3_taxonomy_vis_container .vanish span:hover {
+    background-color: #D1EDFF;
+}
+
+#d3_taxonomy_vis_container .vanish .h2 {
+    color: #99D7FF;
+}
+
+#d3_taxonomy_vis_container .vanish {
+    font-size: large;
+    font-style: italic;
+    color: #006600;
+
+    width: 3000px;
+    height: 2000px;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    animation: fadeIn 3s;
+    -webkit-animation: fadeIn 3s;
+    -moz-animation: fadeIn 3s;
+    -o-animation: fadeIn 3s;
+    -ms-animation: fadeIn 3s;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-moz-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-o-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@-ms-keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+#d3_taxonomy_vis_container {
+    width: auto;
+    height: auto;
+    min-height: 500px;
+    min-width: 500px;
+}
+/*.container { {
+    width: available;
+    height: available;
+}*/
+
+#d3_taxonomy_vis_container .h2 {
+    font-style: italic;
+    font-family: 'Poppins', sans-serif;
+    color: rgba(122, 202, 108, 0.63);
+}
+
+/*body {
+    width: available;
+    height: available;
+    overflow-x: hidden;
+}*/
+
+#d3_taxonomy_vis_container .space {
+    width: 15%;
+    height: available;
+    background-color: white;
+}
+
+#d3_taxonomy_vis_container .color {
+    background-color: white;
+    width: 65%;
+    float: left
+}
+
+#d3_taxonomy_vis_container .species {
+
+    overflow-x: hidden;
+    background-color: whitesmoke;
+    width: 25%;
+    float: right;
+}
+
+#test {
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+
+#d3_taxonomy_vis_container .msl-release {
+    width: 50%;
+}
+/*#dropdown {
+    width: 50%;
+}*/
+
+#d3_taxonomy_vis_container .selection {
+    width: 50%;
+    border-radius: 10px;
+}
+
+#d3_taxonomy_vis_container h1 {
+    font-family: var(--mt-pff);
+    color: #008000;
+    background-color: hsl(0, 0%, 100%);
+    font-size: 75;
+}
+
+#d3_taxonomy_vis_container div.tooltip {
+    position: absolute;
+    width: auto;
+    height: auto;
+    padding: 2px;
+    background: #f3f3ef;
+    border: solid 1px #aaa;
+    border-radius: 8px;
+}
+
+
+#d3_taxonomy_vis_container .center {
+    text-align: center;
+}
+
+#d3_taxonomy_vis_container .light-bg {
+    background-color: whitesmoke;
+}
