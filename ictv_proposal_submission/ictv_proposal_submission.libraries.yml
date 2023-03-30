@@ -1,0 +1,29 @@
+proposalSubmission:
+  version: 1.x
+  css:
+    theme:
+      assets/css/fa-regular.css: {}
+      assets/css/fa-solid.css: {}
+      assets/css/fontawesome.css: {}
+      assets/css/jquery.dataTables.min.css: {}
+      assets/css/ICTV.css: {} 
+      assets/css/tippy.css: {} 
+      assets/css/light-border.css: {}
+  fonts:
+    assets/css/fonts/fa-regular-400.eot: {}
+    assets/css/fonts/fa-regular-400.svg: {}
+    assets/css/fonts/fa-regular-400.ttf: {}
+    assets/css/fonts/fa-regular-400.woff: {}
+    assets/css/fonts/fa-regular-400.woff2: {}
+    assets/css/fonts/fa-solid-900.eot: {}
+    assets/css/fonts/fa-solid-900.svg: {}
+    assets/css/fonts/fa-solid-900.ttf: {}
+    assets/css/fonts/fa-solid-900.woff: {}
+    assets/css/fonts/fa-solid-900.woff2: {}
+  js:
+    assets/js/ICTV.js: {}
+    assets/js/proposalSubmission.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
