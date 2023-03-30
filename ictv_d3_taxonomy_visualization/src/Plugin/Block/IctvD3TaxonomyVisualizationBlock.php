@@ -20,8 +20,13 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
   public function build() {
 
     // Use the module path to create a path for the module's asset directory.
-    $modulePath = \Drupal::service('extension.list.module')->getPath('ictv_d3_taxonomy_visualization');
-    $assetPath = $modulePath."/assets";
+    //$modulePath = \Drupal::service('extension.list.module')->getPath('ictv_d3_taxonomy_visualization');
+    //$assetPath = $modulePath."/assets";
+    // dmd 030223 Testing the code above
+    $testModulePath = \Drupal::service('extension.list.module')->getPath('ictv_d3_taxonomy_visualization');
+
+    // dmd 030223 the code above doesn't work in prod, so we use this hard-coded version.
+    $assetPath = "/modules/custom/ictv_d3_taxonomy_visualization/assets";
 
     // Use the default database instance.
     $database = \Drupal::database();
@@ -67,12 +72,16 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
 
     $build = [
         '#markup' => $this->t("<div id='d3_taxonomy_vis_container' class='ictv-custom'>
-            <div class='color'>
-                <div class='years'></div>
-                <div class='legend'></div>
-            </div>
-            <div class='space'></div>
-            <div class='species light-bg'></div>
+        <div class='release-panel'>
+        <select class='release-ctrl'></select>
+    </div>
+    <div class='body-panel'>
+        <div class='taxonomy-panel'></div>
+        <div class='species-panel light-bg'>
+            <div class='parent-name'></div>
+            <div class='species-list'></div>
+        </div>
+    </div>
         </div>"),
         '#attached' => [
             'library' => [
@@ -97,6 +106,9 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
     $build['#attached']['drupalSettings']['releaseProposalsURL'] = $releaseProposalsURL;
     $build['#attached']['drupalSettings']['taxonHistoryPage'] = $taxonHistoryPage;
 
+    // TEST 030223
+    $build['#attached']['drupalSettings']['testModulePath'] = $testModulePath;
+    
     return $build;
   }
 

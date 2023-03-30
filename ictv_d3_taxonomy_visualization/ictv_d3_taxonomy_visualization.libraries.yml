@@ -9,5 +9,6 @@ d3TaxonomyVisualization:
     assets/js/script.js: {}
     assets/js/d3TaxonomyVisualization.js: {}
   dependencies:
+    - core/jquery
     - core/drupal
     - core/drupalSettings

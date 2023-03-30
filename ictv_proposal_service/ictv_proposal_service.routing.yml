@@ -1,0 +1,4 @@
+ictv_proposal_service:
+ path: '/proposal-ui'
+ requirements:
+   _permission: 'access content'
