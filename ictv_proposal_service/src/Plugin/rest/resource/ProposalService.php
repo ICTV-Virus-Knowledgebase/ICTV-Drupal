@@ -2,266 +2,205 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Database;
+use Drupal\Core\Database\Connection;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Psr\Log\LoggerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Job;
+
 
 /**
- * Provides a resource to get view modes by entity and bundle.
+ * Provides a resource to [TODO!]
  * @RestResource(
  *   id = "ictv_proposal_service_resource",
  *   label = @Translation("ICTV Proposal Service"),
  *   uri_paths = {
  *     "canonical" = "/proposal-api",
- *     "create" = "/proposal-api"
+ *      "create" = "/proposal-api"
  *   }
  * )
  */
 class ProposalService extends ResourceBase {
 
-    // "https://www.drupal.org/link-relations/create" = "/proposal-api"
-  /**
-   * A current user instance which is logged in the session.
-   * @var \Drupal\Core\Session\AccountProxyInterface
-   */
-  protected $loggedUser;
+    // The database connection.
+    protected Connection $connection;
 
-  /**
-   * @var \Symfony\Component\HttpFoundation\RequestStack
-   */
-  private $requestStack;
+    /**
+     * Constructs a Drupal\rest\Plugin\ResourceBase object.
+     *
+     * @param array $config
+     *   A configuration array which contains the information about the plugin instance.
+     * @param string $module_id
+     *   The module_id for the plugin instance.
+     * @param mixed $module_definition
+     *   The plugin implementation definition.
+     * @param array $serializer_formats
+     *   The available serialization formats.
+     * @param \Psr\Log\LoggerInterface $logger
+     *   A logger instance.
+     * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+     *   A currently logged user instance.
+     */
+    public function __construct(
+        array $config,
+        $module_id,
+        $module_definition,
+        array $serializer_formats,
+        LoggerInterface $logger) {
+        parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
-  /**
-   * Constructs a Drupal\rest\Plugin\ResourceBase object.
-   *
-   * @param array $config
-   *   A configuration array which contains the information about the plugin instance.
-   * @param string $module_id
-   *   The module_id for the plugin instance.
-   * @param mixed $module_definition
-   *   The plugin implementation definition.
-   * @param array $serializer_formats
-   *   The available serialization formats.
-   * @param \Psr\Log\LoggerInterface $logger
-   *   A logger instance.
-   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
-   *   A currently logged user instance.
-   */
-  public function __construct(
-    array $config,
-    $module_id,
-    $module_definition,
-    array $serializer_formats,
-    LoggerInterface $logger,
-    AccountProxyInterface $current_user,
-    RequestStack $request_stack) {
-    parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
-
-    $this->requestStack = $request_stack;
-    $this->loggedUser = $current_user;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
-    return new static(
-      $config,
-      $module_id,
-      $module_definition,
-      $container->getParameter('serializer.formats'),
-      $container->get('logger.factory')->get('ictv_proposal_resource'),
-      $container->get('current_user'),
-      $container->get('request_stack')
-    );
-  }
-
-  /**
-   * Responds to GET request.
-   * Returns a list of taxonomy terms.
-   * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-   * Throws exception expected.
-   */
-  /*public function get() {
-
-    $data = $this->processRequest();
-    
-    $response = new ResourceResponse($data);
-    $response->addCacheableDependency($data);
-    return $response;
-  }*/
-
-
-  public function getJobs($userUID_) {
-
-    $jobUID = 1234;
-
-    $jobs[] = array(
-        'job_uid' => $jobUID
-	);
-
-    return $jobs;
-  }
-
-
-  public function post() {
-
-    // Use currently logged user after passing authentication and validating the access of term list.
-    /*if (!$this->loggedUser->hasPermission('access content')) {
-        throw new AccessDeniedHttpException();
-    }*/
-
-    /*if (!$this->loggedUser->hasRole('proposal uploader')) {
-        throw new AccessDeniedHttpException();
+        // Use the ICTV_APPS database instance.
+        $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
     }
 
-    // Load the current user.
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    $email = $user->get('mail')->value;
-    $name = $user->get('name')->value;
-    //$userUID= $user->get('uid')->value;
-    */
-    /*
-    // Get parameters
-    $actionCode = $this->requestStack->getCurrentRequest()->get('action_code');
-    $userUID = $this->requestStack->getCurrentRequest()->get('user_uid');
-
-    $data = null;
-
-    switch ($actionCode) {
-
-        case "get_jobs":
-
-            $data = $this->getJobs();
-            break;
-
-        case "upload_proposal":
-            $data = $this->uploadProposal($proposalFile, $userUID, $test);
-            break;
-
-        default:
-            break;
+    /**
+     * {@inheritdoc}
+     */
+    public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
+        return new static(
+            $config,
+            $module_id,
+            $module_definition,
+            $container->getParameter('serializer.formats'),
+            $container->get('logger.factory')->get('ictv_proposal_resource')
+        );
     }
 
-    $data[] = array(
-        'test' => "testing..."
-    );*/
+    /**
+     * Responds to GET request.
+     * Returns data corresponding to the action code provided.
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * Throws exception expected.
+     */
+    public function get(Request $request) {
 
-    /*
-    // Load the current user.
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    $email = $user->get('mail')->value;
-    $name = $user->get('name')->value;
-    $uid= $user->get('uid')->value;
+        $data = $this->processAction($request);
 
-
-    $term_result[] = array(
-        'uid' => $uid,
-        'name' => $name,
-        'email' => $email,
-        'user_uid' => $userUID
-    );
-    */
-
-    $data = $this->processRequest();
-
-    $response = new ResourceResponse($data);
-    $response->addCacheableDependency($data);
-    return $response;
-  }
-
-
-  public function processRequest() {
-
-    // Use currently logged user after passing authentication and validating the access of term list.
-    /*if (!$this->loggedUser->hasPermission('access content')) {
-        throw new AccessDeniedHttpException();
-    }*/
-
-    /*if (!$this->loggedUser->hasRole('proposal uploader')) {
-        throw new AccessDeniedHttpException();
+        $response = new ResourceResponse($data);
+        //$response->addCacheableDependency($data);
+        return $response;
     }
 
-    // Get the current user's email, name, and UID.
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    $email = $user->get('mail')->value;
-    $name = $user->get('name')->value;
-    $userUID= $user->get('uid')->value;
-    */
 
-    // Get parameters
-    $actionCode = $this->requestStack->getCurrentRequest()->get('action_code');
-    $userUID = $this->requestStack->getCurrentRequest()->get('user_uid');
-    
-    $data = null;
+    public function getJobs($userUID_) {
 
-    switch ($actionCode) {
+        $jobs = [];
 
-        case "get_jobs":
-            $data = $this->getJobs($userUID);
-            break;
+        $query = $this->connection->query("SELECT * FROM {v_job}");
+        $result = $query->fetchAll();
+        if ($result) {
 
-        case "upload_proposal":
-            $data = $this->uploadProposal($proposalFile, $userUID, $test);
-            break;
+            foreach ($result as $job) {
 
-        default:
-            break;
+                array_push($jobs, array(
+                    "id" => $job->id,
+                    "completedOn" => $job->completed_on,
+                    "createdOn" => $job->created_on,
+                    "failedOn" => $job->failed_on,
+                    "message" => $job->message,
+                    "status" => $job->status,
+                    "type" => $job->type,
+                    "uid" => $job->uid,
+                    "userEmail" => $job->user_email,
+                    "userUID" => $job->user_uid
+                ));  
+            }
+        }
+
+        return $jobs;
     }
 
-    /*
-    // Load the current user.
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    $email = $user->get('mail')->value;
-    $name = $user->get('name')->value;
-    $uid= $user->get('uid')->value;
+
+    // Is this string null or empty?
+    function isNullOrEmpty($str){
+        return ($str === null || trim($str) === '');
+    }
+
+    /**
+     * Responds to POST request.
+     * Returns data corresponding to the action code provided.
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * Throws exception expected.
+     */
+    public function post(Request $request) {
+
+        $data = $this->processAction($request);
+
+        $response = new ResourceResponse($data);
+        //$response->addCacheableDependency($data);
+        return $response;
+    }
 
 
-    $term_result[] = array(
-        'uid' => $uid,
-        'name' => $name,
-        'email' => $email,
-        'user_uid' => $userUID
-    );
-    */
+    public function processAction(Request $request) {
 
-    //$response = new ResourceResponse($data);
-    //$response->addCacheableDependency($data);
-    //return $response;
-
-    return $data;
-  }
+        // Get and validate the JSON in the request body.
+        $json = Json::decode($request->getContent());
+        if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
 
-  public function uploadProposal($userUID, $test) {
+        //$jsonType = gettype($json);
+        //\Drupal::logger('ictv_proposal_service')->notice($jsonType);
 
-    $all_files = \Drupal::request()->files;
+        // Get and validate the action code.
+        $actionCode = $json["actionCode"];
+        if ($this->isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
 
-    //throw new Error($all_files);
+        // Get and validate the user UID.
+        $userUID = $json["userUID"];
+        if ($this->isNullOrEmpty($userUID)) { throw new BadRequestHttpException("Invalid user UID"); }
+        
+        $data = null;
 
-    // Make sure there's an upload to process.
-    $proposalFile = $this->requestStack->getCurrentRequest()->files[0];
-    
-    //$all_files->get("proposal");
-    /*if (empty($proposalFile)) {
-        return NULL;
-    }*/
+        switch ($actionCode) {
+            case "get_jobs":
+                $data = $this->getJobs($userUID);
+                break;
+            case "upload_proposal":
+                $data = $this->uploadProposal($json, $userUID);
+                break;
+            default: throw new BadRequestHttpException("Unrecognized action code");
+        }
+
+        return $data;
+    }
 
 
-    $filename = $proposalFile->filename();
+    public function uploadProposal(array $json, string $userUID) {
 
-    $result[] = array(
-        "filename" => $filename,
-        'status' => "It worked",
-        "test" => $test
-	);
 
-    return $result;
-  }
+        $proposalFile = $json["proposal"];
+
+        $userEmail = $json["userEmail"];
+
+        \Drupal::logger('ictv_proposal_service')->notice($proposalFile);
+
+
+        //$all_files = $request->$files;
+
+        //throw new Error($all_files);
+
+        // Make sure there's an uploaded file to process.
+        //$proposalFile = $request->$files[0];
+        
+
+
+        $filename = "TODO"; //$proposalFile->filename();
+
+        $result[] = array(
+            "filename" => $filename,
+            'status' => "It worked"
+        );
+
+        return $result;
+    }
 
 
 }
