@@ -13,7 +13,6 @@
 
             initialized = true;
             
-
             /*
             //----------------------------------------------------------------------------------------
             // Initialize the ICTV AppSettings using drupalSettings
@@ -40,14 +39,6 @@
             const userName = settings_.userName;
             const userUID = settings_.userUID;
 
-            console.log("In proposalSubmission:")
-            console.log("authToken = ", authToken)
-            console.log("userEmail = ", userEmail)
-            console.log("name = ", userName)
-            console.log("userUID = ", userUID)
-
-
-
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_proposal_submission_container";
 
@@ -58,9 +49,8 @@
             // Initialize and display the UI.
             proposalSubmission.initialize();
 
-
-            const test = proposalSubmission.getJobs(1234);
-            console.log(test)
+            // Get this user's jobs.
+            proposalSubmission.getJobs();
         }
     };
     
