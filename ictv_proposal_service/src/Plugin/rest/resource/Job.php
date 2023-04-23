@@ -10,6 +10,7 @@ class Job {
     public string $completedOn; // datetime
     public string $createdOn; // datetime
     public string $failedOn; // datetime
+    public string $filename; 
     public int $id;
     public string $message;
     public string $status; //: JobStatus;

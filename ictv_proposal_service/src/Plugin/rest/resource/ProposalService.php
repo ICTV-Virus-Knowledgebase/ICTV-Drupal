@@ -5,15 +5,16 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Job;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 use Drupal\rest\Plugin\ResourceBase;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\rest\ResourceResponse;
 use Psr\Log\LoggerInterface;
-use Drupal\Core\Session\AccountProxyInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Job;
 
 
 /**
@@ -29,7 +30,7 @@ use Drupal\ictv_proposal_service\Plugin\rest\resource\Job;
  */
 class ProposalService extends ResourceBase {
 
-    // The database connection.
+    // The connection to the ictv_apps database.
     protected Connection $connection;
 
     /**
@@ -56,7 +57,7 @@ class ProposalService extends ResourceBase {
         LoggerInterface $logger) {
         parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
-        // Use the ICTV_APPS database instance.
+        // Use the ictv_apps database instance.
         $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
     }
 
@@ -72,6 +73,25 @@ class ProposalService extends ResourceBase {
             $container->get('logger.factory')->get('ictv_proposal_resource')
         );
     }
+
+
+
+    public function createJob(string $filename, string $userEmail, int $userUID) {
+
+        $jobUID = null;
+
+        // Generate SQL to call the "createJob" stored procedure and return the job UID.
+        $sql = "CALL createJob('{$filename}', '{$userEmail}', {$userUID});";
+
+        $query = $this->connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result && $result[0] !== null) {
+            $jobUID = $result[0]->jobUID;
+        }
+
+        return $jobUID;
+    }
+
 
     /**
      * Responds to GET request.
@@ -89,11 +109,19 @@ class ProposalService extends ResourceBase {
     }
 
 
-    public function getJobs($userUID_) {
+    public function getJobs(string $userEmail, int $userUID) {
 
         $jobs = [];
 
-        $query = $this->connection->query("SELECT * FROM {v_job}");
+        // Generate the SQL
+        $sql = "SELECT * 
+                FROM v_job 
+                WHERE user_uid = {$userUID}
+                AND user_email = '{$userEmail}'
+                ORDER BY created_on DESC";
+
+        // Execute the query and process the results.
+        $query = $this->connection->query($sql);
         $result = $query->fetchAll();
         if ($result) {
 
@@ -104,6 +132,7 @@ class ProposalService extends ResourceBase {
                     "completedOn" => $job->completed_on,
                     "createdOn" => $job->created_on,
                     "failedOn" => $job->failed_on,
+                    "filename" => $job->filename,
                     "message" => $job->message,
                     "status" => $job->status,
                     "type" => $job->type,
@@ -118,11 +147,7 @@ class ProposalService extends ResourceBase {
     }
 
 
-    // Is this string null or empty?
-    function isNullOrEmpty($str){
-        return ($str === null || trim($str) === '');
-    }
-
+    
     /**
      * Responds to POST request.
      * Returns data corresponding to the action code provided.
@@ -145,26 +170,26 @@ class ProposalService extends ResourceBase {
         $json = Json::decode($request->getContent());
         if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-
-        //$jsonType = gettype($json);
-        //\Drupal::logger('ictv_proposal_service')->notice($jsonType);
-
         // Get and validate the action code.
         $actionCode = $json["actionCode"];
-        if ($this->isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
+        if (Utils::IsNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
+
+        // Get and validate the user email.
+        $userEmail = $json["userEmail"];
+        if (Utils::IsNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
 
         // Get and validate the user UID.
         $userUID = $json["userUID"];
-        if ($this->isNullOrEmpty($userUID)) { throw new BadRequestHttpException("Invalid user UID"); }
+        if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
         
         $data = null;
 
         switch ($actionCode) {
             case "get_jobs":
-                $data = $this->getJobs($userUID);
+                $data = $this->getJobs($userEmail, $userUID);
                 break;
             case "upload_proposal":
-                $data = $this->uploadProposal($json, $userUID);
+                $data = $this->uploadProposal($json, $userEmail, $userUID);
                 break;
             default: throw new BadRequestHttpException("Unrecognized action code");
         }
@@ -173,30 +198,36 @@ class ProposalService extends ResourceBase {
     }
 
 
-    public function uploadProposal(array $json, string $userUID) {
+    public function uploadProposal(array $json, string $userEmail, int $userUID) {
+
+        $filename = $json["filename"];
+        if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+
+        $proposal = $json["proposal"];
+        if (Utils::IsNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
+
+        $fileStartIndex = stripos($proposal, ",");
+        if ($fileStartIndex < 0) { throw HttpException("Invalid data URL in proposal file"); }
+
+        $fileContents = substr($proposal, $fileStartIndex + 1);
 
 
-        $proposalFile = $json["proposal"];
+        // TODO: decode file contents from base64
+        // TODO: determine the job UID (create record in db, return resulting UID?)
+        $jobUID = $this->createJob($filename, $userEmail, $userUID);
 
-        $userEmail = $json["userEmail"];
-
-        \Drupal::logger('ictv_proposal_service')->notice($proposalFile);
+        // TODO: save file in temp directory using Curtis' directory structure
 
 
-        //$all_files = $request->$files;
-
-        //throw new Error($all_files);
-
-        // Make sure there's an uploaded file to process.
-        //$proposalFile = $request->$files[0];
         
 
+        //\Drupal::logger('ictv_proposal_service')->notice($proposalFile);
 
-        $filename = "TODO"; //$proposalFile->filename();
 
         $result[] = array(
             "filename" => $filename,
-            'status' => "It worked"
+            "file" => $fileContents,
+            "jobUID" => $jobUID
         );
 
         return $result;

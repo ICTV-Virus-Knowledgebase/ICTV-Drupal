@@ -3,12 +3,14 @@ d3TaxonomyVisualization:
   css:
     theme:
       assets/css/stylesheet.css: {}
+      assets/css/tippy.css: {}
   js:
     assets/js/d3.min.js: {}
-    assets/js/ICTV.js: {}
+    assets/js/tippy-bundle.umd.js: {}
     assets/js/script.js: {}
     assets/js/d3TaxonomyVisualization.js: {}
   dependencies:
     - core/jquery
     - core/drupal
     - core/drupalSettings
+    - core/popperjs
