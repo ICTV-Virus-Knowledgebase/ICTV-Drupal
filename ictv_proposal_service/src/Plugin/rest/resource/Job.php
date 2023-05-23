@@ -3,7 +3,6 @@
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 
-
 class Job {
 
     
@@ -44,6 +43,7 @@ class Job {
         $this->$userUID = $userUID_;
     }
     */
+
 }
 
 

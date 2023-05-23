@@ -1,0 +1,128 @@
+<?php
+
+namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
+
+use Drupal\Core\Database\Connection;
+use Drupal\Core\File\FileSystemInterface;
+use Psr\Log\LoggerInterface;
+
+
+class JobService {
+
+
+    // The path where job directories are created.
+    public string $basePath = "private://jobs";
+
+    // The connection to the ictv_apps database.
+    protected Connection $connection;
+
+    /**
+     * Provides helpers to operate on files and stream wrappers.
+     *
+     * @var \Drupal\Core\File\FileSystemInterface
+     */
+    protected FileSystemInterface $fileSystem;
+
+
+
+    public function __construct(Connection $connection_) {
+        $this->connection = $connection_;
+        $this->fileSystem = \Drupal::service("file_system");
+    }
+
+
+
+    // Create the job directory that will contain the proposal file(s).
+    public function createDirectory(string $directoryName) {
+
+        $path = $this->basePath."/".$directoryName;
+        
+        if (!$this->fileSystem->prepareDirectory($path, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to create job directory");
+            return null;
+        }
+
+        return $path;
+    }
+
+
+    // Create a file under the specified path (job directory).
+    public function createFile(string $data_, string $filename_, string $path_) {
+
+        // Info:
+        // https://drupal.stackexchange.com/questions/290701/how-do-i-programmatically-create-a-file-and-write-it-in-the-private-folder 
+        // https://api.drupal.org/api/drupal/includes%21file.inc/group/file/7.x
+
+        // The file identifier to return.
+        $fileID = null;
+
+        try {
+            $fileID = $this->fileSystem->saveData($data_, $path_."/".$filename_, FileSystemInterface::EXISTS_REPLACE);
+        }
+        catch (FileException $e) {
+            \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+        }
+
+        return $fileID;
+    }
+
+
+    /**
+     * Creates a job record in the database.
+     * Returns the new job's unique ID.
+     */
+    public function createJob(string $filename, string $userEmail, string $userUID) {
+
+        $jobUID = null;
+
+        // Generate SQL to call the "createJob" stored procedure and return the job UID.
+        $sql = "CALL createJob('{$filename}', '{$userEmail}', {$userUID});";
+
+        $query = $this->connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result && $result[0] !== null) {
+            $jobUID = $result[0]->jobUID;
+        }
+
+        return $jobUID;
+    }
+
+
+    public function getJobs(string $userEmail, string $userUID) {
+
+        $jobs = [];
+
+        // Generate the SQL
+        $sql = "SELECT * 
+                FROM v_job 
+                WHERE user_uid = {$userUID}
+                AND user_email = '{$userEmail}'
+                ORDER BY created_on DESC";
+
+        // Execute the query and process the results.
+        $query = $this->connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result) {
+
+            foreach ($result as $job) {
+
+                array_push($jobs, array(
+                    "id" => $job->id,
+                    "completedOn" => $job->completed_on,
+                    "createdOn" => $job->created_on,
+                    "failedOn" => $job->failed_on,
+                    "filename" => $job->filename,
+                    "message" => $job->message,
+                    "status" => $job->status,
+                    "type" => $job->type,
+                    "uid" => $job->uid,
+                    "userEmail" => $job->user_email,
+                    "userUID" => $job->user_uid
+                ));  
+            }
+        }
+
+        return $jobs;
+    }
+
+}

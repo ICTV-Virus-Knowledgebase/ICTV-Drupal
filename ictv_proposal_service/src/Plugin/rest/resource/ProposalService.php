@@ -6,6 +6,8 @@ use Drupal\Component\Serialization\Json;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Job;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\Core\Session\AccountProxyInterface;
@@ -33,6 +35,10 @@ class ProposalService extends ResourceBase {
     // The connection to the ictv_apps database.
     protected Connection $connection;
 
+    
+    protected JobService $jobService;
+
+
     /**
      * Constructs a Drupal\rest\Plugin\ResourceBase object.
      *
@@ -59,6 +65,9 @@ class ProposalService extends ResourceBase {
 
         // Use the ictv_apps database instance.
         $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
+
+        // Create a new instance of JobService.
+        $this->jobService = new JobService($this->connection);
     }
 
     /**
@@ -72,24 +81,6 @@ class ProposalService extends ResourceBase {
             $container->getParameter('serializer.formats'),
             $container->get('logger.factory')->get('ictv_proposal_resource')
         );
-    }
-
-
-
-    public function createJob(string $filename, string $userEmail, int $userUID) {
-
-        $jobUID = null;
-
-        // Generate SQL to call the "createJob" stored procedure and return the job UID.
-        $sql = "CALL createJob('{$filename}', '{$userEmail}', {$userUID});";
-
-        $query = $this->connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result && $result[0] !== null) {
-            $jobUID = $result[0]->jobUID;
-        }
-
-        return $jobUID;
     }
 
 
@@ -107,45 +98,6 @@ class ProposalService extends ResourceBase {
         //$response->addCacheableDependency($data);
         return $response;
     }
-
-
-    public function getJobs(string $userEmail, int $userUID) {
-
-        $jobs = [];
-
-        // Generate the SQL
-        $sql = "SELECT * 
-                FROM v_job 
-                WHERE user_uid = {$userUID}
-                AND user_email = '{$userEmail}'
-                ORDER BY created_on DESC";
-
-        // Execute the query and process the results.
-        $query = $this->connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result) {
-
-            foreach ($result as $job) {
-
-                array_push($jobs, array(
-                    "id" => $job->id,
-                    "completedOn" => $job->completed_on,
-                    "createdOn" => $job->created_on,
-                    "failedOn" => $job->failed_on,
-                    "filename" => $job->filename,
-                    "message" => $job->message,
-                    "status" => $job->status,
-                    "type" => $job->type,
-                    "uid" => $job->uid,
-                    "userEmail" => $job->user_email,
-                    "userUID" => $job->user_uid
-                ));  
-            }
-        }
-
-        return $jobs;
-    }
-
 
     
     /**
@@ -186,7 +138,7 @@ class ProposalService extends ResourceBase {
 
         switch ($actionCode) {
             case "get_jobs":
-                $data = $this->getJobs($userEmail, $userUID);
+                $data = $this->jobService->getJobs($userEmail, $userUID);
                 break;
             case "upload_proposal":
                 $data = $this->uploadProposal($json, $userEmail, $userUID);
@@ -198,7 +150,7 @@ class ProposalService extends ResourceBase {
     }
 
 
-    public function uploadProposal(array $json, string $userEmail, int $userUID) {
+    public function uploadProposal(array $json, string $userEmail, string $userUID) {
 
         $filename = $json["filename"];
         if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
@@ -209,25 +161,44 @@ class ProposalService extends ResourceBase {
         $fileStartIndex = stripos($proposal, ",");
         if ($fileStartIndex < 0) { throw HttpException("Invalid data URL in proposal file"); }
 
-        $fileContents = substr($proposal, $fileStartIndex + 1);
+        $base64Data = substr($proposal, $fileStartIndex + 1);
+
+        // Decode the file contents from base64.
+        $binaryData = base64_decode($base64Data);
 
 
-        // TODO: decode file contents from base64
-        // TODO: determine the job UID (create record in db, return resulting UID?)
-        $jobUID = $this->createJob($filename, $userEmail, $userUID);
+        //-------------------------------------------------------------------------------------------------------
+        // Create a job record and return its unique ID.
+        //-------------------------------------------------------------------------------------------------------
+        $jobUID = $this->jobService->createJob($filename, $userEmail, $userUID);
 
-        // TODO: save file in temp directory using Curtis' directory structure
+        // The job directory name will combine the user UID and job UID.
+        $directoryName = $userUID."_".$jobUID;
 
+        // Create the job directory that will contain the proposal file(s).
+        $path = $this->jobService->createDirectory($directoryName);
 
+        // Save the proposal file in the job directory.
+        $fileID = $this->jobService->createFile($binaryData, $filename, $path);
         
 
-        //\Drupal::logger('ictv_proposal_service')->notice($proposalFile);
+        //-------------------------------------------------------------------------------------------------------
+        // Validate the proposal
+        //-------------------------------------------------------------------------------------------------------
+        $validatorResult = ProposalValidator::validateProposals($path . "/" . $directoryName, "the_output");
+        /*array(
+            "error",
+            "isValid",
+            "result"
+        );*/
 
+        // TODO: call the stored proc "updateJob" based on isValid
 
         $result[] = array(
+            "fileID" => $fileID,
             "filename" => $filename,
-            "file" => $fileContents,
-            "jobUID" => $jobUID
+            "validatorResult" => $validatorResult,
+            "jobUID" => $jobUID 
         );
 
         return $result;

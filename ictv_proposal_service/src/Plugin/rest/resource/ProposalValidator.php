@@ -3,38 +3,66 @@
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 
-
 class ProposalValidator {
 
 
-    public function createDirectories(string $jobUID) {
+    public static function validateProposals(string $inputDir, string $outputDir) {
 
-    }
+        $isValid = 0;
+        $error = null;
+        $result = null;
 
-    public function validateProposals(string $inputDir, string $outputDir) {
+        $descriptorspec = array(
+            0 => array("pipe", "r"),  // Read from stdin
+            1 => array("pipe", "w")  // Write to stdout
+            //2 => array("file", "/tmp/error-output.txt", "a") // Write to stderr
+        );
 
+        // Current working directory
+        $cwd = "c:\\DrupalFiles\\"; // /var/www/drupal/apps/proposal_validator
         
-
-        // Executable location (I think): /var/www/drupal/apps/proposal_validator
-
         // Generate command line text.
         $command = "docker run -it ictv_proposal_processor /merge_proposal_zips.R "
             . "-i {$inputDir} "
             . "-o {$outputDir} ";
 
+        // TEST
+        $command = "test.cmd {$inputDir} {$outputDir}";
+
+        try {
+            $process = proc_open($command, $descriptorspec, $pipes, $cwd);
+
+            if (is_resource($process)) {
+                // $pipes now looks like this:
+                // 0 => writeable handle connected to child stdin
+                // 1 => readable handle connected to child stdout
+                // Any error output will be appended to /tmp/error-output.txt
+
+                /*fwrite($pipes[0], '<?php print_r($_ENV); ?>');
+                fclose($pipes[0]); */
+
+                $result = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+
+                // It is important that you close any pipes before calling
+                // proc_close in order to avoid a deadlock
+                $isValid = proc_close($process);
+            }
+        } 
+        catch (Exception $e) {
+            $error = $e->getMessage();
+        }
+
+        // Executable location (I think): /var/www/drupal/apps/proposal_validator
+
         //"sudo docker run -it  -v \"$(pwd)/proposalsTest:/proposalsTest\":ro  -v \"$(pwd)/results:/results\" ictv_proposal_processor";
         //"validate_proposals % docker run -it ictv_proposal_processor /merge_proposal_zips.R";
 
-
-
-
-        // TODO: call command line R script.
-
-
-
-        // TODO: wait for results and update database.
-
-
+        return array(
+            "error" => $error,
+            "isValid" => $isValid,
+            "result" => $result
+        );
     }
 
 
