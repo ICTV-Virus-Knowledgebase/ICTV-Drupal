@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 
 /**
- * Provides a resource to [TODO!]
+ * A web service supporting ICTV proposal validations and quality control.
  * @RestResource(
  *   id = "ictv_proposal_service_resource",
  *   label = @Translation("ICTV Proposal Service"),
@@ -190,6 +190,10 @@ class ProposalService extends ResourceBase {
         );*/
 
         // TODO: call the stored proc "updateJob" based on isValid
+
+
+
+        
 
         $result[] = array(
             "fileID" => $fileID,
