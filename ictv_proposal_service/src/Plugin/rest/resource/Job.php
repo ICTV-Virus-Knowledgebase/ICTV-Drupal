@@ -5,7 +5,6 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 class Job {
 
-    
     public string $completedOn; // datetime
     public string $createdOn; // datetime
     public string $failedOn; // datetime

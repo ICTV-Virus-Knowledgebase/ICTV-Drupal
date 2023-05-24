@@ -4,6 +4,7 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Terms;
 use Psr\Log\LoggerInterface;
 
 
@@ -95,6 +96,7 @@ class JobService {
         return $this->basePath."/".$userUID."_".$jobUID;
     }
 
+
     // Get all jobs created by the specified user.
     public function getJobs(string $userEmail, string $userUID) {
 
@@ -133,6 +135,7 @@ class JobService {
         return $jobs;
     }
 
+
     public function getProposalFile(string $jobUID, string $userUID) {
 
         // TODO: should we confirm the job in the database first?
@@ -141,6 +144,26 @@ class JobService {
         $path = $this->getJobPath($jobUID, $userUID);
 
 
+    }
+
+    // Update a job's status, possibly adding a message if the status is "failed".
+    public function updateJob(string $jobUID, string $message, JobStatus $status, string $userUID) {
+
+        // TODO: the updateJob stored procedure needs to be included in CreateIctvAppsDB.sql!!!
+
+        if ($message == null || $message == "") {
+            $message = "NULL";
+        } else {
+            $message = "'{$message}'";
+        }
+
+        // Generate SQL to call the "updateJob" stored procedure.
+        $sql = "CALL updateJob('{$jobUID}', {$message}, '{$status->name}', '{$userUID}');";
+
+        $query = $this->connection->query($sql);
+        $result = $query->execute();
+
+        // TODO: should we validate the result?
     }
 
 }
