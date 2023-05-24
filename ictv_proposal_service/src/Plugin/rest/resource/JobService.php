@@ -33,9 +33,9 @@ class JobService {
 
 
     // Create the job directory that will contain the proposal file(s).
-    public function createDirectory(string $directoryName) {
+    public function createDirectory(string $jobUID, string $userUID) {
 
-        $path = $this->basePath."/".$directoryName;
+        $path = $this->getJobPath($jobUID, $userUID);
         
         if (!$this->fileSystem->prepareDirectory($path, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create job directory");
@@ -88,6 +88,14 @@ class JobService {
     }
 
 
+    // The job directory name will combine the user UID and job UID.
+    public function getJobPath(string $jobUID, string $userUID) {
+
+        // The job directory name will combine the user UID and job UID.
+        return $this->basePath."/".$userUID."_".$jobUID;
+    }
+
+    // Get all jobs created by the specified user.
     public function getJobs(string $userEmail, string $userUID) {
 
         $jobs = [];
@@ -123,6 +131,16 @@ class JobService {
         }
 
         return $jobs;
+    }
+
+    public function getProposalFile(string $jobUID, string $userUID) {
+
+        // TODO: should we confirm the job in the database first?
+
+        // https://stackoverflow.com/questions/14011021/how-to-download-a-base64-encoded-image
+        $path = $this->getJobPath($jobUID, $userUID);
+
+
     }
 
 }

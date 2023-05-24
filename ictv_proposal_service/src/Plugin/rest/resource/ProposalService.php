@@ -172,11 +172,8 @@ class ProposalService extends ResourceBase {
         //-------------------------------------------------------------------------------------------------------
         $jobUID = $this->jobService->createJob($filename, $userEmail, $userUID);
 
-        // The job directory name will combine the user UID and job UID.
-        $directoryName = $userUID."_".$jobUID;
-
         // Create the job directory that will contain the proposal file(s).
-        $path = $this->jobService->createDirectory($directoryName);
+        $path = $this->jobService->createDirectory($jobUID, $userUID);
 
         // Save the proposal file in the job directory.
         $fileID = $this->jobService->createFile($binaryData, $filename, $path);
