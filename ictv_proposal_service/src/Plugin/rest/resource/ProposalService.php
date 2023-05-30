@@ -35,8 +35,10 @@ class ProposalService extends ResourceBase {
     // The connection to the ictv_apps database.
     protected Connection $connection;
 
-    
     protected JobService $jobService;
+
+    // The docker command will be run in the working directory.
+    protected string $workingDirectory = "/var/www/dapp/apps/";
 
 
     /**
@@ -182,7 +184,9 @@ class ProposalService extends ResourceBase {
         //-------------------------------------------------------------------------------------------------------
         // Validate the proposal
         //-------------------------------------------------------------------------------------------------------
-        $validatorResult = ProposalValidator::validateProposals($path . "/" . $directoryName, "the_output");
+        $validatorResult = ProposalValidator::validateProposals($path, "the_output", $this->workingDirectory);
+
+        //\Drupal::logger('ictv_jwt_generator')->info($validatorResult);
         /*array(
             "error",
             "isValid",

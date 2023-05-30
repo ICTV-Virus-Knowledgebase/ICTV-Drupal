@@ -1,0 +1,7 @@
+ictv_config.admin:
+  title: 'ICTV JWT Generator'
+  description: 'Generate an ICTV JSON Web Token (JWT)'
+  parent: system.admin_config_system
+  # menu_name: main
+  route_name: ictv_jwt_generator.form
+  weight: 1

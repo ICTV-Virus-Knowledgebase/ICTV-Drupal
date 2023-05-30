@@ -1,0 +1,9 @@
+name: ICTV JWT Generator
+type: module
+description: 'A custom module that displays a form to generate a JSON Web Token (JWT)'
+package: ICTV
+#configure: ictv_settings.form
+core_version_requirement: ^8 || ^9
+dependencies:
+  - drupal:block
+  - jwt:jwt_auth_issuer
