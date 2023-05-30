@@ -6,7 +6,7 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 class ProposalValidator {
 
 
-    public static function validateProposals(string $inputDir, string $outputDir) {
+    public static function validateProposals(string $inputDir, string $outputDir, string $workingDirectory) {
 
         $isValid = 0;
         $error = null;
@@ -19,15 +19,15 @@ class ProposalValidator {
         );
 
         // Current working directory
-        $cwd = "c:\\DrupalFiles\\"; // /var/www/drupal/apps/proposal_validator
+        $cwd = $workingDirectory; //"c:\\DrupalFiles\\"; // /var/www/drupal/apps/proposal_validator
         
-        // Generate command line text.
-        $command = "docker run -it ictv_proposal_processor /merge_proposal_zips.R "
-            . "-i {$inputDir} "
-            . "-o {$outputDir} ";
+        // Generate the command to be run.
+        $command = "docker run -it ".
+            "-v \"{$inputDir}/proposalsTest:/proposalsTest\":ro " .
+            "-v \"{$outputDir}/results:/results\" ictv_proposal_processor";
 
         // TEST
-        $command = "test.cmd {$inputDir} {$outputDir}";
+        //$command = "test.cmd {$inputDir} {$outputDir}";
 
         try {
             $process = proc_open($command, $descriptorspec, $pipes, $cwd);
@@ -52,11 +52,6 @@ class ProposalValidator {
         catch (Exception $e) {
             $error = $e->getMessage();
         }
-
-        // Executable location (I think): /var/www/drupal/apps/proposal_validator
-
-        //"sudo docker run -it  -v \"$(pwd)/proposalsTest:/proposalsTest\":ro  -v \"$(pwd)/results:/results\" ictv_proposal_processor";
-        //"validate_proposals % docker run -it ictv_proposal_processor /merge_proposal_zips.R";
 
         return array(
             "error" => $error,
