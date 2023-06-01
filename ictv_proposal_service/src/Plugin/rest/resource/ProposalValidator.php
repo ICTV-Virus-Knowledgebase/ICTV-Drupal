@@ -6,37 +6,32 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 class ProposalValidator {
 
 
-    public static function validateProposals(string $inputDir, string $outputDir, string $workingDirectory) {
+    public static function validateProposals(string $jobPath, string $workingDirectory) {
 
         $isValid = 0;
         $error = null;
         $result = null;
 
         $descriptorspec = array(
-            0 => array("pipe", "r"),  // Read from stdin
-            1 => array("pipe", "w")  // Write to stdout
-            //2 => array("file", "/tmp/error-output.txt", "a") // Write to stderr
+            0 => array("pipe", "r"), // Read from stdin
+            1 => array("pipe", "w"), // Write to stdout
+            2 => array("pipe", "w")  // Write to stderr
         );
-
-        // Current working directory
-        $cwd = $workingDirectory; //"c:\\DrupalFiles\\"; // /var/www/drupal/apps/proposal_validator
         
         // Generate the command to be run.
-        $command = "docker run -it ".
-            "-v \"{$inputDir}/proposalsTest:/proposalsTest\":ro " .
-            "-v \"{$outputDir}/results:/results\" ictv_proposal_processor";
-
-        // TEST
-        //$command = "test.cmd {$inputDir} {$outputDir}";
+        $command = "docker run ".   // -it 
+            "-v \"{$jobPath}/proposalsTest:/proposalsTest\":ro ".
+            "-v \"{$jobPath}/results:/results\" curtish/ictv_proposal_processor ".
+            "/merge_proposal_zips.R -v ";
 
         try {
-            $process = proc_open($command, $descriptorspec, $pipes, $cwd);
+            $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
 
             if (is_resource($process)) {
                 // $pipes now looks like this:
                 // 0 => writeable handle connected to child stdin
                 // 1 => readable handle connected to child stdout
-                // Any error output will be appended to /tmp/error-output.txt
+                // 2 => writeable handle connected to child stderr
 
                 /*fwrite($pipes[0], '<?php print_r($_ENV); ?>');
                 fclose($pipes[0]); */
@@ -44,13 +39,19 @@ class ProposalValidator {
                 $result = stream_get_contents($pipes[1]);
                 fclose($pipes[1]);
 
+                $error = stream_get_contents($pipes[2]);
+                fclose($pipes[2]);
+
                 // It is important that you close any pipes before calling
                 // proc_close in order to avoid a deadlock
                 $isValid = proc_close($process);
+            } else {
+                $error = "process is not a resource";
             }
         } 
         catch (Exception $e) {
-            $error = $e->getMessage();
+            if (isset($error) && $error !== '') { $error = $error . "; "; }
+            $error = $error . $e->getMessage();
         }
 
         return array(
