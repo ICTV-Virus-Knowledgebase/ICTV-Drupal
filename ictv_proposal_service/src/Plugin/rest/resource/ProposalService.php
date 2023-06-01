@@ -37,8 +37,8 @@ class ProposalService extends ResourceBase {
 
     protected JobService $jobService;
 
-    // The docker command will be run in the working directory.
-    protected string $workingDirectory = "/var/www/dapp/apps/";
+    // The full path of the jobs directory.
+    protected string $jobsPath;
 
 
     /**
@@ -68,8 +68,14 @@ class ProposalService extends ResourceBase {
         // Use the ictv_apps database instance.
         $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
 
+        // Get configuration settings from ictv_proposal_service.settings.yml.
+        $config = \Drupal::config('ictv_proposal_service.settings');
+
+        // Get the jobs path setting.
+        $this->jobsPath = $config->get("jobsPath");
+
         // Create a new instance of JobService.
-        $this->jobService = new JobService($this->connection);
+        $this->jobService = new JobService($this->connection, $this->jobsPath);
     }
 
     /**
@@ -96,12 +102,18 @@ class ProposalService extends ResourceBase {
 
         $data = $this->processAction($request);
 
-        $response = new ResourceResponse($data);
-        //$response->addCacheableDependency($data);
-        return $response;
+        return new ResourceResponse($data);
     }
 
-    
+    /** 
+     * {@inheritdoc} 
+     * This function has to exist in order for the admin to assign user permissions 
+     * to the web service.
+     */ 
+    public function permissions() {
+        return []; 
+    } 
+
     /**
      * Responds to POST request.
      * Returns data corresponding to the action code provided.
@@ -112,9 +124,7 @@ class ProposalService extends ResourceBase {
 
         $data = $this->processAction($request);
 
-        $response = new ResourceResponse($data);
-        //$response->addCacheableDependency($data);
-        return $response;
+        return new ResourceResponse($data);
     }
 
 
@@ -174,30 +184,21 @@ class ProposalService extends ResourceBase {
         //-------------------------------------------------------------------------------------------------------
         $jobUID = $this->jobService->createJob($filename, $userEmail, $userUID);
 
-        // Create the job directory that will contain the proposal file(s).
-        $path = $this->jobService->createDirectory($jobUID, $userUID);
+        // Create the job directory and subdirectories and return the path where the proposal file will be saved.
+        $proposalsPath = $this->jobService->createDirectories($jobUID, $userUID);
 
         // Save the proposal file in the job directory.
-        $fileID = $this->jobService->createFile($binaryData, $filename, $path);
+        $fileID = $this->jobService->createFile($binaryData, $filename, $proposalsPath);
         
 
         //-------------------------------------------------------------------------------------------------------
         // Validate the proposal
         //-------------------------------------------------------------------------------------------------------
-        $validatorResult = ProposalValidator::validateProposals($path, "the_output", $this->workingDirectory);
+        $validatorResult = ProposalValidator::validateProposals($proposalsPath, $this->jobsPath);
 
-        //\Drupal::logger('ictv_jwt_generator')->info($validatorResult);
-        /*array(
-            "error",
-            "isValid",
-            "result"
-        );*/
 
         // TODO: call the stored proc "updateJob" based on isValid
 
-
-
-        
 
         $result[] = array(
             "fileID" => $fileID,

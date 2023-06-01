@@ -10,9 +10,8 @@ use Psr\Log\LoggerInterface;
 
 class JobService {
 
-
     // The path where job directories are created.
-    public string $basePath = "private://jobs";
+    public string $jobsPath;
 
     // The connection to the ictv_apps database.
     protected Connection $connection;
@@ -26,24 +25,62 @@ class JobService {
 
 
 
-    public function __construct(Connection $connection_) {
-        $this->connection = $connection_;
+    public function __construct(Connection $connection, string $jobsPath) {
+        $this->connection = $connection;
         $this->fileSystem = \Drupal::service("file_system");
+        $this->jobsPath = $jobsPath;
     }
 
 
 
-    // Create the job directory that will contain the proposal file(s).
-    public function createDirectory(string $jobUID, string $userUID) {
+    // Create the job directory and subdirectories.
+    public function createDirectories(string $jobUID, string $userUID) {
 
+        // Create a job directory name using the job UID and user UID, and return its full path.
         $path = $this->getJobPath($jobUID, $userUID);
         
+        // Create a directory for the job.
         if (!$this->fileSystem->prepareDirectory($path, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create job directory");
             return null;
         }
 
-        return $path;
+        //---------------------------------------------------------------------------------------------------------------
+        // The proposalsTest subdirectory
+        //---------------------------------------------------------------------------------------------------------------
+        $proposalsTest = $path."/proposalsTest";
+
+        // Create the directory
+        if (!$this->fileSystem->prepareDirectory($proposalsTest, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to create proposalsTest subdirectory");
+            return null;
+        }
+
+        // Update the permissions
+        if (!$this->fileSystem->chmod($proposalsTest, 777)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on proposalsTest subdirectory");
+            return null;
+        }
+
+        //---------------------------------------------------------------------------------------------------------------
+        // The results subdirectory
+        //---------------------------------------------------------------------------------------------------------------
+        $results = $path."/results";
+
+        // Create the directory
+        if (!$this->fileSystem->prepareDirectory($results, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
+            return null;
+        }
+
+        // Update the permissions
+        if (!$this->fileSystem->chmod($results, 777)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on results subdirectory");
+            return null;
+        }
+
+        // Return the full path of where the proposal files will be stored.
+        return $proposalsTest;
     }
 
 
@@ -93,7 +130,7 @@ class JobService {
     public function getJobPath(string $jobUID, string $userUID) {
 
         // The job directory name will combine the user UID and job UID.
-        return $this->basePath."/".$userUID."_".$jobUID;
+        return $this->jobsPath."/".$userUID."_".$jobUID;
     }
 
 
@@ -136,7 +173,7 @@ class JobService {
     }
 
 
-    public function getProposalFile(string $jobUID, string $userUID) {
+    /*public function getProposalFile(string $jobUID, string $userUID) {
 
         // TODO: should we confirm the job in the database first?
 
@@ -144,7 +181,7 @@ class JobService {
         $path = $this->getJobPath($jobUID, $userUID);
 
 
-    }
+    }*/
 
     // Update a job's status, possibly adding a message if the status is "failed".
     // TODO: after upgrading the dev environment to 9.5, make status an enum.
