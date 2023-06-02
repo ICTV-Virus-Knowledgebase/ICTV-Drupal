@@ -23,6 +23,10 @@ class JobService {
      */
     protected FileSystemInterface $fileSystem;
 
+    // Directory names for subdirectories of the job directory.
+    protected string $proposalsDirectory = "proposalsTest";
+    protected string $resultsDirectory = "results";
+
 
 
     public function __construct(Connection $connection, string $jobsPath) {
@@ -37,65 +41,79 @@ class JobService {
     public function createDirectories(string $jobUID, string $userUID) {
 
         // Create a job directory name using the job UID and user UID, and return its full path.
-        $path = $this->getJobPath($jobUID, $userUID);
+        $jobPath = $this->getJobPath($jobUID, $userUID);
         
         // Create a directory for the job.
-        if (!$this->fileSystem->prepareDirectory($path, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+        if (!$this->fileSystem->prepareDirectory($jobPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create job directory");
             return null;
         }
 
+        /*
+        // Update the permissions
+        if (!$this->fileSystem->chmod($jobPath, 777)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on job directory");
+            return null;
+        }*/
+
         //---------------------------------------------------------------------------------------------------------------
         // The proposalsTest subdirectory
         //---------------------------------------------------------------------------------------------------------------
-        $proposalsTest = $path."/proposalsTest";
+        $proposalsPath = $jobPath."/".$this->proposalsDirectory;
 
         // Create the directory
-        if (!$this->fileSystem->prepareDirectory($proposalsTest, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to create proposalsTest subdirectory");
+        if (!$this->fileSystem->prepareDirectory($proposalsPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to create proposals subdirectory");
             return null;
         }
 
+        /*
         // Update the permissions
-        if (!$this->fileSystem->chmod($proposalsTest, 777)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on proposalsTest subdirectory");
+        if (!$this->fileSystem->chmod($proposalsPath, 777)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on proposals subdirectory");
             return null;
-        }
+        }*/
 
         //---------------------------------------------------------------------------------------------------------------
         // The results subdirectory
         //---------------------------------------------------------------------------------------------------------------
-        $results = $path."/results";
+        $resultsPath = $jobPath."/".$this->resultsDirectory;
 
         // Create the directory
-        if (!$this->fileSystem->prepareDirectory($results, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+        if (!$this->fileSystem->prepareDirectory($resultsPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
             return null;
         }
 
+        /* dmd 060123: This is giving weird permissions...
         // Update the permissions
-        if (!$this->fileSystem->chmod($results, 777)) {
+        if (!$this->fileSystem->chmod($resultsPath, 777)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on results subdirectory");
             return null;
-        }
+        }*/
 
-        // Return the full path of where the proposal files will be stored.
-        return $proposalsTest;
+        // Return the full path of the job directory.
+        return $jobPath;
     }
 
 
-    // Create a file under the specified path (job directory).
-    public function createFile(string $data_, string $filename_, string $path_) {
+    // Create the proposal file under the specified path (job directory).
+    public function createProposalFile(string $data, string $filename, string $jobPath) {
 
-        // Info:
-        // https://drupal.stackexchange.com/questions/290701/how-do-i-programmatically-create-a-file-and-write-it-in-the-private-folder 
-        // https://api.drupal.org/api/drupal/includes%21file.inc/group/file/7.x
+        $fileNameAndPath = $jobPath."/".$this->proposalsDirectory."/".$filename;
 
         // The file identifier to return.
         $fileID = null;
 
         try {
-            $fileID = $this->fileSystem->saveData($data_, $path_."/".$filename_, FileSystemInterface::EXISTS_REPLACE);
+            // Create the file
+            $fileID = $this->fileSystem->saveData($data, $fileNameAndPath, FileSystemInterface::EXISTS_REPLACE);
+
+            // Update the permissions
+            if (!$this->fileSystem->chmod($fileNameAndPath, 777)) {
+                \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on file ".$filename);
+                return null;
+            }
         }
         catch (FileException $e) {
             \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
@@ -130,7 +148,9 @@ class JobService {
     public function getJobPath(string $jobUID, string $userUID) {
 
         // The job directory name will combine the user UID and job UID.
-        return $this->jobsPath."/".$userUID."_".$jobUID;
+        $jobPath = $this->jobsPath."/".$userUID."_".$jobUID;
+
+        return $jobPath;
     }
 
 
@@ -172,6 +192,17 @@ class JobService {
         return $jobs;
     }
 
+    // Use the job path to generate the path of the proposals subdirectory.
+    public function getProposalsPath(string $jobPath) {
+        $proposalsPath = $jobPath."/".$this->proposalsDirectory;
+        return $proposalsPath;
+    }
+
+    // Use the job path to generate the path of the results subdirectory.
+    public function getResultsPath(string $jobPath) {
+        $resultsPath = $jobPath."/".$this->resultsDirectory;
+        return $resultsPath;
+    }
 
     /*public function getProposalFile(string $jobUID, string $userUID) {
 
@@ -182,6 +213,20 @@ class JobService {
 
 
     }*/
+
+
+    // Process the job subdirectories and results files after the validator process has been run.
+    public function processValidatorResults(string $jobPath) {
+
+        $resultsPath = $jobPath."/".$this->resultsDirectory;
+
+        // Update the permissions of the results directory.
+        if (!$this->fileSystem->chmod($resultsPath, 777)) {
+            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on results subdirectory");
+            return null;
+        }
+    }
+
 
     // Update a job's status, possibly adding a message if the status is "failed".
     // TODO: after upgrading the dev environment to 9.5, make status an enum.

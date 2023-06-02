@@ -98,9 +98,12 @@ class IctvProposalSubmissionBlock extends BlockBase {
         $userUID = $user->get('uid')->value;
 
         $build = [
-            '#markup' => $this->t("<div id='ictv_proposal_submission_container' class='ictv-custom'>
-                Upload file: <input type='file' class='proposal-ctrl' /> <button class='upload-button'>upload</button>
-                <div class='jobs'></div>
+            '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\">
+                <div class=\"user-row\"></div>
+                <div class=\"controls-row\">
+                    Upload file: <input type=\"file\" class=\"proposal-ctrl\" /> <button class=\"btn upload-button\">upload</button>
+                </div>
+                <div class=\"jobs\"></div>
             </div>"),
             '#attached' => [
                 'library' => [
