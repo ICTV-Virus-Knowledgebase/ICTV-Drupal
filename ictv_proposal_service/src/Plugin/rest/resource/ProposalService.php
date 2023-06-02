@@ -69,10 +69,10 @@ class ProposalService extends ResourceBase {
         $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
 
         // Get configuration settings from ictv_proposal_service.settings.yml.
-        $config = \Drupal::config('ictv_proposal_service.settings');
+        //$config = \Drupal::config('ictv_proposal_service.settings');
 
         // Get the jobs path setting.
-        $this->jobsPath = $config->get("jobsPath");
+        $this->jobsPath = "/var/www/dapp/files/jobs"; //$config->get("jobsPath");
 
         // Create a new instance of JobService.
         $this->jobService = new JobService($this->connection, $this->jobsPath);
@@ -164,6 +164,13 @@ class ProposalService extends ResourceBase {
 
     public function uploadProposal(array $json, string $userEmail, string $userUID) {
 
+        // Declare variables used in the try/catch block.
+        $errorMessage = null;
+        $fileID = null;
+        $jobUID = null;
+        $updatedStatus = null;
+        $validatorResult = null;
+
         $filename = $json["filename"];
         if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
@@ -171,34 +178,53 @@ class ProposalService extends ResourceBase {
         if (Utils::IsNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
 
         $fileStartIndex = stripos($proposal, ",");
-        if ($fileStartIndex < 0) { throw HttpException("Invalid data URL in proposal file"); }
+        if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
 
         $base64Data = substr($proposal, $fileStartIndex + 1);
 
         // Decode the file contents from base64.
         $binaryData = base64_decode($base64Data);
 
+        try {
+            //-------------------------------------------------------------------------------------------------------
+            // Create a job record and return its unique ID.
+            //-------------------------------------------------------------------------------------------------------
+            $jobUID = $this->jobService->createJob($filename, $userEmail, $userUID);
 
-        //-------------------------------------------------------------------------------------------------------
-        // Create a job record and return its unique ID.
-        //-------------------------------------------------------------------------------------------------------
-        $jobUID = $this->jobService->createJob($filename, $userEmail, $userUID);
+            // Create the job directory and subdirectories and return the full path of the job directory.
+            $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
 
-        // Create the job directory and subdirectories and return the path where the proposal file will be saved.
-        $proposalsPath = $this->jobService->createDirectories($jobUID, $userUID);
+            // Create the proposal file in the job directory using the data provided.
+            $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+            
+            // Use the job path to generate the path of the proposals and results subdirectories.
+            $proposalsPath = $this->jobService->getProposalsPath($jobPath);
+            $resultsPath = $this->jobService->getResultsPath($jobPath);
 
-        // Save the proposal file in the job directory.
-        $fileID = $this->jobService->createFile($binaryData, $filename, $proposalsPath);
-        
+            //-------------------------------------------------------------------------------------------------------
+            // Validate the proposal
+            //-------------------------------------------------------------------------------------------------------
+            $validatorResult = ProposalValidator::validateProposals($proposalsPath, $resultsPath, $jobPath);
 
-        //-------------------------------------------------------------------------------------------------------
-        // Validate the proposal
-        //-------------------------------------------------------------------------------------------------------
-        $validatorResult = ProposalValidator::validateProposals($proposalsPath, $this->jobsPath);
+            if ($validatorResult["isValid"] == TRUE) {
+                $updatedStatus = "completed";
+                $errorMessage = "";
+            } else {
+                $updatedStatus = "failed";
+                $errorMessage = $validatorResult["error"];
+            }
 
+            //-------------------------------------------------------------------------------------------------------
+            // Update the job record in the database.
+            //-------------------------------------------------------------------------------------------------------
+            $this->jobService->updateJob($jobUID, $errorMessage, $updatedStatus, $userUID);    
 
-        // TODO: call the stored proc "updateJob" based on isValid
-
+            // Process the job subdirectories and results files after the validator process has been run.
+            //$this->jobService->processValidatorResults($jobPath);
+        }
+        catch (Exception $e) {
+            \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+        }
 
         $result[] = array(
             "fileID" => $fileID,

@@ -6,22 +6,24 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 class ProposalValidator {
 
 
-    public static function validateProposals(string $jobPath, string $workingDirectory) {
+    public static function validateProposals(string $proposalsPath, string $resultsPath, string $workingDirectory) {
 
-        $isValid = 0;
+        // Declare variables used in the try/catch block.
         $error = null;
+        $isValid = FALSE;
         $result = null;
 
         $descriptorspec = array(
-            0 => array("pipe", "r"), // Read from stdin
+            0 => array("pipe", "r"), // Read from stdin (not used)
             1 => array("pipe", "w"), // Write to stdout
             2 => array("pipe", "w")  // Write to stderr
         );
         
         // Generate the command to be run.
-        $command = "docker run ".   // -it 
-            "-v \"{$jobPath}/proposalsTest:/proposalsTest\":ro ".
-            "-v \"{$jobPath}/results:/results\" curtish/ictv_proposal_processor ".
+        $command = "docker run ".
+            "-v \"{$proposalsPath}:/proposalsTest\":ro ".
+            "-v \"{$resultsPath}:/results\" ".
+            "curtish/ictv_proposal_processor ".
             "/merge_proposal_zips.R -v ";
 
         try {
@@ -33,18 +35,20 @@ class ProposalValidator {
                 // 1 => readable handle connected to child stdout
                 // 2 => writeable handle connected to child stderr
 
-                /*fwrite($pipes[0], '<?php print_r($_ENV); ?>');
-                fclose($pipes[0]); */
+                // Note: We're not using the stdin pipe.
 
+                // Get stdout
                 $result = stream_get_contents($pipes[1]);
                 fclose($pipes[1]);
 
+                // Get stderror
                 $error = stream_get_contents($pipes[2]);
                 fclose($pipes[2]);
 
                 // It is important that you close any pipes before calling
                 // proc_close in order to avoid a deadlock
-                $isValid = proc_close($process);
+                proc_close($process);
+
             } else {
                 $error = "process is not a resource";
             }
@@ -54,14 +58,16 @@ class ProposalValidator {
             $error = $error . $e->getMessage();
         }
 
+        // If nothing was returned from stderr, the process succeeded.
+        if (!isset($error) || trim($error) == '') { $isValid = TRUE; }
+        
         return array(
+            "command" => $command,
             "error" => $error,
             "isValid" => $isValid,
             "result" => $result
         );
     }
-
-
 };
 
 
