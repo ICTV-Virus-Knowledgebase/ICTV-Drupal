@@ -49,13 +49,6 @@ class JobService {
             return null;
         }
 
-        /*
-        // Update the permissions
-        if (!$this->fileSystem->chmod($jobPath, 777)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on job directory");
-            return null;
-        }*/
-
         //---------------------------------------------------------------------------------------------------------------
         // The proposalsTest subdirectory
         //---------------------------------------------------------------------------------------------------------------
@@ -67,13 +60,6 @@ class JobService {
             return null;
         }
 
-        /*
-        // Update the permissions
-        if (!$this->fileSystem->chmod($proposalsPath, 777)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on proposals subdirectory");
-            return null;
-        }*/
-
         //---------------------------------------------------------------------------------------------------------------
         // The results subdirectory
         //---------------------------------------------------------------------------------------------------------------
@@ -84,13 +70,6 @@ class JobService {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
             return null;
         }
-
-        /* dmd 060123: This is giving weird permissions...
-        // Update the permissions
-        if (!$this->fileSystem->chmod($resultsPath, 777)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on results subdirectory");
-            return null;
-        }*/
 
         // Return the full path of the job directory.
         return $jobPath;
@@ -179,6 +158,7 @@ class JobService {
                     "createdOn" => $job->created_on,
                     "failedOn" => $job->failed_on,
                     "filename" => $job->filename,
+                    "jobUID" => $job->uid,
                     "message" => $job->message,
                     "status" => $job->status,
                     "type" => $job->type,
@@ -204,16 +184,56 @@ class JobService {
         return $resultsPath;
     }
 
-    /*public function getProposalFile(string $jobUID, string $userUID) {
+    public function getValidatorResults(string $filename, string $jobUID, string $userUID) {
 
         // TODO: should we confirm the job in the database first?
 
         // https://stackoverflow.com/questions/14011021/how-to-download-a-base64-encoded-image
-        $path = $this->getJobPath($jobUID, $userUID);
+        
+        //\Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
 
+        $jobPath = $this->getJobPath($jobUID, $userUID);
 
-    }*/
+        // Use the job path to generate the path of the results subdirectory.
+        $resultsPath = $this->getResultsPath($jobPath);
 
+        $fileID = $resultsPath."/".$filename;
+
+        // Load the file
+        $handle = null;
+        $fileData = null;
+
+        try {
+            // Get a file handle and read its contents.
+            $handle = fopen($fileID, "r");
+            $fileData = fread($handle, filesize($fileID));
+
+        } catch (Exception $e) {
+            \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+            return null;
+
+        } finally {
+            if ($handle != null) { fclose($handle); }
+        }
+
+        if ($fileData == null) {
+            \Drupal::logger('ictv_proposal_service')->error("File data is null");
+            return null;
+        }
+        
+        //$file = \Drupal\file\Entity\File::load($fileID);
+
+        // Encode the file contents as base64.
+        $encodedData = base64_encode($fileData);
+
+        $result[] = array(
+            "filename" => $filename,
+            "file" => $encodedData,
+            "jobUID" => $jobUID 
+        );
+
+        return $result;
+    }
 
     // Process the job subdirectories and results files after the validator process has been run.
     public function processValidatorResults(string $jobPath) {
