@@ -208,6 +208,7 @@ class ProposalService extends ResourceBase {
         if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
 
         $base64Data = substr($proposal, $fileStartIndex + 1);
+        if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
 
         // Decode the file contents from base64.
         $binaryData = base64_decode($base64Data);
@@ -246,11 +247,18 @@ class ProposalService extends ResourceBase {
             //-------------------------------------------------------------------------------------------------------
             $this->jobService->updateJob($jobUID, $errorMessage, $updatedStatus, $userUID);    
 
-            // Process the job subdirectories and results files after the validator process has been run.
-            //$this->jobService->processValidatorResults($jobPath);
         }
         catch (Exception $e) {
-            \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+
+            $errorMessage = $e->getMessage();
+            $updatedStatus = "failed";
+
+            \Drupal::logger('ictv_proposal_service')->error($errorMessage);
+
+            //-------------------------------------------------------------------------------------------------------
+            // Update the job record in the database.
+            //-------------------------------------------------------------------------------------------------------
+            $this->jobService->updateJob($jobUID, $errorMessage, $updatedStatus, $userUID);    
         }
 
         $result[] = array(

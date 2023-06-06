@@ -100,8 +100,10 @@ class IctvProposalSubmissionBlock extends BlockBase {
         $build = [
             '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\">
                 <div class=\"user-row\"></div>
+                <div class=\"upload-instructions\">To upload a proposal file for validation, 
+                click on \"Browse\" to select the file,and then click on the \"Upload\" button.</div>
                 <div class=\"controls-row\">
-                    Upload file: <input type=\"file\" class=\"proposal-ctrl\" /> 
+                    <input type=\"file\" class=\"proposal-ctrl\" /> 
                     <button class=\"btn upload-button\"><i class=\"fa-solid fa-upload\"></i> Upload</button>
                 </div>
                 <div class=\"jobs\"></div>

@@ -188,10 +188,6 @@ class JobService {
 
         // TODO: should we confirm the job in the database first?
 
-        // https://stackoverflow.com/questions/14011021/how-to-download-a-base64-encoded-image
-        
-        //\Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
-
         $jobPath = $this->getJobPath($jobUID, $userUID);
 
         // Use the job path to generate the path of the results subdirectory.
@@ -220,8 +216,6 @@ class JobService {
             \Drupal::logger('ictv_proposal_service')->error("File data is null");
             return null;
         }
-        
-        //$file = \Drupal\file\Entity\File::load($fileID);
 
         // Encode the file contents as base64.
         $encodedData = base64_encode($fileData);
@@ -234,19 +228,6 @@ class JobService {
 
         return $result;
     }
-
-    // Process the job subdirectories and results files after the validator process has been run.
-    public function processValidatorResults(string $jobPath) {
-
-        $resultsPath = $jobPath."/".$this->resultsDirectory;
-
-        // Update the permissions of the results directory.
-        if (!$this->fileSystem->chmod($resultsPath, 777)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on results subdirectory");
-            return null;
-        }
-    }
-
 
     // Update a job's status, possibly adding a message if the status is "failed".
     // TODO: after upgrading the dev environment to 9.5, make status an enum.
