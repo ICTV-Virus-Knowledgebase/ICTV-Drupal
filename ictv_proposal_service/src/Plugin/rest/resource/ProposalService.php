@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\Request;
  *   id = "ictv_proposal_service_resource",
  *   label = @Translation("ICTV Proposal Service"),
  *   uri_paths = {
- *     "canonical" = "/proposal-api",
+ *      "canonical" = "/proposal-api",
  *      "create" = "/proposal-api"
  *   }
  * )
@@ -105,6 +105,28 @@ class ProposalService extends ResourceBase {
         return new ResourceResponse($data);
     }
 
+
+    public function getValidatorResults(array $json, string $userUID) {
+
+        // Get the job UID from the request.
+        $jobUID = $json["jobUID"];
+        if (Utils::IsNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
+
+
+        /*
+        These are the result files that are available:
+
+        QC.pretty_summary.all.xlsx
+        QC.summary.tsv
+        QC.summary.xlsx
+        */
+
+        $filename = "QC.pretty_summary.all.xlsx";
+
+        $results = $this->jobService->getValidatorResults($filename, $jobUID, $userUID);
+        return $results;
+    }
+
     /** 
      * {@inheritdoc} 
      * This function has to exist in order for the admin to assign user permissions 
@@ -152,6 +174,11 @@ class ProposalService extends ResourceBase {
             case "get_jobs":
                 $data = $this->jobService->getJobs($userEmail, $userUID);
                 break;
+
+            case "get_validator_results":
+                $data = $this->getValidatorResults($json, $userUID);
+                break;
+
             case "upload_proposal":
                 $data = $this->uploadProposal($json, $userEmail, $userUID);
                 break;
