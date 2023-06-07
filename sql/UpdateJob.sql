@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS updateJob;
 
 CREATE PROCEDURE updateJob (
 	IN jobUID VARCHAR(100),
-	IN message VARCHAR(200),
+	IN message TEXT,
 	IN status VARCHAR(50),
 	IN userUID INT
 )
