@@ -15,6 +15,10 @@ use Drupal\Core\Block\BlockBase;
  */
 class IctvProposalSubmissionBlock extends BlockBase {
 
+
+    public $authToken;
+    public $drupalWebServiceURL;
+
     /**
      * A current user instance which is logged in the session.
      * @var \Drupal\Core\Session\AccountProxyInterface
@@ -24,85 +28,55 @@ class IctvProposalSubmissionBlock extends BlockBase {
 
 
     /**
-     * Constructs a Drupal\rest\Plugin\ResourceBase object.
-     *
-     * @param array $config
-     *   A configuration array which contains the information about the plugin instance.
-     * @param string $module_id
-     *   The module_id for the plugin instance.
-     * @param mixed $module_definition
-     *   The plugin implementation definition.
-     * @param \Drupal\Core\Session\AccountProxyInterface $current_user
-     *   A currently logged user instance.
-     */
-    /*
-    public function __construct(
-        array $config,
-        $module_id,
-        $module_definition,
-        AccountProxyInterface $current_user) {
-        parent::__construct($config, $module_id, $module_definition);
-
-        $this->loggedUser = $current_user;
-    }*/
-
-
-    /**
-     * {@inheritdoc}
-     */
-    /*public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
-        return new static(
-            $config,
-            $module_id,
-            $module_definition,
-            $container->get('current_user')
-        );
-    }*/
-
-
-
-    /**
      * {@inheritdoc}
      */
     public function build() {
 
+        // Get and validate the current user
+        $currentUser = \Drupal::currentUser();
+        if (!$currentUser) { 
+            \Drupal::logger('ictv_proposal_service')->error("Current user is invalid"); 
+            throw new HttpException("Current user is invalid");
+        }
 
-        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-        // TODO: how to raise/report an exception if this is null?
-
-        // Use the default database instance.
-        $database = \Drupal::database();
+        // Load the current user object by ID
+        $user = \Drupal\user\Entity\User::load($currentUser->id());
 
         // The currently logged in user.
-        if (!$user->hasPermission('access content')) {
-            throw new AccessDeniedHttpException();
-        }
+        if (!$user->hasPermission('access content')) { throw new AccessDeniedHttpException(); }
+
 
         /*if (!$this->loggedUser->hasRole('proposal uploader')) {
             throw new AccessDeniedHttpException();
         }*/
 
-        // TODO: get authToken from ictv_settings
-        // Get all ictv_settings
-        // TODO: centralize this code somewhere else!
-        $query = $database->query("SELECT ictv_settings.value AS authToken FROM ictv_settings WHERE NAME = 'authToken' ");
-
+        /*
+        // Get ictv_settings
+        //$query = $database->query("SELECT ictv_settings.value AS authToken FROM ictv_settings WHERE NAME = 'authToken' ");
         $result = $query->fetchAll();
-
-        // TODO: validate result!
         $authToken = $result[0]->authToken;
-    
+        */
+
+        // Load the authToken and drupalWebServiceURL from the database.
+        $this->loadData();
+
         // Get the current user's email, name, and UID.
         $email = $user->get('mail')->value;
         $name = $user->get('name')->value;
         $userUID = $user->get('uid')->value;
 
+        /*
+        Removed on 06/08/23:
+        <div class=\"upload-instructions\">To upload a proposal file for validation: 
+            <ol>Click on \"Browse\" and select the proposal file</ol>
+            <ol>Click on the \"Upload\" button</ol>
+        </div>
+        */
         $build = [
             '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\">
                 <div class=\"user-row\"></div>
-                <div class=\"upload-instructions\">To upload a proposal file for validation, 
-                click on \"Browse\" to select the file and then click on the \"Upload\" button.</div>
                 <div class=\"controls-row\">
+                    <div class=\"browse-label\"></div>
                     <input type=\"file\" class=\"proposal-ctrl\" /> 
                     <button class=\"btn upload-button\"><i class=\"fa-solid fa-upload\"></i> Upload</button>
                 </div>
@@ -119,12 +93,52 @@ class IctvProposalSubmissionBlock extends BlockBase {
         ];
 
         // Populate drupalSettings with variables needed by the ProposalSubmission object.
-        $build['#attached']['drupalSettings']['authToken'] = $authToken;
+        $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
+        $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
         $build['#attached']['drupalSettings']['userEmail'] = $email;
         $build['#attached']['drupalSettings']['userName'] = $name;
         $build['#attached']['drupalSettings']['userUID'] = $userUID;
         
         return $build;
+    }
+
+
+    public function loadData() {
+
+        // Use the default database instance.
+        $database = \Drupal::database();
+
+        // Initialize the member variables.
+        $this->authToken = "";
+        $this->drupalWebServiceURL = "";
+
+        // Get authToken and drupalWebServiceURL from the ictv_settings table.
+        $sql = 
+            "SELECT (".
+            "   SELECT a.value ".
+            "   FROM {ictv_settings} a ".
+            "    WHERE a.NAME = 'authToken' ".
+            ") AS authToken, ".
+            "(".
+            "    SELECT d.value ".
+            "    FROM {ictv_settings} d ".
+            "    WHERE d.NAME = 'drupalWebServiceURL' ".
+            ") AS drupalWebServiceURL ";
+
+        $query = $database->query($sql);
+        if (!$query) { \Drupal::logger('ictv_proposal_service')->error("Invalid query object"); }
+
+        $result = $query->fetchAll();
+        if (!$result) { \Drupal::logger('ictv_proposal_service')->error("Invalid result object"); }
+
+        foreach ($result as $setting) {
+
+            // Populate member variables
+            $this->authToken = $setting->authToken;
+            $this->drupalWebServiceURL = $setting->drupalWebServiceURL;
+        }
+
+        // TODO: validate?
     }
 
 }

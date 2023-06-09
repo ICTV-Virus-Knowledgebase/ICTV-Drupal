@@ -11,8 +11,10 @@ class ConfigForm extends FormBase {
 
     // Variables to maintain form values populated from the database.
     public $applicationURL;
+    public $authToken;
     public $baseWebServiceURL;
     public $currentMslRelease;
+    public $drupalWebServiceURL;
     public $releaseProposalsURL;
     public $taxonHistoryPage;
 
@@ -52,12 +54,20 @@ class ConfigForm extends FormBase {
             '#default_value' => $this->applicationURL,
         );
 
+        // The JWT auth token used with the Drupal web services (the app server).
+        $form['authToken'] = array(
+            '#type' => 'textarea',
+            '#title' => t('JWT auth token'),
+            '#required' => TRUE,
+            '#default_value' => $this->authToken
+        );
+
         // The base URL for web services.
         $form['baseWebServiceURL'] = array(
             '#type' => 'url',
             '#title' => t('Web service URL'),
             '#required' => TRUE,
-            '#default_value' => $this->baseWebServiceURL,
+            '#default_value' => $this->baseWebServiceURL
         );
 
         // The current MSL release number.
@@ -67,6 +77,14 @@ class ConfigForm extends FormBase {
             '#title' => t('Current MSL release number'),
             '#required' => TRUE,
             '#default_value' => $this->currentMslRelease
+        );
+
+        // The URL for Drupal web services (the app server).
+        $form['drupalWebServiceURL'] = array(
+            '#type' => 'url',
+            '#title' => t('Drupal web service URL'),
+            '#required' => TRUE,
+            '#default_value' => $this->drupalWebServiceURL
         );
 
         // The location of release proposal files.
@@ -100,8 +118,10 @@ class ConfigForm extends FormBase {
 
         // Initialize the member variables.
         $this->applicationURL = "";
+        $this->authToken = "";
         $this->baseWebServiceURL = "";
         $this->currentMslRelease = NULL;
+        $this->drupalWebServiceURL = "";
         $this->releaseProposalsURL = "";
         $this->taxonHistoryPage = "";
 
@@ -116,18 +136,31 @@ class ConfigForm extends FormBase {
                     case "applicationURL":
                         $this->applicationURL = $setting->value;
                         break;
+
+                    case "authToken":
+                        $this->authToken = $setting->value;
+                        break;
+
                     case "baseWebServiceURL":
                         $this->baseWebServiceURL = $setting->value;
                         break;
+
                     case "currentMslRelease":
                         $this->currentMslRelease = $setting->value;
                         break;
+
+                    case "drupalWebServiceURL":
+                        $this->drupalWebServiceURL = $setting->value;
+                        break;
+
                     case "releaseProposalsURL":
                         $this->releaseProposalsURL = $setting->value;
                         break;
+
                     case "taxonHistoryPage":
                         $this->taxonHistoryPage = $setting->value;
                         break;
+
                     default:
                         break;
                 }
@@ -182,6 +215,12 @@ class ConfigForm extends FormBase {
             $form_state->setErrorByName('applicationURL', $this->t('Unable to save application URL.'));
         }
     
+        // Get the JWT auth token and save it.
+        $value = $form_state->getValue('authToken');
+        if (!$this->saveValue("authToken", $value)) {
+            $form_state->setErrorByName('authToken', $this->t('Unable to save the JWT auth token.'));
+        }
+
         // Get the base web service URL and save it.
         $value = $form_state->getValue('baseWebServiceURL');
         if (!$this->saveValue("baseWebServiceURL", $value)) {
@@ -192,6 +231,12 @@ class ConfigForm extends FormBase {
         $value = $form_state->getValue('currentMslRelease');
         if (!$this->saveValue("currentMslRelease", $value)) {
             $form_state->setErrorByName('currentMslRelease', $this->t('Unable to save current MSL release.'));
+        }
+    
+        // Get the current Drupal web service URL and save it.
+        $value = $form_state->getValue('drupalWebServiceURL');
+        if (!$this->saveValue("drupalWebServiceURL", $value)) {
+            $form_state->setErrorByName('drupalWebServiceURL', $this->t('Unable to save current Drupal web service URL.'));
         }
     
         // Get the release proposals URL and save it.
@@ -224,6 +269,16 @@ class ConfigForm extends FormBase {
             $form_state->setValue('applicationURL', $value);
         }
 
+        // The JWT auth token
+        $value = $form_state->getValue('authToken');
+        $value = trim($value); 
+        if (strlen($value) < 1) {
+            $form_state->setErrorByName('authToken', $this->t('Please enter a valid JWT auth token.'));
+        } else {
+            // Replace the value with the trimmed version.
+            $form_state->setValue('authToken', $value);
+        }
+
         // The base web service URL
         $value = $form_state->getValue('baseWebServiceURL');
         $value = trim($value); 
@@ -242,6 +297,16 @@ class ConfigForm extends FormBase {
         } else {
             // Replace the value with the trimmed version.
             $form_state->setValue('currentMslRelease', $value);
+        }
+
+        // The Drupal web service URL
+        $value = $form_state->getValue('drupalWebServiceURL');
+        $value = trim($value); 
+        if (strlen($value) < 1) {
+            $form_state->setErrorByName('drupalWebServiceURL', $this->t('Please enter a valid Drupal web service URL.'));
+        } else {
+            // Replace the value with the trimmed version.
+            $form_state->setValue('drupalWebServiceURL', $value);
         }
 
         // The release proposals URL
