@@ -187,14 +187,13 @@ class ProposalService extends ResourceBase {
 
         return $data;
     }
-
-
+    
     public function uploadProposal(array $json, string $userEmail, string $userUID) {
 
         // Declare variables used in the try/catch block.
-        $errorMessage = null;
         $fileID = null;
         $jobUID = null;
+        $message = null;
         $updatedStatus = null;
         $validatorResult = null;
 
@@ -236,16 +235,18 @@ class ProposalService extends ResourceBase {
 
             if ($validatorResult["isValid"] == TRUE) {
                 $updatedStatus = "completed";
-                $errorMessage = "";
             } else {
                 $updatedStatus = "failed";
-                $errorMessage = $validatorResult["error"];
             }
 
+            // Get the summary message returned by the ProposalValidator.
+            $message = $validatorResult["summary"];
+            if ($message == NULL) { $message = ""; }
+            
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $errorMessage, $updatedStatus, $userUID);    
+            $this->jobService->updateJob($jobUID, $message, $updatedStatus, $userUID);    
 
         }
         catch (Exception $e) {
@@ -253,12 +254,16 @@ class ProposalService extends ResourceBase {
             $errorMessage = $e->getMessage();
             $updatedStatus = "failed";
 
-            \Drupal::logger('ictv_proposal_service')->error($errorMessage);
+            // Update the log with the job UID and this error message.
+            \Drupal::logger('ictv_proposal_service')->error($jobUID.": ".$errorMessage);
+
+            // Provide a default message, if necessary.
+            if ($message == NULL || len($message) < 1) { $message = "1 error"; }
 
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $errorMessage, $updatedStatus, $userUID);    
+            $this->jobService->updateJob($jobUID, $message, $updatedStatus, $userUID);    
         }
 
         $result[] = array(
