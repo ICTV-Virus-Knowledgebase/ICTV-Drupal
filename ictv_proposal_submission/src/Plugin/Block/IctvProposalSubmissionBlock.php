@@ -45,18 +45,6 @@ class IctvProposalSubmissionBlock extends BlockBase {
         // The currently logged in user.
         if (!$user->hasPermission('access content')) { throw new AccessDeniedHttpException(); }
 
-
-        /*if (!$this->loggedUser->hasRole('proposal uploader')) {
-            throw new AccessDeniedHttpException();
-        }*/
-
-        /*
-        // Get ictv_settings
-        //$query = $database->query("SELECT ictv_settings.value AS authToken FROM ictv_settings WHERE NAME = 'authToken' ");
-        $result = $query->fetchAll();
-        $authToken = $result[0]->authToken;
-        */
-
         // Load the authToken and drupalWebServiceURL from the database.
         $this->loadData();
 
@@ -65,23 +53,9 @@ class IctvProposalSubmissionBlock extends BlockBase {
         $name = $user->get('name')->value;
         $userUID = $user->get('uid')->value;
 
-        /*
-        Removed on 06/08/23:
-        <div class=\"upload-instructions\">To upload a proposal file for validation: 
-            <ol>Click on \"Browse\" and select the proposal file</ol>
-            <ol>Click on the \"Upload\" button</ol>
-        </div>
-        */
+        
         $build = [
-            '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\">
-                <div class=\"user-row\"></div>
-                <div class=\"controls-row\">
-                    <div class=\"browse-label\"></div>
-                    <input type=\"file\" class=\"proposal-ctrl\" /> 
-                    <button class=\"btn upload-button\"><i class=\"fa-solid fa-upload\"></i> Upload</button>
-                </div>
-                <div class=\"jobs\"></div>
-            </div>"),
+            '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\"></div>"),
             '#attached' => [
                 'library' => [
                     'ictv_proposal_submission/ICTV',

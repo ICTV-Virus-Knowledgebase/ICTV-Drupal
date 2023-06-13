@@ -11,6 +11,21 @@ class JobStatus {
 }
 
 /*
+class ResultFile {
+    public static string $summaryAllPrettyXLSX = "QC.pretty_summary.all.xlsx";
+    public static string $summaryTSV = "QC.summary.tsv";
+    public static string $summaryXLSX = "QC.summary.xlsx";
+}
+*/
+/*
+
+QC.summary.tsv
+QC.pretty_summary.all.xlsx
+QC.summary.xlsx
+
+*/
+
+/*
 enum JobStatus {
     case complete;
     case failed;

@@ -50,7 +50,8 @@ BEGIN
 		
 		-- Update the job as completed.
 		UPDATE job SET
-			completed_on = NOW(), 
+			completed_on = NOW(),
+            message = message,
 			status_tid = statusTID
 		WHERE uid = jobUID
 		AND user_uid = userUID;

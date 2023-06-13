@@ -75,6 +75,27 @@ class JobService {
         return $jobPath;
     }
 
+    
+    /**
+     * Creates a job record in the database.
+     * Returns the new job's unique ID.
+     */
+    public function createJob(string $filename, string $userEmail, string $userUID) {
+
+        $jobUID = null;
+
+        // Generate SQL to call the "createJob" stored procedure and return the job UID.
+        $sql = "CALL createJob('{$filename}', '{$userEmail}', {$userUID});";
+
+        $query = $this->connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result && $result[0] !== null) {
+            $jobUID = $result[0]->jobUID;
+        }
+
+        return $jobUID;
+    }
+
 
     // Create the proposal file under the specified path (job directory).
     public function createProposalFile(string $data, string $filename, string $jobPath) {
@@ -99,27 +120,6 @@ class JobService {
         }
 
         return $fileID;
-    }
-
-
-    /**
-     * Creates a job record in the database.
-     * Returns the new job's unique ID.
-     */
-    public function createJob(string $filename, string $userEmail, string $userUID) {
-
-        $jobUID = null;
-
-        // Generate SQL to call the "createJob" stored procedure and return the job UID.
-        $sql = "CALL createJob('{$filename}', '{$userEmail}', {$userUID});";
-
-        $query = $this->connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result && $result[0] !== null) {
-            $jobUID = $result[0]->jobUID;
-        }
-
-        return $jobUID;
     }
 
 

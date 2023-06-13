@@ -2,16 +2,17 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
+use Drupal\ictv_proposal_service\Plugin\rest\resource\SummaryFile;
+
 
 class ProposalValidator {
-
 
     public static function validateProposals(string $proposalsPath, string $resultsPath, string $workingDirectory) {
 
         // Declare variables used in the try/catch block.
-        $error = null;
         $isValid = FALSE;
         $result = null;
+        $stdError = null;
 
         $descriptorspec = array(
             0 => array("pipe", "r"), // Read from stdin (not used)
@@ -42,7 +43,7 @@ class ProposalValidator {
                 fclose($pipes[1]);
 
                 // Get stderror
-                $error = stream_get_contents($pipes[2]);
+                $stdError = stream_get_contents($pipes[2]);
                 fclose($pipes[2]);
 
                 // It is important that you close any pipes before calling
@@ -50,22 +51,51 @@ class ProposalValidator {
                 proc_close($process);
 
             } else {
-                $error = "process is not a resource";
+                $stdError = "process is not a resource";
             }
         } 
         catch (Exception $e) {
-            if (isset($error) && $error !== '') { $error = $error . "; "; }
-            $error = $error . $e->getMessage();
+            if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
+            $stdError = $stdError . $e->getMessage();
         }
 
-        // If nothing was returned from stderr, the process succeeded.
-        if (!isset($error) || trim($error) == '') { $isValid = TRUE; }
-        
+        // Get data from the summary (TSV) file.
+        $summaryData = SummaryFile::getSummaryData($resultsPath);
+
+        // Placeholders for the summaryData contents that could be NULL.
+        $errors = NULL;
+        $info = NULL;
+        $summary = NULL;
+        $warnings = NULL;
+
+        if (!$summaryData) { 
+            
+            // Provide default values that indicate that an error has occurred.
+            $errors = 1;
+            $info = 0;
+            $isValid = FALSE;
+            $summary = "";
+            $warnings = 0;
+
+        } else {
+
+            // The error count determines whether the validation succeeded.
+            if ($summaryData["errors"] > 0) {
+                $isValid = FALSE;
+            } else {
+                $isValid = TRUE;
+            }
+        }
+
         return array(
             "command" => $command,
-            "error" => $error,
+            "errors" => $errors,
+            "info" => $info,
             "isValid" => $isValid,
-            "result" => $result
+            "result" => $result,
+            "stdError" => $stdError,
+            "summary" => $summary,
+            "warnings" => $warnings
         );
     }
 };
