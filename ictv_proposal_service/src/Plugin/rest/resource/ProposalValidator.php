@@ -62,25 +62,28 @@ class ProposalValidator {
         // Get data from the summary (TSV) file.
         $summaryData = SummaryFile::getSummaryData($resultsPath);
 
-        // Placeholders for the summaryData contents that could be NULL.
-        $errors = NULL;
-        $info = NULL;
-        $summary = NULL;
-        $warnings = NULL;
+        // Default values for summaryData contents.
+        $errors = 0;
+        $info = 0;
+        $isValid = FALSE;
+        $summary = "";
+        $warnings = 0;
 
         if (!$summaryData) { 
             
-            // Provide default values that indicate that an error has occurred.
+            // Indicate that an error has occurred.
             $errors = 1;
-            $info = 0;
-            $isValid = FALSE;
-            $summary = "";
-            $warnings = 0;
 
         } else {
 
+            // Get values from summaryData.
+            $errors = $summaryData["errors"];
+            $info = $summaryData["info"];
+            $summary = $summaryData["summary"];
+            $warnings = $summaryData["warnings"];
+
             // The error count determines whether the validation succeeded.
-            if ($summaryData["errors"] > 0) {
+            if ($errors > 0) {
                 $isValid = FALSE;
             } else {
                 $isValid = TRUE;

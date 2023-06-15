@@ -22,9 +22,6 @@ class SummaryFile {
 
     public static function getSummaryData(string $resultsPath) {
 
-        //$testfilename = $resultsPath."/QC.summary.tsv";
-        //\Drupal::logger('ictv_proposal_service')->info("in getSummaryData filename = {$testfilename}");
-
         // Counts of level types found in the summary file.
         $errorCount = 0;
         $infoCount = 0;
@@ -43,13 +40,9 @@ class SummaryFile {
             // Iterate over every line in the file.
             while ($line = fgets($handle)) {
             
-                //\Drupal::logger('ictv_proposal_service')->info("line = ".$line);
-                //\Drupal::logger('ictv_proposal_service')->info("first tab index = ".stripos($line, "\t"));
-
                 // Split the line by tab characters.
                 $columns = explode("\t", $line);
                 if (!$columns || sizeof($columns) < 10) {
-                    //\Drupal::logger('ictv_proposal_service')->error("Error in SummaryFile.getSummaryData: No columns found in line of text");
                     continue;
                 }
 
@@ -95,19 +88,12 @@ class SummaryFile {
             $summary = $summary."{$warningCount} warnings";
         }
 
-
-        \Drupal::logger('ictv_proposal_service')->info("summary = {$summary} and warningCount = {$warningCount}");
-
-        $summaryData[] = array(
+        return array(
             "errors" => $errorCount,
             "info" => $infoCount,
             "summary" => $summary,
             "warnings" => $warningCount 
         );
-
-        \Drupal::logger('ictv_proposal_service')->info("returning from getSummaryData");
-
-        return $summaryData;
     }
 
     
