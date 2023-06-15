@@ -38,7 +38,7 @@ class ProposalService extends ResourceBase {
     protected JobService $jobService;
 
     // The full path of the jobs directory.
-    protected string $jobsPath;
+    protected string $jobsPath = "/var/www/dapp/files/jobs";
 
 
     /**
@@ -68,11 +68,31 @@ class ProposalService extends ResourceBase {
         // Use the ictv_apps database instance.
         $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
 
+        
         // Get configuration settings from ictv_proposal_service.settings.yml.
-        //$config = \Drupal::config('ictv_proposal_service.settings');
+        /* $config = \Drupal::config('ictv_proposal_service.settings');
 
+        $keys = $config->get();
+        \Drupal::logger('ictv_proposal_service')->info("ProposalService: keys = ".json_encode($keys));
+
+        if (!!$config) {
+
+            $configData = $config->get();
+
+            \Drupal::logger('ictv_proposal_service')->info("ProposalService: config object = ".json_encode($configData));
+            $testJobsPath = $config->get("jobsPath");
+            if (!!$testJobsPath) { 
+                \Drupal::logger('ictv_proposal_service')->info("ProposalService: testJobsPath = ".$testJobsPath);
+            } else {
+                \Drupal::logger('ictv_proposal_service')->info("ProposalService: couldn't find testJobsPath");
+            }
+        } else {
+            \Drupal::logger('ictv_proposal_service')->info("ProposalService: couldn't find config");
+        }
+        */
+        
         // Get the jobs path setting.
-        $this->jobsPath = "/var/www/dapp/files/jobs"; //$config->get("jobsPath");
+        //$this->jobsPath = "/var/www/dapp/files/jobs"; //$config->get("jobsPath");
 
         // Create a new instance of JobService.
         $this->jobService = new JobService($this->connection, $this->jobsPath);
@@ -266,9 +286,27 @@ class ProposalService extends ResourceBase {
             $this->jobService->updateJob($jobUID, $message, $updatedStatus, $userUID);    
         }
 
+        // Try to extend the filename by including the job UID.
+        $extendedFilename = $filename;
+        
+        // The index of the last dot.
+        $lastDotIndex = strrpos($filename, ".");
+
+        if (!!$lastDotIndex) {
+            
+            // The file extension (probably ".xlsx")
+            $extension = substr($filename, $lastDotIndex);
+
+            // The filename prior to the last dot.
+            $extendedFilename = substr($filename, 0, $lastDotIndex);
+
+            // Include the user UID and job UID.
+            $extendedFilename = $extendedFilename . "." . $userUID . "_" . $jobUID . $extension;
+        }
+
         $result[] = array(
             "fileID" => $fileID,
-            "filename" => $filename,
+            "filename" => $extendedFilename,
             "validatorResult" => $validatorResult,
             "jobUID" => $jobUID 
         );

@@ -39,10 +39,11 @@ class IctvProposalSubmissionBlock extends BlockBase {
             throw new HttpException("Current user is invalid");
         }
 
-        // Load the current user object by ID
+        // Retrieve additional user details.
         $user = \Drupal\user\Entity\User::load($currentUser->id());
 
-        // The currently logged in user.
+        // Make sure the user has permission to access content.
+        // TODO: shouldn't we also make sure they have a specific "proposal submitter" role?
         if (!$user->hasPermission('access content')) { throw new AccessDeniedHttpException(); }
 
         // Load the authToken and drupalWebServiceURL from the database.
@@ -53,7 +54,8 @@ class IctvProposalSubmissionBlock extends BlockBase {
         $name = $user->get('name')->value;
         $userUID = $user->get('uid')->value;
 
-        
+        \Drupal::logger('ictv_proposal_service')->info("In ProposalSubmissionBlock, user email = {$email} and userUID = {$userUID}"); 
+
         $build = [
             '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\"></div>"),
             '#attached' => [

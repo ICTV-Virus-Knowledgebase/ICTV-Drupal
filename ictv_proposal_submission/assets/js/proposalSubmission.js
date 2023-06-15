@@ -13,31 +13,12 @@
 
             initialized = true;
             
-            /*
-            //----------------------------------------------------------------------------------------
-            // Initialize the ICTV AppSettings using drupalSettings
-            //----------------------------------------------------------------------------------------
-
-            // The website's base URL.
-            window.ICTV.AppSettings.applicationURL = settings_.applicationURL;
-
-            // Set the base URL for web services.
-            window.ICTV.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
-
-            // The current MSL release number.
-            window.ICTV.AppSettings.currentMslRelease = settings_.currentMslRelease;
-
-            // The location of release proposal files. 
-            window.ICTV.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
-
-            // The taxon history page name.
-            window.ICTV.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
-            */
-
             const authToken = settings_.authToken;
             const userEmail = settings_.userEmail;
             const userName = settings_.userName;
             const userUID = settings_.userUID;
+
+            console.log(`In proposalSubmission.js user email = ${userEmail} and userUID = ${userUID}`);
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_proposal_submission_container";
