@@ -4,6 +4,7 @@ namespace Drupal\ictv_proposal_submission\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 
+
 /**
  * A Block for the ICTV proposal submission form.
  *
@@ -15,17 +16,11 @@ use Drupal\Core\Block\BlockBase;
  */
 class IctvProposalSubmissionBlock extends BlockBase {
 
-
+    // The JWT auth token for the Drupal web service.
     public $authToken;
+
+    // The URL of the Drupal web service.
     public $drupalWebServiceURL;
-
-    /**
-     * A current user instance which is logged in the session.
-     * @var \Drupal\Core\Session\AccountProxyInterface
-     */
-    protected $loggedUser;
-
-
 
     /**
      * {@inheritdoc}
@@ -35,7 +30,7 @@ class IctvProposalSubmissionBlock extends BlockBase {
         // Get and validate the current user
         $currentUser = \Drupal::currentUser();
         if (!$currentUser) { 
-            \Drupal::logger('ictv_proposal_service')->error("Current user is invalid"); 
+            \Drupal::logger('ictv_proposal_submission')->error("Current user is invalid"); 
             throw new HttpException("Current user is invalid");
         }
 
@@ -53,8 +48,6 @@ class IctvProposalSubmissionBlock extends BlockBase {
         $email = $user->get('mail')->value;
         $name = $user->get('name')->value;
         $userUID = $user->get('uid')->value;
-
-        \Drupal::logger('ictv_proposal_service')->info("In ProposalSubmissionBlock, user email = {$email} and userUID = {$userUID}"); 
 
         $build = [
             '#markup' => $this->t("<div id=\"ictv_proposal_submission_container\" class=\"ictv-custom\"></div>"),
@@ -76,6 +69,16 @@ class IctvProposalSubmissionBlock extends BlockBase {
         $build['#attached']['drupalSettings']['userUID'] = $userUID;
         
         return $build;
+    }
+
+
+    /**
+     * {@inheritdoc}
+     * 
+     * Prevent this block from being cached.
+     */
+    public function getCacheMaxAge() {
+        return 2;
     }
 
 
@@ -102,10 +105,10 @@ class IctvProposalSubmissionBlock extends BlockBase {
             ") AS drupalWebServiceURL ";
 
         $query = $database->query($sql);
-        if (!$query) { \Drupal::logger('ictv_proposal_service')->error("Invalid query object"); }
+        if (!$query) { \Drupal::logger('ictv_proposal_submission')->error("Invalid query object"); }
 
         $result = $query->fetchAll();
-        if (!$result) { \Drupal::logger('ictv_proposal_service')->error("Invalid result object"); }
+        if (!$result) { \Drupal::logger('ictv_proposal_submission')->error("Invalid result object"); }
 
         foreach ($result as $setting) {
 

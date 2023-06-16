@@ -184,7 +184,7 @@ class JobService {
         return $resultsPath;
     }
 
-    public function getValidatorResults(string $filename, string $jobUID, string $userUID) {
+    public function getValidationSummary(string $filename, string $jobUID, string $userUID) {
 
         // TODO: should we confirm the job in the database first?
 
@@ -220,13 +220,32 @@ class JobService {
         // Encode the file contents as base64.
         $encodedData = base64_encode($fileData);
 
-        $result[] = array(
+        //--------------------------------------------------------------------------------------------------
+        // Try to extend the filename by including the job UID.
+        //--------------------------------------------------------------------------------------------------
+        $extendedFilename = $filename;
+        
+        // The index of the last dot.
+        $lastDotIndex = strrpos($filename, ".");
+
+        if ($lastDotIndex != FALSE && $lastDotIndex > -1) {
+            
+            // The file extension (probably ".xlsx")
+            $extension = substr($filename, $lastDotIndex);
+
+            // The filename prior to the last dot.
+            $extendedFilename = substr($filename, 0, $lastDotIndex);
+
+            // Include the user UID and job UID.
+            $extendedFilename = $extendedFilename.".".$userUID."_".$jobUID.$extension;
+        }
+
+        return array(
+            "extendedFilename" => $extendedFilename,
             "filename" => $filename,
             "file" => $encodedData,
             "jobUID" => $jobUID 
         );
-
-        return $result;
     }
 
     // Update a job's status, possibly adding a message if the status is "failed".
