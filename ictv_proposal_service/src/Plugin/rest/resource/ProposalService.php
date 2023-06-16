@@ -35,11 +35,16 @@ class ProposalService extends ResourceBase {
     // The connection to the ictv_apps database.
     protected Connection $connection;
 
+    // The name of the database used by this web service.
+    protected string $databaseName = "ictv_apps";
+
     protected JobService $jobService;
 
     // The full path of the jobs directory.
     protected string $jobsPath = "/var/www/dapp/files/jobs";
 
+    // The name of the downloadable validation summary file.
+    protected string $summaryFilename = "QC.pretty_summary.all.xlsx";
 
     /**
      * Constructs a Drupal\rest\Plugin\ResourceBase object.
@@ -66,30 +71,20 @@ class ProposalService extends ResourceBase {
         parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
         // Use the ictv_apps database instance.
-        $this->connection = \Drupal\Core\Database\Database::getConnection('default', 'ictv_apps');
+        $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
-        
         // Get configuration settings from ictv_proposal_service.settings.yml.
         /* $config = \Drupal::config('ictv_proposal_service.settings');
-
-        $keys = $config->get();
-        \Drupal::logger('ictv_proposal_service')->info("ProposalService: keys = ".json_encode($keys));
-
         if (!!$config) {
 
-            $configData = $config->get();
+            //$configData = $config->get();
 
-            \Drupal::logger('ictv_proposal_service')->info("ProposalService: config object = ".json_encode($configData));
-            $testJobsPath = $config->get("jobsPath");
-            if (!!$testJobsPath) { 
-                \Drupal::logger('ictv_proposal_service')->info("ProposalService: testJobsPath = ".$testJobsPath);
-            } else {
-                \Drupal::logger('ictv_proposal_service')->info("ProposalService: couldn't find testJobsPath");
-            }
-        } else {
-            \Drupal::logger('ictv_proposal_service')->info("ProposalService: couldn't find config");
-        }
-        */
+            //\Drupal::logger('ictv_proposal_service')->info("ProposalService: config object = ".json_encode($configData));
+            $jobsPath = $config->get("jobsPath");
+            if (!$jobsPath) { $jobsPath = "EMPTY"; }
+
+            \Drupal::logger('ictv_proposal_service')->info("ProposalService: jobsPath = ".$jobsPath);
+        } */
         
         // Get the jobs path setting.
         //$this->jobsPath = "/var/www/dapp/files/jobs"; //$config->get("jobsPath");
@@ -123,28 +118,6 @@ class ProposalService extends ResourceBase {
         $data = $this->processAction($request);
 
         return new ResourceResponse($data);
-    }
-
-
-    public function getValidatorResults(array $json, string $userUID) {
-
-        // Get the job UID from the request.
-        $jobUID = $json["jobUID"];
-        if (Utils::IsNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
-
-
-        /*
-        These are the result files that are available:
-
-        QC.pretty_summary.all.xlsx
-        QC.summary.tsv
-        QC.summary.xlsx
-        */
-
-        $filename = "QC.pretty_summary.all.xlsx";
-
-        $results = $this->jobService->getValidatorResults($filename, $jobUID, $userUID);
-        return $results;
     }
 
     /** 
@@ -195,13 +168,18 @@ class ProposalService extends ResourceBase {
                 $data = $this->jobService->getJobs($userEmail, $userUID);
                 break;
 
-            case "get_validator_results":
-                $data = $this->getValidatorResults($json, $userUID);
+            case "get_validation_summary":
+                
+                $jobUID = $json["jobUID"];
+                if (Utils::IsNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
+                
+                $data = $this->jobService->getValidationSummary($this->summaryFilename, $jobUID, $userUID);
                 break;
 
             case "upload_proposal":
                 $data = $this->uploadProposal($json, $userEmail, $userUID);
                 break;
+
             default: throw new BadRequestHttpException("Unrecognized action code");
         }
 
@@ -286,32 +264,12 @@ class ProposalService extends ResourceBase {
             $this->jobService->updateJob($jobUID, $message, $updatedStatus, $userUID);    
         }
 
-        // Try to extend the filename by including the job UID.
-        $extendedFilename = $filename;
-        
-        // The index of the last dot.
-        $lastDotIndex = strrpos($filename, ".");
-
-        if (!!$lastDotIndex) {
-            
-            // The file extension (probably ".xlsx")
-            $extension = substr($filename, $lastDotIndex);
-
-            // The filename prior to the last dot.
-            $extendedFilename = substr($filename, 0, $lastDotIndex);
-
-            // Include the user UID and job UID.
-            $extendedFilename = $extendedFilename . "." . $userUID . "_" . $jobUID . $extension;
-        }
-
-        $result[] = array(
+        return array(
             "fileID" => $fileID,
-            "filename" => $extendedFilename,
+            "filename" => $filename,
             "validatorResult" => $validatorResult,
             "jobUID" => $jobUID 
         );
-
-        return $result;
     }
 
 
