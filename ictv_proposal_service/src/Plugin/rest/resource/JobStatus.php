@@ -4,11 +4,12 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 
 class JobStatus {
-    public static string $complete = "complete";
-    public static string $failed = "failed";
+    public static string $crashed = "crashed";
+    public static string $invalid = "invalid";
     public static string $pending = "pending";
-    public static string $running = "running";
+    public static string $valid = "valid";
 }
+
 
 /*
 class ResultFile {

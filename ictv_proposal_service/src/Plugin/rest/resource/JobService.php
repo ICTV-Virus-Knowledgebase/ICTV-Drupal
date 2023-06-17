@@ -4,7 +4,6 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Terms\JobStatus;
 use Psr\Log\LoggerInterface;
 
 
@@ -27,8 +26,11 @@ class JobService {
     protected string $proposalsDirectory = "proposalsTest";
     protected string $resultsDirectory = "results";
 
+    // This will be the prefix of the validation summary filename that's returned to the user.
+    public string $validationSummaryPrefix = "ictv-proposal-file-results";
 
 
+    // C-tor
     public function __construct(Connection $connection, string $jobsPath) {
         $this->connection = $connection;
         $this->fileSystem = \Drupal::service("file_system");
@@ -133,7 +135,9 @@ class JobService {
     }
 
 
-    // Get all jobs created by the specified user.
+    /** 
+     * Get all jobs created by the specified user.
+     */ 
     public function getJobs(string $userEmail, string $userUID) {
 
         $jobs = [];
@@ -172,11 +176,13 @@ class JobService {
         return $jobs;
     }
 
+
     // Use the job path to generate the path of the proposals subdirectory.
     public function getProposalsPath(string $jobPath) {
         $proposalsPath = $jobPath."/".$this->proposalsDirectory;
         return $proposalsPath;
     }
+
 
     // Use the job path to generate the path of the results subdirectory.
     public function getResultsPath(string $jobPath) {
@@ -184,6 +190,8 @@ class JobService {
         return $resultsPath;
     }
 
+
+    // Return an array containing the validation summary file contents, a new filename, and the jobUID.
     public function getValidationSummary(string $filename, string $jobUID, string $userUID) {
 
         // TODO: should we confirm the job in the database first?
@@ -220,41 +228,34 @@ class JobService {
         // Encode the file contents as base64.
         $encodedData = base64_encode($fileData);
 
-        //--------------------------------------------------------------------------------------------------
-        // Try to extend the filename by including the job UID.
-        //--------------------------------------------------------------------------------------------------
-        $extendedFilename = $filename;
-        
         // The index of the last dot.
         $lastDotIndex = strrpos($filename, ".");
 
-        if ($lastDotIndex != FALSE && $lastDotIndex > -1) {
-            
-            // The file extension (probably ".xlsx")
+        // Get the file extension.
+        if ($lastDotIndex && $lastDotIndex > -1) {
             $extension = substr($filename, $lastDotIndex);
-
-            // The filename prior to the last dot.
-            $extendedFilename = substr($filename, 0, $lastDotIndex);
-
-            // Include the user UID and job UID.
-            $extendedFilename = $extendedFilename.".".$userUID."_".$jobUID.$extension;
+        } else {
+            // Testing...
+            $extension = ".error";
         }
-
+        
+        // We will return a new filename that includes the job UID and user UID.
+        $newFilename = $this->validationSummaryPrefix.".".$userUID."_".$jobUID.$extension;
+        
         return array(
-            "extendedFilename" => $extendedFilename,
-            "filename" => $filename,
+            "filename" => $newFilename,
             "file" => $encodedData,
             "jobUID" => $jobUID 
         );
     }
 
-    // Update a job's status, possibly adding a message if the status is "failed".
+
+    // Update a job's status, message, and either completed_on or failed_on.
     // TODO: after upgrading the dev environment to 9.5, make status an enum.
+    // TODO: the updateJob stored procedure needs to be included in CreateIctvAppsDB.sql!!!
     public function updateJob(string $jobUID, string $message, string $status, string $userUID) {
 
-        // TODO: the updateJob stored procedure needs to be included in CreateIctvAppsDB.sql!!!
-
-        if ($message == null || $message == "") {
+        if ($message == null || trim($message) == "") {
             $message = "NULL";
         } else {
             $message = "'{$message}'";

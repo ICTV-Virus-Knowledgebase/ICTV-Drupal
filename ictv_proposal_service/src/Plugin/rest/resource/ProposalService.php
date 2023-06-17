@@ -5,8 +5,8 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Job;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 use Drupal\rest\Plugin\ResourceBase;
@@ -102,10 +102,59 @@ class ProposalService extends ResourceBase {
             $module_id,
             $module_definition,
             $container->getParameter('serializer.formats'),
-            $container->get('logger.factory')->get('ictv_proposal_resource')
+            $container->get('logger.factory')->get('ictv_proposal_service_resource') // Previously "ictv_proposal_resource"
         );
     }
 
+
+    // Use the status counts to generate summary text.
+    public static function createSummary(int $errors, int $info, int $successes, int $warnings) {
+
+        $summary = "";
+
+        // Generate error text
+        $errorText = "";
+        if ($errors == 1) {
+            $errorText = "1 error";
+        } else if ($errors > 1) {
+            $errorText = "{$errors} errors";
+        }
+   
+        // Generate warning text
+        $warningText = "";
+        if ($warnings == 1) {
+            if (strlen($summary) > 0) { $summary = $summary.", "; }
+            $warningText = "1 warning";
+
+        } else if ($warnings > 1) {
+            if (strlen($summary) > 0) { $summary = $summary.", "; }
+            $warningText = "{$warnings} warnings";
+        }
+
+        // Generate success text
+        $successText = "";
+        if ($successes == 1) {
+            if (strlen($summary) > 0) { $summary = $summary.", "; }
+            $successText = "1 success";
+
+        } else if ($successes > 1) {
+            if (strlen($summary) > 0) { $summary = $summary.", "; }
+            $successText = "{$successes} successes";
+        }
+
+        // Generate info text
+        $infoText = "";
+        if ($info == 1) {
+            if (strlen($summary) > 0) { $summary = $summary.", "; }
+            $infoText = "1 note";
+
+        } else if ($info > 1) {
+            if (strlen($summary) > 0) { $summary = $summary.", "; }
+            $infoText = "{$info} notes";
+        }
+
+        return $summary;
+    }
 
     /**
      * Responds to GET request.
@@ -164,6 +213,7 @@ class ProposalService extends ResourceBase {
         $data = null;
 
         switch ($actionCode) {
+
             case "get_jobs":
                 $data = $this->jobService->getJobs($userEmail, $userUID);
                 break;
@@ -186,14 +236,16 @@ class ProposalService extends ResourceBase {
         return $data;
     }
     
+
     public function uploadProposal(array $json, string $userEmail, string $userUID) {
 
         // Declare variables used in the try/catch block.
         $fileID = null;
         $jobUID = null;
         $message = null;
-        $updatedStatus = null;
-        $validatorResult = null;
+        $result = null;
+        $status = null;
+        
 
         $filename = $json["filename"];
         if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
@@ -229,31 +281,33 @@ class ProposalService extends ResourceBase {
             //-------------------------------------------------------------------------------------------------------
             // Validate the proposal
             //-------------------------------------------------------------------------------------------------------
-            $validatorResult = ProposalValidator::validateProposals($proposalsPath, $resultsPath, $jobPath);
+            $result = ProposalValidator::validateProposals($proposalsPath, $resultsPath, $jobPath);
 
-            if ($validatorResult["isValid"] == TRUE) {
-                $updatedStatus = "completed";
-            } else {
-                $updatedStatus = "failed";
-            }
+            $status = $result["status"];
 
-            // Get the summary message returned by the ProposalValidator.
-            $message = $validatorResult["summary"];
+            // Create a summary message using status counts.
+            $message = $this->createSummary($result["errors"], $result["info"], $result["successes"], $result["warnings"]);
             if ($message == NULL) { $message = ""; }
             
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $message, $updatedStatus, $userUID);    
+            $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
 
         }
         catch (Exception $e) {
 
-            $errorMessage = $e->getMessage();
-            $updatedStatus = "failed";
+            $status = JobStatus::$crashed;
 
+            $errorMessage = null;
+            if ($e) { 
+                $errorMessage = $e->getMessage(); 
+            } else {
+                $errorMessage = "Unspecified error";
+            }
+            
             // Update the log with the job UID and this error message.
-            \Drupal::logger('ictv_proposal_service')->error($jobUID.": ".$errorMessage);
+            \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$errorMessage);
 
             // Provide a default message, if necessary.
             if ($message == NULL || len($message) < 1) { $message = "1 error"; }
@@ -261,14 +315,14 @@ class ProposalService extends ResourceBase {
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $message, $updatedStatus, $userUID);    
+            $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
         }
 
         return array(
             "fileID" => $fileID,
             "filename" => $filename,
-            "validatorResult" => $validatorResult,
-            "jobUID" => $jobUID 
+            "jobUID" => $jobUID,
+            "validatorResult" => $result
         );
     }
 
