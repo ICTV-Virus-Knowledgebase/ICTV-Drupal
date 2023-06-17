@@ -16,7 +16,7 @@ BEGIN
 	SET tempAuthToken := (
 		SELECT a.value
 		FROM ictv_settings a
-		WHERE a.NAME = 'authTokenZZZ'
+		WHERE a.NAME = 'authToken'
 	);
 	
 	-- Is "drupalWebServiceURL" already a setting?

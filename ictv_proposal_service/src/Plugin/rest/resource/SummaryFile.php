@@ -4,7 +4,6 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 class SummaryFile {
 
-
     // Summary file (TSV) column indices
     public static int $COLUMN_SUBCOMMITTEE = 0;
     public static int $COLUMN_CODE = 1;
@@ -25,6 +24,7 @@ class SummaryFile {
         // Counts of level types found in the summary file.
         $errorCount = 0;
         $infoCount = 0;
+        $successCount = 0;
         $warningCount = 0;
 
         // The file handle
@@ -55,6 +55,9 @@ class SummaryFile {
                     case "INFO":
                         $infoCount = $infoCount + 1;
                         break;
+                    case "SUCCESS":
+                        $successCount = $successCount + 1;
+                        break;
                     case "WARNING":
                         $warningCount = $warningCount + 1;
                         break;
@@ -71,6 +74,7 @@ class SummaryFile {
             if ($handle) { fclose($handle); }
         }
 
+        /*
         // Add an error count if errors were found.
         if ($errorCount == 1) {
             $summary = $summary."1 error";
@@ -87,11 +91,20 @@ class SummaryFile {
             if (strlen($summary) > 1) { $summary = $summary.", "; }
             $summary = $summary."{$warningCount} warnings";
         }
+        // Add a succes count if successes were found.
+        if ($successCount == 1) {
+            if (strlen($summary) > 1) { $summary = $summary.", "; }
+            $summary = $summary."1 success";
+        } else if ($successCount > 1) {
+            if (strlen($summary) > 1) { $summary = $summary.", "; }
+            $summary = $summary."{$successCount} successes";
+        }*/
 
         return array(
             "errors" => $errorCount,
             "info" => $infoCount,
-            "summary" => $summary,
+            "successes" => $successCount,
+            //"summary" => $summary,
             "warnings" => $warningCount 
         );
     }

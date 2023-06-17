@@ -2,6 +2,7 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
+use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\SummaryFile;
 
 
@@ -10,8 +11,8 @@ class ProposalValidator {
     public static function validateProposals(string $proposalsPath, string $resultsPath, string $workingDirectory) {
 
         // Declare variables used in the try/catch block.
-        $isValid = FALSE;
         $result = null;
+        $status = null;
         $stdError = null;
 
         $descriptorspec = array(
@@ -51,12 +52,18 @@ class ProposalValidator {
                 proc_close($process);
 
             } else {
-                $stdError = "process is not a resource";
+                $status = JobStatus::$crashed;
+                $stdError = "Process is not a resource";
             }
         } 
         catch (Exception $e) {
-            if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
-            $stdError = $stdError . $e->getMessage();
+
+            $status = JobStatus::$crashed;
+
+            if ($e) { 
+                if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
+                $stdError = $stdError.$e->getMessage(); 
+            }
         }
 
         // Get data from the summary (TSV) file.
@@ -65,28 +72,29 @@ class ProposalValidator {
         // Default values for summaryData contents.
         $errors = 0;
         $info = 0;
-        $isValid = FALSE;
-        $summary = "";
+        $status = null;
+        $successes = 0;
         $warnings = 0;
 
         if (!$summaryData) { 
             
-            // Indicate that an error has occurred.
+            // Indicate that a serious error has occurred.
             $errors = 1;
+            $status = JobStatus::$crashed;
 
         } else {
 
             // Get values from summaryData.
             $errors = $summaryData["errors"];
             $info = $summaryData["info"];
-            $summary = $summaryData["summary"];
+            $successes = $summaryData["successes"];
             $warnings = $summaryData["warnings"];
 
-            // The error count determines whether the validation succeeded.
-            if ($errors > 0) {
-                $isValid = FALSE;
+            // The error and warning counts determine whether the validation succeeded.
+            if ($errors > 0 || $warnings > 0) {
+                $status = JobStatus::$invalid;
             } else {
-                $isValid = TRUE;
+                $status = JobStatus::$valid;
             }
         }
 
@@ -94,10 +102,10 @@ class ProposalValidator {
             "command" => $command,
             "errors" => $errors,
             "info" => $info,
-            "isValid" => $isValid,
             "result" => $result,
+            "status" => $status,
             "stdError" => $stdError,
-            "summary" => $summary,
+            "successes" => $successes,
             "warnings" => $warnings
         );
     }

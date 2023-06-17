@@ -46,7 +46,7 @@ BEGIN
 
   
 	-- The status determines how the job is updated.
-	IF status = 'completed' THEN
+	IF status = 'valid' THEN
 		
 		-- Update the job as completed.
 		UPDATE job SET
@@ -56,20 +56,13 @@ BEGIN
 		WHERE uid = jobUID
 		AND user_uid = userUID;
 
-	ELSEIF status = 'failed' THEN
+	ELSEIF status = 'invalid' OR status = 'crashed' THEN
 		
-		-- Update the job as failed and include the error message.
+		-- Update the job as invalid or crashed and include the error message.
 		UPDATE job SET
 			failed_on = NOW(), 
 			message = message,
 			status_tid = statusTID
-		WHERE uid = jobUID
-		AND user_uid = userUID;
-
-	ELSEIF status = 'running' THEN
-
-		-- Update the job as running.
-		UPDATE job SET status_tid = statusTID
 		WHERE uid = jobUID
 		AND user_uid = userUID;
 
