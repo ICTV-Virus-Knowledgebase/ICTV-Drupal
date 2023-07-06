@@ -80,22 +80,24 @@ class JobService {
     
     /**
      * Creates a job record in the database.
-     * Returns the new job's unique ID.
+     * Returns the new job's ID and UID.
      */
-    public function createJob(string $filename, string $userEmail, string $userUID) {
+    public function createJob(int &$jobID, string $jobName, string &$jobUID, string $userEmail, string $userUID) {
 
+        $jobID = null;
         $jobUID = null;
 
-        // Generate SQL to call the "createJob" stored procedure and return the job UID.
-        $sql = "CALL createJob('{$filename}', '{$userEmail}', {$userUID});";
+        // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
+        $sql = "CALL createJob('{$jobName}', '{$userEmail}', {$userUID});";
 
         $query = $this->connection->query($sql);
         $result = $query->fetchAll();
         if ($result && $result[0] !== null) {
+            $jobID = $result[0]->jobID;
             $jobUID = $result[0]->jobUID;
         }
 
-        return $jobUID;
+        return;
     }
 
 
@@ -161,7 +163,7 @@ class JobService {
                     "completedOn" => $job->completed_on,
                     "createdOn" => $job->created_on,
                     "failedOn" => $job->failed_on,
-                    "filename" => $job->filename,
+                    "jobName" => $job->name,
                     "jobUID" => $job->uid,
                     "message" => $job->message,
                     "status" => $job->status,

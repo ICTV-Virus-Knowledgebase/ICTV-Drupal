@@ -74,37 +74,10 @@ class SummaryFile {
             if ($handle) { fclose($handle); }
         }
 
-        /*
-        // Add an error count if errors were found.
-        if ($errorCount == 1) {
-            $summary = $summary."1 error";
-        } else if ($errorCount > 1) {
-            $summary = $summary."{$errorCount} errors";
-        }
-
-        // Add a warning count if warnings were found.
-        if ($warningCount == 1) {
-            if (strlen($summary) > 1) { $summary = $summary.", "; }
-            $summary = $summary."1 warning";
-
-        } else if ($warningCount > 1) {
-            if (strlen($summary) > 1) { $summary = $summary.", "; }
-            $summary = $summary."{$warningCount} warnings";
-        }
-        // Add a succes count if successes were found.
-        if ($successCount == 1) {
-            if (strlen($summary) > 1) { $summary = $summary.", "; }
-            $summary = $summary."1 success";
-        } else if ($successCount > 1) {
-            if (strlen($summary) > 1) { $summary = $summary.", "; }
-            $summary = $summary."{$successCount} successes";
-        }*/
-
         return array(
             "errors" => $errorCount,
             "info" => $infoCount,
             "successes" => $successCount,
-            //"summary" => $summary,
             "warnings" => $warningCount 
         );
     }
