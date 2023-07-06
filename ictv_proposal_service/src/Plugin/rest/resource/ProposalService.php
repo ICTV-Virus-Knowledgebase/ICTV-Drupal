@@ -115,42 +115,42 @@ class ProposalService extends ResourceBase {
         // Generate error text
         $errorText = "";
         if ($errors == 1) {
-            $errorText = "1 error";
+            $summary = $summary."1 error";
         } else if ($errors > 1) {
-            $errorText = "{$errors} errors";
+            $summary = $summary."{$errors} errors";
         }
    
         // Generate warning text
         $warningText = "";
         if ($warnings == 1) {
             if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $warningText = "1 warning";
+            $summary = $summary."1 warning";
 
         } else if ($warnings > 1) {
             if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $warningText = "{$warnings} warnings";
+            $summary = $summary."{$warnings} warnings";
         }
 
         // Generate success text
         $successText = "";
         if ($successes == 1) {
             if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $successText = "1 success";
+            $summary = $summary."1 success";
 
         } else if ($successes > 1) {
             if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $successText = "{$successes} successes";
+            $summary = $summary."{$successes} successes";
         }
 
         // Generate info text
         $infoText = "";
         if ($info == 1) {
             if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $infoText = "1 note";
+            $summary = $summary."1 note";
 
         } else if ($info > 1) {
             if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $infoText = "{$info} notes";
+            $summary = $summary."{$info} notes";
         }
 
         return $summary;
@@ -230,6 +230,10 @@ class ProposalService extends ResourceBase {
                 $data = $this->uploadProposal($json, $userEmail, $userUID);
                 break;
 
+            case "upload_proposals":
+                $data = $this->uploadProposals($json, $userEmail, $userUID);
+                break;
+
             default: throw new BadRequestHttpException("Unrecognized action code");
         }
 
@@ -285,15 +289,18 @@ class ProposalService extends ResourceBase {
 
             $status = $result["status"];
 
+            $stdError = $result["stdError"];
+            if ($stdError) {
+                \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError);
+            }
+
             // Create a summary message using status counts.
             $message = $this->createSummary($result["errors"], $result["info"], $result["successes"], $result["warnings"]);
-            if ($message == NULL) { $message = ""; }
             
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
             $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
-
         }
         catch (Exception $e) {
 
@@ -327,4 +334,105 @@ class ProposalService extends ResourceBase {
     }
 
 
+
+    public function uploadProposals(array $json, string $userEmail, string $userUID) {
+
+        $jobName = $json["jobName"];
+
+        $files = $json["files"];
+        if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
+
+        $jobID = 0;
+        $jobUID = "";
+        $status = null;
+
+        try {
+            //-------------------------------------------------------------------------------------------------------
+            // Create a job record and get its ID and UID.
+            //-------------------------------------------------------------------------------------------------------
+            $this->jobService->createJob($jobID, $jobName, $jobUID, $userEmail, $userUID);
+            
+            \Drupal::logger('ictv_proposal_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
+
+            // Create the job directory and subdirectories and return the full path of the job directory.
+            $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
+
+            // Use the job path to generate the path of the proposals and results subdirectories.
+            $proposalsPath = $this->jobService->getProposalsPath($jobPath);
+            $resultsPath = $this->jobService->getResultsPath($jobPath);
+
+            foreach ($files as $file) {
+                
+                // TODO: validate file?
+                $filename = $file["name"];
+                if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+
+                $proposal = $file["content"];
+                if (Utils::IsNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
+
+                $fileStartIndex = stripos($proposal, ",");
+                if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
+
+                $base64Data = substr($proposal, $fileStartIndex + 1);
+                if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
+
+                // Decode the file contents from base64.
+                $binaryData = base64_decode($base64Data);
+
+                // Create the proposal file in the job directory using the data provided.
+                $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+            
+            }
+
+            //-------------------------------------------------------------------------------------------------------
+            // Validate the proposal(s)
+            //-------------------------------------------------------------------------------------------------------
+            $result = ProposalValidator::validateProposals($proposalsPath, $resultsPath, $jobPath);
+
+            $status = $result["status"];
+
+            $stdError = $result["stdError"];
+            if ($stdError) {
+                \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError);
+            }
+
+            // Create a summary message using status counts.
+            $message = $this->createSummary($result["errors"], $result["info"], $result["successes"], $result["warnings"]);
+            
+            //-------------------------------------------------------------------------------------------------------
+            // Update the job record in the database.
+            //-------------------------------------------------------------------------------------------------------
+            $this->jobService->updateJob($jobUID, $message, $status, $userUID); 
+            
+            // TODO: what about updating the job_files?
+
+        } catch (Exception $e) {
+
+            $status = JobStatus::$crashed;
+
+            $errorMessage = null;
+            if ($e) { 
+                $errorMessage = $e->getMessage(); 
+            } else {
+                $errorMessage = "Unspecified error";
+            }
+            
+            // Update the log with the job UID and this error message.
+            \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$errorMessage);
+
+            // Provide a default message, if necessary.
+            if ($message == NULL || len($message) < 1) { $message = "1 error"; }
+
+            //-------------------------------------------------------------------------------------------------------
+            // Update the job record in the database.
+            //-------------------------------------------------------------------------------------------------------
+            $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
+        }
+
+        return array(
+            "jobName" => $jobName,
+            "jobUID" => $jobUID,
+            "validatorResult" => $result
+        );
+    }
 }
