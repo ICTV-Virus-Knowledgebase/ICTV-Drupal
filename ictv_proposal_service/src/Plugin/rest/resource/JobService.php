@@ -5,15 +5,13 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
 use Psr\Log\LoggerInterface;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 
 class JobService {
 
     // The path where job directories are created.
     public string $jobsPath;
-
-    // The connection to the ictv_apps database.
-    protected Connection $connection;
 
     /**
      * Provides helpers to operate on files and stream wrappers.
@@ -31,8 +29,7 @@ class JobService {
 
 
     // C-tor
-    public function __construct(Connection $connection, string $jobsPath) {
-        $this->connection = $connection;
+    public function __construct(string $jobsPath) {
         $this->fileSystem = \Drupal::service("file_system");
         $this->jobsPath = $jobsPath;
     }
@@ -48,7 +45,7 @@ class JobService {
         // Create a directory for the job.
         if (!$this->fileSystem->prepareDirectory($jobPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create job directory");
-            return null;
+            return '';
         }
 
         //---------------------------------------------------------------------------------------------------------------
@@ -59,7 +56,7 @@ class JobService {
         // Create the directory
         if (!$this->fileSystem->prepareDirectory($proposalsPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create proposals subdirectory");
-            return null;
+            return '';
         }
 
         //---------------------------------------------------------------------------------------------------------------
@@ -70,7 +67,7 @@ class JobService {
         // Create the directory
         if (!$this->fileSystem->prepareDirectory($resultsPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
             \Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
-            return null;
+            return '';
         }
 
         // Return the full path of the job directory.
@@ -82,15 +79,22 @@ class JobService {
      * Creates a job record in the database.
      * Returns the new job's ID and UID.
      */
-    public function createJob(int &$jobID, string $jobName, string &$jobUID, string $userEmail, string $userUID) {
+    public function createJob(Connection $connection, int|null &$jobID, string|null $jobName, string|null &$jobUID, 
+        string $userEmail, string $userUID) {
 
         $jobID = null;
         $jobUID = null;
 
-        // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
-        $sql = "CALL createJob('{$jobName}', '{$userEmail}', {$userUID});";
+        if (Utils::isEmptyElseTrim($jobName)) {
+            $jobName = "NULL";
+        } else {
+            $jobName = "'{$jobName}'";
+        }
 
-        $query = $this->connection->query($sql);
+        // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
+        $sql = "CALL createJob({$jobName}, '{$userEmail}', {$userUID});";
+
+        $query = $connection->query($sql);
         $result = $query->fetchAll();
         if ($result && $result[0] !== null) {
             $jobID = $result[0]->jobID;
@@ -98,6 +102,27 @@ class JobService {
         }
 
         return;
+    }
+
+    /**
+     * Creates a job file record in the database.
+     * Returns the new job file's UID.
+     */
+    public function createJobFile(Connection $connection, string $fileName, int $jobID, int $uploadOrder) {
+
+        $jobFileUID = null;
+
+        // Generate SQL to call the "createJobFile" stored procedure.
+        $sql = "CALL createJobFile('{$fileName}', {$jobID}, {$uploadOrder});";
+
+        // Run the stored procedure and retrieve the job file UID that's returned.
+        $query = $connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result && $result[0] !== null) {
+            $jobFileUID = $result[0]->jobFileUID;
+        }
+
+        return $jobFileUID;
     }
 
 
@@ -140,7 +165,7 @@ class JobService {
     /** 
      * Get all jobs created by the specified user.
      */ 
-    public function getJobs(string $userEmail, string $userUID) {
+    public function getJobs(Connection $connection, string $userEmail, string $userUID) {
 
         $jobs = [];
 
@@ -152,7 +177,7 @@ class JobService {
                 ORDER BY created_on DESC";
 
         // Execute the query and process the results.
-        $query = $this->connection->query($sql);
+        $query = $connection->query($sql);
         $result = $query->fetchAll();
         if ($result) {
 
@@ -255,9 +280,11 @@ class JobService {
     // Update a job's status, message, and either completed_on or failed_on.
     // TODO: after upgrading the dev environment to 9.5, make status an enum.
     // TODO: the updateJob stored procedure needs to be included in CreateIctvAppsDB.sql!!!
-    public function updateJob(string $jobUID, string $message, string $status, string $userUID) {
+    public static function updateJob(Connection $connection, string $jobUID, string $message, string $status, string $userUID) {
 
-        if ($message == null || trim($message) == "") {
+        $jobID = 0;
+
+        if (Utils::isEmptyOrTrim($message)) {
             $message = "NULL";
         } else {
             $message = "'{$message}'";
@@ -266,7 +293,42 @@ class JobService {
         // Generate SQL to call the "updateJob" stored procedure.
         $sql = "CALL updateJob('{$jobUID}', {$message}, '{$status}', '{$userUID}');";
 
-        $query = $this->connection->query($sql);
+        $query = $connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result && $result[0] !== null) {
+            $jobID = $result[0]->jobID;
+        }
+
+        return $jobFileUID;
+    }
+
+
+    // Update a job file based on the contents of the summary TSV file.
+    public static function updateJobFile(Connection $connection, int $jobID, ProposalSummary $summary) {
+
+        // Validate the filename
+        if (Utils::isEmptyOrTrim($summary->filename)) { throw new Error("Unable to update job file: Invalid filename"); }
+
+        // Use the summary counts to determine the status.
+        $status = JobStatus::$valid;
+        if ($summary->error > 0 || $summary->warning > 0) { $status = JobStatus::$invalid; }
+
+        // Create a message containing a list of status counts.
+        $message = ProposalSummary::createMessage($summary);
+
+        // Generate SQL to call the "updateJobFile" stored procedure.
+        $sql = "CALL updateJobFile(".
+            "{$summary->error}, ".
+            "{$summary->info}, ".
+            "'{$summary->filename}', ".
+            "{$jobID}, ".
+            "'{$status}', ".
+            "'{$message}', ".
+            "{$summary->success}, ".
+            "{$summary->warning} ".
+        ")";
+
+        $query = $connection->query($sql);
         $result = $query->execute();
 
         // TODO: should we validate the result?
