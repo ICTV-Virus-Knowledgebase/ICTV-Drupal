@@ -14,6 +14,7 @@
             initialized = true;
             
             const authToken = settings_.authToken;
+            const contactEmail = "info@ictv.global";
             const userEmail = settings_.userEmail;
             const userName = settings_.userName;
             const userUID = settings_.userUID;
@@ -24,8 +25,8 @@
             const containerSelector = "#ictv_proposal_submission_container";
 
             // Create a new ProposalSubmission instance.
-            const proposalSubmission = new window.ICTV.ProposalSubmission(authToken, containerSelector, 
-                userEmail, userName, userUID);
+            const proposalSubmission = new window.ICTV.ProposalSubmission(authToken, contactEmail, 
+                containerSelector, userEmail, userName, userUID);
 
             // Initialize and display the UI.
             proposalSubmission.initialize();

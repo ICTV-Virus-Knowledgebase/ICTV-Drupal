@@ -44,7 +44,8 @@ class ConfigForm extends FormBase {
     public function buildForm(array $form, FormStateInterface $form_state) {
 
         // Load the default values from the database.
-        self::loadData();
+        $this->loadData();
+        //self::loadData();
 
         // The website's base URL.
         $form['applicationURL'] = array(

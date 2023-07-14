@@ -8,11 +8,11 @@ use Drupal\ictv_proposal_service\Plugin\rest\resource\SummaryFile;
 
 class ProposalValidator {
 
-    public static function validateProposals(string $proposalsPath, string $resultsPath, string $workingDirectory) {
+    public static function runValidation(string $proposalsPath, string $resultsPath, string $scriptName, string $workingDirectory) {
 
         // Declare variables used in the try/catch block.
         $result = null;
-        $status = null;
+        $jobStatus = null;
         $stdError = null;
 
         $descriptorspec = array(
@@ -25,7 +25,7 @@ class ProposalValidator {
         $command = "docker run ".
             "-v \"{$proposalsPath}:/proposalsTest\":ro ".
             "-v \"{$resultsPath}:/results\" ".
-            "curtish/ictv_proposal_processor ".
+            $scriptName." ".  // Previously "curtish/ictv_proposal_processor"
             "/merge_proposal_zips.R -v ";
 
         try {
@@ -52,13 +52,13 @@ class ProposalValidator {
                 proc_close($process);
 
             } else {
-                $status = JobStatus::$crashed;
+                $jobStatus = JobStatus::$crashed;
                 $stdError = "Process is not a resource";
             }
         } 
         catch (Exception $e) {
 
-            $status = JobStatus::$crashed;
+            $jobStatus = JobStatus::$crashed;
 
             if ($e) { 
                 if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
@@ -66,49 +66,37 @@ class ProposalValidator {
             }
         }
 
-        // Get data from the summary (TSV) file.
-        $summaryData = SummaryFile::getSummaryData($resultsPath);
+        // Parameters that will be passed to (and returned by) "getProposalSummaries".
+        $summaries = array();
+        $totals = new ProposalSummary();
 
-        // Default values for summaryData contents.
-        $errors = 0;
-        $info = 0;
-        $status = null;
-        $successes = 0;
-        $warnings = 0;
+        // Parse the summary TSV file for proposal filenames and their summaries (status counts).
+        ProposalSummary::getProposalSummaries($resultsPath, $summaries, $totals);
 
-        if (!$summaryData) { 
+        // Determine the overall job status.
+        
+        if (!$summaries || sizeof($summaries) < 1 || !$totals) {
+            $jobStatus = JobStatus::$crashed;
             
-            // Indicate that a serious error has occurred.
-            $errors = 1;
-            $status = JobStatus::$crashed;
-
-        } else {
-
-            // Get values from summaryData.
-            $errors = $summaryData["errors"];
-            $info = $summaryData["info"];
-            $successes = $summaryData["successes"];
-            $warnings = $summaryData["warnings"];
+        } else if (!$jobStatus) {
 
             // The error and warning counts determine whether the validation succeeded.
-            if ($errors > 0 || $warnings > 0) {
-                $status = JobStatus::$invalid;
+            if ($totals->error > 0 || $totals->warning > 0) {
+                $jobStatus = JobStatus::$invalid;
             } else {
-                $status = JobStatus::$valid;
+                $jobStatus = JobStatus::$valid;
             }
         }
-
+        
         return array(
             "command" => $command,
-            "errors" => $errors,
-            "info" => $info,
-            "result" => $result,
-            "status" => $status,
+            "jobStatus" => $jobStatus,
             "stdError" => $stdError,
-            "successes" => $successes,
-            "warnings" => $warnings
+            "summaries" => $summaries,
+            "totals" => $totals
         );
     }
+
 };
 
 

@@ -38,10 +38,14 @@ class ProposalService extends ResourceBase {
     // The name of the database used by this web service.
     protected string $databaseName = "ictv_apps";
 
+    // The path of the Drupal installation.
+    protected string $drupalRoot = "/var/www/drupal/site"; // tODO: can this be replaced by getcwd()?
+
     protected JobService $jobService;
 
     // The full path of the jobs directory.
-    protected string $jobsPath = "/var/www/dapp/files/jobs";
+    protected string $jobsPath = "/var/www/drupal/files/jobs"; // Value for cms.ictv.global
+    // Value for app.ictv.global: "/var/www/dapp/files/jobs";
 
     // The name of the downloadable validation summary file.
     protected string $summaryFilename = "QC.pretty_summary.all.xlsx";
@@ -90,7 +94,7 @@ class ProposalService extends ResourceBase {
         //$this->jobsPath = "/var/www/dapp/files/jobs"; //$config->get("jobsPath");
 
         // Create a new instance of JobService.
-        $this->jobService = new JobService($this->connection, $this->jobsPath);
+        $this->jobService = new JobService($this->jobsPath);
     }
 
     /**
@@ -107,54 +111,7 @@ class ProposalService extends ResourceBase {
     }
 
 
-    // Use the status counts to generate summary text.
-    public static function createSummary(int $errors, int $info, int $successes, int $warnings) {
-
-        $summary = "";
-
-        // Generate error text
-        $errorText = "";
-        if ($errors == 1) {
-            $summary = $summary."1 error";
-        } else if ($errors > 1) {
-            $summary = $summary."{$errors} errors";
-        }
-   
-        // Generate warning text
-        $warningText = "";
-        if ($warnings == 1) {
-            if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $summary = $summary."1 warning";
-
-        } else if ($warnings > 1) {
-            if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $summary = $summary."{$warnings} warnings";
-        }
-
-        // Generate success text
-        $successText = "";
-        if ($successes == 1) {
-            if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $summary = $summary."1 success";
-
-        } else if ($successes > 1) {
-            if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $summary = $summary."{$successes} successes";
-        }
-
-        // Generate info text
-        $infoText = "";
-        if ($info == 1) {
-            if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $summary = $summary."1 note";
-
-        } else if ($info > 1) {
-            if (strlen($summary) > 0) { $summary = $summary.", "; }
-            $summary = $summary."{$info} notes";
-        }
-
-        return $summary;
-    }
+    
 
     /**
      * Responds to GET request.
@@ -200,11 +157,11 @@ class ProposalService extends ResourceBase {
 
         // Get and validate the action code.
         $actionCode = $json["actionCode"];
-        if (Utils::IsNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
+        if (Utils::isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
 
         // Get and validate the user email.
         $userEmail = $json["userEmail"];
-        if (Utils::IsNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
+        if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
 
         // Get and validate the user UID.
         $userUID = $json["userUID"];
@@ -215,13 +172,13 @@ class ProposalService extends ResourceBase {
         switch ($actionCode) {
 
             case "get_jobs":
-                $data = $this->jobService->getJobs($userEmail, $userUID);
+                $data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
                 break;
 
             case "get_validation_summary":
                 
                 $jobUID = $json["jobUID"];
-                if (Utils::IsNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
+                if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
                 
                 $data = $this->jobService->getValidationSummary($this->summaryFilename, $jobUID, $userUID);
                 break;
@@ -252,10 +209,10 @@ class ProposalService extends ResourceBase {
         
 
         $filename = $json["filename"];
-        if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+        if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
         $proposal = $json["proposal"];
-        if (Utils::IsNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
+        if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
 
         $fileStartIndex = stripos($proposal, ",");
         if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
@@ -342,6 +299,7 @@ class ProposalService extends ResourceBase {
         $files = $json["files"];
         if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
 
+        $commandResult = -1;
         $jobID = 0;
         $jobUID = "";
         $status = null;
@@ -350,10 +308,10 @@ class ProposalService extends ResourceBase {
             //-------------------------------------------------------------------------------------------------------
             // Create a job record and get its ID and UID.
             //-------------------------------------------------------------------------------------------------------
-            $this->jobService->createJob($jobID, $jobName, $jobUID, $userEmail, $userUID);
+            $this->jobService->createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
             
             \Drupal::logger('ictv_proposal_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
-
+            
             // Create the job directory and subdirectories and return the full path of the job directory.
             $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
 
@@ -361,14 +319,19 @@ class ProposalService extends ResourceBase {
             $proposalsPath = $this->jobService->getProposalsPath($jobPath);
             $resultsPath = $this->jobService->getResultsPath($jobPath);
 
+            //-------------------------------------------------------------------------------------------------------
+            // Create job_file records and actual files for every proposal file provided.
+            //-------------------------------------------------------------------------------------------------------
+            $uploadOrder = 1;
+
             foreach ($files as $file) {
                 
                 // TODO: validate file?
                 $filename = $file["name"];
-                if (Utils::IsNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+                if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
-                $proposal = $file["content"];
-                if (Utils::IsNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
+                $proposal = $file["contents"];
+                if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
 
                 $fileStartIndex = stripos($proposal, ",");
                 if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
@@ -381,30 +344,67 @@ class ProposalService extends ResourceBase {
 
                 // Create the proposal file in the job directory using the data provided.
                 $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+
+                // Create a job file
+                $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
             
+                $uploadOrder = $uploadOrder + 1;
             }
 
+            // This *should* be the Drupal root directory's path.
+            $rootPath = getcwd();
+
+            // Get the relative path of this module.
+            $moduleHandler = \Drupal::service('module_handler');
+            $modulePath = $moduleHandler->getModule('ictv_proposal_service')->getPath();
+
+            // The path within this module.
+            $localPath = "src/Plugin/rest/resource";
+
+            $fullPath = $rootPath."/".$modulePath."/".$localPath;
+        
+
+            // TESTING
+            \Drupal::logger("ictv_proposal_service")->info("full module path = {$fullPath}");
+
+
             //-------------------------------------------------------------------------------------------------------
-            // Validate the proposal(s)
+            // Create the command that will be run on the command line.
             //-------------------------------------------------------------------------------------------------------
-            $result = ProposalValidator::validateProposals($proposalsPath, $resultsPath, $jobPath);
+            $command = "nohup php -f {$fullPath}/RunProposalValidation.php ".
 
-            $status = $result["status"];
-
-            $stdError = $result["stdError"];
-            if ($stdError) {
-                \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError);
-            }
-
-            // Create a summary message using status counts.
-            $message = $this->createSummary($result["errors"], $result["info"], $result["successes"], $result["warnings"]);
+                // The name of the MySQL database (probably "ictv_apps").
+                "dbName={$this->databaseName} ".
             
-            //-------------------------------------------------------------------------------------------------------
-            // Update the job record in the database.
-            //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $message, $status, $userUID); 
+                // The path of the Drupal installation (Ex. "/var/www/drupal/site").
+                "drupalRoot={$this->drupalRoot} ".
+                
+                // The job's unique alphanumeric identifier (UUID).
+                "jobUID={$jobUID} ".
+                
+                // The job's filesystem path.
+                "jobPath={$jobPath} ".
             
-            // TODO: what about updating the job_files?
+                // The location of the proposal file(s).
+                "proposalsPath=\"{$proposalsPath}\" ".
+                
+                // The location where result files will be created.
+                "resultsPath=\"{$resultsPath}\" ".
+            
+                // The user's unique numeric identifier.
+                "userUID={$userUID} ".
+                
+                // Redirect stdout and stderr to the file "output.txt".
+                "> {$resultsPath}/output.txt 2>&1 ".
+
+                // Run in the background.
+                "&";
+
+            $output = null;
+            $resultCode = -1;
+
+            // Run the command on the command line.
+            $commandResult = exec($command, $output, $resultCode);
 
         } catch (Exception $e) {
 
@@ -426,13 +426,13 @@ class ProposalService extends ResourceBase {
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
+            JobService::updateJob($this->connection, $jobUID, $message, $status, $userUID); 
         }
 
         return array(
+            "commandResult" => $commandResult,
             "jobName" => $jobName,
-            "jobUID" => $jobUID,
-            "validatorResult" => $result
+            "jobUID" => $jobUID
         );
     }
 }
