@@ -102,28 +102,33 @@ class ProposalSummary {
             // Open the file
             // TODO: abstract this filename into a centralized location.
             $handle = fopen($resultsPath."/QC.summary.tsv", "r");
-            if (!$handle) { throw new Exception("Unable to open QC.summary.tsv"); }
+            if (!$handle) { throw new \Exception("Unable to open QC.summary.tsv"); }
+
+            $lineNumber = -1;
 
             // Iterate over every line in the file.
             while ($line = fgets($handle)) {
             
+                $lineNumber = $lineNumber + 1;
+
+                // Skip the first line of column headers.
+                if ($lineNumber < 1) { continue; }
+
                 // Split the line by tab characters.
                 $columns = explode("\t", $line);
                 if (!$columns || sizeof($columns) < 10) { continue; }
 
                 // Get and validate the spreadsheet filename column.
-                $filename = $columns[SummaryFile::$COLUMN_XLSX];
+                $filename = $columns[ProposalSummary::$COLUMN_XLSX];
                 if (Utils::isEmptyElseTrim($filename)) { $filename = "NA"; }
 
                 // Get and validate the status (level) column.
-                $status = $columns[SummaryFile::$COLUMN_LEVEL];
-                if (Utils::isEmptyElseTrim($status)) { 
-                    continue; 
-                } else {
-                    // Convert the status to lowercase.
-                    $status = strtolower($status);
-                }
-
+                $status = $columns[ProposalSummary::$COLUMN_LEVEL];
+                if (Utils::isEmptyElseTrim($status)) { continue; } 
+                
+                // Convert the status to lowercase.
+                $status = strtolower($status);
+                
                 // Look for the filename's summary in the array and create one if it doesn't exist.
                 $summary = $summaries[$filename];
                 if (!$summary) { $summary = new ProposalSummary($filename); }
@@ -138,8 +143,8 @@ class ProposalSummary {
                 $totals->increment($status);
             }
         }
-        catch (Exception $e) {
-            throw new Exception("Error in ProposalSummary.getProposalSummaries: " . $e->getMessage());
+        catch (\Exception $e) {
+            throw new \Exception("Error in ProposalSummary.getProposalSummaries: " . $e->getMessage());
         }
         finally {
             if ($handle) { fclose($handle); }
@@ -163,7 +168,7 @@ class ProposalSummary {
                 $this->warning = $this->warning + 1;
                 break;
             default: 
-                throw new Exception("Unhandled status ".$status);
+                throw new \Exception("Unhandled status ".$status);
         }
     }
 }

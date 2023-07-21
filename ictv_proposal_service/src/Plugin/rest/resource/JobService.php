@@ -144,7 +144,7 @@ class JobService {
                 return null;
             }
         }
-        catch (FileException $e) {
+        catch (\FileException $e) {
             \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
         }
 
@@ -204,6 +204,29 @@ class JobService {
     }
 
 
+    /** 
+     * Get all jobs created by the specified user and format as JSON.
+     */ 
+    public function getJobsAsJSON(Connection $connection, string $userEmail, string $userUID): string {
+
+        $json = "";
+        
+        // Generate the SQL
+        $sql = "CALL exportJobsAsJSON('{$userEmail}', {$userUID});";
+
+        // Execute the query and process the results.
+        $query = $connection->query($sql);
+        $result = $query->fetchAll();
+        if ($result && $result[0]) {
+            $json = $result[0]->json;
+            if ($json) { $json = "[{$json}]"; }
+        }
+
+        $json = str_replace("\u0022","\"",$json);
+
+        return $json;
+    }
+
     // Use the job path to generate the path of the proposals subdirectory.
     public function getProposalsPath(string $jobPath) {
         $proposalsPath = $jobPath."/".$this->proposalsDirectory;
@@ -239,7 +262,7 @@ class JobService {
             $handle = fopen($fileID, "r");
             $fileData = fread($handle, filesize($fileID));
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
             return null;
 
@@ -279,19 +302,25 @@ class JobService {
 
     // Update a job's status, message, and either completed_on or failed_on.
     // TODO: after upgrading the dev environment to 9.5, make status an enum.
-    // TODO: the updateJob stored procedure needs to be included in CreateIctvAppsDB.sql!!!
-    public static function updateJob(Connection $connection, string $jobUID, string $message, string $status, string $userUID) {
+    public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $message, 
+        string $status, string $userUID): int {
 
         $jobID = 0;
 
-        if (Utils::isEmptyOrTrim($message)) {
+        if (Utils::isEmptyElseTrim($errorMessage)) {
+            $errorMessage = "NULL";
+        } else {
+            $errorMessage = "'{$errorMessage}'";
+        }
+
+        if (Utils::isEmptyElseTrim($message)) {
             $message = "NULL";
         } else {
             $message = "'{$message}'";
         }
 
         // Generate SQL to call the "updateJob" stored procedure.
-        $sql = "CALL updateJob('{$jobUID}', {$message}, '{$status}', '{$userUID}');";
+        $sql = "CALL updateJob({$errorMessage}, '{$jobUID}', {$message}, '{$status}', '{$userUID}');";
 
         $query = $connection->query($sql);
         $result = $query->fetchAll();
@@ -299,7 +328,9 @@ class JobService {
             $jobID = $result[0]->jobID;
         }
 
-        return $jobFileUID;
+        if ($jobID < 1) { \Drupal::logger('ictv_proposal_service')->error("Error in updateJob: jobID < 1"); }
+
+        return $jobID;
     }
 
 
@@ -307,7 +338,7 @@ class JobService {
     public static function updateJobFile(Connection $connection, int $jobID, ProposalSummary $summary) {
 
         // Validate the filename
-        if (Utils::isEmptyOrTrim($summary->filename)) { throw new Error("Unable to update job file: Invalid filename"); }
+        if (Utils::isEmptyElseTrim($summary->filename)) { throw new Error("Unable to update job file: Invalid filename"); }
 
         // Use the summary counts to determine the status.
         $status = JobStatus::$valid;
@@ -320,10 +351,10 @@ class JobService {
         $sql = "CALL updateJobFile(".
             "{$summary->error}, ".
             "{$summary->info}, ".
+            "'{$message}', ".
             "'{$summary->filename}', ".
             "{$jobID}, ".
             "'{$status}', ".
-            "'{$message}', ".
             "{$summary->success}, ".
             "{$summary->warning} ".
         ")";

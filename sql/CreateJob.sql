@@ -1,7 +1,9 @@
 
 DELIMITER //
 
-CREATE PROCEDURE createJob (
+DROP PROCEDURE IF EXISTS `createJob`;
+
+CREATE PROCEDURE `createJob` (
 	IN jobName VARCHAR(100),
 	IN userEmail VARCHAR(100),
 	IN userUID VARCHAR(100)
@@ -76,6 +78,6 @@ BEGIN
     -- Return the newly-created job ID, the job name, and the generated job UID.
 	SELECT LAST_INSERT_ID() AS jobID, jobName, jobUID;
 
-END;
+END //
 
 DELIMITER ;

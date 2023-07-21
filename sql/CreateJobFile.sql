@@ -1,15 +1,14 @@
-CREATE DEFINER=`root`@`localhost` PROCEDURE `createJobFile`(
+
+DELIMITER //
+
+DROP PROCEDURE IF EXISTS `createJobFile`;
+
+CREATE PROCEDURE `createJobFile`(
 	IN `filename` VARCHAR(100),
 	IN `jobID` INT,
 	IN `uploadOrder` INT
 )
-LANGUAGE SQL
-NOT DETERMINISTIC
-CONTAINS SQL
-SQL SECURITY DEFINER
-COMMENT ''
 BEGIN
-
 	DECLARE jobFileUID VARCHAR(100);
 	DECLARE statusTID INT;
 	
@@ -74,4 +73,6 @@ BEGIN
     -- Return the newly-created job file UID.
 	SELECT jobFileUID AS jobFileUID;
 
-END
+END //
+
+DELIMITER ;

@@ -3,7 +3,7 @@
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\SummaryFile;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalSummary;
 
 
 class ProposalValidator {
@@ -14,6 +14,8 @@ class ProposalValidator {
         $result = null;
         $jobStatus = null;
         $stdError = null;
+        $summaries;
+        $totals;
 
         $descriptorspec = array(
             0 => array("pipe", "r"), // Read from stdin (not used)
@@ -51,9 +53,36 @@ class ProposalValidator {
                 // proc_close in order to avoid a deadlock
                 proc_close($process);
 
+                // In this case "pending complete validation".
+                $jobStatus = JobStatus::$pending;
+
             } else {
                 $jobStatus = JobStatus::$crashed;
                 $stdError = "Process is not a resource";
+            }
+
+            if ($jobStatus != JobStatus::$crashed) {
+
+                // Parameters that will be passed to (and returned by) "getProposalSummaries".
+                $summaries = array();
+                $totals = new ProposalSummary();
+    
+                // Parse the summary TSV file for proposal filenames and their summaries (status counts).
+                ProposalSummary::getProposalSummaries($resultsPath, $summaries, $totals);
+    
+                // Determine the overall job status. 
+                if (!$summaries || sizeof($summaries) < 1 || !$totals) {
+                    $jobStatus = JobStatus::$crashed;
+                    
+                } else if ($jobStatus == JobStatus::$pending) {
+    
+                    // The error and warning counts determine whether the validation succeeded.
+                    if ($totals->error > 0 || $totals->warning > 0) {
+                        $jobStatus = JobStatus::$invalid;
+                    } else {
+                        $jobStatus = JobStatus::$valid;
+                    }
+                }
             }
         } 
         catch (Exception $e) {
@@ -64,30 +93,12 @@ class ProposalValidator {
                 if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
                 $stdError = $stdError.$e->getMessage(); 
             }
+
+            \Drupal::logger('ictv_proposal_service')->info("In proposalValidator catch, stdError = ".$stdError);
         }
 
-        // Parameters that will be passed to (and returned by) "getProposalSummaries".
-        $summaries = array();
-        $totals = new ProposalSummary();
+        if ($jobStatus == null) { $jobStatus = JobStatus::$crashed; } 
 
-        // Parse the summary TSV file for proposal filenames and their summaries (status counts).
-        ProposalSummary::getProposalSummaries($resultsPath, $summaries, $totals);
-
-        // Determine the overall job status.
-        
-        if (!$summaries || sizeof($summaries) < 1 || !$totals) {
-            $jobStatus = JobStatus::$crashed;
-            
-        } else if (!$jobStatus) {
-
-            // The error and warning counts determine whether the validation succeeded.
-            if ($totals->error > 0 || $totals->warning > 0) {
-                $jobStatus = JobStatus::$invalid;
-            } else {
-                $jobStatus = JobStatus::$valid;
-            }
-        }
-        
         return array(
             "command" => $command,
             "jobStatus" => $jobStatus,
