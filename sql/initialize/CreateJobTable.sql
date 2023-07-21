@@ -1,0 +1,22 @@
+
+DROP TABLE IF EXISTS `job`;
+
+CREATE TABLE `job` (
+	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`completed_on` DATETIME NULL DEFAULT NULL,
+	`created_on` DATETIME NULL DEFAULT current_timestamp(),
+	`error_message` TEXT NULL DEFAULT NULL,
+	`failed_on` DATETIME NULL DEFAULT NULL,
+	`message` TEXT NULL DEFAULT NULL,
+	`name` VARCHAR(100) NULL DEFAULT NULL,
+	`status_tid` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`type_tid` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`uid` VARCHAR(100) NOT NULL,
+	`user_email` TEXT NOT NULL,
+	`user_uid` INT(11) NULL DEFAULT NULL,
+	PRIMARY KEY (`id`) USING BTREE,
+	INDEX `FK_status_tid` (`status_tid`) USING BTREE,
+	CONSTRAINT `FK_status_tid` FOREIGN KEY (`status_tid`) REFERENCES `ictv_apps`.`term` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+AUTO_INCREMENT=29
+;

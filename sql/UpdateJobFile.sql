@@ -1,20 +1,19 @@
-CREATE DEFINER=`root`@`localhost` PROCEDURE `updateJobFile`(
+
+DELIMITER //
+
+DROP PROCEDURE IF EXISTS `updateJobFile`;
+
+CREATE PROCEDURE `updateJobFile`(
 	IN `errorCount` INT,
 	IN `infoCount` INT,
+	IN `jobFileMessage` VARCHAR(100),
 	IN `jobFilename` VARCHAR(100),
 	IN `jobID` INT,
 	IN `status` VARCHAR(50),
-	IN `message` VARCHAR(100),
 	IN `successCount` INT,
 	IN `warningCount` INT
 )
-LANGUAGE SQL
-NOT DETERMINISTIC
-CONTAINS SQL
-SQL SECURITY DEFINER
-COMMENT ''
 BEGIN
-
 	DECLARE completedOn DATETIME;
 	DECLARE failedOn DATETIME;
 	DECLARE fullStatus VARCHAR(100);
@@ -62,7 +61,7 @@ BEGIN
 		error_count = errorCount,
 		failed_on = failedOn,
 		info_count = infoCount,
-		message = message,
+		message = jobFileMessage,
 		status_tid = statusTID,
 		success_count = successCount,
 		warning_count = warningCount
@@ -70,4 +69,6 @@ BEGIN
 	WHERE job_id = jobID
 	AND filename = jobFilename;
 
-END
+END //
+
+DELIMITER ;

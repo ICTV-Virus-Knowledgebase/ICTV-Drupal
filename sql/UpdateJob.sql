@@ -1,20 +1,19 @@
-CREATE DEFINER=`root`@`localhost` PROCEDURE `updateJob`(
+
+DELIMITER //
+
+DROP PROCEDURE IF EXISTS `updateJob`;
+
+CREATE PROCEDURE `updateJob`(
+	IN `errorMessage` TEXT,
 	IN `jobUID` VARCHAR(100),
 	IN `message` TEXT,
 	IN `status` VARCHAR(50),
 	IN `userUID` INT
 )
-LANGUAGE SQL
-NOT DETERMINISTIC
-CONTAINS SQL
-SQL SECURITY DEFINER
-COMMENT ''
 BEGIN
-
 	DECLARE fullStatus VARCHAR(100);
 	DECLARE jobID INT;
 	DECLARE statusTID INT;
-	
 	
 	-- Validate the jobUID
 	IF jobUID IS NULL OR jobUID = '' THEN 
@@ -41,35 +40,30 @@ BEGIN
 		LIMIT 1
 	);
 
-	/*IF statusTID IS NULL THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for job_status parameter'
-	END IF;*/
+	IF statusTID IS NULL THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for status parameter';
+	END IF;
 
   
 	-- The status determines how the job is updated.
-	IF status = 'completed' THEN
+	IF status = 'valid' THEN
 		
 		-- Update the job as completed.
 		UPDATE job SET
-			completed_on = NOW(), 
+			completed_on = NOW(),
+			error_message = errorMessage,
 			status_tid = statusTID
 		WHERE uid = jobUID
 		AND user_uid = userUID;
 
-	ELSEIF status = 'failed' THEN
+	ELSEIF status IN ('invalid', 'crashed') THEN
 		
-		-- Update the job as failed and include the error message.
+		-- Update the job as invalid or crashed and include the message and error message.
 		UPDATE job SET
+			error_message = errorMessage,
 			failed_on = NOW(), 
 			message = message,
 			status_tid = statusTID
-		WHERE uid = jobUID
-		AND user_uid = userUID;
-
-	ELSEIF status = 'running' THEN
-
-		-- Update the job as running.
-		UPDATE job SET status_tid = statusTID
 		WHERE uid = jobUID
 		AND user_uid = userUID;
 
@@ -81,4 +75,6 @@ BEGIN
 	WHERE uid = jobUID
 	LIMIT 1;
 	
-END
+END //
+
+DELIMITER ;

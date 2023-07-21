@@ -67,7 +67,7 @@ class GeneratorForm extends FormBase {
                 \Drupal::logger('ictv_jwt_generator')->error("Error in GeneratorForm: Invalid user");
             }
         }
-        catch (Exception $e) {
+        catch (\Exception $e) {
             \Drupal::logger('ictv_jwt_generator')->error($e->getMessage());
         }
     }

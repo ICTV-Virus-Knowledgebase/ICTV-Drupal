@@ -35,11 +35,9 @@ use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Symfony\Component\HttpFoundation\Request;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\SummaryFile;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalSummary;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
-// The contents of this log will be written to log.txt at the end.
-$log = "";
 
 // Moving the scope of this variable.
 $resultsPath = "";
@@ -57,26 +55,25 @@ try {
 
     // Get and validate the command line arguments.
     $dbName = $_GET["dbName"];
-    if (!$dbName) { throw new Exception("Invalid dbName parameter"); }
+    if (!$dbName) { throw new \Exception("Invalid dbName parameter"); }
 
     $drupalRoot = $_GET["drupalRoot"];
-    if (!$drupalRoot) { throw new Exception("Invalid drupalRoot parameter"); }
+    if (!$drupalRoot) { throw new \Exception("Invalid drupalRoot parameter"); }
 
     $jobUID = $_GET["jobUID"];
-    if (!$jobUID) { throw new Exception("Invalid jobUID parameter"); }
+    if (!$jobUID) { throw new \Exception("Invalid jobUID parameter"); }
 
     $jobPath = $_GET["jobPath"];
-    if (!$jobPath) { throw new Exception("Invalid jobPath parameter"); }
+    if (!$jobPath) { throw new \Exception("Invalid jobPath parameter"); }
 
     $proposalsPath = $_GET["proposalsPath"];
-    if (!$proposalsPath) { throw new Exception("Invalid proposalsPath parameter"); }
+    if (!$proposalsPath) { throw new \Exception("Invalid proposalsPath parameter"); }
 
     $resultsPath = $_GET["resultsPath"];
-    if (!$resultsPath) { throw new Exception("Invalid resultsPath parameter"); }
+    if (!$resultsPath) { throw new \Exception("Invalid resultsPath parameter"); }
 
     $userUID = $_GET["userUID"];
-    if (!$userUID) { throw new Exception("Invalid userUID parameter"); }
-
+    if (!$userUID) { throw new \Exception("Invalid userUID parameter"); }
 
 
     // Get the current directory so we can return to it.
@@ -84,6 +81,7 @@ try {
 
     // Navigate to the Drupal root directory.
     chdir($drupalRoot); 
+
 
     //-------------------------------------------------------------------------------------------------------
     // Initialize an instance of Drupal.
@@ -98,37 +96,38 @@ try {
 
     require_once 'core/includes/schema.inc';
 
+
     // Return to the original working directory.
     chdir($cwd);
-
-    \Drupal::logger('ictv_proposal_service')->info("executing RunProposalValidation in {$cwd}");
 
     //-------------------------------------------------------------------------------------------------------
     // Get a connection to the ictv_apps database.
     //-------------------------------------------------------------------------------------------------------
     $connection = \Drupal\Core\Database\Database::getConnection("default", $dbName);
-    if (!$connection) { throw new Exception("The database connection is invalid or null."); }
+    if (!$connection) { throw new \Exception("The database connection is invalid or null."); }
 
     //-------------------------------------------------------------------------------------------------------
     // Validate the proposal(s)
     //-------------------------------------------------------------------------------------------------------
     $result = ProposalValidator::runValidation($proposalsPath, $resultsPath, $scriptName, $jobPath);
 
+    // Validate the validation result object and its properties.
+    if (!$result || !$result["jobStatus"]) { throw new \Exception("Invalid validation result"); }
+    
     $jobStatus = $result["jobStatus"];
-    if (!$jobStatus) { throw new Exception("Result.jobStatus is invalid"); }
+    if (!$jobStatus) { throw new \Exception("Result.jobStatus is invalid"); }
 
-    // Validate the validation result object.
     $summaries = $result["summaries"];
-    if (!$summaries || sizeof($summaries) < 1) { throw new Exception("Result.summaries is invalid"); }
+    if (!$summaries || sizeof($summaries) < 1) { throw new \Exception("Result.summaries is invalid"); }
 
     $stdError = $result["stdError"];
     if ($stdError) {
-        // TODO: How should we report a std error? Update the job record?
+        // TODO: Should the std error update the job record?
         \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError);
     }
 
     $totals = $result["totals"];
-    if (!$totals) { throw new Exception("Result.totals is invalid"); }
+    if (!$totals) { throw new \Exception("Result.totals is invalid"); }
 
     // Create a job summary message using the total counts.
     $jobMessage = ProposalSummary::createMessage($totals);
@@ -136,7 +135,7 @@ try {
     //-------------------------------------------------------------------------------------------------------
     // Update the job record in the database.
     //-------------------------------------------------------------------------------------------------------
-    $jobID = JobService::updateJob($connection, $jobUID, $jobMessage, $jobStatus, $userUID); 
+    $jobID = JobService::updateJob($connection, $stdError, $jobUID, $jobMessage, $jobStatus, $userUID); 
 
     //-------------------------------------------------------------------------------------------------------
     // Update the job_file records for all proposal files.
@@ -149,26 +148,13 @@ try {
 
     fwrite(STDOUT, "Validation is complete");
 
-    $log = "Validation is complete";
-
 } catch (Exception $e) {
 
-    $errorMessage = null;
-    if ($e) { 
-        $errorMessage = $e->getMessage(); 
-    } else {
-        $errorMessage = "Unspecified error";
-    }
-
-    $log = $errorMessage;
+    $errorMessage = "Unspecified error";
+    if ($e) { $errorMessage = $e->getMessage(); }
 
     fwrite(STDERR, $errorMessage);
     exit(1);
-
-} finally {
-    \Drupal::logger('ictv_proposal_service')->info("in finally, resultsPath = {$resultsPath}");
-    $fileID = \Drupal::service("file_system")->saveData($log, $resultsPath."/log.txt", FileSystemInterface::EXISTS_REPLACE);
 }
-
 
 ?>

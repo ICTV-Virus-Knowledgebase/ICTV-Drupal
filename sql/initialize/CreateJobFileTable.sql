@@ -1,0 +1,24 @@
+
+DROP TABLE IF EXISTS `job_file`;
+
+CREATE TABLE `job_file` (
+	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`completed_on` DATETIME NULL DEFAULT NULL,
+	`created_on` DATETIME NULL DEFAULT current_timestamp(),
+	`error_count` INT(10) UNSIGNED NULL DEFAULT '0',
+	`failed_on` DATETIME NULL DEFAULT NULL,
+	`filename` VARCHAR(100) NOT NULL,
+	`info_count` INT(10) UNSIGNED NULL DEFAULT '0',
+	`job_id` INT(10) UNSIGNED NOT NULL,
+	`message` VARCHAR(100) NULL DEFAULT NULL,
+	`status_tid` INT(10) UNSIGNED NOT NULL,
+	`success_count` INT(10) UNSIGNED NULL DEFAULT '0',
+	`uid` VARCHAR(100) NOT NULL,
+	`upload_order` INT(10) UNSIGNED NULL DEFAULT '0',
+	`warning_count` INT(10) UNSIGNED NULL DEFAULT '0',
+	PRIMARY KEY (`id`) USING BTREE,
+	INDEX `FK_status` (`status_tid`) USING BTREE,
+	CONSTRAINT `FK_status` FOREIGN KEY (`status_tid`) REFERENCES `ictv_apps`.`term` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+AUTO_INCREMENT=4
+;

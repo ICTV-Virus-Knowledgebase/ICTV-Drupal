@@ -106,12 +106,10 @@ class ProposalService extends ResourceBase {
             $module_id,
             $module_definition,
             $container->getParameter('serializer.formats'),
-            $container->get('logger.factory')->get('ictv_proposal_service_resource') // Previously "ictv_proposal_resource"
+            $container->get('logger.factory')->get('ictv_proposal_service_resource')
         );
     }
 
-
-    
 
     /**
      * Responds to GET request.
@@ -120,9 +118,7 @@ class ProposalService extends ResourceBase {
      * Throws exception expected.
      */
     public function get(Request $request) {
-
         $data = $this->processAction($request);
-
         return new ResourceResponse($data);
     }
 
@@ -142,9 +138,7 @@ class ProposalService extends ResourceBase {
      * Throws exception expected.
      */
     public function post(Request $request) {
-
         $data = $this->processAction($request);
-
         return new ResourceResponse($data);
     }
 
@@ -172,7 +166,8 @@ class ProposalService extends ResourceBase {
         switch ($actionCode) {
 
             case "get_jobs":
-                $data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
+                $data = $this->jobService->getJobsAsJSON($this->connection, $userEmail, $userUID);
+                //$data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
                 break;
 
             case "get_validation_summary":
@@ -181,10 +176,6 @@ class ProposalService extends ResourceBase {
                 if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
                 
                 $data = $this->jobService->getValidationSummary($this->summaryFilename, $jobUID, $userUID);
-                break;
-
-            case "upload_proposal":
-                $data = $this->uploadProposal($json, $userEmail, $userUID);
                 break;
 
             case "upload_proposals":
@@ -196,100 +187,6 @@ class ProposalService extends ResourceBase {
 
         return $data;
     }
-    
-
-    public function uploadProposal(array $json, string $userEmail, string $userUID) {
-
-        // Declare variables used in the try/catch block.
-        $fileID = null;
-        $jobUID = null;
-        $message = null;
-        $result = null;
-        $status = null;
-        
-
-        $filename = $json["filename"];
-        if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
-
-        $proposal = $json["proposal"];
-        if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
-
-        $fileStartIndex = stripos($proposal, ",");
-        if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
-
-        $base64Data = substr($proposal, $fileStartIndex + 1);
-        if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
-
-        // Decode the file contents from base64.
-        $binaryData = base64_decode($base64Data);
-
-        try {
-            //-------------------------------------------------------------------------------------------------------
-            // Create a job record and return its unique ID.
-            //-------------------------------------------------------------------------------------------------------
-            $jobUID = $this->jobService->createJob($filename, $userEmail, $userUID);
-
-            // Create the job directory and subdirectories and return the full path of the job directory.
-            $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
-
-            // Create the proposal file in the job directory using the data provided.
-            $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
-            
-            // Use the job path to generate the path of the proposals and results subdirectories.
-            $proposalsPath = $this->jobService->getProposalsPath($jobPath);
-            $resultsPath = $this->jobService->getResultsPath($jobPath);
-
-            //-------------------------------------------------------------------------------------------------------
-            // Validate the proposal
-            //-------------------------------------------------------------------------------------------------------
-            $result = ProposalValidator::validateProposals($proposalsPath, $resultsPath, $jobPath);
-
-            $status = $result["status"];
-
-            $stdError = $result["stdError"];
-            if ($stdError) {
-                \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError);
-            }
-
-            // Create a summary message using status counts.
-            $message = $this->createSummary($result["errors"], $result["info"], $result["successes"], $result["warnings"]);
-            
-            //-------------------------------------------------------------------------------------------------------
-            // Update the job record in the database.
-            //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
-        }
-        catch (Exception $e) {
-
-            $status = JobStatus::$crashed;
-
-            $errorMessage = null;
-            if ($e) { 
-                $errorMessage = $e->getMessage(); 
-            } else {
-                $errorMessage = "Unspecified error";
-            }
-            
-            // Update the log with the job UID and this error message.
-            \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$errorMessage);
-
-            // Provide a default message, if necessary.
-            if ($message == NULL || len($message) < 1) { $message = "1 error"; }
-
-            //-------------------------------------------------------------------------------------------------------
-            // Update the job record in the database.
-            //-------------------------------------------------------------------------------------------------------
-            $this->jobService->updateJob($jobUID, $message, $status, $userUID);    
-        }
-
-        return array(
-            "fileID" => $fileID,
-            "filename" => $filename,
-            "jobUID" => $jobUID,
-            "validatorResult" => $result
-        );
-    }
-
 
 
     public function uploadProposals(array $json, string $userEmail, string $userUID) {
@@ -299,9 +196,11 @@ class ProposalService extends ResourceBase {
         $files = $json["files"];
         if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
 
+        $command = "";
         $commandResult = -1;
         $jobID = 0;
         $jobUID = "";
+        $resultCode = -1;
         $status = null;
 
         try {
@@ -363,11 +262,6 @@ class ProposalService extends ResourceBase {
 
             $fullPath = $rootPath."/".$modulePath."/".$localPath;
         
-
-            // TESTING
-            \Drupal::logger("ictv_proposal_service")->info("full module path = {$fullPath}");
-
-
             //-------------------------------------------------------------------------------------------------------
             // Create the command that will be run on the command line.
             //-------------------------------------------------------------------------------------------------------
@@ -426,13 +320,15 @@ class ProposalService extends ResourceBase {
             //-------------------------------------------------------------------------------------------------------
             // Update the job record in the database.
             //-------------------------------------------------------------------------------------------------------
-            JobService::updateJob($this->connection, $jobUID, $message, $status, $userUID); 
+            JobService::updateJob($this->connection, $errorMessage, $jobUID, $message, $status, $userUID); 
         }
 
         return array(
+            "command" => $command,
             "commandResult" => $commandResult,
             "jobName" => $jobName,
-            "jobUID" => $jobUID
+            "jobUID" => $jobUID,
+            "resultCode" => $resultCode
         );
     }
 }
