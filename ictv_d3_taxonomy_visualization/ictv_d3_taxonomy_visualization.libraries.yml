@@ -13,4 +13,3 @@ d3TaxonomyVisualization:
     - core/jquery
     - core/drupal
     - core/drupalSettings
-    - core/popperjs

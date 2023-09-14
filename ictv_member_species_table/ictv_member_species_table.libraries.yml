@@ -20,6 +20,12 @@ memberSpeciesTable:
     assets/css/fonts/fa-solid-900.ttf: {}
     assets/css/fonts/fa-solid-900.woff: {}
     assets/css/fonts/fa-solid-900.woff2: {}
+  images:
+    assets/images/sort_asc_disabled.png: {}
+    assets/images/sort_asc.png: {}
+    assets/images/sort_both.png: {}
+    assets/images/sort_desc_disabled.png: {}
+    assets/images/sort_desc.png: {}
   js:
     assets/js/ICTV.js: {}
     assets/js/memberSpeciesTable.js: {}

@@ -3,6 +3,6 @@ type: module
 description: 'A custom module that provides a RESTful web service for taxonomy proposals'
 package: ICTV
 configure: ictv_proposal_service.settings
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^8 || ^9 || ^10
 dependencies:
   - drupal:block
