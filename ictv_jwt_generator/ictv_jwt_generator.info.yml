@@ -3,7 +3,7 @@ type: module
 description: 'A custom module that displays a form to generate a JSON Web Token (JWT)'
 package: ICTV
 #configure: ictv_settings.form
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^8 || ^9 || ^10
 dependencies:
   - drupal:block
   - jwt:jwt_auth_issuer

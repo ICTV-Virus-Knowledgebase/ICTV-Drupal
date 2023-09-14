@@ -68,7 +68,7 @@
             const memberSpeciesTable = new window.ICTV.MemberSpeciesTable(containerSelector);
 
             // Initialize and display the table.
-            memberSpeciesTable.initialize(taxonName, null, onlyUnassigned);
+            memberSpeciesTable.initialize(taxonName, window.ICTV.AppSettings.currentMslRelease, onlyUnassigned);
         }
     };
     

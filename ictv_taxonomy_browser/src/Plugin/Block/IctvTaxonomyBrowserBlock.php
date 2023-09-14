@@ -27,30 +27,35 @@ class IctvTaxonomyBrowserBlock extends BlockBase {
     // TODO: centralize this code somewhere else!
     $query = $database->query("SELECT
         (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'applicationURL'
+            SELECT value
+            FROM ictv_settings
+            WHERE name = 'applicationURL'
+            LIMIT 1
         ) AS applicationURL,
         (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'baseWebServiceURL'
+            SELECT value
+            FROM ictv_settings
+            WHERE name = 'baseWebServiceURL'
+            LIMIT 1
         ) AS baseWebServiceURL,
         (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'currentMslRelease'
+            SELECT value
+            FROM ictv_settings
+            WHERE name = 'currentMslRelease'
+            LIMIT 1
         ) AS currentMslRelease,
         (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'releaseProposalsURL'
+            SELECT value
+            FROM ictv_settings
+            WHERE name = 'releaseProposalsURL'
+            LIMIT 1
         ) AS releaseProposalsURL,
         (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'taxonHistoryPage'
-        ) AS taxonHistoryPage ");
+            SELECT value
+            FROM ictv_settings
+            WHERE name = 'taxonHistoryPage'
+            LIMIT 1
+        ) AS taxonHistoryPage");
 
     $result = $query->fetchAll();
 

@@ -3,6 +3,6 @@ type: module
 description: 'A custom module that displays a table of member species'
 package: ICTV
 configure: ictv_member_species_table.settings
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^8 || ^9 || ^10
 dependencies:
   - drupal:block

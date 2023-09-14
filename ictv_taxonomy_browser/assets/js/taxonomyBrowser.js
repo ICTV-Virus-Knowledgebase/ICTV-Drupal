@@ -54,7 +54,7 @@
             }
             const initialData =  {
                 displayType: window.ICTV.TaxonomyDisplayType.display_all,
-                releaseNumber: null,
+                releaseNumber: settings_.currentMslRelease,
                 taxonName: null
             }
 

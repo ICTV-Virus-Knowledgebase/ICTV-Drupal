@@ -3,6 +3,6 @@ type: module
 description: 'A custom module that displays a taxon''s release history'
 package: ICTV
 configure: ictv_taxon_history.settings
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^8 || ^9 || ^10
 dependencies:
   - drupal:block
