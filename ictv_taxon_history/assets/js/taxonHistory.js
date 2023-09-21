@@ -45,7 +45,7 @@
 
 
             // Create a new TaxonReleaseHistory instance.
-            const taxonHistory = new window.ICTV.TaxonReleaseHistory(containerSelector);
+            const taxonHistory = new window.ICTV.TaxonReleaseHistory(settings_.currentMslRelease, containerSelector);
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();
