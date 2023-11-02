@@ -49,7 +49,7 @@
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();
-            taxonHistory.get(taxNodeID);
+            taxonHistory.get(taxNodeID).then(() => {});
         }
     };
     

@@ -5,30 +5,43 @@ DROP PROCEDURE IF EXISTS `updateJobFile`;
 
 CREATE PROCEDURE `updateJobFile`(
 	IN `errorCount` INT,
+	IN `filename` VARCHAR(300),
 	IN `infoCount` INT,
-	IN `jobFileMessage` VARCHAR(100),
-	IN `jobFilename` VARCHAR(100),
-	IN `jobID` INT,
-	IN `status` VARCHAR(50),
+	IN `jobUID` VARCHAR(100),
 	IN `successCount` INT,
 	IN `warningCount` INT
 )
 BEGIN
-	DECLARE completedOn DATETIME;
-	DECLARE failedOn DATETIME;
 	DECLARE fullStatus VARCHAR(100);
+	DECLARE jobID INT;
+	DECLARE message VARCHAR(300);
+	DECLARE status VARCHAR(100);
 	DECLARE statusTID INT;
 	
-	-- Validate the job filename
-	IF jobFilename IS NULL OR jobFilename = '' THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid jobFilename parameter';
+	-- Validate the job_file's filename
+	IF filename IS NULL OR filename = '' THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid filename parameter';
 	END IF;
 	
-	-- Validate the status
-	IF status IS NULL OR status = '' THEN 
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid status parameter';
+	-- Validate the job UID
+	IF jobUID IS NULL OR jobUID = '' THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid job UID parameter';
 	END IF;
 
+	-- Lookup the job ID
+	SET jobID := (SELECT id FROM job WHERE uid = jobUID LIMIT 1);
+	IF jobID IS NULL THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid job ID parameter';
+	END IF;
+
+	-- Determine the status using the error and warning counts.
+	IF errorCount > 0 OR warningCount > 0 THEN
+		SET status := 'invalid';
+	ELSE
+		SET status := 'valid';
+	END IF;
+
+	-- Prepend the vocabulary key "job_status".
 	SET fullStatus = CONCAT('job_status.', status);
 	
 	-- Lookup the term ID for the status.
@@ -38,36 +51,25 @@ BEGIN
 		WHERE full_key = fullStatus
 		LIMIT 1
 	);
-
 	IF statusTID IS NULL THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for the status parameter';
 	END IF;
 
-	-- The status determines the completed_on and failed_on dates.
-	IF STATUS = 'valid' THEN
-		SET completedOn = NOW();
-		SET failedOn = NULL;
-	ELSEIF status = 'invalid' OR status = 'crashed' THEN
-		SET completedOn = NULL;
-		SET failedOn = NOW();
-	ELSE
-		SET completedOn = NULL;
-		SET failedOn = NULL;
-	END IF;
+	-- Use the counts to generate the job_file's message.
+	SET message := (SELECT generateStatusMessage(errorCount, infoCount, successCount, warningCount));
 
-	-- Update the job file
+	-- Update the job_file
 	UPDATE job_file SET
-		completed_on = completedOn,
+		ended_on = NOW(),
 		error_count = errorCount,
-		failed_on = failedOn,
 		info_count = infoCount,
-		message = jobFileMessage,
+		message = message,
 		status_tid = statusTID,
 		success_count = successCount,
 		warning_count = warningCount
 		
 	WHERE job_id = jobID
-	AND filename = jobFilename;
+	AND filename = filename;
 
 END //
 

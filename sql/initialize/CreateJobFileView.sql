@@ -2,13 +2,13 @@
 CREATE OR REPLACE VIEW `v_job_file` AS 
 SELECT 
     jf.id,
-    jf.completed_on,
     jf.created_on,
+    jf.ended_on,
     jf.error_count,
-    jf.failed_on,
     jf.filename,
     jf.info_count,
     jf.job_id,
+    jf.json,
     jf.message,
     statusterm.term_key AS status,
     jf.status_tid,

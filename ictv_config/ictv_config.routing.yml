@@ -4,4 +4,4 @@ ictv_config.form:
    _title: 'ICTV Configuration'
    _form: '\Drupal\ictv_config\Form\ConfigForm'
  requirements:
-   _role: 'Administrator'
+   _role: administrator

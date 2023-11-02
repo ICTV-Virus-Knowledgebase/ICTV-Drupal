@@ -36,7 +36,7 @@
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#release_history_taxonomy_browser_container";
             
-            const controlKey = "taxtest";
+            const controlKey = "releaseHistoryTaxonomyBrowser";
             const ctrlSettings = {
                 displayChildCount: true,
                 displayHistoryCtrls: true,
@@ -54,7 +54,7 @@
             }
             const initialData =  {
                 displayType: window.ICTV.TaxonomyDisplayType.display_release_history,
-                releaseNumber: null,
+                releaseNumber: null, // settings_.currentMslRelease,
                 taxonName: null
             }
 
