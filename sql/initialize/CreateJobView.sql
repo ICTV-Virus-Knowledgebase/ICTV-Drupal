@@ -2,20 +2,21 @@
 CREATE OR REPLACE VIEW `v_job` AS 
 SELECT 
 	j.id,
-	j.completed_on,
 	j.created_on,
+	j.ended_on,
+	j.error_count,
 	j.error_message,
-	j.failed_on,
+	j.info_count,
+	j.json,
 	j.message,
 	j.name,
 	statusterm.term_key AS status,
 	j.status_tid,
-	typeterm.term_key AS type,
-	j.type_tid,
+	j.success_count,
 	j.uid,
 	j.user_email,
-	j.user_uid
+	j.user_uid,
+	j.warning_count
 	
 FROM job j
-JOIN term statusterm ON statusterm.id = status_tid
-LEFT JOIN term typeterm ON typeterm.id = type_tid  ;
+JOIN term statusterm ON statusterm.id = status_tid;

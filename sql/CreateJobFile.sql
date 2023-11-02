@@ -37,7 +37,7 @@ BEGIN
 	-- Generate a new job file UID
 	SET jobFileUID = REPLACE(CAST(UUID() AS VARCHAR(100)),'-','');
   	
-  	
+  	-- Calculate the upload order if it wasn't provided.
   	IF uploadOrder IS NULL OR uploadOrder < 0 THEN
   		
   		SET uploadOrder := (

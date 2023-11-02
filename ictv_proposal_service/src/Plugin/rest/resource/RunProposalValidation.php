@@ -35,7 +35,7 @@ use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Symfony\Component\HttpFoundation\Request;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalSummary;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 
@@ -117,34 +117,42 @@ try {
     $jobStatus = $result["jobStatus"];
     if (!$jobStatus) { throw new \Exception("Result.jobStatus is invalid"); }
 
-    $summaries = $result["summaries"];
-    if (!$summaries || sizeof($summaries) < 1) { throw new \Exception("Result.summaries is invalid"); }
+    $fileSummaries = $result["fileSummaries"];
+    if (!$fileSummaries || sizeof($fileSummaries) < 1) { throw new \Exception("Result.fileSummaries is invalid"); }
 
     $stdError = $result["stdError"];
-    if ($stdError) {
-        // TODO: Should the std error update the job record?
-        \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError);
+    if ($stdError) { \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError); }
+
+    
+    //-------------------------------------------------------------------------------------------------------
+    // Update the job_file records for all proposal files.
+    //-------------------------------------------------------------------------------------------------------
+    foreach ($fileSummaries as $fileSummary) {
+
+        if (!$fileSummary) { 
+            \Drupal::logger('ictv_proposal_service')->error("Unable to update job_file: Invalid file summary"); 
+            continue;
+        }
+
+        // Update a job file based on the contents of the summary TSV file.
+        $sql = "CALL updateJobFile(".
+            "{$fileSummary->errors}, ".
+            "'{$fileSummary->filename}', ".
+            "{$fileSummary->notes}, ".
+            "'{$jobUID}', ".
+            "{$fileSummary->success}, ".
+            "{$fileSummary->warning} ".
+        ")";
+
+        $fileQuery = $connection->query($sql);
+        $fileResult = $fileQuery->execute();
+        // TODO: validate the result?
     }
-
-    $totals = $result["totals"];
-    if (!$totals) { throw new \Exception("Result.totals is invalid"); }
-
-    // Create a job summary message using the total counts.
-    $jobMessage = ProposalSummary::createMessage($totals);
 
     //-------------------------------------------------------------------------------------------------------
     // Update the job record in the database.
     //-------------------------------------------------------------------------------------------------------
-    $jobID = JobService::updateJob($connection, $stdError, $jobUID, $jobMessage, $jobStatus, $userUID); 
-
-    //-------------------------------------------------------------------------------------------------------
-    // Update the job_file records for all proposal files.
-    //-------------------------------------------------------------------------------------------------------
-    foreach ($summaries as $summary) {
-
-        // Update a job file based on the contents of the summary TSV file.
-        JobService::updateJobFile($connection, $jobID, $summary);
-    }
+    JobService::updateJob($connection, $stdError, $jobUID, $jobMessage, $jobStatus, $userUID); 
 
     fwrite(STDOUT, "Validation is complete");
 

@@ -39,12 +39,12 @@ class ProposalService extends ResourceBase {
     protected string $databaseName = "ictv_apps";
 
     // The path of the Drupal installation.
-    protected string $drupalRoot = "/var/www/drupal/site"; // tODO: can this be replaced by getcwd()?
+    protected string $drupalRoot = "/var/www/drupal/site"; // TODO: can this be replaced by getcwd()?
 
     protected JobService $jobService;
 
     // The full path of the jobs directory.
-    protected string $jobsPath = "/var/www/drupal/files/jobs"; // Value for cms.ictv.global
+    protected string $jobsPath = "/var/www/drupal/files/jobs"; // Value for test.ictv.global
     // Value for app.ictv.global: "/var/www/dapp/files/jobs";
 
     // The name of the downloadable validation summary file.
@@ -166,8 +166,7 @@ class ProposalService extends ResourceBase {
         switch ($actionCode) {
 
             case "get_jobs":
-                $data = $this->jobService->getJobsAsJSON($this->connection, $userEmail, $userUID);
-                //$data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
+                $data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
                 break;
 
             case "get_validation_summary":

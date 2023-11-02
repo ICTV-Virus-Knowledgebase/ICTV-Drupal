@@ -36,7 +36,7 @@
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#taxonomy_browser_container";
             
-            const controlKey = "taxtest";
+            const controlKey = "taxbrowser";
             const ctrlSettings = {
                 displayChildCount: true,
                 displayHistoryCtrls: true,

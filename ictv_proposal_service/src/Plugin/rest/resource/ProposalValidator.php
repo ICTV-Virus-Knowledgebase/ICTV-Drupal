@@ -3,7 +3,7 @@
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalSummary;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
 
 
 class ProposalValidator {
@@ -14,7 +14,7 @@ class ProposalValidator {
         $result = null;
         $jobStatus = null;
         $stdError = null;
-        $summaries;
+        $fileSummaries;
         $totals;
 
         $descriptorspec = array(
@@ -63,15 +63,14 @@ class ProposalValidator {
 
             if ($jobStatus != JobStatus::$crashed) {
 
-                // Parameters that will be passed to (and returned by) "getProposalSummaries".
-                $summaries = array();
-                $totals = new ProposalSummary();
+                // An array of ProposalFileSummary objects.
+                $fileSummaries = array();
     
                 // Parse the summary TSV file for proposal filenames and their summaries (status counts).
-                ProposalSummary::getProposalSummaries($resultsPath, $summaries, $totals);
+                ProposalFileSummary::getProposalSummaries($resultsPath, $fileSummaries);
     
                 // Determine the overall job status. 
-                if (!$summaries || sizeof($summaries) < 1 || !$totals) {
+                if (!$fileSummaries || sizeof($fileSummaries) < 1 || !$totals) {
                     $jobStatus = JobStatus::$crashed;
                     
                 } else if ($jobStatus == JobStatus::$pending) {
@@ -94,17 +93,16 @@ class ProposalValidator {
                 $stdError = $stdError.$e->getMessage(); 
             }
 
-            \Drupal::logger('ictv_proposal_service')->info("In proposalValidator catch, stdError = ".$stdError);
+            \Drupal::logger('ictv_proposal_service')->error("An error occurred in ProposalValidator: ".$stdError);
         }
 
         if ($jobStatus == null) { $jobStatus = JobStatus::$crashed; } 
 
         return array(
             "command" => $command,
+            "fileSummaries" => $fileSummaries,
             "jobStatus" => $jobStatus,
-            "stdError" => $stdError,
-            "summaries" => $summaries,
-            "totals" => $totals
+            "stdError" => $stdError
         );
     }
 

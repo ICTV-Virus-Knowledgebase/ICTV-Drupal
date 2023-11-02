@@ -167,65 +167,16 @@ class JobService {
      */ 
     public function getJobs(Connection $connection, string $userEmail, string $userUID) {
 
-        $jobs = [];
-
-        // Generate the SQL
-        $sql = "SELECT * 
-                FROM v_job 
-                WHERE user_uid = {$userUID}
-                AND user_email = '{$userEmail}'
-                ORDER BY created_on DESC";
+        // Generate SQL to return JSON for each of the user's jobs.
+        $sql = "CALL getJobs('{$userEmail}', {$userUID});";
 
         // Execute the query and process the results.
-        $query = $connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result) {
+        $result = $connection->query($sql);
+        $jobsJSON = $result->fetchField(0);
 
-            foreach ($result as $job) {
-
-                array_push($jobs, array(
-                    "id" => $job->id,
-                    "completedOn" => $job->completed_on,
-                    "createdOn" => $job->created_on,
-                    "failedOn" => $job->failed_on,
-                    "jobName" => $job->name,
-                    "jobUID" => $job->uid,
-                    "message" => $job->message,
-                    "status" => $job->status,
-                    "type" => $job->type,
-                    "uid" => $job->uid,
-                    "userEmail" => $job->user_email,
-                    "userUID" => $job->user_uid
-                ));  
-            }
-        }
-
-        return $jobs;
+        return $jobsJSON;
     }
 
-
-    /** 
-     * Get all jobs created by the specified user and format as JSON.
-     */ 
-    public function getJobsAsJSON(Connection $connection, string $userEmail, string $userUID): string {
-
-        $json = "";
-        
-        // Generate the SQL
-        $sql = "CALL exportJobsAsJSON('{$userEmail}', {$userUID});";
-
-        // Execute the query and process the results.
-        $query = $connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result && $result[0]) {
-            $json = $result[0]->json;
-            if ($json) { $json = "[{$json}]"; }
-        }
-
-        $json = str_replace("\u0022","\"",$json);
-
-        return $json;
-    }
 
     // Use the job path to generate the path of the proposals subdirectory.
     public function getProposalsPath(string $jobPath) {
@@ -271,7 +222,7 @@ class JobService {
         }
 
         if ($fileData == null) {
-            \Drupal::logger('ictv_proposal_service')->error("File data is null");
+            \Drupal::logger('ictv_proposal_service')->error("Invalid file ".$filename." in job ".$jobUID);
             return null;
         }
 
@@ -300,12 +251,9 @@ class JobService {
     }
 
 
-    // Update a job's status, message, and either completed_on or failed_on.
+    // Update the job record in the database.
     // TODO: after upgrading the dev environment to 9.5, make status an enum.
-    public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $message, 
-        string $status, string $userUID): int {
-
-        $jobID = 0;
+    public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $status, int $userUID) {
 
         if (Utils::isEmptyElseTrim($errorMessage)) {
             $errorMessage = "NULL";
@@ -313,56 +261,12 @@ class JobService {
             $errorMessage = "'{$errorMessage}'";
         }
 
-        if (Utils::isEmptyElseTrim($message)) {
-            $message = "NULL";
-        } else {
-            $message = "'{$message}'";
-        }
-
         // Generate SQL to call the "updateJob" stored procedure.
-        $sql = "CALL updateJob({$errorMessage}, '{$jobUID}', {$message}, '{$status}', '{$userUID}');";
+        $sql = "CALL updateJob('{$status}', {$errorMessage}, '{$jobUID}', {$userUID});";
 
         $query = $connection->query($sql);
         $result = $query->fetchAll();
-        if ($result && $result[0] !== null) {
-            $jobID = $result[0]->jobID;
-        }
-
-        if ($jobID < 1) { \Drupal::logger('ictv_proposal_service')->error("Error in updateJob: jobID < 1"); }
-
-        return $jobID;
-    }
-
-
-    // Update a job file based on the contents of the summary TSV file.
-    public static function updateJobFile(Connection $connection, int $jobID, ProposalSummary $summary) {
-
-        // Validate the filename
-        if (Utils::isEmptyElseTrim($summary->filename)) { throw new Error("Unable to update job file: Invalid filename"); }
-
-        // Use the summary counts to determine the status.
-        $status = JobStatus::$valid;
-        if ($summary->error > 0 || $summary->warning > 0) { $status = JobStatus::$invalid; }
-
-        // Create a message containing a list of status counts.
-        $message = ProposalSummary::createMessage($summary);
-
-        // Generate SQL to call the "updateJobFile" stored procedure.
-        $sql = "CALL updateJobFile(".
-            "{$summary->error}, ".
-            "{$summary->info}, ".
-            "'{$message}', ".
-            "'{$summary->filename}', ".
-            "{$jobID}, ".
-            "'{$status}', ".
-            "{$summary->success}, ".
-            "{$summary->warning} ".
-        ")";
-
-        $query = $connection->query($sql);
-        $result = $query->execute();
-
-        // TODO: should we validate the result?
+        // TODO: validate result?
     }
 
 }
