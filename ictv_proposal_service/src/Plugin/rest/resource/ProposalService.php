@@ -181,7 +181,7 @@ class ProposalService extends ResourceBase {
                 $data = $this->uploadProposals($json, $userEmail, $userUID);
                 break;
 
-            default: throw new BadRequestHttpException("Unrecognized action code");
+            default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");
         }
 
         return $data;
