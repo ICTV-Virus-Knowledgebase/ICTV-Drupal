@@ -21,6 +21,13 @@
 
             //console.log(`In proposalSubmission.js user email = ${userEmail} and userUID = ${userUID}`);
 
+            //----------------------------------------------------------------------------------------
+            // Initialize the ICTV AppSettings using drupalSettings
+            //----------------------------------------------------------------------------------------
+
+            // The Drupal web service base URL.
+            window.ICTV.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_proposal_submission_container";
 
