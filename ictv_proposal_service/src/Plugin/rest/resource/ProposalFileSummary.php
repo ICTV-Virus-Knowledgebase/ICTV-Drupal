@@ -81,8 +81,10 @@ class ProposalFileSummary {
                 // Convert the status to lowercase.
                 $status = strtolower($status);
                 
+                $fileSummary = null;
+                
                 // Look for the filename's summary in the array and create one if it doesn't exist.
-                $fileSummary = $fileSummaries[$filename];
+                if (array_key_exists($filename, $fileSummaries)) { $fileSummary = $fileSummaries[$filename]; }
                 if (!$fileSummary) { $fileSummary = new ProposalFileSummary($filename); }
 
                 // Increment this status' count.

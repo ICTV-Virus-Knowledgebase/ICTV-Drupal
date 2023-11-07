@@ -246,6 +246,8 @@ class ProposalService extends ResourceBase {
                 // Create a job file
                 $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
             
+                \Drupal::logger('ictv_proposal_service')->info("created job_file with UID ".$jobFileUID);
+
                 $uploadOrder = $uploadOrder + 1;
             }
 
