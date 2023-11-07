@@ -67,7 +67,7 @@ class ProposalValidator {
                 $fileSummaries = array();
     
                 // Parse the summary TSV file for proposal filenames and their summaries (status counts).
-                ProposalFileSummary::getProposalSummaries($resultsPath, $fileSummaries);
+                ProposalFileSummary::getFileSummaries($resultsPath, $fileSummaries);
     
                 // Determine the overall job status. 
                 if (!$fileSummaries || sizeof($fileSummaries) < 1 || !$totals) {

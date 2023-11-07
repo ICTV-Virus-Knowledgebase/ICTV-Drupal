@@ -51,11 +51,17 @@ BEGIN
             END, ', ',
             
             '"files": ', (
-                SELECT IFNULL(JSON_ARRAYAGG(JSON), 'null')
-                    FROM job_file jf
-                    WHERE jf.job_id = job.id
-                    ORDER BY jf.upload_order ASC
-                    LIMIT 10000000
+               SELECT CASE
+                  WHEN json IS NULL THEN 'null'
+                  ELSE CONCAT('[', json, ']')
+               END
+               FROM (
+                  SELECT GROUP_CONCAT(jf.json) AS json
+                  FROM job_file jf
+                  WHERE jf.job_id = 1
+                  ORDER BY jf.upload_order ASC
+                  LIMIT 10000000
+               ) jobFiles
             ), ', ',
             
             '"message": ', CASE 
