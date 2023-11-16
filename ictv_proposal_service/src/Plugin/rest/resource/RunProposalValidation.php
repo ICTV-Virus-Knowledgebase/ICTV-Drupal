@@ -82,7 +82,6 @@ try {
     // Navigate to the Drupal root directory.
     chdir($drupalRoot); 
 
-
     //-------------------------------------------------------------------------------------------------------
     // Initialize an instance of Drupal.
     //-------------------------------------------------------------------------------------------------------
@@ -99,8 +98,6 @@ try {
 
     // Return to the original working directory.
     chdir($cwd);
-
-    \Drupal::logger('ictv_proposal_service')->info("Inside RunProposalValidation.php before getting db connection");
 
     //-------------------------------------------------------------------------------------------------------
     // Get a connection to the ictv_apps database.
@@ -142,8 +139,8 @@ try {
             "'{$fileSummary->filename}', ".
             "{$fileSummary->notes}, ".
             "'{$jobUID}', ".
-            "{$fileSummary->success}, ".
-            "{$fileSummary->warning} ".
+            "{$fileSummary->successes}, ".
+            "{$fileSummary->warnings} ".
         ")";
 
         $fileQuery = $connection->query($sql);
@@ -155,8 +152,6 @@ try {
     // Update the job record in the database.
     //-------------------------------------------------------------------------------------------------------
     JobService::updateJob($connection, $stdError, $jobUID, $jobStatus, $userUID); 
-
-    \Drupal::logger('ictv_proposal_service')->info("After updateJob in RunProposalValidation.php");
 
     fwrite(STDOUT, "Validation is complete");
 
