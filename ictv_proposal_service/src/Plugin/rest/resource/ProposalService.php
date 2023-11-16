@@ -75,21 +75,26 @@ class ProposalService extends ResourceBase {
       LoggerInterface $logger) {
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
+
+      // dmd 111623 Testing configuration settings (again) vvv
+      // Get configuration settings from the settings.yml file.
+      $configSettings = \Drupal::config("ictv_proposal_service.settings");
+
+      // Validate the configuration settings.
+      if ($configSettings == null) { 
+         \Drupal::logger('ictv_proposal_service')->error("Invalid configuration settings in ProposalService");
+      } else {
+         $testDbName = $configSettings->databaseName;
+         \Drupal::logger('ictv_proposal_service')->info("The configuration setting for database name = ".$testDbName);
+      }
+      // dmd 111623 Testing configuration settings (again) ^^^
+
       /*
       // TESTING!!!
       // Validate the config parameter.
       if (empty($config) || count($config) < 1) { 
          \Drupal::logger('ictv_proposal_service')->error("Invalid config parameter in ProposalService");
          throw new Exception("Invalid config parameter in ProposalService");
-      }
-
-      // Get configuration settings from ictv_proposal_service.settings.yml.
-      $configSettings = \Drupal::config('ictv_proposal_service.settings');
-
-      // Validate the configuration settings.
-      if ($configSettings === null) { 
-         \Drupal::logger('ictv_proposal_service')->error("Invalid configuration settings in ProposalService");
-         throw new Exception("Invalid configuration settings in ProposalService");
       }
 
       // Get the name of the database used by this web service.
