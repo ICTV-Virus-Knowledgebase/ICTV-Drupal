@@ -178,95 +178,97 @@ class JobService {
     }
 
 
-    // Use the job path to generate the path of the proposals subdirectory.
-    public function getProposalsPath(string $jobPath) {
-        $proposalsPath = $jobPath."/".$this->proposalsDirectory;
-        return $proposalsPath;
-    }
+   // Use the job path to generate the path of the proposals subdirectory.
+   public function getProposalsPath(string $jobPath) {
+      $proposalsPath = $jobPath."/".$this->proposalsDirectory;
+      return $proposalsPath;
+   }
 
 
-    // Use the job path to generate the path of the results subdirectory.
-    public function getResultsPath(string $jobPath) {
-        $resultsPath = $jobPath."/".$this->resultsDirectory;
-        return $resultsPath;
-    }
+   // Use the job path to generate the path of the results subdirectory.
+   public function getResultsPath(string $jobPath) {
+      $resultsPath = $jobPath."/".$this->resultsDirectory;
+      return $resultsPath;
+   }
 
 
-    // Return an array containing the validation summary file contents, a new filename, and the jobUID.
-    public function getValidationSummary(string $filename, string $jobUID, string $userUID) {
+   // Return an array containing the validation summary file contents, a new filename, and the jobUID.
+   public function getValidationSummary(string $filename, string $jobUID, string $userUID) {
 
-        // TODO: should we confirm the job in the database first?
+      // TODO: should we confirm the job in the database first?
 
-        $jobPath = $this->getJobPath($jobUID, $userUID);
+      $jobPath = $this->getJobPath($jobUID, $userUID);
 
-        // Use the job path to generate the path of the results subdirectory.
-        $resultsPath = $this->getResultsPath($jobPath);
+      // Use the job path to generate the path of the results subdirectory.
+      $resultsPath = $this->getResultsPath($jobPath);
 
-        $fileID = $resultsPath."/".$filename;
+      $fileID = $resultsPath."/".$filename;
 
-        // Load the file
-        $handle = null;
-        $fileData = null;
+      // Load the file
+      $handle = null;
+      $fileData = null;
 
-        try {
-            // Get a file handle and read its contents.
-            $handle = fopen($fileID, "r");
-            $fileData = fread($handle, filesize($fileID));
+      try {
+         // Get a file handle and read its contents.
+         $handle = fopen($fileID, "r");
+         $fileData = fread($handle, filesize($fileID));
 
-        } catch (\Exception $e) {
-            \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
-            return null;
+      } catch (\Exception $e) {
+         \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+         return null;
 
-        } finally {
-            if ($handle != null) { fclose($handle); }
-        }
+      } finally {
+         if ($handle != null) { fclose($handle); }
+      }
 
-        if ($fileData == null) {
-            \Drupal::logger('ictv_proposal_service')->error("Invalid file ".$filename." in job ".$jobUID);
-            return null;
-        }
+      if ($fileData == null) {
+         \Drupal::logger('ictv_proposal_service')->error("Invalid file ".$filename." in job ".$jobUID);
+         return null;
+      }
 
-        // Encode the file contents as base64.
-        $encodedData = base64_encode($fileData);
+      // Encode the file contents as base64.
+      $encodedData = base64_encode($fileData);
 
-        // The index of the last dot.
-        $lastDotIndex = strrpos($filename, ".");
+      // The index of the last dot.
+      $lastDotIndex = strrpos($filename, ".");
 
-        // Get the file extension.
-        if ($lastDotIndex && $lastDotIndex > -1) {
-            $extension = substr($filename, $lastDotIndex);
-        } else {
-            // Testing...
-            $extension = ".error";
-        }
-        
-        // We will return a new filename that includes the job UID and user UID.
-        $newFilename = $this->validationSummaryPrefix.".".$userUID."_".$jobUID.$extension;
-        
-        return array(
-            "filename" => $newFilename,
-            "file" => $encodedData,
-            "jobUID" => $jobUID 
-        );
-    }
+      // Get the file extension.
+      if ($lastDotIndex && $lastDotIndex > -1) {
+         $extension = substr($filename, $lastDotIndex);
+      } else {
+         // Testing...
+         $extension = ".error";
+      }
+      
+      // We will return a new filename that includes the job UID and user UID.
+      $newFilename = $this->validationSummaryPrefix.".".$userUID."_".$jobUID.$extension;
+      
+      return array(
+         "filename" => $newFilename,
+         "file" => $encodedData,
+         "jobUID" => $jobUID 
+      );
+   }
 
 
-    // Update the job record in the database.
-    // TODO: after upgrading the dev environment to 9.5, make status an enum.
-    public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $status, int $userUID) {
+   // Update the job record in the database.
+   // TODO: after upgrading the dev environment to 9.5, make status an enum.
+   public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $status, int $userUID) {
 
-        if (Utils::isEmptyElseTrim($errorMessage)) {
-            $errorMessage = "NULL";
-        } else {
-            $errorMessage = "'{$errorMessage}'";
-        }
+      \Drupal::logger('ictv_proposal_service')->info("jobUID: ".$jobUID.", status: ".$status.", userUID: ".$userUID);
 
-        // Generate SQL to call the "updateJob" stored procedure.
-        $sql = "CALL updateJob('{$status}', {$errorMessage}, '{$jobUID}', {$userUID});";
+      if (Utils::isEmptyElseTrim($errorMessage)) {
+         $errorMessage = "NULL";
+      } else {
+         $errorMessage = "'{$errorMessage}'";
+      }
 
-        $query = $connection->query($sql);
-        $result = $query->fetchAll();
-        // TODO: validate result?
-    }
+      // Generate SQL to call the "updateJob" stored procedure.
+      $sql = "CALL updateJob('{$status}', {$errorMessage}, '{$jobUID}', {$userUID});";
+
+      $query = $connection->query($sql);
+      $result = $query->fetchAll();
+      // TODO: validate result?
+   }
 
 }

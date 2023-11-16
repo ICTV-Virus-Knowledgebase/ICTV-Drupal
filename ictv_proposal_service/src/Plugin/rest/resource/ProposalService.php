@@ -3,6 +3,7 @@
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Config;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
@@ -32,304 +33,318 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class ProposalService extends ResourceBase {
 
-    // The connection to the ictv_apps database.
-    protected Connection $connection;
+   // The connection to the ictv_apps database.
+   protected Connection $connection;
 
-    // The name of the database used by this web service.
-    protected string $databaseName = "ictv_apps";
+   // The name of the database used by this web service.
+   protected string $databaseName = "ictv_apps";
 
-    // The path of the Drupal installation.
-    protected string $drupalRoot = "/var/www/drupal/site"; // TODO: can this be replaced by getcwd()?
+   // The path of the Drupal installation.
+   protected string $drupalRoot = "/var/www/dapp/web";
 
-    protected JobService $jobService;
+   protected JobService $jobService;
 
-    // The full path of the jobs directory.
-    protected string $jobsPath = "/var/www/drupal/files/jobs"; // Value for test.ictv.global
-    // Value for app.ictv.global: "/var/www/dapp/files/jobs";
+   // The full path of the jobs directory.
+   protected string $jobsPath = "/var/www/dapp/files/jobs";
 
-    // The name of the downloadable validation summary file.
-    protected string $summaryFilename = "QC.pretty_summary.all.xlsx";
-
-    /**
-     * Constructs a Drupal\rest\Plugin\ResourceBase object.
-     *
-     * @param array $config
-     *   A configuration array which contains the information about the plugin instance.
-     * @param string $module_id
-     *   The module_id for the plugin instance.
-     * @param mixed $module_definition
-     *   The plugin implementation definition.
-     * @param array $serializer_formats
-     *   The available serialization formats.
-     * @param \Psr\Log\LoggerInterface $logger
-     *   A logger instance.
-     * @param \Drupal\Core\Session\AccountProxyInterface $current_user
-     *   A currently logged user instance.
-     */
-    public function __construct(
-        array $config,
-        $module_id,
-        $module_definition,
-        array $serializer_formats,
-        LoggerInterface $logger) {
-        parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
-
-        // Use the ictv_apps database instance.
-        $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
-
-        // Get configuration settings from ictv_proposal_service.settings.yml.
-        /* $config = \Drupal::config('ictv_proposal_service.settings');
-        if (!!$config) {
-
-            //$configData = $config->get();
-
-            //\Drupal::logger('ictv_proposal_service')->info("ProposalService: config object = ".json_encode($configData));
-            $jobsPath = $config->get("jobsPath");
-            if (!$jobsPath) { $jobsPath = "EMPTY"; }
-
-            \Drupal::logger('ictv_proposal_service')->info("ProposalService: jobsPath = ".$jobsPath);
-        } */
-        
-        // Get the jobs path setting.
-        //$this->jobsPath = "/var/www/dapp/files/jobs"; //$config->get("jobsPath");
-
-        // Create a new instance of JobService.
-        $this->jobService = new JobService($this->jobsPath);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
-        return new static(
-            $config,
-            $module_id,
-            $module_definition,
-            $container->getParameter('serializer.formats'),
-            $container->get('logger.factory')->get('ictv_proposal_service_resource')
-        );
-    }
+   // The name of the downloadable validation summary file.
+   protected string $summaryFilename = "QC.pretty_summary.all.xlsx";
 
 
-    /**
-     * Responds to GET request.
-     * Returns data corresponding to the action code provided.
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     * Throws exception expected.
-     */
-    public function get(Request $request) {
-        $data = $this->processAction($request);
-        return new ResourceResponse($data);
-    }
+   /**
+    * Constructs a Drupal\rest\Plugin\ResourceBase object.
+    *
+    * @param array $config
+    *   A configuration array which contains the information about the plugin instance.
+    * @param string $module_id
+    *   The module_id for the plugin instance.
+    * @param mixed $module_definition
+    *   The plugin implementation definition.
+    * @param array $serializer_formats
+    *   The available serialization formats.
+    * @param \Psr\Log\LoggerInterface $logger
+    *   A logger instance.
+    * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+    *   A currently logged user instance.
+    */
+   public function __construct(
+      array $config,
+      $module_id,
+      $module_definition,
+      array $serializer_formats,
+      LoggerInterface $logger) {
+      parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
-    /** 
-     * {@inheritdoc} 
-     * This function has to exist in order for the admin to assign user permissions 
-     * to the web service.
-     */ 
-    public function permissions() {
-        return []; 
-    } 
+      /*
+      // TESTING!!!
+      // Validate the config parameter.
+      if (empty($config) || count($config) < 1) { 
+         \Drupal::logger('ictv_proposal_service')->error("Invalid config parameter in ProposalService");
+         throw new Exception("Invalid config parameter in ProposalService");
+      }
 
-    /**
-     * Responds to POST request.
-     * Returns data corresponding to the action code provided.
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     * Throws exception expected.
-     */
-    public function post(Request $request) {
-        $data = $this->processAction($request);
-        return new ResourceResponse($data);
-    }
+      // Get configuration settings from ictv_proposal_service.settings.yml.
+      $configSettings = \Drupal::config('ictv_proposal_service.settings');
 
+      // Validate the configuration settings.
+      if ($configSettings === null) { 
+         \Drupal::logger('ictv_proposal_service')->error("Invalid configuration settings in ProposalService");
+         throw new Exception("Invalid configuration settings in ProposalService");
+      }
 
-    public function processAction(Request $request) {
+      // Get the name of the database used by this web service.
+      $this->databaseName = $configSettings->get("databaseName");
+      if ($this->databaseName === null || trim($this->databaseName) === '') { throw new Exception("Invalid database name in ProposalService"); }
 
-        // Get and validate the JSON in the request body.
-        $json = Json::decode($request->getContent());
-        if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+      // Get the path of the Drupal installation.
+      $this->drupalRoot = $configSettings->get("drupalRoot");
+      if ($this->drupalRoot === null || trim($this->drupalRoot) === '') { throw new Exception("Invalid drupal root path in ProposalService"); }
 
-        // Get and validate the action code.
-        $actionCode = $json["actionCode"];
-        if (Utils::isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
+      // Get the full path of the jobs directory.
+      $this->jobsPath = $configSettings->get("jobsPath");
+      if ($this->jobsPath === null || trim($this->jobsPath) === '') { throw new Exception("Invalid jobs path in ProposalService"); }
+      */
+      
+      // Get a database connection.
+      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
-        // Get and validate the user email.
-        $userEmail = $json["userEmail"];
-        if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
+      // Create a new instance of JobService.
+      $this->jobService = new JobService($this->jobsPath);
+   }
 
-        // Get and validate the user UID.
-        $userUID = $json["userUID"];
-        if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
-        
-        $data = null;
-
-        switch ($actionCode) {
-
-            case "get_jobs":
-                $data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
-                break;
-
-            case "get_validation_summary":
-                
-                $jobUID = $json["jobUID"];
-                if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
-                
-                $data = $this->jobService->getValidationSummary($this->summaryFilename, $jobUID, $userUID);
-                break;
-
-            case "upload_proposals":
-                $data = $this->uploadProposals($json, $userEmail, $userUID);
-                break;
-
-            default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");
-        }
-
-        return $data;
-    }
+   /**
+    * {@inheritdoc}
+    */
+   public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
+      return new static(
+         $config,
+         $module_id,
+         $module_definition,
+         $container->getParameter('serializer.formats'),
+         $container->get('logger.factory')->get('ictv_proposal_service_resource')
+      );
+   }
 
 
-    public function uploadProposals(array $json, string $userEmail, string $userUID) {
+   /**
+    * Responds to GET request.
+    * Returns data corresponding to the action code provided.
+    * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+    * Throws exception expected.
+    */
+   public function get(Request $request) {
+      $data = $this->processAction($request);
+      return new ResourceResponse($data);
+   }
 
-        $jobName = $json["jobName"];
+   /** 
+    * {@inheritdoc} 
+    * This function has to exist in order for the admin to assign user permissions 
+    * to the web service.
+    */ 
+   public function permissions() {
+      return []; 
+   } 
 
-        $files = $json["files"];
-        if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
+   /**
+    * Responds to POST request.
+    * Returns data corresponding to the action code provided.
+    * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+    * Throws exception expected.
+    */
+   public function post(Request $request) {
+      $data = $this->processAction($request);
+      return new ResourceResponse($data);
+   }
 
-        $command = "";
-        $commandResult = -1;
-        $jobID = 0;
-        $jobUID = "";
-        $resultCode = -1;
-        $status = null;
 
-        try {
-            //-------------------------------------------------------------------------------------------------------
-            // Create a job record and get its ID and UID.
-            //-------------------------------------------------------------------------------------------------------
-            $this->jobService->createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
-            
-            \Drupal::logger('ictv_proposal_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
-            
-            // Create the job directory and subdirectories and return the full path of the job directory.
-            $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
+   public function processAction(Request $request) {
 
-            // Use the job path to generate the path of the proposals and results subdirectories.
-            $proposalsPath = $this->jobService->getProposalsPath($jobPath);
-            $resultsPath = $this->jobService->getResultsPath($jobPath);
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-            //-------------------------------------------------------------------------------------------------------
-            // Create job_file records and actual files for every proposal file provided.
-            //-------------------------------------------------------------------------------------------------------
-            $uploadOrder = 1;
+      // Get and validate the action code.
+      $actionCode = $json["actionCode"];
+      if (Utils::isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
 
-            foreach ($files as $file) {
-                
-                // TODO: validate file?
-                $filename = $file["name"];
-                if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+      // Get and validate the user email.
+      $userEmail = $json["userEmail"];
+      if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
 
-                $proposal = $file["contents"];
-                if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
+      // Get and validate the user UID.
+      $userUID = $json["userUID"];
+      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
+      
+      $data = null;
 
-                $fileStartIndex = stripos($proposal, ",");
-                if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
+      switch ($actionCode) {
 
-                $base64Data = substr($proposal, $fileStartIndex + 1);
-                if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
+         case "get_jobs":
+               $data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
+               break;
 
-                // Decode the file contents from base64.
-                $binaryData = base64_decode($base64Data);
+         case "get_validation_summary":
+               
+               $jobUID = $json["jobUID"];
+               if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
+               
+               $data = $this->jobService->getValidationSummary($this->summaryFilename, $jobUID, $userUID);
+               break;
 
-                // Create the proposal file in the job directory using the data provided.
-                $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+         case "upload_proposals":
+               $data = $this->uploadProposals($json, $userEmail, $userUID);
+               break;
 
-                // Create a job file
-                $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
-            
-                \Drupal::logger('ictv_proposal_service')->info("created job_file with UID ".$jobFileUID);
+         default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");
+      }
 
-                $uploadOrder = $uploadOrder + 1;
-            }
+      return $data;
+   }
 
-            // This *should* be the Drupal root directory's path.
-            $rootPath = getcwd();
 
-            // Get the relative path of this module.
-            $moduleHandler = \Drupal::service('module_handler');
-            $modulePath = $moduleHandler->getModule('ictv_proposal_service')->getPath();
+   public function uploadProposals(array $json, string $userEmail, string $userUID) {
 
-            // The path within this module.
-            $localPath = "src/Plugin/rest/resource";
+      $jobName = $json["jobName"];
 
-            $fullPath = $rootPath."/".$modulePath."/".$localPath;
-        
-            //-------------------------------------------------------------------------------------------------------
-            // Create the command that will be run on the command line.
-            //-------------------------------------------------------------------------------------------------------
-            $command = "nohup php -f {$fullPath}/RunProposalValidation.php ".
+      $files = $json["files"];
+      if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
 
-                // The name of the MySQL database (probably "ictv_apps").
-                "dbName={$this->databaseName} ".
-            
-                // The path of the Drupal installation (Ex. "/var/www/drupal/site").
-                "drupalRoot={$this->drupalRoot} ".
-                
-                // The job's unique alphanumeric identifier (UUID).
-                "jobUID={$jobUID} ".
-                
-                // The job's filesystem path.
-                "jobPath={$jobPath} ".
-            
-                // The location of the proposal file(s).
-                "proposalsPath=\"{$proposalsPath}\" ".
-                
-                // The location where result files will be created.
-                "resultsPath=\"{$resultsPath}\" ".
-            
-                // The user's unique numeric identifier.
-                "userUID={$userUID} ".
-                
-                // Redirect stdout and stderr to the file "output.txt".
-                "> {$resultsPath}/output.txt 2>&1 ".
+      $command = "";
+      $commandResult = -1;
+      $jobID = 0;
+      $jobUID = "";
+      $resultCode = -1;
+      $status = null;
 
-                // Run in the background.
-                "&";
+      try {
+         //-------------------------------------------------------------------------------------------------------
+         // Create a job record and get its ID and UID.
+         //-------------------------------------------------------------------------------------------------------
+         $this->jobService->createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
+         
+         \Drupal::logger('ictv_proposal_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
+         
+         // Create the job directory and subdirectories and return the full path of the job directory.
+         $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
 
-            $output = null;
-            $resultCode = -1;
+         // Use the job path to generate the path of the proposals and results subdirectories.
+         $proposalsPath = $this->jobService->getProposalsPath($jobPath);
+         $resultsPath = $this->jobService->getResultsPath($jobPath);
 
-            // Run the command on the command line.
-            $commandResult = exec($command, $output, $resultCode);
+         //-------------------------------------------------------------------------------------------------------
+         // Create job_file records and actual files for every proposal file provided.
+         //-------------------------------------------------------------------------------------------------------
+         $uploadOrder = 1;
 
-        } catch (Exception $e) {
+         foreach ($files as $file) {
+               
+               // TODO: validate file?
+               $filename = $file["name"];
+               if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
-            $status = JobStatus::$crashed;
+               $proposal = $file["contents"];
+               if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
 
-            $errorMessage = null;
-            if ($e) { 
-                $errorMessage = $e->getMessage(); 
-            } else {
-                $errorMessage = "Unspecified error";
-            }
-            
-            // Update the log with the job UID and this error message.
-            \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$errorMessage);
+               $fileStartIndex = stripos($proposal, ",");
+               if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
 
-            // Provide a default message, if necessary.
-            if ($message == NULL || len($message) < 1) { $message = "1 error"; }
+               $base64Data = substr($proposal, $fileStartIndex + 1);
+               if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
 
-            //-------------------------------------------------------------------------------------------------------
-            // Update the job record in the database.
-            //-------------------------------------------------------------------------------------------------------
-            JobService::updateJob($this->connection, $errorMessage, $jobUID, $message, $status, $userUID); 
-        }
+               // Decode the file contents from base64.
+               $binaryData = base64_decode($base64Data);
 
-        return array(
-            "command" => $command,
-            "commandResult" => $commandResult,
-            "jobName" => $jobName,
-            "jobUID" => $jobUID,
-            "resultCode" => $resultCode
-        );
-    }
+               // Create the proposal file in the job directory using the data provided.
+               $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+
+               // Create a job file
+               $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
+         
+               \Drupal::logger('ictv_proposal_service')->info("created job_file with UID ".$jobFileUID);
+
+               $uploadOrder = $uploadOrder + 1;
+         }
+
+         // This *should* be the Drupal root directory's path.
+         $rootPath = getcwd();
+
+         // Get the relative path of this module.
+         $moduleHandler = \Drupal::service('module_handler');
+         $modulePath = $moduleHandler->getModule('ictv_proposal_service')->getPath();
+
+         // The path within this module.
+         $localPath = "src/Plugin/rest/resource";
+
+         $fullPath = $rootPath."/".$modulePath."/".$localPath;
+      
+         //-------------------------------------------------------------------------------------------------------
+         // Create the command that will be run on the command line.
+         //-------------------------------------------------------------------------------------------------------
+         $command = "nohup php -f {$fullPath}/RunProposalValidation.php ".
+
+               // The name of the MySQL database (probably "ictv_apps").
+               "dbName={$this->databaseName} ".
+         
+               // The path of the Drupal installation (Ex. "/var/www/drupal/site").
+               "drupalRoot={$this->drupalRoot} ".
+               
+               // The job's unique alphanumeric identifier (UUID).
+               "jobUID={$jobUID} ".
+               
+               // The job's filesystem path.
+               "jobPath={$jobPath} ".
+         
+               // The location of the proposal file(s).
+               "proposalsPath=\"{$proposalsPath}\" ".
+               
+               // The location where result files will be created.
+               "resultsPath=\"{$resultsPath}\" ".
+         
+               // The user's unique numeric identifier.
+               "userUID={$userUID} ".
+               
+               // Redirect stdout and stderr to the file "output.txt".
+               "> {$resultsPath}/output.txt 2>&1 ".
+
+               // Run in the background.
+               "&";
+
+         $output = null;
+         $resultCode = -1;
+
+         // Run the command on the command line.
+         $commandResult = exec($command, $output, $resultCode);
+
+      } catch (Exception $e) {
+
+         $status = JobStatus::$crashed;
+
+         $errorMessage = null;
+         if ($e) { 
+               $errorMessage = $e->getMessage(); 
+         } else {
+               $errorMessage = "Unspecified error";
+         }
+         
+         // Update the log with the job UID and this error message.
+         \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$errorMessage);
+
+         // Provide a default message, if necessary.
+         if ($message == NULL || len($message) < 1) { $message = "1 error"; }
+
+         //-------------------------------------------------------------------------------------------------------
+         // Update the job record in the database.
+         //-------------------------------------------------------------------------------------------------------
+         JobService::updateJob($this->connection, $errorMessage, $jobUID, $message, $status, $userUID); 
+      }
+
+      return array(
+         "command" => $command,
+         "commandResult" => $commandResult,
+         "jobName" => $jobName,
+         "jobUID" => $jobUID,
+         "resultCode" => $resultCode
+      );
+   }
 }

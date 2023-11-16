@@ -1,1 +1,4 @@
-jobsPath: "/var/www/dapp/files/jobs"
+databaseName: 'ictv_apps'
+drupalRoot: '/var/www/dapp/web'
+jobsPath: '/var/www/dapp/files/jobs'
+summaryFilename: 'QC.pretty_summary.all.xlsx'

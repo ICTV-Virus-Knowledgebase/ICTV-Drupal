@@ -63,25 +63,11 @@ class ProposalValidator {
 
             if ($jobStatus != JobStatus::$crashed) {
 
-                // An array of ProposalFileSummary objects.
-                $fileSummaries = array();
+                // Parse the summary TSV file for proposal filenames and their status counts (file summaries).
+                $fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
     
-                // Parse the summary TSV file for proposal filenames and their summaries (status counts).
-                ProposalFileSummary::getFileSummaries($resultsPath, $fileSummaries);
-    
-                // Determine the overall job status. 
-                if (!$fileSummaries || sizeof($fileSummaries) < 1 || !$totals) {
-                    $jobStatus = JobStatus::$crashed;
-                    
-                } else if ($jobStatus == JobStatus::$pending) {
-    
-                    // The error and warning counts determine whether the validation succeeded.
-                    if ($totals->error > 0 || $totals->warning > 0) {
-                        $jobStatus = JobStatus::$invalid;
-                    } else {
-                        $jobStatus = JobStatus::$valid;
-                    }
-                }
+                // If no file summaries were found, return a job status of "crashed".
+                if (!$fileSummaries || sizeof($fileSummaries) < 1) { $jobStatus = JobStatus::$crashed; }
             }
         } 
         catch (Exception $e) {

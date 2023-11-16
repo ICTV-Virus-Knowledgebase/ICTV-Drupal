@@ -58,7 +58,7 @@ BEGIN
                FROM (
                   SELECT GROUP_CONCAT(jf.json) AS json
                   FROM job_file jf
-                  WHERE jf.job_id = 1
+                  WHERE jf.job_id = jobID
                   ORDER BY jf.upload_order ASC
                   LIMIT 10000000
                ) jobFiles
