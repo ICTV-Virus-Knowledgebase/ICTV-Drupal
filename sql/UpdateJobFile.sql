@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `updateJobFile`;
 
 CREATE PROCEDURE `updateJobFile`(
 	IN `errorCount` INT,
-	IN `filename` VARCHAR(300),
+	IN `filename_` VARCHAR(300),
 	IN `infoCount` INT,
 	IN `jobUID` VARCHAR(100),
 	IN `successCount` INT,
@@ -14,13 +14,13 @@ CREATE PROCEDURE `updateJobFile`(
 BEGIN
 	DECLARE fullStatus VARCHAR(100);
 	DECLARE jobID INT;
-	DECLARE message VARCHAR(300);
-	DECLARE status VARCHAR(100);
+	DECLARE _message VARCHAR(300);
+	DECLARE _status VARCHAR(100);
 	DECLARE statusTID INT;
 	
 	-- Validate the job_file's filename
-	IF filename IS NULL OR filename = '' THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid filename parameter';
+	IF filename_ IS NULL OR filename_ = '' THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid filename_ parameter';
 	END IF;
 	
 	-- Validate the job UID
@@ -29,23 +29,23 @@ BEGIN
 	END IF;
 
 	-- Lookup the job ID
-	SET jobID := (SELECT id FROM job WHERE uid = jobUID LIMIT 1);
+	SET jobID = (SELECT id FROM job WHERE uid = jobUID LIMIT 1);
 	IF jobID IS NULL THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid job ID parameter';
 	END IF;
 
 	-- Determine the status using the error and warning counts.
 	IF errorCount > 0 OR warningCount > 0 THEN
-		SET status := 'invalid';
+		SET _status = 'invalid';
 	ELSE
-		SET status := 'valid';
+		SET _status = 'valid';
 	END IF;
 
 	-- Prepend the vocabulary key "job_status".
-	SET fullStatus = CONCAT('job_status.', status);
+	SET fullStatus = CONCAT('job_status.', _status);
 	
 	-- Lookup the term ID for the status.
-	SET statusTID := (
+	SET statusTID = (
 		SELECT id 
 		FROM term 
 		WHERE full_key = fullStatus
@@ -56,20 +56,20 @@ BEGIN
 	END IF;
 
 	-- Use the counts to generate the job_file's message.
-	SET message := (SELECT generateStatusMessage(errorCount, infoCount, successCount, warningCount));
+	SET _message = (SELECT generateStatusMessage(errorCount, infoCount, successCount, warningCount));
 
 	-- Update the job_file
 	UPDATE job_file SET
 		ended_on = NOW(),
 		error_count = errorCount,
 		info_count = infoCount,
-		message = message,
+		job_file.message = _message,
 		status_tid = statusTID,
 		success_count = successCount,
 		warning_count = warningCount
 		
 	WHERE job_id = jobID
-	AND filename = filename;
+	AND job_file.filename = filename_;
 
 END //
 

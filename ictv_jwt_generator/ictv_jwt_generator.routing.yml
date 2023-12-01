@@ -1,7 +1,7 @@
 ictv_jwt_generator.form:
- path: '/admin/config/ictv_jwt_generator'
- defaults:
-   _title: 'ICTV JWT Generator'
-   _form: '\Drupal\ictv_jwt_generator\Form\GeneratorForm'
- requirements:
-   _permission: 'access content'
+  path: '/admin/config/ictv_jwt_generator'
+  defaults:
+    _title: 'ICTV JWT Generator'
+    _form: '\Drupal\ictv_jwt_generator\Form\GeneratorForm'
+  requirements:
+    _role: administrator

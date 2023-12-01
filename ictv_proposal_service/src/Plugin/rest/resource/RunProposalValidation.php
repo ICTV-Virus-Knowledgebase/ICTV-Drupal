@@ -46,122 +46,128 @@ $resultsPath = "";
 $scriptName = "curtish/ictv_proposal_processor";
 
 try {
-    //-------------------------------------------------------------------------------------------------------
-    // Get and validate command line arguments.
-    //-------------------------------------------------------------------------------------------------------
+   //-------------------------------------------------------------------------------------------------------
+   // Get and validate command line arguments.
+   //-------------------------------------------------------------------------------------------------------
 
-    // Store command line arguments in $_GET.
-    parse_str(implode('&', array_slice($argv, 1)), $_GET);
+   // Store command line arguments in $_GET.
+   parse_str(implode('&', array_slice($argv, 1)), $_GET);
 
-    // Get and validate the command line arguments.
-    $dbName = $_GET["dbName"];
-    if (!$dbName) { throw new \Exception("Invalid dbName parameter"); }
+   // Get and validate the command line arguments.
+   $dbName = $_GET["dbName"];
+   if (!$dbName) { throw new \Exception("Invalid dbName parameter"); }
 
-    $drupalRoot = $_GET["drupalRoot"];
-    if (!$drupalRoot) { throw new \Exception("Invalid drupalRoot parameter"); }
+   $drupalRoot = $_GET["drupalRoot"];
+   if (!$drupalRoot) { throw new \Exception("Invalid drupalRoot parameter"); }
 
-    $jobUID = $_GET["jobUID"];
-    if (!$jobUID) { throw new \Exception("Invalid jobUID parameter"); }
+   $jobUID = $_GET["jobUID"];
+   if (!$jobUID) { throw new \Exception("Invalid jobUID parameter"); }
 
-    $jobPath = $_GET["jobPath"];
-    if (!$jobPath) { throw new \Exception("Invalid jobPath parameter"); }
+   $jobPath = $_GET["jobPath"];
+   if (!$jobPath) { throw new \Exception("Invalid jobPath parameter"); }
 
-    $proposalsPath = $_GET["proposalsPath"];
-    if (!$proposalsPath) { throw new \Exception("Invalid proposalsPath parameter"); }
+   $proposalsPath = $_GET["proposalsPath"];
+   if (!$proposalsPath) { throw new \Exception("Invalid proposalsPath parameter"); }
 
-    $resultsPath = $_GET["resultsPath"];
-    if (!$resultsPath) { throw new \Exception("Invalid resultsPath parameter"); }
+   $resultsPath = $_GET["resultsPath"];
+   if (!$resultsPath) { throw new \Exception("Invalid resultsPath parameter"); }
 
-    $userUID = $_GET["userUID"];
-    if (!$userUID) { throw new \Exception("Invalid userUID parameter"); }
-
-
-    // Get the current directory so we can return to it.
-    $cwd = getcwd();
-
-    // Navigate to the Drupal root directory.
-    chdir($drupalRoot); 
-
-    //-------------------------------------------------------------------------------------------------------
-    // Initialize an instance of Drupal.
-    //-------------------------------------------------------------------------------------------------------
-    $autoloader = require_once 'autoload.php';
-
-    $request = Request::createFromGlobals();
-
-    $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
-
-    $kernel->boot();
-
-    require_once 'core/includes/schema.inc';
+   $userUID = $_GET["userUID"];
+   if (!$userUID) { throw new \Exception("Invalid userUID parameter"); }
 
 
-    // Return to the original working directory.
-    chdir($cwd);
+   // Get the current directory so we can return to it.
+   $cwd = getcwd();
 
-    //-------------------------------------------------------------------------------------------------------
-    // Get a connection to the ictv_apps database.
-    //-------------------------------------------------------------------------------------------------------
-    $connection = \Drupal\Core\Database\Database::getConnection("default", $dbName);
-    if (!$connection) { throw new \Exception("The database connection is invalid or null."); }
+   // Navigate to the Drupal root directory.
+   chdir($drupalRoot); 
 
-    //-------------------------------------------------------------------------------------------------------
-    // Validate the proposal(s)
-    //-------------------------------------------------------------------------------------------------------
-    $result = ProposalValidator::runValidation($proposalsPath, $resultsPath, $scriptName, $jobPath);
+   //-------------------------------------------------------------------------------------------------------
+   // Initialize an instance of Drupal.
+   //-------------------------------------------------------------------------------------------------------
+   $autoloader = require_once 'autoload.php';
 
-    // Validate the validation result object and its properties.
-    if (!$result || !$result["jobStatus"]) { throw new \Exception("Invalid validation result"); }
-    
-    $jobStatus = $result["jobStatus"];
-    if (!$jobStatus) { throw new \Exception("Result.jobStatus is invalid"); }
+   $request = Request::createFromGlobals();
 
-    $fileSummaries = $result["fileSummaries"];
-    if (!$fileSummaries || sizeof($fileSummaries) < 1) { throw new \Exception("Result.fileSummaries is invalid"); }
+   $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
 
-    $stdError = $result["stdError"];
-    if ($stdError) { \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError); }
+   $kernel->boot();
 
-    
-    //-------------------------------------------------------------------------------------------------------
-    // Update the job_file records for all proposal files.
-    //-------------------------------------------------------------------------------------------------------
-    foreach ($fileSummaries as $fileSummary) {
+   require_once 'core/includes/schema.inc';
 
-        if (!$fileSummary) { 
-            \Drupal::logger('ictv_proposal_service')->error("Unable to update job_file: Invalid file summary"); 
-            continue;
-        }
 
-        // Update a job file based on the contents of the summary TSV file.
-        $sql = "CALL updateJobFile(".
-            "{$fileSummary->errors}, ".
-            "'{$fileSummary->filename}', ".
-            "{$fileSummary->notes}, ".
-            "'{$jobUID}', ".
-            "{$fileSummary->successes}, ".
-            "{$fileSummary->warnings} ".
-        ")";
+   // Return to the original working directory.
+   chdir($cwd);
 
-        $fileQuery = $connection->query($sql);
-        $fileResult = $fileQuery->execute();
-        // TODO: validate the result?
-    }
+   //-------------------------------------------------------------------------------------------------------
+   // Get a connection to the ictv_apps database.
+   //-------------------------------------------------------------------------------------------------------
+   $connection = \Drupal\Core\Database\Database::getConnection("default", $dbName);
+   if (!$connection) { throw new \Exception("The database connection is invalid or null."); }
 
-    //-------------------------------------------------------------------------------------------------------
-    // Update the job record in the database.
-    //-------------------------------------------------------------------------------------------------------
-    JobService::updateJob($connection, $stdError, $jobUID, $jobStatus, $userUID); 
+   //-------------------------------------------------------------------------------------------------------
+   // Validate the proposal(s)
+   //-------------------------------------------------------------------------------------------------------
+   $result = ProposalValidator::runValidation($proposalsPath, $resultsPath, $scriptName, $jobPath);
 
-    fwrite(STDOUT, "Validation is complete");
+   // Validate the validation result object and its properties.
+   if (!$result || !$result["jobStatus"]) { throw new \Exception("Invalid validation result"); }
+   
+   $jobStatus = $result["jobStatus"];
+   if (!$jobStatus) { throw new \Exception("Result.jobStatus is invalid"); }
+
+   $fileSummaries = $result["fileSummaries"];
+   if (!$fileSummaries || sizeof($fileSummaries) < 1) { throw new \Exception("Result.fileSummaries is invalid"); }
+
+   $stdError = $result["stdError"];
+   if ($stdError) { \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$stdError); }
+
+   
+   //-------------------------------------------------------------------------------------------------------
+   // Update the job_file records for all proposal files.
+   //-------------------------------------------------------------------------------------------------------
+   
+   // Iterate over the file summaries.
+   foreach (array_values($fileSummaries) as $fileSummary) {
+
+      if (!$fileSummary) { 
+         \Drupal::logger('ictv_proposal_service')->error("Unable to update job_file: Invalid file summary"); 
+         continue;
+      }
+
+      // Update a job file based on the contents of the summary TSV file.
+      $sql = "CALL updateJobFile(".
+         "{$fileSummary->errors}, ".
+         "'{$fileSummary->filename}', ".
+         "{$fileSummary->notes}, ".
+         "'{$jobUID}', ".
+         "{$fileSummary->successes}, ".
+         "{$fileSummary->warnings} ".
+      ");";
+
+      $fileQuery = $connection->query($sql);
+      $fileResult = $fileQuery->execute();
+   }
+
+   //-------------------------------------------------------------------------------------------------------
+   // Update the job record in the database.
+   //-------------------------------------------------------------------------------------------------------
+   JobService::updateJob($connection, $stdError, $jobUID, $jobStatus, $userUID); 
+
+   fwrite(STDOUT, "Validation is complete");
 
 } catch (Exception $e) {
 
-    $errorMessage = "Unspecified error";
-    if ($e) { $errorMessage = $e->getMessage(); }
+   $errorMessage = "Unspecified error";
+   if ($e) { $errorMessage = $e->getMessage(); }
 
-    fwrite(STDERR, $errorMessage);
-    exit(1);
+   // Write the error message to stderr.
+   fwrite(STDERR, $errorMessage);
+
+   // Display an error in the Drupal log.
+   \Drupal::logger('ictv_proposal_service')->error($errorMessage); 
+
+   exit(1);
 }
 
 ?>

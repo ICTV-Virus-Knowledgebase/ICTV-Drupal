@@ -76,6 +76,7 @@ class ProposalService extends ResourceBase {
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
 
+      /*
       // dmd 111623 Testing configuration settings (again) vvv
       // Get configuration settings from the settings.yml file.
       $configSettings = \Drupal::config("ictv_proposal_service.settings");
@@ -84,19 +85,13 @@ class ProposalService extends ResourceBase {
       if ($configSettings == null) { 
          \Drupal::logger('ictv_proposal_service')->error("Invalid configuration settings in ProposalService");
       } else {
-         $testDbName = $configSettings->databaseName;
+         $testDbName = $configSettings->get("databaseName");
          \Drupal::logger('ictv_proposal_service')->info("The configuration setting for database name = ".$testDbName);
       }
       // dmd 111623 Testing configuration settings (again) ^^^
-
+      */
+      
       /*
-      // TESTING!!!
-      // Validate the config parameter.
-      if (empty($config) || count($config) < 1) { 
-         \Drupal::logger('ictv_proposal_service')->error("Invalid config parameter in ProposalService");
-         throw new Exception("Invalid config parameter in ProposalService");
-      }
-
       // Get the name of the database used by this web service.
       $this->databaseName = $configSettings->get("databaseName");
       if ($this->databaseName === null || trim($this->databaseName) === '') { throw new Exception("Invalid database name in ProposalService"); }
@@ -244,31 +239,31 @@ class ProposalService extends ResourceBase {
 
          foreach ($files as $file) {
                
-               // TODO: validate file?
-               $filename = $file["name"];
-               if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+            // TODO: validate file?
+            $filename = $file["name"];
+            if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
-               $proposal = $file["contents"];
-               if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
+            $proposal = $file["contents"];
+            if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid proposal"); }
 
-               $fileStartIndex = stripos($proposal, ",");
-               if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
+            $fileStartIndex = stripos($proposal, ",");
+            if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in proposal file"); }
 
-               $base64Data = substr($proposal, $fileStartIndex + 1);
-               if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
+            $base64Data = substr($proposal, $fileStartIndex + 1);
+            if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The proposal file is empty"); }
 
-               // Decode the file contents from base64.
-               $binaryData = base64_decode($base64Data);
+            // Decode the file contents from base64.
+            $binaryData = base64_decode($base64Data);
 
-               // Create the proposal file in the job directory using the data provided.
-               $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+            // Create the proposal file in the job directory using the data provided.
+            $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
 
-               // Create a job file
-               $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
-         
-               \Drupal::logger('ictv_proposal_service')->info("created job_file with UID ".$jobFileUID);
+            // Create a job file
+            $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
+      
+            \Drupal::logger('ictv_proposal_service')->info("created job_file with UID ".$jobFileUID);
 
-               $uploadOrder = $uploadOrder + 1;
+            $uploadOrder = $uploadOrder + 1;
          }
 
          // This *should* be the Drupal root directory's path.
@@ -288,32 +283,32 @@ class ProposalService extends ResourceBase {
          //-------------------------------------------------------------------------------------------------------
          $command = "nohup php -f {$fullPath}/RunProposalValidation.php ".
 
-               // The name of the MySQL database (probably "ictv_apps").
-               "dbName={$this->databaseName} ".
-         
-               // The path of the Drupal installation (Ex. "/var/www/drupal/site").
-               "drupalRoot={$this->drupalRoot} ".
-               
-               // The job's unique alphanumeric identifier (UUID).
-               "jobUID={$jobUID} ".
-               
-               // The job's filesystem path.
-               "jobPath={$jobPath} ".
-         
-               // The location of the proposal file(s).
-               "proposalsPath=\"{$proposalsPath}\" ".
-               
-               // The location where result files will be created.
-               "resultsPath=\"{$resultsPath}\" ".
-         
-               // The user's unique numeric identifier.
-               "userUID={$userUID} ".
-               
-               // Redirect stdout and stderr to the file "output.txt".
-               "> {$resultsPath}/output.txt 2>&1 ".
+            // The name of the MySQL database (probably "ictv_apps").
+            "dbName={$this->databaseName} ".
+      
+            // The path of the Drupal installation (Ex. "/var/www/drupal/site").
+            "drupalRoot={$this->drupalRoot} ".
+            
+            // The job's unique alphanumeric identifier (UUID).
+            "jobUID={$jobUID} ".
+            
+            // The job's filesystem path.
+            "jobPath={$jobPath} ".
+      
+            // The location of the proposal file(s).
+            "proposalsPath=\"{$proposalsPath}\" ".
+            
+            // The location where result files will be created.
+            "resultsPath=\"{$resultsPath}\" ".
+      
+            // The user's unique numeric identifier.
+            "userUID={$userUID} ".
+            
+            // Redirect stdout and stderr to the file "output.txt".
+            "> {$resultsPath}/output.txt 2>&1 ".
 
-               // Run in the background.
-               "&";
+            // Run in the background.
+            "&";
 
          $output = null;
          $resultCode = -1;

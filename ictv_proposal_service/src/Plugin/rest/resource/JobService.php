@@ -255,8 +255,6 @@ class JobService {
    // TODO: after upgrading the dev environment to 9.5, make status an enum.
    public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $status, int $userUID) {
 
-      \Drupal::logger('ictv_proposal_service')->info("jobUID: ".$jobUID.", status: ".$status.", userUID: ".$userUID);
-
       if (Utils::isEmptyElseTrim($errorMessage)) {
          $errorMessage = "NULL";
       } else {
@@ -268,7 +266,6 @@ class JobService {
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();
-      // TODO: validate result?
    }
 
 }
