@@ -27,7 +27,7 @@ class ProposalValidator {
         $command = "docker run ".
             "-v \"{$proposalsPath}:/proposalsTest\":ro ".
             "-v \"{$resultsPath}:/results\" ".
-            $scriptName." ".  // Previously "curtish/ictv_proposal_processor"
+            $scriptName." ".
             "/merge_proposal_zips.R -v ";
 
         try {
@@ -49,8 +49,7 @@ class ProposalValidator {
                 $stdError = stream_get_contents($pipes[2]);
                 fclose($pipes[2]);
 
-                // It is important that you close any pipes before calling
-                // proc_close in order to avoid a deadlock
+                // It is important that you close any pipes before calling proc_close in order to avoid a deadlock.
                 proc_close($process);
 
                 // In this case "pending complete validation".

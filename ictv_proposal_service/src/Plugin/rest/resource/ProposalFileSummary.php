@@ -61,37 +61,37 @@ class ProposalFileSummary {
             // Iterate over every line in the file.
             while ($line = fgets($handle)) {
             
-                $lineNumber = $lineNumber + 1;
+               $lineNumber = $lineNumber + 1;
 
-                // Skip the first line of column headers.
-                if ($lineNumber < 1) { continue; }
+               // Skip the first line of column headers.
+               if ($lineNumber < 1) { continue; }
 
-                // Split the line by tab delimiters.
-                $columns = explode("\t", $line);
-                if (!$columns || sizeof($columns) < 10) { continue; }
+               // Split the line by tab delimiters.
+               $columns = explode("\t", $line);
+               if (!$columns || sizeof($columns) < 10) { continue; }
 
-                // Get and validate the spreadsheet filename column.
-                $filename = $columns[ProposalFileSummary::$COLUMN_XLSX];
-                if (Utils::isEmptyElseTrim($filename)) { $filename = "NA"; }
+               // Get and validate the spreadsheet filename column.
+               $filename = $columns[ProposalFileSummary::$COLUMN_XLSX];
+               if (Utils::isEmptyElseTrim($filename)) { $filename = "NA"; }
 
-                // Get and validate the status (level) column.
-                $status = $columns[ProposalFileSummary::$COLUMN_LEVEL];
-                if (Utils::isEmptyElseTrim($status)) { continue; } 
-                
-                // Convert the status to lowercase.
-                $status = strtolower($status);
-                
-                $fileSummary = null;
-                
-                // Look for the filename's summary in the array and create one if it doesn't exist.
-                if (array_key_exists($filename, $fileSummaries)) { $fileSummary = $fileSummaries[$filename]; }
-                if (!$fileSummary) { $fileSummary = new ProposalFileSummary($filename); }
+               // Get and validate the status (level) column.
+               $status = $columns[ProposalFileSummary::$COLUMN_LEVEL];
+               if (Utils::isEmptyElseTrim($status)) { continue; } 
+               
+               // Convert the status to lowercase.
+               $status = strtolower($status);
+               
+               $fileSummary = null;
+               
+               // Look for the filename's summary in the array and create one if it doesn't exist.
+               if (array_key_exists($filename, $fileSummaries)) { $fileSummary = $fileSummaries[$filename]; }
+               if (!$fileSummary) { $fileSummary = new ProposalFileSummary($filename); }
 
-                // Increment this status' count.
-                $fileSummary->incrementCount($status);
+               // Increment this status' count.
+               $fileSummary->incrementCount($status);
 
-                // Replace the summary in the array.
-                $fileSummaries[$filename] = $fileSummary;
+               // Replace the summary in the array.
+               $fileSummaries[$filename] = $fileSummary;
             }
         }
         catch (\Exception $e) {
@@ -105,24 +105,24 @@ class ProposalFileSummary {
     }
 
 
-    // Increment the count of the specified status.
-    public function incrementCount(string $status) {
+   // Increment the count of the specified status.
+   public function incrementCount(string $status) {
 
-        switch ($status) {
-            case "error":
-                $this->errors = $this->errors + 1;
-                break;
-            case "info":
-                $this->notes = $this->notes + 1;
-                break;
-            case "success":
-                $this->successes = $this->successes + 1;
-                break;
-            case "warning":
-                $this->warnings = $this->warnings + 1;
-                break;
-            default: 
-                throw new \Exception("Unhandled status ".$status);
-        }
-    }
+      switch ($status) {
+         case "error":
+               $this->errors = $this->errors + 1;
+               break;
+         case "info":
+               $this->notes = $this->notes + 1;
+               break;
+         case "success":
+               $this->successes = $this->successes + 1;
+               break;
+         case "warning":
+               $this->warnings = $this->warnings + 1;
+               break;
+         default: 
+               throw new \Exception("Unhandled status ".$status);
+      }
+   }
 }
