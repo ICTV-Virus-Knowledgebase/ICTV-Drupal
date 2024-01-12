@@ -72,7 +72,7 @@ class ConfigForm extends FormBase {
       $form[$this->CONTROL_APPLICATION_URL] = array(
          '#type' => 'url',
          '#title' => t('Application URL'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->applicationURL,
       );
 
@@ -80,7 +80,7 @@ class ConfigForm extends FormBase {
       $form[$this->CONTROL_AUTH_TOKEN] = array(
          '#type' => 'textarea',
          '#title' => t('JWT auth token'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->authToken
       );
 
@@ -88,7 +88,7 @@ class ConfigForm extends FormBase {
       $form[$this->CONTROL_BASE_WEB_SERVICE_URL] = array(
          '#type' => 'url',
          '#title' => t('Web service URL'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->baseWebServiceURL
       );
 
@@ -97,7 +97,7 @@ class ConfigForm extends FormBase {
          '#type' => 'number',
          '#step' => '1',
          '#title' => t('Current MSL release number'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->currentMslRelease
       );
 
@@ -105,7 +105,7 @@ class ConfigForm extends FormBase {
       $form[$this->CONTROL_DRUPAL_WEB_SERVICE_URL] = array(
          '#type' => 'url',
          '#title' => t('Drupal web service URL'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->drupalWebServiceURL
       );
 
@@ -113,7 +113,7 @@ class ConfigForm extends FormBase {
       $form[$this->CONTROL_RELEASE_PROPOSALS_URL] = array(
          '#type' => 'url',
          '#title' => t('Location of release proposal files'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->releaseProposalsURL
       );
 
@@ -121,7 +121,7 @@ class ConfigForm extends FormBase {
       $form[$this->CONTROL_TAXON_HISTORY_PAGE] = array(
          '#type' => 'textfield',
          '#title' => t('Taxon history page name'),
-         '#required' => TRUE,
+         '#required' => FALSE,
          '#default_value' => $this->taxonHistoryPage
       );
 
@@ -136,58 +136,47 @@ class ConfigForm extends FormBase {
    }
 
 
+   /**
+    * Load the ICTV settings from the database.
+    */
    public function loadData() {
 
-      // Initialize the member variables.
-      $this->applicationURL = "";
-      $this->authToken = "";
-      $this->baseWebServiceURL = "";
-      $this->currentMslRelease = NULL;
-      $this->drupalWebServiceURL = "";
-      $this->releaseProposalsURL = "";
-      $this->taxonHistoryPage = "";
-
       // Get all ictv_settings
-      $query = $this->dbConnection->query("SELECT * FROM {ictv_settings}");
-      $result = $query->fetchAll();
+      $query = $this->dbConnection->query(
+         "SELECT  
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'applicationURL' LIMIT 1
+         ) AS applicationURL,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'authToken' LIMIT 1
+         ) AS authToken,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'baseWebServiceURL' LIMIT 1
+         ) AS baseWebServiceURL,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
+         ) AS currentMslRelease,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'drupalWebServiceURL' LIMIT 1
+         ) AS drupalWebServiceURL,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'releaseProposalsURL' LIMIT 1
+         ) AS releaseProposalsURL,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'taxonHistoryPage' LIMIT 1
+         ) AS taxonHistoryPage;");
 
-      if ($result) { 
-         foreach ($result as $setting) {
+      $settings = $query->fetchAssoc();
 
-            switch ($setting->name) {
-               case $this->CONTROL_APPLICATION_URL:
-                  $this->applicationURL = $setting->value;
-                  break;
+      $this->applicationURL = $settings["applicationURL"];
+      $this->authToken = $settings["authToken"];
+      $this->baseWebServiceURL = $settings["baseWebServiceURL"];
+      $this->currentMslRelease = $settings["currentMslRelease"];
+      $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
+      $this->releaseProposalsURL = $settings["releaseProposalsURL"];
+      $this->taxonHistoryPage = $settings["taxonHistoryPage"];
 
-               case $this->CONTROL_AUTH_TOKEN:
-                  $this->authToken = $setting->value;
-                  break;
-
-               case $this->CONTROL_BASE_WEB_SERVICE_URL:
-                  $this->baseWebServiceURL = $setting->value;
-                  break;
-
-               case $this->CONTROL_CURRENT_MSL_RELEASE:
-                  $this->currentMslRelease = $setting->value;
-                  break;
-
-               case $this->CONTROL_DRUPAL_WEB_SERVICE_URL:
-                  $this->drupalWebServiceURL = $setting->value;
-                  break;
-
-               case $this->CONTROL_RELEASE_PROPOSALS_URL:
-                  $this->releaseProposalsURL = $setting->value;
-                  break;
-
-               case $this->CONTROL_TAXON_HISTORY_PAGE:
-                  $this->taxonHistoryPage = $setting->value;
-                  break;
-
-               default:
-                  break;
-            }
-         }
-      }
+      // TODO: validate!
    }
 
 
@@ -198,9 +187,10 @@ class ConfigForm extends FormBase {
 
       if (is_null($this->dbConnection)) {
          \Drupal::logger('ictv_config_form')->error("Invalid db connection in saveValue");
-         return false;
+         return FALSE;
       }
       
+      // Update ICTV Settings in the database.
       $success = $this->dbConnection->update('ictv_settings')
          ->fields([
             'value' => $value_,
@@ -209,15 +199,13 @@ class ConfigForm extends FormBase {
          ->condition('name', $name_, '=')
          ->execute();
       
-      \Drupal::logger('ictv_config_form')->info("success = ".$success);
-
       if ($success == 1) {
          $this->messenger()->addStatus($this->t('Update successful'));
-      } else {
-         $this->messenger()->addStatus($this->t('Unable to update'));
+         return TRUE;
       }
       
-      return TRUE;
+      $this->messenger()->addError($this->t('Unable to update'));
+      return FALSE;
    }
 
 
@@ -284,7 +272,7 @@ class ConfigForm extends FormBase {
       // The application URL
       $value = $form_state->getValue($this->CONTROL_APPLICATION_URL);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_APPLICATION_URL, $this->t('Please enter a valid application URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -294,9 +282,8 @@ class ConfigForm extends FormBase {
       // The JWT auth token
       $value = $form_state->getValue($this->CONTROL_AUTH_TOKEN);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_AUTH_TOKEN, $this->t('Please enter a valid JWT auth token.'));
-         
       } else {
          // Replace the value with the trimmed version.
          $form_state->setValue($this->CONTROL_AUTH_TOKEN, $value);
@@ -305,7 +292,7 @@ class ConfigForm extends FormBase {
       // The base web service URL
       $value = $form_state->getValue($this->CONTROL_BASE_WEB_SERVICE_URL);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_BASE_WEB_SERVICE_URL, $this->t('Please enter a valid base web service URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -315,7 +302,7 @@ class ConfigForm extends FormBase {
       // The current MSL release
       $value = $form_state->getValue($this->CONTROL_CURRENT_MSL_RELEASE);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_CURRENT_MSL_RELEASE, $this->t('Please enter a valid current MSL release.'));
       } else {
          // Replace the value with the trimmed version.
@@ -325,7 +312,7 @@ class ConfigForm extends FormBase {
       // The Drupal web service URL
       $value = $form_state->getValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $this->t('Please enter a valid Drupal web service URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -335,7 +322,7 @@ class ConfigForm extends FormBase {
       // The release proposals URL
       $value = $form_state->getValue($this->CONTROL_RELEASE_PROPOSALS_URL);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_RELEASE_PROPOSALS_URL, $this->t('Please enter a valid release proposals URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -345,7 +332,7 @@ class ConfigForm extends FormBase {
       // The taxon history page
       $value = $form_state->getValue($this->CONTROL_TAXON_HISTORY_PAGE);
       $value = trim($value); 
-      if (strlen($value) < 1) {
+      if (is_null($value) || strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_TAXON_HISTORY_PAGE, $this->t('Please enter a valid taxon history page.'));
       } else {
          // Replace the value with the trimmed version.

@@ -93,9 +93,6 @@ try {
 
    $kernel->boot();
 
-   require_once 'core/includes/schema.inc';
-
-
    // Return to the original working directory.
    chdir($cwd);
 
