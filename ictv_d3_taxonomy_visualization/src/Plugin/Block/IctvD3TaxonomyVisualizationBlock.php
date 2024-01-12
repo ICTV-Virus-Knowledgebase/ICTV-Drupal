@@ -20,7 +20,8 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
   public function build() {
 
     // Use the module path to create a path for the module's asset directory.
-    //$modulePath = \Drupal::service('extension.list.module')->getPath('ictv_d3_taxonomy_visualization');
+    //$testModulePath = \Drupal::service('extension.list.module')->getPath('ictv_d3_taxonomy_visualization');
+    //\Drupal::logger('ictv_d3_taxonomy_visualization')->info("test module path = ".$testModulePath);
     //$assetPath = $modulePath."/assets";
 
     // dmd 030223 the code above doesn't work in prod, so we use this hard-coded version.

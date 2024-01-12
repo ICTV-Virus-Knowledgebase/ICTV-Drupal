@@ -21,8 +21,8 @@ proposalSubmission:
     assets/css/fonts/fa-solid-900.woff: {}
     assets/css/fonts/fa-solid-900.woff2: {}
   js:
-    assets/js/ICTV.js: {}
-    assets/js/proposalSubmission.js: {}
+    assets/js/ICTV.js: { preprocess: false }
+    assets/js/proposalSubmission.js: { preprocess: false }
   dependencies:
     - core/jquery
     - core/drupal

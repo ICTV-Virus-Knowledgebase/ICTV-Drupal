@@ -27,8 +27,8 @@ memberSpeciesTable:
     assets/images/sort_desc_disabled.png: {}
     assets/images/sort_desc.png: {}
   js:
-    assets/js/ICTV.js: {}
-    assets/js/memberSpeciesTable.js: {}
+    assets/js/ICTV.js: { preprocess: false }
+    assets/js/memberSpeciesTable.js: { preprocess: false }
   dependencies:
     - core/jquery
     - core/drupal

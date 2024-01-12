@@ -5,10 +5,11 @@ d3TaxonomyVisualization:
       assets/css/stylesheet.css: {}
       assets/css/tippy.css: {}
   js:
-    assets/js/d3.min.js: {}
-    assets/js/tippy-bundle.umd.js: {}
-    assets/js/script.js: {}
-    assets/js/d3TaxonomyVisualization.js: {}
+    assets/js/d3.min.js: { preprocess: false }
+    assets/js/popper.min.js: { preprocess: false }
+    assets/js/tippy-bundle.umd.min.js: { preprocess: false }
+    assets/js/script.js: { preprocess: false }
+    assets/js/d3TaxonomyVisualization.js: { preprocess: false }
   dependencies:
     - core/jquery
     - core/drupal
