@@ -1,0 +1,2 @@
+databaseName: 'virus_name_lookup'
+drupalRoot: '/var/www/dapp/web'
