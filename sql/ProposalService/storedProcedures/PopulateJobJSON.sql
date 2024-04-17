@@ -73,6 +73,8 @@ BEGIN
             END, ', ',
             
             '"status": "', (SELECT term_key FROM term t WHERE t.id = status_tid LIMIT 1), '", ',
+
+            '"type": "', (SELECT term_key FROM term t WHERE t.id = type_tid LIMIT 1), '", ',
             
             '"uid": "', uid, '" ',
         '} ') 

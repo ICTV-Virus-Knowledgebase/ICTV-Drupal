@@ -19,12 +19,12 @@ BEGIN
 	DECLARE statusTID INT;
 	
 	-- Validate the job_file's filename
-	IF filename_ IS NULL OR filename_ = '' THEN
+	IF filename_ IS NULL OR LENGTH(filename_) < 1 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid filename_ parameter';
 	END IF;
 	
 	-- Validate the job UID
-	IF jobUID IS NULL OR jobUID = '' THEN
+	IF jobUID IS NULL OR LENGTH(jobUID) < 1 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid job UID parameter';
 	END IF;
 

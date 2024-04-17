@@ -1,0 +1,3 @@
+databaseName: 'ictv_apps'
+drupalRoot: '/var/www/dapp/web'
+jobsPath: '/var/www/dapp/files/jobs'
