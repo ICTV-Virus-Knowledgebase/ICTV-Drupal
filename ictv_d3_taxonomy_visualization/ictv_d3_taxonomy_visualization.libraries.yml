@@ -8,6 +8,8 @@ d3TaxonomyVisualization:
     assets/js/d3.min.js: { preprocess: false }
     assets/js/popper.min.js: { preprocess: false }
     assets/js/tippy-bundle.umd.min.js: { preprocess: false }
+    assets/js/html2canvas.min.js: { preprocess: false }
+    assets/js/searchPanel.js: { preprocess: false }
     assets/js/script.js: { preprocess: false }
     assets/js/d3TaxonomyVisualization.js: { preprocess: false }
   dependencies:
