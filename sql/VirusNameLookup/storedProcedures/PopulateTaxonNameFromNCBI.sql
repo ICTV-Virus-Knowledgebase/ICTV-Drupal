@@ -36,7 +36,7 @@ BEGIN
 	)
 	
 	SELECT 
-		divTerm.id AS division_tid,
+		d.tid AS division_tid,
 		LOWER(
 			REPLACE( 
 				REPLACE( 
@@ -56,27 +56,29 @@ BEGIN
 		) AS filtered_name,
 		1 AS is_valid,
 		nname.name_txt AS name,
-		nameClass.id AS name_class_tid,
+		nname.name_class_tid,
 		nnode.parent_tax_id AS parent_taxonomy_id,
-		rank_name,
-		rankName.id AS rank_tid,
+		nnode.rank_name,
+		nnode.rank_name_tid,
 		taxonomyDbTID AS taxonomy_db_tid,
 		nnode.tax_id AS taxonomy_id,
 		0 AS VERSION
 		
 	FROM ncbi_node nnode
 	JOIN ncbi_division d ON d.id = nnode.division_id
-	JOIN term divTerm ON divTerm.label = d.name
 	JOIN ncbi_name nname ON nname.tax_id = nnode.tax_id
-	JOIN term nameClass ON nameClass.label = nname.name_class
-	JOIN term rankName ON rankName.label = nname.name_class
-	WHERE divTerm.full_key IN (
-		'ncbi_division.bacteria',
-		'ncbi_division.environmental_samples',
-		'ncbi_division.phages',
-		'ncbi_division.synthetic_and_chimeric',
-		'ncbi_division.unassigned',
-		'ncbi_division.viruses'
+	WHERE nname.name_class_tid IS NOT NULL 
+	AND d.tid IN (
+		SELECT divTerm.id
+		FROM term divTerm
+		WHERE divTerm.full_key IN (
+			'ncbi_division.bacteria',
+			'ncbi_division.environmental_samples',
+			'ncbi_division.phages',
+			'ncbi_division.synthetic_and_chimeric',
+			'ncbi_division.unassigned',
+			'ncbi_division.viruses'
+		)
 	);
 	
 END;

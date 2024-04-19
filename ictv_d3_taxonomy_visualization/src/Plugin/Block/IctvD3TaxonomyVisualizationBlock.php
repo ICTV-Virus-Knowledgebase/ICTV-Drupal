@@ -75,7 +75,9 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
                 <div class='label'>Release</div>
                 <select class='release-ctrl'></select>
                 <div class='font-size-panel'></div>
+                <div class='search-panel'></div>
             </div>
+            <div class='search-results-panel'></div>
             <div class='body-panel'>
                 <div class='taxonomy-panel'></div>
                 <div class='species-panel light-bg'>
@@ -87,6 +89,12 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
         '#attached' => [
             'library' => [
                 'ictv_d3_taxonomy_visualization/tippy',
+            ],
+            'library' => [
+               'ictv_d3_taxonomy_visualization/html2canvas',
+            ],
+            'library' => [
+               'ictv_d3_taxonomy_visualization/searchPanel',
             ],
             'library' => [
               'ictv_d3_taxonomy_visualization/script',
