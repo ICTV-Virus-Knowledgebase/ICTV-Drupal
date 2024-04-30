@@ -1,17 +1,22 @@
 d3TaxonomyVisualization:
-  version: 1.x
+  version: 2.x
   css:
     theme:
+      assets/css/font-awesome.min.css: {}
+      assets/css/jquery.dataTables.min.css: {}
+      assets/css/select2.min.css: {}
       assets/css/stylesheet.css: {}
       assets/css/tippy.css: {}
   js:
     assets/js/d3.min.js: { preprocess: false }
-    assets/js/popper.min.js: { preprocess: false }
-    assets/js/tippy-bundle.umd.min.js: { preprocess: false }
+    assets/js/d3TaxonomyVisualization.js: { preprocess: false }
     assets/js/html2canvas.min.js: { preprocess: false }
+    assets/js/jquery.dataTables.min.js: { preprocess: false }
+    assets/js/popper.min.js: { preprocess: false }
+    assets/js/select2.min.js: { preprocess: false }
+    assets/js/tippy-bundle.umd.min.js: { preprocess: false }
     assets/js/searchPanel.js: { preprocess: false }
     assets/js/script.js: { preprocess: false }
-    assets/js/d3TaxonomyVisualization.js: { preprocess: false }
   dependencies:
     - core/jquery
     - core/drupal
