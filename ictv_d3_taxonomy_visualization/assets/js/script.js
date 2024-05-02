@@ -1166,8 +1166,12 @@ d
                   })
                   .style("fill", function (d) {
                      findParent(d);
-                  });
+                  })
+                  .style("font-size", fontSliderEl.property("value") + "rem");
 
+               Update.select("text.unassigned-text")
+                  .style("font-size", fontSliderEl.property("value") + "rem");
+                  
                var Exit = children
                   .exit()
                   .transition()
@@ -1473,11 +1477,15 @@ d
             }
             
             // when there is a ghost node, do not dispatch the click event
-            const is_assigned = notResultNode.getAttribute('is_assigned');
-            if (is_assigned === 'false') {
-               //console.log("Ghost Node: ", nodeId);
-               resolve();
-               return;
+            if (notResultNode) {
+               const textElement = notResultNode.querySelector('text');
+               if (textElement && textElement.textContent === '') {
+                  // console.log("Ghost Node: ", nodeId);
+                  resolve();
+                  return;
+               }
+            } else {
+               // console.log(`No node found with data-id "${nodeId}"`);
             }
             
             // when index value does not equal the data-id, open the node
