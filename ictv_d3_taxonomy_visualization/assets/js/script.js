@@ -364,7 +364,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       if (!releaseYear) { throw new Error("Invalid release year in getRelease (empty)"); }
 
-      const release = releases.data[`r${releaseYear}`];
+      const release = releases.data[`${releaseYear}`];
       if (!release) { throw new Error(`No release found for release year ${releaseYear}`); }
 
       return release;
