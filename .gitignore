@@ -8,3 +8,6 @@ ictv_taxonomy_browser/assets/css/
 ictv_taxonomy_browser/assets/images/
 ictv_taxonomy_browser/assets/js/ICTV.js
 
+ui/dist/
+ui/node_modules/
+
