@@ -11,3 +11,5 @@ ictv_taxonomy_browser/assets/js/ICTV.js
 ui/dist/
 ui/node_modules/
 
+scripts/__pycache__/
+

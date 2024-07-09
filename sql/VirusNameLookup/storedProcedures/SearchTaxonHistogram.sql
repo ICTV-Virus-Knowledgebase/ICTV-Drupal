@@ -1,8 +1,6 @@
-
 DELIMITER //
-
-CREATE OR REPLACE PROCEDURE searchTaxonHistogram(
-	IN searchName VARCHAR(100)
+CREATE PROCEDURE `searchTaxonHistogram`(
+	IN `searchName` VARCHAR(100)
 )
 BEGIN
 
@@ -58,7 +56,7 @@ BEGIN
 	SET searchName = LOWER(searchName);
 	
 	SET diffThreshold = 1;
-   SET maxDifferences = 10;
+   SET maxDifferences = 4;
    
 	
 	-- Calculate a count for every symbol.
@@ -109,6 +107,10 @@ BEGIN
 			uDiff + vDiff + wDiff + xDiff + yDiff + zDiff + 1Diff + 2Diff + 3Diff + 4Diff + 
 			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS totalDiff 
 		FROM (
+			-- For every character, this returns:
+			-- The test record's number of occurrences
+			-- The number of occurrences in the search text
+			-- The difference between the two counts
 			SELECT 
 				_a, aCount, ABS(aCount - _a) AS aDiff, 
 				_b, bCount, ABS(bCount - _b) AS bDiff, 
@@ -146,7 +148,9 @@ BEGIN
 				_8, 8Count, ABS(8Count - _8) AS 8Diff, 
 				_9, 9Count, ABS(9Count - _9) AS 9Diff, 
 				_0, 0Count, ABS(0Count - _0) AS 0Diff, 
-				_, spaceCount, ABS(spaceCount - _) AS spaceDiff,
+				_, 
+				spaceCount, 
+				ABS(spaceCount - _) AS spaceDiff,
 				taxon_name_id
 			FROM taxon_histogram 
 			WHERE 
@@ -193,8 +197,5 @@ BEGIN
 	WHERE totalDiff <= maxDifferences
 	ORDER BY totalDiff DESC;
 	
-END;
-
-//
-
+END//
 DELIMITER ;
