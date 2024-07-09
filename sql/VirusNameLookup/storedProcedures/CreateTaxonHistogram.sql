@@ -1,12 +1,11 @@
-
 DELIMITER //
-
-CREATE OR REPLACE PROCEDURE createTaxonHistogram(
-	IN taxonName VARCHAR(100),
-	IN taxonNameID INT
+CREATE PROCEDURE `createTaxonHistogram`(
+	IN `taxonName` VARCHAR(500),
+	IN `taxonNameID` INT
 )
 BEGIN
 
+	DECLARE firstCharacter VARCHAR(1);
 	DECLARE nameLength INT;
 	
 	DECLARE aCount INT;
@@ -47,6 +46,9 @@ BEGIN
 	DECLARE 0Count INT; 
 	DECLARE spaceCount INT;
 	
+	-- Get the first character.
+   SET firstCharacter = LEFT(taxonName, 1);
+   
 	-- Get the length of the taxon name parameter.
 	SET nameLength = LENGTH(taxonName);
 	
@@ -94,7 +96,6 @@ BEGIN
 	SET spaceCount = nameLength - LENGTH(REPLACE(taxonName, ' ', ''));
 	
    
-   
    INSERT INTO `taxon_histogram` (
 		_a, 
 		_b, 
@@ -133,6 +134,8 @@ BEGIN
 		_9, 
 		_0, 
 		_,
+		`first_character`,
+		`length`,
 		taxon_name_id
 	) VALUES (
 		aCount, 
@@ -172,11 +175,10 @@ BEGIN
 		9Count, 
 		0Count, 
 		spaceCount,
+		firstCharacter,
+		nameLength,
 		taxonNameID 
 	); 
 	
-END;
-
-//
-
+END//
 DELIMITER ;
