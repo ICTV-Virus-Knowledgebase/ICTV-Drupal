@@ -1,29 +1,22 @@
 
 import argparse
-from enum import Enum
-import mariadb
+from terms import NameClass, TaxonomyDB, TaxonomyRank
 import pandas as pd
-import sys
+from taxonName import TaxonName
 
 
+# The name of the MariaDB database with the table "taxon_name".
+databaseName = "virus_name_lookup"
 
 # https://mariadb.com/docs/server/connect/programming-languages/python/connect/
 # https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
 
-class NameClass(Enum):
-   genbank_accession = "name_class.genbank_accession"
-   isolate_abbreviation = "name_class.isolate_abbreviation"
-   isolate_designation = "name_class.isolate_designation"
-   isolate_name = "name_class.isolate_name"
-   refseq_accession = "name_class.refseq_accession"
-   refseq_organism = "name_class.refseq_organism"
 
-# The header columns in the CSV we import. Note that the order is important!
+# The header columns in the CSV file. Note that the order is important!
 csvColumns = [ 
    "isolate_id",
    "taxnode_id",
    "species_name",
-   "isolate_name",
    "isolate_names",
    "isolate_abbrevs",
    "isolate_designation",
@@ -35,15 +28,13 @@ csvColumns = [
 ]
 
 
-# def importSpeciesIsolate():
+#--------------------------------------------------------------------------------
+# Load the CSV file and import the contents into the taxon_name DB table.
+#--------------------------------------------------------------------------------
+def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
 
-   # CALL importSpeciesIsolate ('test;!234', 'isolate_name', 'ictv_taxonomy', 12345, 'family', 'ictv_vmr', 1, 39);
-
-
-def loadData(filename_):
-
-   
-   df = pd.read_csv(filename, header=0, index_col=False, names=csvColumns, encoding="latin-1", keep_default_na=False)
+   # Read the contents of the CSV file.
+   df = pd.read_csv(filename_, header=0, index_col=False, names=csvColumns, encoding="latin-1", keep_default_na=False)
    # TODO: validate!
 
    # Iterate over every row.
@@ -62,96 +53,85 @@ def loadData(filename_):
       if taxNodeID in (None, ''):
          raise Exception("Taxnode ID is invalid")
       
-      print(f"isolateID = {isolateID}, mslReleaseNum = {mslReleaseNum}, taxNodeID = {taxNodeID}")
-
       # Don't include row._isolate_name as it's just the first token in row.isolate_names
       # Don't include row.species_name since it will be in taxonomy_node data
       # For now, all values of row.refseq_organism are null
-
-      names = []
 
       genbankAccessions = row.genbank_accessions
       if genbankAccessions not in (None, '') and len(genbankAccessions.strip()) > 0:
          for genbankAccession in genbankAccessions.split(";"):
             trimmedName = genbankAccession.strip()
             if len(trimmedName) > 0: 
-               names.append([NameClass.genbank_accession, trimmedName])
+               taxonName_.importTaxonName(trimmedName, NameClass.genbank_accession.name,
+                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       isolateAbbrevs = row.isolate_abbrevs
       if isolateAbbrevs not in (None, '') and len(isolateAbbrevs.strip()) > 0:
          for isolateAbbrev in isolateAbbrevs.split(";"):
             trimmedName = isolateAbbrev.strip()
             if len(trimmedName) > 0: 
-               names.append([NameClass.isolate_abbreviation, trimmedName])
+               taxonName_.importTaxonName(trimmedName, NameClass.isolate_abbreviation.name,
+                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       isolateDesignations = row.isolate_designation
       if isolateDesignations not in (None, ''):
          for isolateDesignation in isolateDesignations.split(";"):
             trimmedName = isolateDesignation.strip()
             if len(trimmedName) > 0: 
-               names.append([NameClass.isolate_designation, trimmedName])
+               taxonName_.importTaxonName(trimmedName, NameClass.isolate_designation.name,
+                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       isolateNames = row.isolate_names
       if isolateNames not in (None, '') and len(isolateNames.strip()) > 0:
          for isolateName in isolateNames.split(";"):
             trimmedName = isolateName.strip()
             if len(trimmedName) > 0: 
-               names.append([NameClass.isolate_name, trimmedName])
+               taxonName_.importTaxonName(trimmedName, NameClass.isolate_name.name,
+                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       refseqAccessions = row.refseq_accessions
       if refseqAccessions not in (None, '') and len(refseqAccessions.strip()) > 0:
          for refseqAccession in refseqAccessions.split(";"):
             trimmedName = refseqAccession.strip()
             if len(trimmedName) > 0: 
-               names.append([NameClass.refseq_accession, trimmedName])
+               taxonName_.importTaxonName(trimmedName, NameClass.refseq_accession.name,
+                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       refseqOrganism = row.refseq_organism
-      if refseqOrganism not in (None, '') and len(refseqOrganism.strip()) > 0:
-         names.append([NameClass.refseq_organism], refseqOrganism)
-   
-      print(names)
+      if refseqOrganism not in (None, '') and len(refseqOrganism.strip()) > 0: 
+         taxonName_.importTaxonName(trimmedName, NameClass.refseq_organism.name,
+                                    TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                    TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
 
-
-# Example usage: py ImportSpeciesIsolates.py --filename "speciesIsolatesTest.csv"
+# Example: py ./importSpeciesIsolates.py --filename data/speciesIsolatesTest.csv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
 
 if __name__ == '__main__':
 
    parser = argparse.ArgumentParser(description="Import species_isolate data from a CSV file and create records in MariaDB.")
    parser.add_argument("--filename", dest="filename", metavar='FILENAME', nargs=1, required=True, help="The CSV filename")
+   parser.add_argument("--dbName", dest="dbName", metavar='DB_NAME', nargs=1, required=True, help="The database name")
+   parser.add_argument("--host", dest="host", metavar='HOST', nargs=1, required=True, help="The database hostname")
+   parser.add_argument("--username", dest="username", metavar='USERNAME', nargs=1, required=True, help="The database username")
+   parser.add_argument("--password", dest="password", metavar='PASSWORD', nargs=1, required=True, help="The database password")
+   parser.add_argument("--port", default="3306", dest="port", metavar='PORT', nargs=1, required=False, help="The database port")
 
    args = parser.parse_args()
 
+   dbName = args.dbName[0]
    filename = args.filename[0]
+   host = args.host[0]
+   password = args.password[0]
+   port = int(args.port[0])
+   username = args.username[0]
 
+   # Create a taxon name instance using the database parameters.
+   taxonName = TaxonName(dbName, host, username, password, port)
 
-   loadData(filename)
-
-   """
-   # Instantiate Connection
-   try:
-      conn = mariadb.connect(
-         host="localhost",
-         port=3306,
-         user="drupal_user",
-         password="n0t@F@n0F1T!")
-   except mariadb.Error as e:
-      print(f"Error connecting to the database: {e}")
-      sys.exit(1)
-
-   # Instantiate Cursor
-   cur = conn.cursor()
-
-   # Initialize Variables
-   terms = []
-
-   # Retrieve terms
-   cur.execute("SELECT term_key FROM virus_name_lookup.term")
-
-   for (termKey) in cur:
-      terms.append(f"{termKey}>")
-
-   print("\n".join(terms))
-
-   # Close Connection
-   conn.close()"""
+   # Load the CSV file and import the contents into the taxon_name DB table.
+   importSpeciesIsolates(filename, taxonName)
