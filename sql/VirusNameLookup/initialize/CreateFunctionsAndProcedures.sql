@@ -487,155 +487,20 @@ BEGIN
 END//
 DELIMITER ;
 
--- Dumping structure for procedure virus_name_lookup.populateVocabsAndTerms
-DELIMITER //
-CREATE PROCEDURE `populateVocabsAndTerms`()
-BEGIN
-
-	-- dmd 07/06/24 TODO: finish this!!!
-	
-	-- Declare variables used below.
-   DECLARE vocabID INT;
-
-   /*
-   -- Curation type
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'curation type', 'curation_type');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   -- Host token type
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'host token type', 'host_token_type');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   */
-
-   SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'job_status');
-   IF vocabID IS NULL THEN
-   
-      select 'about to create job_status';
-      -- INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'job status', 'job_status');
-
-   ELSE select 'job_status already exists';
-   END IF;
-
-   -- INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'job type', 'job_type');
-
-   /*
-   -- Name class
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'name class', 'name_class');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.acronym', 'acronym', 'acronym', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.blast_name', 'BLAST name', 'blast_name', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.common_name', 'common name', 'common_name', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.equivalent_name', 'equivalent name', 'equivalent_name', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.genbank_acronym', 'GenBank acronym', 'genbank_acronym', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.genbank_common_name', 'GenBank common name', 'genbank_common_name', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.scientific_name', 'scientific name', 'scientific_name', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.synonym', 'synonym', 'synonym', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.virus_name', 'Virus name', 'virus_name', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.virus_name_abbreviation', 'Virus name abbreviation', 'virus_name_abbreviation', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'name_class.virus_isolate_designation', 'Virus isolate designation', 'virus_isolate_designation', vocabID);
-
-
-   -- NCBI division
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'NCBI Division', 'ncbi_division');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.bacteria', 'Bacteria', 'bacteria', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.environmental_samples', 'Environmental samples', 'environmental_samples', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.invertebrates', 'Invertebrates', 'invertebrates', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.mammals', 'Mammals', 'mammals', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.phages', 'Phages', 'phages', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.plants_and_fungi', 'Plants and Fungi', 'plants_and_fungi', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.primates', 'Primates', 'primates', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.rodents', 'Rodents', 'rodents', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.synthetic_and_chimeric', 'Synthetic and Chimeric', 'synthetic_and_chimeric', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.unassigned', 'Unassigned', 'unassigned', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.vertebrates', 'Vertebrates', 'vertebrates', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'ncbi_division.viruses', 'Viruses', 'viruses', vocabID);
-
-
-   -- Taxon match type
-   -- INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'taxon match type', 'taxon_match_type');
-   -- SET vocabID = (SELECT LAST_INSERT_ID());
-
-
-   -- Taxonomic rank
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'taxonomic rank', 'taxonomic_rank');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.biotype', 'biotype', 'biotype', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.clade', 'clade', 'clade', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.class', 'class', 'class', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.cohort', 'cohort', 'cohort', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.family', 'family', 'family', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.forma', 'forma', 'forma', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.forma_specialis', 'forma specialis', 'forma_specialis', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.genotype', 'genotype', 'genotype', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.genus', 'genus', 'genus', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.infraclass', 'infraclass', 'infraclass', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.infraorder', 'infraorder', 'infraorder', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.isolate', 'isolate', 'isolate', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.kingdom', 'kingdom', 'kingdom', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.morph', 'morph', 'morph', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.no_rank', 'no rank', 'no_rank', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.order', 'order', 'order', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.parvorder', 'parvorder', 'parvorder', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.pathogroup', 'pathogroup', 'pathogroup', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.phylum', 'phylum', 'phylum', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.section', 'section', 'section', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.series', 'series', 'series', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.serogroup', 'serogroup', 'serogroup', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.serotype', 'serotype', 'serotype', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.species', 'species', 'species', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.species_group', 'species group', 'species_group', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.species_subgroup', 'species subgroup', 'species_subgroup', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.strain', 'strain', 'strain', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subclass', 'subclass', 'subclass', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subcohort', 'subcohort', 'subcohort', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subfamily', 'subfamily', 'subfamily', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subgenus', 'subgenus', 'subgenus', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subkingdom', 'subkingdom', 'subkingdom', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.suborder', 'suborder', 'suborder', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subphylum', 'subphylum', 'subphylum', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subsection', 'subsection', 'subsection', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subspecies', 'subspecies', 'subspecies', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.subtribe', 'subtribe', 'subtribe', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.superclass', 'superclass', 'superclass', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.superfamily', 'superfamily', 'superfamily', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.superkingdom', 'superkingdom', 'superkingdom', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.superorder', 'superorder', 'superorder', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.superphylum', 'superphylum', 'superphylum', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.tribe', 'tribe', 'tribe', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomic_rank.varietas', 'varietas', 'varietas', vocabID);
-
-
-   -- Taxonomy DB
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'taxonomy DB', 'taxonomy_db');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomy_db.ictv_taxonomy', 'ICTV Taxonomy', 'ictv_taxonomy', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomy_db.ictv_vmr', 'ICTV VMR', 'ictv_vmr', vocabID);
-   INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomy_db.ncbi_taxonomy', 'NCBI Taxonomy', 'ncbi_taxonomy', vocabID);
-   */
-
-END//
-DELIMITER ;
-
 -- Dumping structure for procedure virus_name_lookup.searchTaxonHistogram
 DELIMITER //
 CREATE PROCEDURE `searchTaxonHistogram`(
-	IN `searchName` VARCHAR(100)
+	IN `countThreshold` INT,
+	IN `maxCountDiffs` INT,
+	IN `maxLengthDiff` INT,
+	IN `searchText` NVARCHAR(500)
 )
 BEGIN
 
-   DECLARE nameLength INT;
+	DECLARE firstCharacter VARCHAR(1);
+   DECLARE searchLength INT;
 
-   -- TESTING
-   DECLARE diffThreshold INT;
-   DECLARE maxDifferences INT;
-
-	
+	-- Variables to store character counts.
 	DECLARE aCount INT;
 	DECLARE bCount INT; 
 	DECLARE cCount INT; 
@@ -674,54 +539,54 @@ BEGIN
 	DECLARE 0Count INT; 
 	DECLARE spaceCount INT;
 	
-	-- Get the length of the search name parameter.
-	SET nameLength = LENGTH(searchName);
+	-- Trim whitespace from both ends of the search text and convert to lowercase.
+	SET searchText = LOWER(TRIM(searchText));
 	
-   -- Convert search name to lowercase.
-	SET searchName = LOWER(searchName);
+	-- Get the first character of the search text.
+	SET firstCharacter = LEFT(searchText, 1);
 	
-	SET diffThreshold = 1;
-   SET maxDifferences = 4;
-   
+	-- Get the length of the search text.
+	SET searchLength = LENGTH(searchText);
+	
 	
 	-- Calculate a count for every symbol.
-	SET aCount = nameLength - LENGTH(REPLACE(searchName, 'a', ''));
-	SET bCount = nameLength - LENGTH(REPLACE(searchName, 'b', ''));
-	SET cCount = nameLength - LENGTH(REPLACE(searchName, 'c', ''));
-	SET dCount = nameLength - LENGTH(REPLACE(searchName, 'd', ''));
-	SET eCount = nameLength - LENGTH(REPLACE(searchName, 'e', ''));
-	SET fCount = nameLength - LENGTH(REPLACE(searchName, 'f', ''));
-	SET gCount = nameLength - LENGTH(REPLACE(searchName, 'g', ''));
-	SET hCount = nameLength - LENGTH(REPLACE(searchName, 'h', ''));
-	SET iCount = nameLength - LENGTH(REPLACE(searchName, 'i', ''));
-	SET jCount = nameLength - LENGTH(REPLACE(searchName, 'j', ''));
-	SET kCount = nameLength - LENGTH(REPLACE(searchName, 'k', ''));
-	SET lCount = nameLength - LENGTH(REPLACE(searchName, 'l', ''));
-	SET mCount = nameLength - LENGTH(REPLACE(searchName, 'm', ''));
-	SET nCount = nameLength - LENGTH(REPLACE(searchName, 'n', ''));
-	SET oCount = nameLength - LENGTH(REPLACE(searchName, 'o', ''));
-	SET pCount = nameLength - LENGTH(REPLACE(searchName, 'p', ''));
-	SET qCount = nameLength - LENGTH(REPLACE(searchName, 'q', ''));
-	SET rCount = nameLength - LENGTH(REPLACE(searchName, 'r', ''));
-	SET sCount = nameLength - LENGTH(REPLACE(searchName, 's', ''));
-	SET tCount = nameLength - LENGTH(REPLACE(searchName, 't', ''));
-	SET uCount = nameLength - LENGTH(REPLACE(searchName, 'u', ''));
-	SET vCount = nameLength - LENGTH(REPLACE(searchName, 'v', ''));
-	SET wCount = nameLength - LENGTH(REPLACE(searchName, 'w', ''));
-	SET xCount = nameLength - LENGTH(REPLACE(searchName, 'x', ''));
-	SET yCount = nameLength - LENGTH(REPLACE(searchName, 'y', ''));
-	SET zCount = nameLength - LENGTH(REPLACE(searchName, 'z', ''));
-	SET 1Count = nameLength - LENGTH(REPLACE(searchName, '1', ''));
-	SET 2Count = nameLength - LENGTH(REPLACE(searchName, '2', ''));
-	SET 3Count = nameLength - LENGTH(REPLACE(searchName, '3', ''));
-	SET 4Count = nameLength - LENGTH(REPLACE(searchName, '4', ''));
-	SET 5Count = nameLength - LENGTH(REPLACE(searchName, '5', ''));
-	SET 6Count = nameLength - LENGTH(REPLACE(searchName, '6', ''));
-	SET 7Count = nameLength - LENGTH(REPLACE(searchName, '7', ''));
-	SET 8Count = nameLength - LENGTH(REPLACE(searchName, '8', ''));
-	SET 9Count = nameLength - LENGTH(REPLACE(searchName, '9', ''));
-	SET 0Count = nameLength - LENGTH(REPLACE(searchName, '0', ''));
-	SET spaceCount = nameLength - LENGTH(REPLACE(searchName, ' ', ''));
+	SET aCount = searchLength - LENGTH(REPLACE(searchText, 'a', ''));
+	SET bCount = searchLength - LENGTH(REPLACE(searchText, 'b', ''));
+	SET cCount = searchLength - LENGTH(REPLACE(searchText, 'c', ''));
+	SET dCount = searchLength - LENGTH(REPLACE(searchText, 'd', ''));
+	SET eCount = searchLength - LENGTH(REPLACE(searchText, 'e', ''));
+	SET fCount = searchLength - LENGTH(REPLACE(searchText, 'f', ''));
+	SET gCount = searchLength - LENGTH(REPLACE(searchText, 'g', ''));
+	SET hCount = searchLength - LENGTH(REPLACE(searchText, 'h', ''));
+	SET iCount = searchLength - LENGTH(REPLACE(searchText, 'i', ''));
+	SET jCount = searchLength - LENGTH(REPLACE(searchText, 'j', ''));
+	SET kCount = searchLength - LENGTH(REPLACE(searchText, 'k', ''));
+	SET lCount = searchLength - LENGTH(REPLACE(searchText, 'l', ''));
+	SET mCount = searchLength - LENGTH(REPLACE(searchText, 'm', ''));
+	SET nCount = searchLength - LENGTH(REPLACE(searchText, 'n', ''));
+	SET oCount = searchLength - LENGTH(REPLACE(searchText, 'o', ''));
+	SET pCount = searchLength - LENGTH(REPLACE(searchText, 'p', ''));
+	SET qCount = searchLength - LENGTH(REPLACE(searchText, 'q', ''));
+	SET rCount = searchLength - LENGTH(REPLACE(searchText, 'r', ''));
+	SET sCount = searchLength - LENGTH(REPLACE(searchText, 's', ''));
+	SET tCount = searchLength - LENGTH(REPLACE(searchText, 't', ''));
+	SET uCount = searchLength - LENGTH(REPLACE(searchText, 'u', ''));
+	SET vCount = searchLength - LENGTH(REPLACE(searchText, 'v', ''));
+	SET wCount = searchLength - LENGTH(REPLACE(searchText, 'w', ''));
+	SET xCount = searchLength - LENGTH(REPLACE(searchText, 'x', ''));
+	SET yCount = searchLength - LENGTH(REPLACE(searchText, 'y', ''));
+	SET zCount = searchLength - LENGTH(REPLACE(searchText, 'z', ''));
+	SET 1Count = searchLength - LENGTH(REPLACE(searchText, '1', ''));
+	SET 2Count = searchLength - LENGTH(REPLACE(searchText, '2', ''));
+	SET 3Count = searchLength - LENGTH(REPLACE(searchText, '3', ''));
+	SET 4Count = searchLength - LENGTH(REPLACE(searchText, '4', ''));
+	SET 5Count = searchLength - LENGTH(REPLACE(searchText, '5', ''));
+	SET 6Count = searchLength - LENGTH(REPLACE(searchText, '6', ''));
+	SET 7Count = searchLength - LENGTH(REPLACE(searchText, '7', ''));
+	SET 8Count = searchLength - LENGTH(REPLACE(searchText, '8', ''));
+	SET 9Count = searchLength - LENGTH(REPLACE(searchText, '9', ''));
+	SET 0Count = searchLength - LENGTH(REPLACE(searchText, '0', ''));
+	SET spaceCount = searchLength - LENGTH(REPLACE(searchText, ' ', ''));
 
 
 	SELECT *
@@ -730,13 +595,28 @@ BEGIN
 			(aDiff + bDiff + cDiff + dDiff + eDiff + fDiff + gDiff + hDiff + iDiff + jDiff + 
 			kDiff + lDiff + mDiff + nDiff + oDiff + pDiff + qDiff + rDiff + sDiff + tDiff + 
 			uDiff + vDiff + wDiff + xDiff + yDiff + zDiff + 1Diff + 2Diff + 3Diff + 4Diff + 
-			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS totalDiff 
+			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS totalCountDiff 
 		FROM (
-			-- For every character, this returns:
-			-- The test record's number of occurrences
-			-- The number of occurrences in the search text
-			-- The difference between the two counts
-			SELECT 
+			
+			SELECT
+			
+				-- The test record's taxon name ID.
+				taxon_name_id,
+				
+				-- Does the first character of the search text match the first character in the test row?
+				CASE
+					WHEN first_character = firstCharacter THEN 1 ELSE 0
+				END AS first_character_match,
+				
+				-- The difference in length between the search text and test record.
+				ABS(searchLength - text_length) AS length_diff,
+				
+				/* 
+				For every character:
+				- The number of occurrences in the test record.
+				- The number of occurrences in the search text.
+				- The difference between the test record and search text counts.	
+				*/
 				_a, aCount, ABS(aCount - _a) AS aDiff, 
 				_b, bCount, ABS(bCount - _b) AS bDiff, 
 				_c, cCount, ABS(cCount - _c) AS cDiff, 
@@ -773,54 +653,55 @@ BEGIN
 				_8, 8Count, ABS(8Count - _8) AS 8Diff, 
 				_9, 9Count, ABS(9Count - _9) AS 9Diff, 
 				_0, 0Count, ABS(0Count - _0) AS 0Diff, 
-				_, 
-				spaceCount, 
-				ABS(spaceCount - _) AS spaceDiff,
-				taxon_name_id
-			FROM taxon_histogram 
-			WHERE 
-			((_a = 0 AND aCount = 0) OR (_a >= aCount - diffThreshold AND _a <= aCount + 1)) AND 
-			(_b >= bCount - diffThreshold AND _b <= bCount + 1) AND 
-			(_c >= cCount - diffThreshold AND _c <= cCount + 1) AND 
-			(_d >= dCount - diffThreshold AND _d <= dCount + 1) AND 
-			(_e >= eCount - diffThreshold AND _e <= eCount + 1) AND 
-			(_f >= fCount - diffThreshold AND _f <= fCount + 1) AND 
-			(_g >= gCount - diffThreshold AND _g <= gCount + 1) AND 
-			(_h >= hCount - diffThreshold AND _h <= hCount + 1) AND 
-			(_i >= iCount - diffThreshold AND _i <= iCount + 1) AND 
-			(_j >= jCount - diffThreshold AND _j <= jCount + 1) AND 
-			(_k >= kCount - diffThreshold AND _k <= kCount + 1) AND 
-			(_l >= lCount - diffThreshold AND _l <= lCount + 1) AND 
-			(_m >= mCount - diffThreshold AND _m <= mCount + 1) AND 
-			(_n >= nCount - diffThreshold AND _n <= nCount + 1) AND 
-			(_o >= oCount - diffThreshold AND _o <= oCount + 1) AND 
-			(_p >= pCount - diffThreshold AND _p <= pCount + 1) AND 
-			(_q >= qCount - diffThreshold AND _q <= qCount + 1) AND 
-			(_r >= rCount - diffThreshold AND _r <= rCount + 1) AND 
-			(_s >= sCount - diffThreshold AND _s <= sCount + 1) AND 
-			(_t >= tCount - diffThreshold AND _t <= tCount + 1) AND 
-			(_u >= uCount - diffThreshold AND _u <= uCount + 1) AND 
-			(_v >= vCount - diffThreshold AND _v <= vCount + 1) AND 
-			(_w >= wCount - diffThreshold AND _w <= wCount + 1) AND 
-			(_x >= xCount - diffThreshold AND _x <= xCount + 1) AND 
-			(_y >= yCount - diffThreshold AND _y <= yCount + 1) AND 
-			(_z >= zCount - diffThreshold AND _z <= zCount + 1) AND 
-			(_1 >= 1Count - diffThreshold AND _1 <= 1Count + 1) AND 
-			(_2 >= 2Count - diffThreshold AND _2 <= 2Count + 1) AND 
-			(_3 >= 3Count - diffThreshold AND _3 <= 3Count + 1) AND 
-			(_4 >= 4Count - diffThreshold AND _4 <= 4Count + 1) AND 
-			(_5 >= 5Count - diffThreshold AND _5 <= 5Count + 1) AND 
-			(_6 >= 6Count - diffThreshold AND _6 <= 6Count + 1) AND 
-			(_7 >= 7Count - diffThreshold AND _7 <= 7Count + 1) AND 
-			(_8 >= 8Count - diffThreshold AND _8 <= 8Count + 1) AND 
-			(_9 >= 9Count - diffThreshold AND _9 <= 9Count + 1) AND 
-			(_0 >= 0Count - diffThreshold AND _0 <= 0Count + 1) AND 
-			(_ >= spaceCount - diffThreshold AND _ <= spaceCount + 1)
+				_, spaceCount, ABS(spaceCount - _) AS spaceDiff
+				
+			FROM taxon_histogram
+			
+			-- Constrain by the difference in text lengths.
+			WHERE (ABS(searchLength - text_length) <= maxLengthDiff) AND
+			(_a >= aCount - countThreshold AND _a <= aCount + countThreshold) AND 
+			(_b >= bCount - countThreshold AND _b <= bCount + countThreshold) AND 
+			(_c >= cCount - countThreshold AND _c <= cCount + countThreshold) AND 
+			(_d >= dCount - countThreshold AND _d <= dCount + countThreshold) AND 
+			(_e >= eCount - countThreshold AND _e <= eCount + countThreshold) AND 
+			(_f >= fCount - countThreshold AND _f <= fCount + countThreshold) AND 
+			(_g >= gCount - countThreshold AND _g <= gCount + countThreshold) AND 
+			(_h >= hCount - countThreshold AND _h <= hCount + countThreshold) AND 
+			(_i >= iCount - countThreshold AND _i <= iCount + countThreshold) AND 
+			(_j >= jCount - countThreshold AND _j <= jCount + countThreshold) AND 
+			(_k >= kCount - countThreshold AND _k <= kCount + countThreshold) AND 
+			(_l >= lCount - countThreshold AND _l <= lCount + countThreshold) AND 
+			(_m >= mCount - countThreshold AND _m <= mCount + countThreshold) AND 
+			(_n >= nCount - countThreshold AND _n <= nCount + countThreshold) AND 
+			(_o >= oCount - countThreshold AND _o <= oCount + countThreshold) AND 
+			(_p >= pCount - countThreshold AND _p <= pCount + countThreshold) AND 
+			(_q >= qCount - countThreshold AND _q <= qCount + countThreshold) AND 
+			(_r >= rCount - countThreshold AND _r <= rCount + countThreshold) AND 
+			(_s >= sCount - countThreshold AND _s <= sCount + countThreshold) AND 
+			(_t >= tCount - countThreshold AND _t <= tCount + countThreshold) AND 
+			(_u >= uCount - countThreshold AND _u <= uCount + countThreshold) AND 
+			(_v >= vCount - countThreshold AND _v <= vCount + countThreshold) AND 
+			(_w >= wCount - countThreshold AND _w <= wCount + countThreshold) AND 
+			(_x >= xCount - countThreshold AND _x <= xCount + countThreshold) AND 
+			(_y >= yCount - countThreshold AND _y <= yCount + countThreshold) AND 
+			(_z >= zCount - countThreshold AND _z <= zCount + countThreshold) AND 
+			(_1 >= 1Count - countThreshold AND _1 <= 1Count + countThreshold) AND 
+			(_2 >= 2Count - countThreshold AND _2 <= 2Count + countThreshold) AND 
+			(_3 >= 3Count - countThreshold AND _3 <= 3Count + countThreshold) AND 
+			(_4 >= 4Count - countThreshold AND _4 <= 4Count + countThreshold) AND 
+			(_5 >= 5Count - countThreshold AND _5 <= 5Count + countThreshold) AND 
+			(_6 >= 6Count - countThreshold AND _6 <= 6Count + countThreshold) AND 
+			(_7 >= 7Count - countThreshold AND _7 <= 7Count + countThreshold) AND 
+			(_8 >= 8Count - countThreshold AND _8 <= 8Count + countThreshold) AND 
+			(_9 >= 9Count - countThreshold AND _9 <= 9Count + countThreshold) AND 
+			(_0 >= 0Count - countThreshold AND _0 <= 0Count + countThreshold) AND 
+			(_ >= spaceCount - countThreshold AND _ <= spaceCount + countThreshold)
 		) results1
 	) results2
 	JOIN taxon_name tn ON tn.id = taxon_name_id
-	WHERE totalDiff <= maxDifferences
-	ORDER BY totalDiff DESC;
+	WHERE totalCountDiff <= maxCountDiffs
+	
+	ORDER BY first_character_match DESC, totalCountDiff ASC, length_diff ASC;
 	
 END//
 DELIMITER ;
