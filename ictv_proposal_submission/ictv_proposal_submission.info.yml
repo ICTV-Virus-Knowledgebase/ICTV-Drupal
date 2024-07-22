@@ -3,6 +3,6 @@ type: module
 description: 'A custom module that displays a form to submit and review ICTV proposals'
 package: ICTV
 configure: ictv_proposal_submission.settings
-core_version_requirement: ^8 || ^9 || ^10
+core_version_requirement: ^10
 dependencies:
   - drupal:block

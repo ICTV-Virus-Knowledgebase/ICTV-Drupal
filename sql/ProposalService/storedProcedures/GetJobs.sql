@@ -30,10 +30,10 @@ BEGIN
 
 
    -- Lookup the term ID for the job type.
-	SET typeTID := (
+	SET typeTID = (
 		SELECT id 
 		FROM term 
-		WHERE full_key = 'job_type.'+jobType
+		WHERE full_key = CONCAT('job_type.', jobType)
 		LIMIT 1
 	);
 	
@@ -46,7 +46,7 @@ BEGIN
    SELECT CASE
       WHEN jobs_json IS NULL THEN 'null'
       ELSE CONCAT('[', jobs_json, ']')
-   END
+   END 
    FROM (
 		SELECT REPLACE(REPLACE(GROUP_CONCAT(job_json ORDER BY created_on DESC), '"{', '{'), '}"', '}') AS jobs_json
 		FROM (

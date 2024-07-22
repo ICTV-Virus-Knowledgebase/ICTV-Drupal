@@ -21,4 +21,5 @@ SELECT
 	j.warning_count
 	
 FROM job j
-JOIN term statusterm ON statusterm.id = status_tid;
+JOIN term statusterm ON statusterm.id = status_tid
+JOIN term typeterm ON typeterm.id = type_tid;
