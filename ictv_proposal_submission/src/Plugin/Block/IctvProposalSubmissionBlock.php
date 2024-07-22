@@ -94,14 +94,16 @@ class IctvProposalSubmissionBlock extends BlockBase {
         // Get authToken and drupalWebServiceURL from the ictv_settings table.
         $sql = 
             "SELECT (".
-            "   SELECT a.value ".
-            "   FROM {ictv_settings} a ".
-            "    WHERE a.NAME = 'authToken' ".
+            "  SELECT a.value ".
+            "  FROM {ictv_settings} a ".
+            "  WHERE a.NAME = 'authToken' ".
+            "  LIMIT 1 ".
             ") AS authToken, ".
             "(".
-            "    SELECT d.value ".
-            "    FROM {ictv_settings} d ".
-            "    WHERE d.NAME = 'drupalWebServiceURL' ".
+            "  SELECT d.value ".
+            "  FROM {ictv_settings} d ".
+            "  WHERE d.NAME = 'drupalWebServiceURL' ".
+            "  LIMIT 1 ".
             ") AS drupalWebServiceURL ";
 
         $query = $database->query($sql);

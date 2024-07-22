@@ -34,7 +34,7 @@ BEGIN
 	END IF;
 	
 	-- Lookup the term ID for the status (jobs always start with "pending" status).
-	SET statusTID := (
+	SET statusTID = (
 		SELECT id 
 		FROM term 
 		WHERE full_key = 'job_status.pending'
@@ -46,7 +46,7 @@ BEGIN
 	END IF;
 
    -- Lookup the term ID for the job type.
-	SET typeTID := (
+	SET typeTID = (
 		SELECT id 
 		FROM term 
 		WHERE full_key = CONCAT('job_type.', jobType)
