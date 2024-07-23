@@ -9,17 +9,6 @@ BEGIN
 	-- Declare variables used below.
    DECLARE vocabID INT;
 
-   /*
-   -- Curation type
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'curation type', 'curation_type');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   -- Host token type
-   INSERT INTO `vocabulary` (`description`, `label`, `vocab_key`) VALUES (NULL, 'host token type', 'host_token_type');
-   SET vocabID = (SELECT LAST_INSERT_ID());
-
-   */
-
    -- Job status
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'job_status');
    IF vocabID IS NULL THEN
@@ -47,6 +36,7 @@ BEGIN
    END IF;
 
 
+   /*
    -- Name class
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'name_class');
    IF vocabID IS NULL THEN
@@ -161,7 +151,8 @@ BEGIN
       INSERT INTO `term` (`description`, `full_key`, `label`, `term_key`, `vocab_id`) VALUES (NULL, 'taxonomy_db.ncbi_taxonomy', 'NCBI Taxonomy', 'ncbi_taxonomy', vocabID);
 
    END IF;
-
+   */
+   
 END //
 
 DELIMITER ;

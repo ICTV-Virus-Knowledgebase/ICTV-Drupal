@@ -2,6 +2,7 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
+
 class Utils {
 
     public static function isEmptyElseTrim(string|null &$str): bool {

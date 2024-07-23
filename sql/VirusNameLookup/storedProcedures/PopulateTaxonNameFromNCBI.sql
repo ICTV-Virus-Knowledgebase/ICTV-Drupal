@@ -1,7 +1,5 @@
-
 DELIMITER //
-
-CREATE OR REPLACE PROCEDURE populateTaxonNameFromNCBI()
+CREATE PROCEDURE `populateTaxonNameFromNCBI`()
 BEGIN
   
   
@@ -32,11 +30,13 @@ BEGIN
 		rank_tid,
 		taxonomy_db_tid,
 		taxonomy_id,
-		version
+		version_id
 	)
 	
 	SELECT 
 		d.tid AS division_tid,
+		
+		-- TODO: What's a good way to replace this with getFilteredName()?
 		LOWER(
 			REPLACE( 
 				REPLACE( 
@@ -62,7 +62,7 @@ BEGIN
 		nnode.rank_name_tid,
 		taxonomyDbTID AS taxonomy_db_tid,
 		nnode.tax_id AS taxonomy_id,
-		0 AS VERSION
+		0 AS version_id
 		
 	FROM ncbi_node nnode
 	JOIN ncbi_division d ON d.id = nnode.division_id
@@ -81,10 +81,5 @@ BEGIN
 		)
 	);
 	
-END;
-
-//
-
+END//
 DELIMITER ;
-
-

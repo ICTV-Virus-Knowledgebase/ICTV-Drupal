@@ -19,8 +19,6 @@
             const userName = settings_.userName;
             const userUID = settings_.userUID;
 
-            //console.log(`In proposalSubmission.js user email = ${userEmail} and userUID = ${userUID}`);
-
             //----------------------------------------------------------------------------------------
             // Initialize the ICTV AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------

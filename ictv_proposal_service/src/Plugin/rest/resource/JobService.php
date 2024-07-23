@@ -5,131 +5,160 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
 use Psr\Log\LoggerInterface;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\JobType;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 
 class JobService {
 
-    // The path where job directories are created.
-    public string $jobsPath;
+   // The path where job directories are created.
+   public string $jobsPath;
 
-    /**
-     * Provides helpers to operate on files and stream wrappers.
-     *
-     * @var \Drupal\Core\File\FileSystemInterface
-     */
-    protected FileSystemInterface $fileSystem;
+   /**
+    * Provides helpers to operate on files and stream wrappers.
+    *
+    * @var \Drupal\Core\File\FileSystemInterface
+    */
+   protected FileSystemInterface $fileSystem;
 
-    // Directory names for subdirectories of the job directory.
-    protected string $proposalsDirectory = "proposalsTest";
-    protected string $resultsDirectory = "results";
+   protected LoggerInterface $logger;
 
-    // This will be the prefix of the validation summary filename that's returned to the user.
-    public string $validationSummaryPrefix = "ictv-proposal-file-results";
+   // Directory names for subdirectories of the job directory.
+   protected string $inputDirName = "input";
+   protected string $outputDirName = "output";
 
-
-    // C-tor
-    public function __construct(string $jobsPath) {
-        $this->fileSystem = \Drupal::service("file_system");
-        $this->jobsPath = $jobsPath;
-    }
+   protected string $parentModule;
 
 
+   /**
+    * Constructs an ICTV JobService object.
+    *
+    * @param string $jobsPath
+    *    The filesystem location where user job files are maintained.
+    *
+    * @param \Psr\Log\LoggerInterface $logger
+    *    A logger instance.
+    *
+    * @param string $parentModule
+    *    The name of the module that is using this job service.
+    *
+    * @param string $inputDirName
+    *    The subdirectory (under a user-specific job directory) for input files (which are generally uploaded).
+    *
+    * @param string $outputDirName
+    *    The subdirectory (under a user-specific job directory) for output files.
+    */
+   public function __construct(string $jobsPath, LoggerInterface $logger, string $parentModule, string $inputDirName = null, string $outputDirName = null) {
 
-    // Create the job directory and subdirectories.
-    public function createDirectories(string $jobUID, string $userUID) {
+      if (Utils::isEmptyElseTrim($jobsPath)) { throw new Exception("Invalid job path parameter"); }
+      $this->jobsPath = $jobsPath;
 
-        // Create a job directory name using the job UID and user UID, and return its full path.
-        $jobPath = $this->getJobPath($jobUID, $userUID);
-        
-        // Create a directory for the job.
-        if (!$this->fileSystem->prepareDirectory($jobPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to create job directory");
-            return '';
-        }
+      $this->logger = $logger;
 
-        //---------------------------------------------------------------------------------------------------------------
-        // The proposalsTest subdirectory
-        //---------------------------------------------------------------------------------------------------------------
-        $proposalsPath = $jobPath."/".$this->proposalsDirectory;
+      if (Utils::isEmptyElseTrim($parentModule)) { throw new Exception("Invalid parent module parameter"); }
+      $this->parentModule = $parentModule;
 
-        // Create the directory
-        if (!$this->fileSystem->prepareDirectory($proposalsPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to create proposals subdirectory");
-            return '';
-        }
+      if (!Utils::isEmptyElseTrim($inputDirName)) { $this->inputDirName = $inputDirName; };
+      if (!Utils::isEmptyElseTrim($outputDirName)) { $this->outputDirName = $outputDirName; };
 
-        //---------------------------------------------------------------------------------------------------------------
-        // The results subdirectory
-        //---------------------------------------------------------------------------------------------------------------
-        $resultsPath = $jobPath."/".$this->resultsDirectory;
-
-        // Create the directory
-        if (!$this->fileSystem->prepareDirectory($resultsPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
-            \Drupal::logger('ictv_proposal_service')->error("Unable to create results subdirectory");
-            return '';
-        }
-
-        // Return the full path of the job directory.
-        return $jobPath;
-    }
-
-    
-    /**
-     * Creates a job record in the database.
-     * Returns the new job's ID and UID.
-     */
-    public function createJob(Connection $connection, int|null &$jobID, string|null $jobName, string|null &$jobUID, 
-        string $userEmail, string $userUID) {
-
-        $jobID = null;
-        $jobUID = null;
-
-        if (Utils::isEmptyElseTrim($jobName)) {
-            $jobName = "NULL";
-        } else {
-            $jobName = "'{$jobName}'";
-        }
-
-        // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
-        $sql = "CALL createJob({$jobName}, '{$userEmail}', {$userUID});";
-
-        $query = $connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result && $result[0] !== null) {
-            $jobID = $result[0]->jobID;
-            $jobUID = $result[0]->jobUID;
-        }
-
-        return;
-    }
-
-    /**
-     * Creates a job file record in the database.
-     * Returns the new job file's UID.
-     */
-    public function createJobFile(Connection $connection, string $fileName, int $jobID, int $uploadOrder) {
-
-        $jobFileUID = null;
-
-        // Generate SQL to call the "createJobFile" stored procedure.
-        $sql = "CALL createJobFile('{$fileName}', {$jobID}, {$uploadOrder});";
-
-        // Run the stored procedure and retrieve the job file UID that's returned.
-        $query = $connection->query($sql);
-        $result = $query->fetchAll();
-        if ($result && $result[0] !== null) {
-            $jobFileUID = $result[0]->jobFileUID;
-        }
-
-        return $jobFileUID;
-    }
+      $this->fileSystem = \Drupal::service("file_system");
+   }
 
 
-    // Create the proposal file under the specified path (job directory).
-    public function createProposalFile(string $data, string $filename, string $jobPath) {
+   // Create the job directory and subdirectories.
+   public function createDirectories(string $jobUID, string $userUID) {
 
-        $fileNameAndPath = $jobPath."/".$this->proposalsDirectory."/".$filename;
+      // Create a job directory name using the job UID and user UID, and return its full path.
+      $jobPath = $this->getJobPath($jobUID, $userUID);
+      
+      // Create a directory for the job.
+      if (!$this->fileSystem->prepareDirectory($jobPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         \Drupal::logger($this->parentModule)->error("Unable to create job directory");
+         return '';
+      }
+
+      // The full path of the input subdirectory.
+      $inputPath = $jobPath."/".$this->inputDirName;
+
+      // Create the input subdirectory.
+      if (!$this->fileSystem->prepareDirectory($inputPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         \Drupal::logger($this->parentModule)->error("Unable to create {$this->inputDirName} subdirectory");
+         return '';
+      }
+
+      // The full path of the output subdirectory.
+      $outputPath = $jobPath."/".$this->outputDirName;
+
+      // Create the output subdirectory.
+      if (!$this->fileSystem->prepareDirectory($outputPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         \Drupal::logger($this->parentModule)->error("Unable to create {$this->outputDirName} subdirectory");
+         return '';
+      }
+
+      // Return the full path of the job directory.
+      return $jobPath;
+   }
+
+   
+   /**
+    * Creates a job record in the database.
+    * Returns the new job's ID and UID.
+    */
+   public function createJob(Connection $connection, ?int &$jobID, ?string $jobName, JobType $jobType,  
+      ?string &$jobUID, string $userEmail, string $userUID) {
+
+      $jobID = null;
+      $jobUID = null;
+
+      if (Utils::isEmptyElseTrim($jobName)) {
+         $jobName = "NULL";
+      } else {
+         $jobName = "'{$jobName}'";
+      }
+
+      // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
+      $sql = "CALL createJob({$jobName}, '{$jobType->value}', '{$userEmail}', {$userUID});";
+
+      $query = $connection->query($sql);
+      $result = $query->fetchAll();
+      if ($result && $result[0] !== null) {
+         $jobID = $result[0]->jobID;
+         $jobUID = $result[0]->jobUID;
+      }
+
+      return;
+   }
+
+
+   /**
+    * Creates a job file record in the database.
+    * Returns the new job file's UID.
+    */
+   public function createJobFile(Connection $connection, string $fileName, int $jobID, int $uploadOrder) {
+
+      $jobFileUID = null;
+
+      // Generate SQL to call the "createJobFile" stored procedure.
+      $sql = "CALL createJobFile('{$fileName}', {$jobID}, {$uploadOrder});";
+
+      // Run the stored procedure and retrieve the job file UID that's returned.
+      $query = $connection->query($sql);
+      $result = $query->fetchAll();
+      if ($result && $result[0] !== null) {
+         $jobFileUID = $result[0]->jobFileUID;
+      }
+
+      return $jobFileUID;
+   }
+
+   /**
+    * Creates an input file under the specified path (job directory).
+    * Returns the new input file's UID.
+    */
+    public function createInputFile(string $data, string $filename, string $jobPath) {
+
+        $fileNameAndPath = $jobPath."/".$this->inputDirName."/".$filename;
 
         // The file identifier to return.
         $fileID = null;
@@ -140,69 +169,62 @@ class JobService {
 
             // Update the permissions
             if (!$this->fileSystem->chmod($fileNameAndPath, 777)) {
-                \Drupal::logger('ictv_proposal_service')->error("Unable to change permissions on file ".$filename);
+                \Drupal::logger($this->parentModule)->error("Unable to change permissions on file ".$filename);
                 return null;
             }
         }
         catch (\FileException $e) {
-            \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+            \Drupal::logger($this->parentModule)->error($e->getMessage());
         }
 
         return $fileID;
     }
 
 
-    // The job directory name will combine the user UID and job UID.
-    public function getJobPath(string $jobUID, string $userUID) {
-
-        // The job directory name will combine the user UID and job UID.
-        $jobPath = $this->jobsPath."/".$userUID."_".$jobUID;
-
-        return $jobPath;
-    }
-
-
-    /** 
-     * Get all jobs created by the specified user.
-     */ 
-    public function getJobs(Connection $connection, string $userEmail, string $userUID) {
-
-        // Generate SQL to return JSON for each of the user's jobs.
-        $sql = "CALL getJobs('{$userEmail}', {$userUID});";
-
-        // Execute the query and process the results.
-        $result = $connection->query($sql);
-        $jobsJSON = $result->fetchField(0);
-
-        return $jobsJSON;
-    }
-
-
-   // Use the job path to generate the path of the proposals subdirectory.
-   public function getProposalsPath(string $jobPath) {
-      $proposalsPath = $jobPath."/".$this->proposalsDirectory;
-      return $proposalsPath;
+    // Use the job path to generate the path of the input subdirectory.
+   public function getInputPath(string $jobPath) {
+      $inputPath = $jobPath."/".$this->inputDirName;
+      return $inputPath;
    }
 
 
-   // Use the job path to generate the path of the results subdirectory.
-   public function getResultsPath(string $jobPath) {
-      $resultsPath = $jobPath."/".$this->resultsDirectory;
-      return $resultsPath;
+   // The job directory name will combine the user UID and job UID.
+   public function getJobPath(string $jobUID, string $userUID) {
+
+      // The job directory name will combine the user UID and job UID.
+      $jobPath = $this->jobsPath."/".$userUID."_".$jobUID;
+
+      return $jobPath;
    }
 
 
-   // Return an array containing the validation summary file contents, a new filename, and the jobUID.
-   public function getValidationSummary(string $filename, string $jobUID, string $userUID) {
+   /** 
+    * Get all jobs created by the specified user.
+    */ 
+   public function getJobs(Connection $connection, JobType $jobType, string $userEmail, string $userUID) {
 
-      // TODO: should we confirm the job in the database first?
+      // Generate SQL to return JSON for each of the user's jobs.
+      $sql = "CALL getJobs('{$jobType->value}', '{$userEmail}', {$userUID});";
+
+      // Execute the query and process the results.
+      $result = $connection->query($sql);
+      $jobsJSON = $result->fetchField(0);
+
+      return $jobsJSON;
+   }
+
+
+   // Return an array containing the output file contents, a new filename, and the jobUID.
+   public function getOutputFile(string $filename, string $jobUID, string $outputFilePrefix, string $userUID) {
+
+      // TODO: should we validate the job against the database first?
 
       $jobPath = $this->getJobPath($jobUID, $userUID);
 
-      // Use the job path to generate the path of the results subdirectory.
-      $resultsPath = $this->getResultsPath($jobPath);
+      // Use the job path to generate the path of the output subdirectory.
+      $outputPath = $this->getOutputPath($jobPath);
 
-      $fileID = $resultsPath."/".$filename;
+      $fileID = $outputPath."/".$filename;
 
       // Load the file
       $handle = null;
@@ -214,7 +236,7 @@ class JobService {
          $fileData = fread($handle, filesize($fileID));
 
       } catch (\Exception $e) {
-         \Drupal::logger('ictv_proposal_service')->error($e->getMessage());
+         \Drupal::logger($this->parentModule)->error($e->getMessage());
          return null;
 
       } finally {
@@ -222,7 +244,7 @@ class JobService {
       }
 
       if ($fileData == null) {
-         \Drupal::logger('ictv_proposal_service')->error("Invalid file ".$filename." in job ".$jobUID);
+         \Drupal::logger($this->parentModule)->error("Invalid file ".$filename." in job ".$jobUID);
          return null;
       }
 
@@ -240,8 +262,14 @@ class JobService {
          $extension = ".error";
       }
       
+      if (Utils::isNullOrEmpty($outputFilePrefix)) {
+         $outputFilePrefix = "";
+      } else {
+         $outputFilePrefix += ".";
+      }
+
       // We will return a new filename that includes the job UID and user UID.
-      $newFilename = $this->validationSummaryPrefix.".".$userUID."_".$jobUID.$extension;
+      $newFilename = $outputFilePrefix.$userUID."_".$jobUID.$extension;
       
       return array(
          "filename" => $newFilename,
@@ -251,9 +279,15 @@ class JobService {
    }
 
 
+   // Use the job path to generate the path of the output subdirectory.
+   public function getOutputPath(string $jobPath) {
+      $outputPath = $jobPath."/".$this->outputDirName;
+      return $outputPath;
+   }
+
+
    // Update the job record in the database.
-   // TODO: after upgrading the dev environment to 9.5, make status an enum.
-   public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, string $status, int $userUID) {
+   public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, JobStatus $status, int $userUID) {
 
       if (Utils::isEmptyElseTrim($errorMessage)) {
          $errorMessage = "NULL";
@@ -262,7 +296,7 @@ class JobService {
       }
 
       // Generate SQL to call the "updateJob" stored procedure.
-      $sql = "CALL updateJob('{$status}', {$errorMessage}, '{$jobUID}', {$userUID});";
+      $sql = "CALL updateJob('{$status->value}', {$errorMessage}, '{$jobUID}', {$userUID});";
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();
