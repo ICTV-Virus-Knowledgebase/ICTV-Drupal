@@ -5,7 +5,8 @@ namespace Drupal\ictv_common\Jobs;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
 use Psr\Log\LoggerInterface;
-use Drupal\ictv_common\Types;
+use Drupal\ictv_common\Types\JobStatus;
+use Drupal\ictv_common\Types\JobType;
 use Drupal\ictv_common\Utils;
 
 
@@ -117,7 +118,7 @@ class JobService {
       }
 
       // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
-      $sql = "CALL createJob({$jobName}, '{$jobType->Value}', '{$userEmail}', {$userUID});";
+      $sql = "CALL createJob({$jobName}, '{$jobType->value}', '{$userEmail}', {$userUID});";
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();
@@ -203,7 +204,7 @@ class JobService {
    public function getJobs(Connection $connection, JobType $jobType, string $userEmail, string $userUID) {
 
       // Generate SQL to return JSON for each of the user's jobs.
-      $sql = "CALL getJobs('{$jobType->Value}', '{$userEmail}', {$userUID});";
+      $sql = "CALL getJobs('{$jobType->value}', '{$userEmail}', {$userUID});";
 
       // Execute the query and process the results.
       $result = $connection->query($sql);
@@ -295,7 +296,7 @@ class JobService {
       }
 
       // Generate SQL to call the "updateJob" stored procedure.
-      $sql = "CALL updateJob('{$status->Value}', {$errorMessage}, '{$jobUID}', {$userUID});";
+      $sql = "CALL updateJob('{$status->value}', {$errorMessage}, '{$jobUID}', {$userUID});";
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();

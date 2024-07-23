@@ -1,18 +1,22 @@
 
 DELIMITER //
 
-CREATE OR REPLACE PROCEDURE searchTaxonHistogram(
-	IN searchName VARCHAR(100)
+DROP PROCEDURE IF EXISTS `searchTaxonHistogram`;
+
+CREATE PROCEDURE `searchTaxonHistogram`(
+	IN `countOffset` INT,
+	IN `lengthOffset` INT,
+	IN `maxCountDiff` INT,
+	IN `maxLengthDiff` INT,
+	IN `maxResultCount` INT,
+	IN `searchText` NVARCHAR(500)
 )
 BEGIN
 
-   DECLARE nameLength INT;
+	DECLARE firstCharacter VARCHAR(1);
+   DECLARE searchLength INT;
 
-   -- TESTING
-   DECLARE diffThreshold INT;
-   DECLARE maxDifferences INT;
-
-	
+	-- Variables to store character counts.
 	DECLARE aCount INT;
 	DECLARE bCount INT; 
 	DECLARE cCount INT; 
@@ -51,65 +55,108 @@ BEGIN
 	DECLARE 0Count INT; 
 	DECLARE spaceCount INT;
 	
-	-- Get the length of the search name parameter.
-	SET nameLength = LENGTH(searchName);
+	-- Trim whitespace from both ends of the search text and convert to lowercase.
+	SET searchText = LOWER(TRIM(searchText));
 	
-   -- Convert search name to lowercase.
-	SET searchName = LOWER(searchName);
+	IF searchText IS NULL OR LENGTH(searchText) < 1 THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid search text parameter (empty)';
+   END IF;
 	
-	SET diffThreshold = 1;
-   SET maxDifferences = 10;
-   
+	-- Get the first character of the search text.
+	SET firstCharacter = LEFT(searchText, 1);
+	
+	-- Get the length of the search text.
+	SET searchLength = LENGTH(searchText);
+	
 	
 	-- Calculate a count for every symbol.
-	SET aCount = nameLength - LENGTH(REPLACE(searchName, 'a', ''));
-	SET bCount = nameLength - LENGTH(REPLACE(searchName, 'b', ''));
-	SET cCount = nameLength - LENGTH(REPLACE(searchName, 'c', ''));
-	SET dCount = nameLength - LENGTH(REPLACE(searchName, 'd', ''));
-	SET eCount = nameLength - LENGTH(REPLACE(searchName, 'e', ''));
-	SET fCount = nameLength - LENGTH(REPLACE(searchName, 'f', ''));
-	SET gCount = nameLength - LENGTH(REPLACE(searchName, 'g', ''));
-	SET hCount = nameLength - LENGTH(REPLACE(searchName, 'h', ''));
-	SET iCount = nameLength - LENGTH(REPLACE(searchName, 'i', ''));
-	SET jCount = nameLength - LENGTH(REPLACE(searchName, 'j', ''));
-	SET kCount = nameLength - LENGTH(REPLACE(searchName, 'k', ''));
-	SET lCount = nameLength - LENGTH(REPLACE(searchName, 'l', ''));
-	SET mCount = nameLength - LENGTH(REPLACE(searchName, 'm', ''));
-	SET nCount = nameLength - LENGTH(REPLACE(searchName, 'n', ''));
-	SET oCount = nameLength - LENGTH(REPLACE(searchName, 'o', ''));
-	SET pCount = nameLength - LENGTH(REPLACE(searchName, 'p', ''));
-	SET qCount = nameLength - LENGTH(REPLACE(searchName, 'q', ''));
-	SET rCount = nameLength - LENGTH(REPLACE(searchName, 'r', ''));
-	SET sCount = nameLength - LENGTH(REPLACE(searchName, 's', ''));
-	SET tCount = nameLength - LENGTH(REPLACE(searchName, 't', ''));
-	SET uCount = nameLength - LENGTH(REPLACE(searchName, 'u', ''));
-	SET vCount = nameLength - LENGTH(REPLACE(searchName, 'v', ''));
-	SET wCount = nameLength - LENGTH(REPLACE(searchName, 'w', ''));
-	SET xCount = nameLength - LENGTH(REPLACE(searchName, 'x', ''));
-	SET yCount = nameLength - LENGTH(REPLACE(searchName, 'y', ''));
-	SET zCount = nameLength - LENGTH(REPLACE(searchName, 'z', ''));
-	SET 1Count = nameLength - LENGTH(REPLACE(searchName, '1', ''));
-	SET 2Count = nameLength - LENGTH(REPLACE(searchName, '2', ''));
-	SET 3Count = nameLength - LENGTH(REPLACE(searchName, '3', ''));
-	SET 4Count = nameLength - LENGTH(REPLACE(searchName, '4', ''));
-	SET 5Count = nameLength - LENGTH(REPLACE(searchName, '5', ''));
-	SET 6Count = nameLength - LENGTH(REPLACE(searchName, '6', ''));
-	SET 7Count = nameLength - LENGTH(REPLACE(searchName, '7', ''));
-	SET 8Count = nameLength - LENGTH(REPLACE(searchName, '8', ''));
-	SET 9Count = nameLength - LENGTH(REPLACE(searchName, '9', ''));
-	SET 0Count = nameLength - LENGTH(REPLACE(searchName, '0', ''));
-	SET spaceCount = nameLength - LENGTH(REPLACE(searchName, ' ', ''));
+	SET aCount = searchLength - LENGTH(REPLACE(searchText, 'a', ''));
+	SET bCount = searchLength - LENGTH(REPLACE(searchText, 'b', ''));
+	SET cCount = searchLength - LENGTH(REPLACE(searchText, 'c', ''));
+	SET dCount = searchLength - LENGTH(REPLACE(searchText, 'd', ''));
+	SET eCount = searchLength - LENGTH(REPLACE(searchText, 'e', ''));
+	SET fCount = searchLength - LENGTH(REPLACE(searchText, 'f', ''));
+	SET gCount = searchLength - LENGTH(REPLACE(searchText, 'g', ''));
+	SET hCount = searchLength - LENGTH(REPLACE(searchText, 'h', ''));
+	SET iCount = searchLength - LENGTH(REPLACE(searchText, 'i', ''));
+	SET jCount = searchLength - LENGTH(REPLACE(searchText, 'j', ''));
+	SET kCount = searchLength - LENGTH(REPLACE(searchText, 'k', ''));
+	SET lCount = searchLength - LENGTH(REPLACE(searchText, 'l', ''));
+	SET mCount = searchLength - LENGTH(REPLACE(searchText, 'm', ''));
+	SET nCount = searchLength - LENGTH(REPLACE(searchText, 'n', ''));
+	SET oCount = searchLength - LENGTH(REPLACE(searchText, 'o', ''));
+	SET pCount = searchLength - LENGTH(REPLACE(searchText, 'p', ''));
+	SET qCount = searchLength - LENGTH(REPLACE(searchText, 'q', ''));
+	SET rCount = searchLength - LENGTH(REPLACE(searchText, 'r', ''));
+	SET sCount = searchLength - LENGTH(REPLACE(searchText, 's', ''));
+	SET tCount = searchLength - LENGTH(REPLACE(searchText, 't', ''));
+	SET uCount = searchLength - LENGTH(REPLACE(searchText, 'u', ''));
+	SET vCount = searchLength - LENGTH(REPLACE(searchText, 'v', ''));
+	SET wCount = searchLength - LENGTH(REPLACE(searchText, 'w', ''));
+	SET xCount = searchLength - LENGTH(REPLACE(searchText, 'x', ''));
+	SET yCount = searchLength - LENGTH(REPLACE(searchText, 'y', ''));
+	SET zCount = searchLength - LENGTH(REPLACE(searchText, 'z', ''));
+	SET 1Count = searchLength - LENGTH(REPLACE(searchText, '1', ''));
+	SET 2Count = searchLength - LENGTH(REPLACE(searchText, '2', ''));
+	SET 3Count = searchLength - LENGTH(REPLACE(searchText, '3', ''));
+	SET 4Count = searchLength - LENGTH(REPLACE(searchText, '4', ''));
+	SET 5Count = searchLength - LENGTH(REPLACE(searchText, '5', ''));
+	SET 6Count = searchLength - LENGTH(REPLACE(searchText, '6', ''));
+	SET 7Count = searchLength - LENGTH(REPLACE(searchText, '7', ''));
+	SET 8Count = searchLength - LENGTH(REPLACE(searchText, '8', ''));
+	SET 9Count = searchLength - LENGTH(REPLACE(searchText, '9', ''));
+	SET 0Count = searchLength - LENGTH(REPLACE(searchText, '0', ''));
+	SET spaceCount = searchLength - LENGTH(REPLACE(searchText, ' ', ''));
 
 
-	SELECT *
+	SELECT 
+		division,
+		first_character_match,
+		CASE 
+			WHEN tn.`name` = searchText THEN 1 ELSE 0
+		END AS is_exact_match,
+		is_valid,
+		length_diff,
+		length_within_range,
+		`name`,
+		name_class,
+		rank_name,
+		taxonomy_db,
+		taxonomy_id,
+		total_count_diff,
+		version_id
+		
 	FROM (
 		SELECT *, 
 			(aDiff + bDiff + cDiff + dDiff + eDiff + fDiff + gDiff + hDiff + iDiff + jDiff + 
 			kDiff + lDiff + mDiff + nDiff + oDiff + pDiff + qDiff + rDiff + sDiff + tDiff + 
 			uDiff + vDiff + wDiff + xDiff + yDiff + zDiff + 1Diff + 2Diff + 3Diff + 4Diff + 
-			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS totalDiff 
+			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS total_count_diff,
+			CASE
+				WHEN length_diff = 0 THEN 1
+				WHEN length_diff >= GREATEST(searchLength - lengthOffset, 0) AND length_diff <= searchLength + lengthOffset THEN 1 ELSE 0
+			END AS length_within_range
 		FROM (
-			SELECT 
+			
+			SELECT
+			
+				-- The test record's taxon name ID.
+				taxon_name_id,
+				
+				-- Does the first character of the search text match the first character in the test row?
+				CASE
+					WHEN first_character = firstCharacter THEN 1 ELSE 0
+				END AS first_character_match,
+				
+				-- The difference in length between the search text and test record.
+				ABS(searchLength - text_length) AS length_diff,
+
+				/* 
+				For every character:
+				- The number of occurrences in the test record.
+				- The number of occurrences in the search text.
+				- The difference between the test record and search text counts.	
+				*/
 				_a, aCount, ABS(aCount - _a) AS aDiff, 
 				_b, bCount, ABS(bCount - _b) AS bDiff, 
 				_c, cCount, ABS(cCount - _c) AS cDiff, 
@@ -146,55 +193,59 @@ BEGIN
 				_8, 8Count, ABS(8Count - _8) AS 8Diff, 
 				_9, 9Count, ABS(9Count - _9) AS 9Diff, 
 				_0, 0Count, ABS(0Count - _0) AS 0Diff, 
-				_, spaceCount, ABS(spaceCount - _) AS spaceDiff,
-				taxon_name_id
-			FROM taxon_histogram 
-			WHERE 
-			((_a = 0 AND aCount = 0) OR (_a >= aCount - diffThreshold AND _a <= aCount + 1)) AND 
-			(_b >= bCount - diffThreshold AND _b <= bCount + 1) AND 
-			(_c >= cCount - diffThreshold AND _c <= cCount + 1) AND 
-			(_d >= dCount - diffThreshold AND _d <= dCount + 1) AND 
-			(_e >= eCount - diffThreshold AND _e <= eCount + 1) AND 
-			(_f >= fCount - diffThreshold AND _f <= fCount + 1) AND 
-			(_g >= gCount - diffThreshold AND _g <= gCount + 1) AND 
-			(_h >= hCount - diffThreshold AND _h <= hCount + 1) AND 
-			(_i >= iCount - diffThreshold AND _i <= iCount + 1) AND 
-			(_j >= jCount - diffThreshold AND _j <= jCount + 1) AND 
-			(_k >= kCount - diffThreshold AND _k <= kCount + 1) AND 
-			(_l >= lCount - diffThreshold AND _l <= lCount + 1) AND 
-			(_m >= mCount - diffThreshold AND _m <= mCount + 1) AND 
-			(_n >= nCount - diffThreshold AND _n <= nCount + 1) AND 
-			(_o >= oCount - diffThreshold AND _o <= oCount + 1) AND 
-			(_p >= pCount - diffThreshold AND _p <= pCount + 1) AND 
-			(_q >= qCount - diffThreshold AND _q <= qCount + 1) AND 
-			(_r >= rCount - diffThreshold AND _r <= rCount + 1) AND 
-			(_s >= sCount - diffThreshold AND _s <= sCount + 1) AND 
-			(_t >= tCount - diffThreshold AND _t <= tCount + 1) AND 
-			(_u >= uCount - diffThreshold AND _u <= uCount + 1) AND 
-			(_v >= vCount - diffThreshold AND _v <= vCount + 1) AND 
-			(_w >= wCount - diffThreshold AND _w <= wCount + 1) AND 
-			(_x >= xCount - diffThreshold AND _x <= xCount + 1) AND 
-			(_y >= yCount - diffThreshold AND _y <= yCount + 1) AND 
-			(_z >= zCount - diffThreshold AND _z <= zCount + 1) AND 
-			(_1 >= 1Count - diffThreshold AND _1 <= 1Count + 1) AND 
-			(_2 >= 2Count - diffThreshold AND _2 <= 2Count + 1) AND 
-			(_3 >= 3Count - diffThreshold AND _3 <= 3Count + 1) AND 
-			(_4 >= 4Count - diffThreshold AND _4 <= 4Count + 1) AND 
-			(_5 >= 5Count - diffThreshold AND _5 <= 5Count + 1) AND 
-			(_6 >= 6Count - diffThreshold AND _6 <= 6Count + 1) AND 
-			(_7 >= 7Count - diffThreshold AND _7 <= 7Count + 1) AND 
-			(_8 >= 8Count - diffThreshold AND _8 <= 8Count + 1) AND 
-			(_9 >= 9Count - diffThreshold AND _9 <= 9Count + 1) AND 
-			(_0 >= 0Count - diffThreshold AND _0 <= 0Count + 1) AND 
-			(_ >= spaceCount - diffThreshold AND _ <= spaceCount + 1)
-		) results1
-	) results2
-	JOIN taxon_name tn ON tn.id = taxon_name_id
-	WHERE totalDiff <= maxDifferences
-	ORDER BY totalDiff DESC;
+				_, spaceCount, ABS(spaceCount - _) AS spaceDiff
+				
+			FROM taxon_histogram
+			
+			-- Constrain by the difference in text lengths.
+			WHERE (ABS(searchLength - text_length) <= maxLengthDiff) AND
+			(_a >= aCount - countOffset AND _a <= aCount + countOffset) AND 
+			(_b >= bCount - countOffset AND _b <= bCount + countOffset) AND 
+			(_c >= cCount - countOffset AND _c <= cCount + countOffset) AND 
+			(_d >= dCount - countOffset AND _d <= dCount + countOffset) AND 
+			(_e >= eCount - countOffset AND _e <= eCount + countOffset) AND 
+			(_f >= fCount - countOffset AND _f <= fCount + countOffset) AND 
+			(_g >= gCount - countOffset AND _g <= gCount + countOffset) AND 
+			(_h >= hCount - countOffset AND _h <= hCount + countOffset) AND 
+			(_i >= iCount - countOffset AND _i <= iCount + countOffset) AND 
+			(_j >= jCount - countOffset AND _j <= jCount + countOffset) AND 
+			(_k >= kCount - countOffset AND _k <= kCount + countOffset) AND 
+			(_l >= lCount - countOffset AND _l <= lCount + countOffset) AND 
+			(_m >= mCount - countOffset AND _m <= mCount + countOffset) AND 
+			(_n >= nCount - countOffset AND _n <= nCount + countOffset) AND 
+			(_o >= oCount - countOffset AND _o <= oCount + countOffset) AND 
+			(_p >= pCount - countOffset AND _p <= pCount + countOffset) AND 
+			(_q >= qCount - countOffset AND _q <= qCount + countOffset) AND 
+			(_r >= rCount - countOffset AND _r <= rCount + countOffset) AND 
+			(_s >= sCount - countOffset AND _s <= sCount + countOffset) AND 
+			(_t >= tCount - countOffset AND _t <= tCount + countOffset) AND 
+			(_u >= uCount - countOffset AND _u <= uCount + countOffset) AND 
+			(_v >= vCount - countOffset AND _v <= vCount + countOffset) AND 
+			(_w >= wCount - countOffset AND _w <= wCount + countOffset) AND 
+			(_x >= xCount - countOffset AND _x <= xCount + countOffset) AND 
+			(_y >= yCount - countOffset AND _y <= yCount + countOffset) AND 
+			(_z >= zCount - countOffset AND _z <= zCount + countOffset) AND 
+			(_1 >= 1Count - countOffset AND _1 <= 1Count + countOffset) AND 
+			(_2 >= 2Count - countOffset AND _2 <= 2Count + countOffset) AND 
+			(_3 >= 3Count - countOffset AND _3 <= 3Count + countOffset) AND 
+			(_4 >= 4Count - countOffset AND _4 <= 4Count + countOffset) AND 
+			(_5 >= 5Count - countOffset AND _5 <= 5Count + countOffset) AND 
+			(_6 >= 6Count - countOffset AND _6 <= 6Count + countOffset) AND 
+			(_7 >= 7Count - countOffset AND _7 <= 7Count + countOffset) AND 
+			(_8 >= 8Count - countOffset AND _8 <= 8Count + countOffset) AND 
+			(_9 >= 9Count - countOffset AND _9 <= 9Count + countOffset) AND 
+			(_0 >= 0Count - countOffset AND _0 <= 0Count + countOffset) AND 
+			(_ >= spaceCount - countOffset AND _ <= spaceCount + countOffset)
+			
+		) initialMatches
+		
+	) matchesWithConstraints
 	
-END;
-
-//
-
+	JOIN v_taxon_name tn ON tn.id = taxon_name_id
+	WHERE total_count_diff <= maxCountDiff
+	
+	ORDER BY is_exact_match DESC, first_character_match DESC, total_count_diff ASC, length_within_range DESC, length_diff ASC, tn.version_id DESC
+	LIMIT maxResultCount;
+	
+END//
 DELIMITER ;
