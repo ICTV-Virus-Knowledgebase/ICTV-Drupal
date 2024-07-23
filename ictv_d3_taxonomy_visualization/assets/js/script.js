@@ -755,55 +755,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       const existingSVG = document.querySelector(`${containerSelector} .taxonomy-panel svg `);
       if (!!existingSVG) { existingSVG.remove(); }
 
-      // Format the release year for use as part of a JSON filename.
-      let filenameReleaseYear = releaseYear_.replace(/a$/, "").replace(/b$/, ".5");
-
       // Determine the filename for the taxonomy JSON file.
-      const jsonFilename = `${dataURL}/data/taxonomy_${filenameReleaseYear}.json`;
-      //const nonSpeciesFilename = `${dataURL}/data/nonSpecies_${filenameReleaseYear}.json`;
-      //const speciesFilename = `${dataURL}/data/species_${filenameReleaseYear}.json`;
-
-      // Load the species data for this release.
-      /*speciesData = await d3.json(speciesFilename).then(function (s) { return s; });
-      if (!speciesData) {
-         throw new Error(`Invalid species data for release ${release_}`);
-      }*/
-
-      // TODO: the non-species file shouldn't be opened twice. Improve the code below!!!
-      // Load the non-species data for this release.
-      // d3.json(nonSpeciesFilename).then(function (data) {
-         // const ab = d3.hierarchy(data, function (d) {
-         //    if (d.children === null) { return; }
-
-         //    do {
-         //       let str = d.child_counts;
-         //       var result;
-         //       const regex = /(\d+)/;
-         //       if (typeof str === "string" && str.length > 0) {
-         //          if (str.includes("species")) {
-         //             result = str.replace(/, .*species|,.*$/, "");
-         //          } else {
-         //             result = str?.match(regex);
-         //          }
-         //       }
-         //       if (typeof result === "string" && result.length > 0) {
-         //          num = parseInt(result.match(/\d+/)[0]);
-         //          if (num > 500) {
-         //             num = temp;
-         //          } else {
-         //             if (num > temp) {
-         //                arr.push(temp);
-         //                temp = num;
-         //             }
-         //          }
-         //       }
-         //    } while (num >= 1000);
-
-         //    max = Math.max(...arr);
-         //    num_flag = true;
-         //    return d.children; 
-         // });
-      // });
+      const jsonFilename = `${dataURL}/data/taxonomy_${releaseYear_}.json`;
       
       // lrm 6-20-2024
       // nonSpeciesFilename was being loaded twice, I took the commented code above
