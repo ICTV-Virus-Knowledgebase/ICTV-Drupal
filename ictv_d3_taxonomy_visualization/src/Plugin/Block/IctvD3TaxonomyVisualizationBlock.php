@@ -80,10 +80,6 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
             <div class='search-results-panel'></div>
             <div class='body-panel'>
                 <div class='taxonomy-panel'></div>
-                <div class='species-panel light-bg'>
-                    <div class='parent-name'></div>
-                    <div class='species-list'></div>
-                </div>
             </div>
         </div>"),
         '#attached' => [
