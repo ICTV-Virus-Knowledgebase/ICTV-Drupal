@@ -12,4 +12,5 @@ ui/dist/
 ui/node_modules/
 
 scripts/__pycache__/
+scripts/VirusNameLookup/__pycache__/
 
