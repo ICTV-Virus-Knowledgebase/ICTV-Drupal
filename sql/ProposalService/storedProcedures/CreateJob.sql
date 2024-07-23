@@ -34,7 +34,7 @@ BEGIN
 	END IF;
 	
 	-- Lookup the term ID for the status (jobs always start with "pending" status).
-	SET statusTID = (
+	SET statusTID := (
 		SELECT id 
 		FROM term 
 		WHERE full_key = 'job_status.pending'
@@ -46,7 +46,7 @@ BEGIN
 	END IF;
 
    -- Lookup the term ID for the job type.
-	SET typeTID = (
+	SET typeTID := (
 		SELECT id 
 		FROM term 
 		WHERE full_key = CONCAT('job_type.', jobType)
@@ -65,19 +65,19 @@ BEGIN
     -- Provide a default job name if nothing was provided.
     IF jobName IS NULL OR LENGTH(jobName) < 1 THEN
 
-        SET today = CURDATE();
+        SET today := CURDATE();
 
         -- Add one to the number of jobs created today.
-        SET jobCount = (
+        SET jobCount := (
             SELECT COUNT(*)
-            FROM v_job 
+            FROM job 
             WHERE user_uid = userUID
             AND type_tid = typeTID
             AND CAST(created_on AS DATE) = today
         ) + 1;
 
         -- Create a default job name.
-        SET jobName = CONCAT(CAST(DATE_FORMAT(today,'%m/%d/%Y') AS VARCHAR(10)), ' #', CAST(jobCount AS VARCHAR(4)));
+        SET jobName := CONCAT(CAST(DATE_FORMAT(today,'%m/%d/%Y') AS VARCHAR(10)), ' #', CAST(jobCount AS VARCHAR(4)));
     END IF;
 
     

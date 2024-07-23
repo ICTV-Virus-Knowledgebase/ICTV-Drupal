@@ -29,23 +29,23 @@ BEGIN
 	END IF;
 
 	-- Lookup the job ID
-	SET jobID = (SELECT id FROM job WHERE uid = jobUID LIMIT 1);
+	SET jobID := (SELECT id FROM job WHERE uid = jobUID LIMIT 1);
 	IF jobID IS NULL THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid job ID parameter';
 	END IF;
 
 	-- Determine the status using the error and warning counts.
 	IF errorCount > 0 OR warningCount > 0 THEN
-		SET _status = 'invalid';
+		SET _status := 'invalid';
 	ELSE
-		SET _status = 'valid';
+		SET _status := 'valid';
 	END IF;
 
 	-- Prepend the vocabulary key "job_status".
-	SET fullStatus = CONCAT('job_status.', _status);
+	SET fullStatus := CONCAT('job_status.', _status);
 	
 	-- Lookup the term ID for the status.
-	SET statusTID = (
+	SET statusTID := (
 		SELECT id 
 		FROM term 
 		WHERE full_key = fullStatus
@@ -56,7 +56,7 @@ BEGIN
 	END IF;
 
 	-- Use the counts to generate the job_file's message.
-	SET _message = (SELECT generateStatusMessage(errorCount, infoCount, successCount, warningCount));
+	SET _message := (SELECT generateStatusMessage(errorCount, infoCount, successCount, warningCount));
 
 	-- Update the job_file
 	UPDATE job_file SET

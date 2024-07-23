@@ -4,92 +4,113 @@ namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 
 class ProposalValidator {
 
-    public static function runValidation(string $proposalsPath, string $resultsPath, string $scriptName, string $workingDirectory) {
+   // The contents of stdout and stderr will be written to these files.
+   public static string $stdErrorFilename = "stderr.txt";
+   public static string $stdOutFilename = "stdout.txt";
 
-        // Declare variables used in the try/catch block.
-        $result = null;
-        $jobStatus = null;
-        $stdError = null;
-        $fileSummaries;
-        $totals;
+   
+   public static function runValidation(string $proposalsPath, string $resultsPath, string $scriptName, string $workingDirectory) {
 
-        $descriptorspec = array(
-            0 => array("pipe", "r"), // Read from stdin (not used)
-            1 => array("pipe", "w"), // Write to stdout
-            2 => array("pipe", "w")  // Write to stderr
-        );
-        
-        // Generate the command to be run.
-        $command = "docker run ".
-            "-v \"{$proposalsPath}:/proposalsTest\":ro ".
-            "-v \"{$resultsPath}:/results\" ".
-            $scriptName." ".
-            "/merge_proposal_zips.R -v ";
+      // Declare variables used in the try/catch block.
+      $exitCode = 0;
+      $jobStatus = null;
+      $stdError = null;
+      $stdOut = null;
+      $fileSummaries;
+      $totals;
 
-        try {
-            $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
+      $descriptorspec = array(
+         0 => array("pipe", "r"), // Read from stdin (not used)
+         1 => array("pipe", "w"), // Write to stdout
+         2 => array("pipe", "w")  // Write to stderr
+      );
+      
+      // Generate the command to be run.
+      $command = "docker run ".
+         "-v \"{$proposalsPath}:/proposalsTest\":ro ".
+         "-v \"{$resultsPath}:/results\" ".
+         $scriptName." ".
+         "/merge_proposal_zips.R -v ";
 
-            if (is_resource($process)) {
-                // $pipes now looks like this:
-                // 0 => writeable handle connected to child stdin
-                // 1 => readable handle connected to child stdout
-                // 2 => writeable handle connected to child stderr
+      try {
+         $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
 
-                // Note: We're not using the stdin pipe.
+         // Validate the process
+         if (!is_resource($process)) { throw new Exception("Process is not a resource"); }
 
-                // Get stdout
-                $result = stream_get_contents($pipes[1]);
-                fclose($pipes[1]);
+         // $pipes now looks like this:
+         // 0 => writeable handle connected to child stdin (we aren't using stdin)
+         // 1 => readable handle connected to child stdout
+         // 2 => writeable handle connected to child stderr
 
-                // Get stderror
-                $stdError = stream_get_contents($pipes[2]);
-                fclose($pipes[2]);
+         // Get stdout
+         $stdOut = stream_get_contents($pipes[1]);
+         fclose($pipes[1]);
 
-                // It is important that you close any pipes before calling proc_close in order to avoid a deadlock.
-                proc_close($process);
+         // Get stderror
+         $stdError = stream_get_contents($pipes[2]);
+         fclose($pipes[2]);
 
-                // In this case "pending complete validation".
-                $jobStatus = JobStatus::$pending;
+         // It is important that you close any pipes before calling proc_close in order to avoid a deadlock.
+         $exitCode = proc_close($process);
 
-            } else {
-                $jobStatus = JobStatus::$crashed;
-                $stdError = "Process is not a resource";
-            }
+         // An exit code of 1 indicates that an error occurred in the process.
+         if ($exitCode !== 0) { throw new \Exception("Invalid exit code"); }
 
-            if ($jobStatus != JobStatus::$crashed) {
+         // If "execution terminated" is found in stdout, this indicates an error.
+         if (str_contains(strtolower($stdError), "execution terminated")) { throw new \Exception("Execution was terminated"); }
+         
+         // If "# COMPLETED" is not found in stdout, there was a problem.
+         if (!str_contains(strtolower($stdOut), "# completed")) { throw new \Exception("#COMPLETED was not found in stdout"); }
 
-                // Parse the summary TSV file for proposal filenames and their status counts (file summaries).
-                $fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
-    
-                // If no file summaries were found, return a job status of "crashed".
-                if (!$fileSummaries || sizeof($fileSummaries) < 1) { $jobStatus = JobStatus::$crashed; }
-            }
-        } 
-        catch (Exception $e) {
+         // If we have gotten this far, set the job status to "pending" ("pending complete validation").
+         $jobStatus = JobStatus::pending;
 
-            $jobStatus = JobStatus::$crashed;
+         // Parse the summary TSV file for proposal filenames and their status counts (file summaries).
+         $fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
+         if (!$fileSummaries || sizeof($fileSummaries) < 1) { throw new \Exception("File summaries are invalid"); }
 
-            if ($e) { 
-                if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
-                $stdError = $stdError.$e->getMessage(); 
-            }
+      } 
+      catch (Exception $e) {
 
-            \Drupal::logger('ictv_proposal_service')->error("An error occurred in ProposalValidator: ".$stdError);
-        }
+         $jobStatus = JobStatus::crashed;
 
-        if ($jobStatus == null) { $jobStatus = JobStatus::$crashed; } 
+         if ($e) { 
+            if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
+            $stdError = $stdError.$e->getMessage(); 
+         }
 
-        return array(
-            "command" => $command,
-            "fileSummaries" => $fileSummaries,
-            "jobStatus" => $jobStatus,
-            "stdError" => $stdError
-        );
-    }
+         \Drupal::logger('ictv_proposal_service')->error("An error occurred in ProposalValidator: ".$stdError);
+      }
+      
+      if ($jobStatus == null) { $jobStatus = JobStatus::crashed; } 
+
+      // If stdout isn't empty, write it to a text file in the working directory.
+      $stdOutFile = fopen($resultsPath.$stdOutFilename, "w");
+      if ($stdOutFile !== false) {
+         fwrite($stdOutFile, $stdOut);
+         fclose($stdOutFile);
+      }
+      
+      // If stderr isn't empty, write it to a text file in the working directory.
+      $stdErrorFile = fopen($resultsPath.$stdErrorFilename, "w");
+      if ($stdErrorFile !== false) {
+         fwrite($stdErrorFile, $stdError);
+         fclose($stdErrorFile);
+      }
+      
+      return array(
+         "command" => $command,
+         "fileSummaries" => $fileSummaries,
+         "jobStatus" => $jobStatus,
+         "stdError" => $stdError
+      );
+   }
 
 };
 

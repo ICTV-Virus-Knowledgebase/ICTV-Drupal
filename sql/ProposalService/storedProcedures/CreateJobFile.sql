@@ -23,7 +23,7 @@ BEGIN
 	END IF;
 	
 	-- Lookup the term ID for the status (job files always start with "pending" status).
-	SET statusTID = (
+	SET statusTID := (
 		SELECT id 
 		FROM term 
 		WHERE full_key = 'job_status.pending'
@@ -47,9 +47,9 @@ BEGIN
   		);
   		
   		IF uploadOrder IS NULL THEN 
-  			SET uploadOrder = 0;
+  			SET uploadOrder := 0;
   		ELSE 
-  			SET uploadOrder = uploadOrder + 1;
+  			SET uploadOrder := uploadOrder + 1;
   		END IF;
 		  	
   	END IF; 
