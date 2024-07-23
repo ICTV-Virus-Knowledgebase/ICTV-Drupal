@@ -47,7 +47,9 @@ window.ICTV.d3TaxonomyVisualization = function (
    
    // Configuration settings (to replace hard-coded values below)
    const settings = {
+      pageSize: 50,
       animationDuration: 900,
+      animationDelay: 1100,
       node: {
          radius: 17.5,
          strokeWidth: 3,
@@ -79,6 +81,29 @@ window.ICTV.d3TaxonomyVisualization = function (
          translateY: -(jQuery(window).height() * 0.45), //-1800
       },
    };
+
+   // Global variables
+
+   // This is used by openNode() to maintain details of the previously selected node.
+   let previousNode = {
+      parentTaxNodeID: null,
+      parentRankIndex: NaN
+   }
+
+   const paginationData = {
+      // The display order of a target child node.
+      childDisplayOrder: NaN,
+      // The (string) parent taxnode ID of the target child node.
+      parentTaxnodeID: null
+   }
+
+   // nodeHeight is used in pageNodes() to determine which page to display when searching
+   var nodeHeight = null;
+   var globalTaxNodeId = null;
+   var currentFontSize;
+   var selectedNode;
+   var clickedText;
+   var clickedCircle;
    var selected;
    var num_flag = false;
    var num;
@@ -98,12 +123,12 @@ window.ICTV.d3TaxonomyVisualization = function (
    // }
 
    // Get and validate the species panel's parent name Element.
-   const speciesParentEl = document.querySelector(`${containerSelector} .species-panel .parent-name`);
-   if (!speciesParentEl) { throw new Error("Invalid parent name element"); }
+   // const speciesParentEl = document.querySelector(`${containerSelector} .species-panel .parent-name`);
+   // if (!speciesParentEl) { throw new Error("Invalid parent name element"); }
 
    // Get and validate the species panel's species list Element.
-   const speciesListEl = document.querySelector(`${containerSelector} .species-panel .species-list`);
-   if (!speciesListEl) { throw new Error("Invalid species list element"); }
+   // const speciesListEl = document.querySelector(`${containerSelector} .species-panel .species-list`);
+   // if (!speciesListEl) { throw new Error("Invalid species list element"); }
 
    // The DOM Element for the font size panel and slider (these are assigned in "iniitializeFontSizePanel").
    let fontSizePanelEl = null;
@@ -144,90 +169,53 @@ window.ICTV.d3TaxonomyVisualization = function (
 
    
    // Clear the contents of the species panel.
-   function clearSpeciesPanel() {
-      speciesParentEl.innerHTML = "";
-      speciesListEl.innerHTML = "";
-   }
+   // function clearSpeciesPanel() {
+   //    speciesParentEl.innerHTML = "";
+   //    speciesListEl.innerHTML = "";
+   // }
 
    // Populate the species panel.
    // Note: The parameters should've been validated before this function is called.
-   function displaySpecies(parentName, parentRank, parentTaxNodeID) {
+   // function displaySpecies(parentName, parentRank, parentTaxNodeID) {
 
-      // Populate the parent name panel.
-      speciesParentEl.innerHTML = `Species of <span class="parent-rank">${parentRank}</span><br/><em>${parentName}<\em>`;
+   //    // Populate the parent name panel.
+   //    speciesParentEl.innerHTML = `Species of <span class="parent-rank">${parentRank}</span><br/><em>${parentName}<\em>`;
 
-      // Convert the taxnode ID to a string so it can be used as a key in the species data.
-      const strTaxNodeID = new String(parentTaxNodeID);
+   //    // Convert the taxnode ID to a string so it can be used as a key in the species data.
+   //    const strTaxNodeID = new String(parentTaxNodeID);
 
-      // Get all species associated with the parent.
-      const speciesArray = speciesData[strTaxNodeID];
-      if (!speciesArray || speciesArray.length < 1) {
+   //    // Get all species associated with the parent.
+   //    const speciesArray = speciesData[strTaxNodeID];
+   //    if (!speciesArray || speciesArray.length < 1) {
 
-         // Display a message in the species list.
-         speciesListEl.innerHTML = "No species available";
-         return;
-      }
+   //       // Display a message in the species list.
+   //       speciesListEl.innerHTML = "No species available";
+   //       return;
+   //    }
 
-      // Initialize the species list panel.
-      speciesListEl.innerHTML = "";
+   //    // Initialize the species list panel.
+   //    speciesListEl.innerHTML = "";
 
-      // Iterate over every species
-      speciesArray.forEach(function (species) {
+   //    // Iterate over every species
+   //    speciesArray.forEach(function (species) {
 
-         // Create and populate a species Element.
-         const speciesEl = document.createElement("div");
-         speciesEl.className = "species-row";
-         speciesEl.innerHTML = species.name;
-         speciesEl.setAttribute("data-taxnode-id", species.taxNodeID);
+   //       // Create and populate a species Element.
+   //       const speciesEl = document.createElement("div");
+   //       speciesEl.className = "species-row";
+   //       speciesEl.innerHTML = species.name;
+   //       speciesEl.setAttribute("data-taxnode-id", species.taxNodeID);
 
-         speciesEl.addEventListener("click", function (e) {
+   //       speciesEl.addEventListener("click", function (e) {
             
-            const taxNodeID = e.target.getAttribute("data-taxnode-id");
+   //          const taxNodeID = e.target.getAttribute("data-taxnode-id");
 
-            window.open(`${taxonDetailsURL}?taxnode_id=${taxNodeID}`, "_blank");
-         });
+   //          window.open(`${taxonDetailsURL}?taxnode_id=${taxNodeID}`, "_blank");
+   //       });
 
-         // Add the species Element to the list.
-         speciesListEl.appendChild(speciesEl);
-      });
-   }
-
-   // Return the color associated with this rank name and whether or not the node has child nodes.
-   function getRankColor(hasChildren_, rankName_) {
-      switch (rankName_) {
-         case "realm":
-         case "subrealm":
-            return hasChildren_ ? "#fff" : "#006600";
-
-         case "kingdom":
-         case "subkingdom":
-            return hasChildren_ ? "#fff" : "#278627";
-
-         case "phylum":
-         case "subphylum":
-            return hasChildren_ ? "#fff" : "#00426D";
-
-         case "class":
-         case "subclass":
-            return hasChildren_ ? "#fff" : "#3D79AA";
-
-         case "order":
-         case "suborder":
-            return hasChildren_ ? "#fff" : "#006CB5";
-
-         case "family":
-         case "subfamily":
-            return hasChildren_ ? "#fff" : "#258DE4";
-
-         case "genus":
-         case "subgenus":
-            return hasChildren_ ? "#fff" : "#99D7FF";
-
-         default:
-            return null;
-      }
-   }
-
+   //       // Add the species Element to the list.
+   //       speciesListEl.appendChild(speciesEl);
+   //    });
+   // }
 
    // TODO: What button? Give this a better name!
    function initializeButton() {
@@ -241,7 +229,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          .select(`${containerSelector} .font-size-panel`)
          .append("button")
          .attr("class", "screenshot-button")
-         .html(`<i class="fa fa-camera"></i> Screenshot`);
+         .html(`<i class="fa fa-camera"></i> Export`);
 
       // Create a dropdown for format selection.
       let selectFormat = d3.select(`${containerSelector} .font-size-panel`)
@@ -250,7 +238,9 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       // Add options to the dropdown.
       selectFormat.selectAll("option")
-         .data(["png", "jpeg", "pdf"]) // SVG supported now
+         // lrm 6-7-2024
+         // changed "pdf" to svg
+         .data(["png", "svg", "pdf"]) // SVG supported now
          .enter()
          .append("option")
          .attr("value", function (d) { return d; })
@@ -261,84 +251,315 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          const selectedFormat = selectFormat.node().value;
 
-         // Get references to taxonomy and species panels.
-         let svgEls = d3.selectAll(`${containerSelector} .taxonomy-panel svg, ${containerSelector} .species-panel svg`).nodes();
+         if (selectedFormat === "png") {
 
-         //             console.log(svgEls);
+            // Select the SVG element from the document
+            let svg = document.querySelector('svg');
 
-         //             if (selectedFormat === "svg") {
-         //                 // Create a new svg element
-         //                 let combinedSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-         //         r
-         //                 svgEls.forEach((svgEl, index) => {
-         //                     // Create a group element to hold the contents of each svg
-         //                     let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            // Get the D3 selection of the SVG
+            let svgSelection = d3.select(svg);
 
-         //                     if(index == 1) {
-         //                         g.setAttribute("transform", "translate(1500, 0)");
-         //                     }
-         //                     let node = document.importNode(svgEl, true);
-         //                     g.appendChild(node);
-         //                     combinedSvg.appendChild(g);
-         //                 });
+            // Apply inline CSS to match SVG before
+            svgSelection.selectAll('text.legend-node-text')
+               .style('font-style', 'normal')
+               .attr('transform', function (d, i) {
+                  return 'rotate(-45, 50, 50)';
+               })
 
-         //                 // Save the combined svg
-         //                 let svgData = new XMLSerializer().serializeToString(combinedSvg);
-         //                 let preface = '<?xml version="1.0" standalone="no"?>\r\n';
-         //                 let svgBlob = new Blob([preface, svgData], {type:"image/svg+xml;charset=utf-8"});
-         //                 let svgUrl = URL.createObjectURL(svgBlob);
-         //                 let downloadLink = document.createElement("a");
-         //                 downloadLink.href = svgUrl;
-         //                 downloadLink.download = "screenshot.svg";
-         //                 document.body.appendChild(downloadLink);
-         //                 downloadLink.click();
-         //                 document.body.removeChild(downloadLink);
-         //             }
+            svgSelection.selectAll('text.node-text')
+               .style('font-style', 'italic')
+               .style('font-weight', 'bold')
 
-         //  else {
+            svgSelection.selectAll('text.unassigned-text')
+               .style('font-style', 'normal')
 
-         let taxonomyPanel = document.querySelector(".taxonomy-panel");
-         let speciesPanel = document.querySelector(".species-panel");
+            svgSelection.selectAll('text')
+               .style('font-size', '64px')
+               .style('fill', 'black')
+               .style('text-transform', 'capitalize')
 
-         let processPanel = panel => {
-            return html2canvas(panel, { allowTaint: true }).then(canvas => {
-               return canvas.toDataURL(`image/${selectedFormat}`);
-            });
-         };
-         if (selectedFormat === "png" || selectedFormat === "jpeg") {
-            Promise.all([processPanel(taxonomyPanel), processPanel(speciesPanel)]).then((screenshots) => {
-               let img1 = new Image();
-               let img2 = new Image();
+            // Save the original viewBox attribute value of the SVG
+            let originalViewBox = svg.getAttribute('viewBox');
 
-               img1.onload = function () {
-                  img2.onload = function () {
-                     let canvas = document.createElement('canvas');
-                     canvas.width = img1.width + img2.width;
-                     canvas.height = Math.max(img1.height, img2.height);
-                     let ctx = canvas.getContext('2d');
-                     ctx.drawImage(img1, 0, 0);
-                     ctx.drawImage(img2, img1.width, 0);
+            // Get the bounding box of the SVG content
+            let bbox = svg.getBBox();
 
-                     let link = document.createElement('a');
-                     link.setAttribute('download', `screenshot.${selectedFormat}`);
-                     link.setAttribute('href', canvas.toDataURL(`image/${selectedFormat}`));
-                     link.click();
+            // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
+            svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+
+            // Get the size of the SVG element in pixels
+            let svgSize = svg.getBoundingClientRect();
+
+            // Function to process the SVG and convert it to an image
+            let processPanel = () => {
+               return new Promise((resolve, reject) => {
+
+                  // Serialize the SVG element to a string
+                  let serializer = new XMLSerializer();
+                  let svgStr = serializer.serializeToString(svg);
+
+                  // Create a scale factor
+                  let scaleFactor = 4;
+
+                  // Create a canvas element to draw the SVG onto
+                  let canvas = document.createElement("canvas");
+                  canvas.width = svgSize.width * scaleFactor;
+                  canvas.height = svgSize.height * scaleFactor;
+
+                  // Get the 2D rendering context of the canvas
+                  let ctx = canvas.getContext("2d");
+
+                  // Scale the context before drawing the SVG onto it
+                  ctx.scale(scaleFactor, scaleFactor);
+
+                  let img = document.createElement("img"); // Create an image element
+                  img.onload = () => {
+                     ctx.fillStyle = "white";
+                     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                     // Draw the image (SVG content) onto the canvas
+                     ctx.drawImage(img, 0, 0);
+
+                     // Convert the canvas content to a data URL (image/png or image/jpeg)
+                     let imgData = canvas.toDataURL(`image/${selectedFormat}`);
+
+                     // Reset or remove the viewBox attribute to its original value
+                     if (originalViewBox) {
+                        svg.setAttribute('viewBox', originalViewBox);
+                     } else {
+                        svg.removeAttribute('viewBox');
+                     }
+
+                     // Reset font slider if it is at a value > 4
+                     // currentFontSize is a global varible assigned to the fontSliderE1 value
+                     if (currentFontSize > 4) {
+                        fontSliderEl.property("value", 4);
+                        font = "4rem";
+                        currentFontSize = 4;
+                        d3.selectAll('text').style("font-size", font);
+                     }
+
+                     // Resolve the promise with the image data
+                     resolve(imgData);
                   };
-                  img2.src = screenshots[1];
-               };
-               img1.src = screenshots[0];
+                  // Set the image source to the serialized SVG data (base64 encoded)
+                  img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgStr))));
+               });
+            };
+
+            // Process the SVG and then save the image
+            processPanel().then((imgData) => {
+               // Create a link element to download the image
+               let link = document.createElement('a');
+               link.download = `screenshot.${selectedFormat}`; // Use the selected format in the filename
+               link.href = imgData;
+               link.click(); // Trigger the download
             });
-         } else if (selectedFormat === "pdf") {
-            let printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>Print</title></head><body>');
-            printWindow.document.write(taxonomyPanel.outerHTML);
-            printWindow.document.write(speciesPanel.outerHTML);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.print();
          }
-      }
-      );
+
+         // lrm 5-29-2024
+         // SVG selection
+         else if (selectedFormat === "svg") {
+
+            // Select the SVG element
+            let svg = document.querySelector('svg');
+
+            // Store the original viewBox value
+            let originalViewBox = svg.getAttribute('viewBox');
+
+            // Get the bounding box of the SVG content
+            let bbox = svg.getBBox();
+
+            // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
+            svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+
+            // Create a D3 selection from the SVG
+            let svgSelection = d3.select(svg);
+
+            // Apply inline styles to the SVG elements
+            svgSelection.selectAll('text.legend-node-text')
+               // 64px = 4rem
+               // adobe illustrator did not like rem
+               .style('font-style', 'normal')
+               // adobe illustrator does not read text-transform
+               // instead, use JS to capitalize the first letter for rank columns
+               .each(function() {
+                  // Get current text
+                  let currentText = d3.select(this).text();
+                  // Capitalize the first letter of the text
+                  let capitalizedText = currentText.charAt(0).toUpperCase() + currentText.slice(1);
+                  // Set the new text
+                  d3.select(this).text(capitalizedText);
+              })
+               // adobe illustrator likes this for text rotation
+               .attr('transform', function (d, i) {
+                  return 'rotate(-45, 50, 50)';
+               });
+
+            svgSelection.selectAll('text.node-text')
+               .style('font-style', 'italic')
+               .style('font-weight', 'bold')
+
+            svgSelection.selectAll('text.unassigned-text')
+               .style('font-style', 'normal')
+
+            svgSelection.selectAll('text')
+               .style('font-size', '64px')
+               .style('fill', 'black')
+
+            // Serialize the SVG to a string
+            let serializer = new XMLSerializer();
+            let svgStr = serializer.serializeToString(svg);
+
+            // Create a Blob object from the SVG string
+            let blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+
+            // Create a URL for the Blob object
+            let url = URL.createObjectURL(blob);
+
+            // Create a link element and set its href to the Blob URL
+            let link = document.createElement('a');
+            link.href = url;
+
+            // Set the download attribute of the link to specify the file name
+            link.download = 'image.svg';
+
+            // Append the link to the document
+            document.body.appendChild(link);
+
+            // Simulate a click on the link
+            link.click();
+
+            // Remove the link from the document
+            document.body.removeChild(link);
+
+            // Reset or remove the viewBox attribute to its original value
+            if (originalViewBox) {
+               svg.setAttribute('viewBox', originalViewBox);
+            } else {
+               svg.removeAttribute('viewBox');
+            }
+
+            // Reset font slider if it is at a value > 4
+            // currentFontSize is a global varible assigned to the fontSliderE1 value
+            if (currentFontSize > 4) {
+               fontSliderEl.property("value", 4);
+               font = "4rem";
+               currentFontSize = 4;
+               d3.selectAll('text').style("font-size", font);
+            }
+
+         }
+
+         // lrm 6-20-2024
+         // PDF selection
+         // This export is done via server-side with InkScape's CLI
+         else if (selectedFormat === "pdf") {
+
+            // Select the SVG element
+            let svg = document.querySelector('svg');
+
+            // Store the original viewBox value
+            let originalViewBox = svg.getAttribute('viewBox');
+
+            // Get the bounding box of the SVG content
+            let bbox = svg.getBBox();
+
+            let padding = 250;
+
+            // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
+            svg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + 2 * padding} ${bbox.height + 2 * padding}`);
+
+            // Create a D3 selection from the SVG
+            let svgSelection = d3.select(svg);
+
+            // Apply inline styles to the SVG elements
+            svgSelection.selectAll('text.legend-node-text')
+               // 64px = 4rem
+               // adobe illustrator did not like rem
+               .style('font-style', 'normal')
+               .style('fill', 'black')
+               // adobe illustrator does not read text-transform
+               // instead, use JS to capitalize the first letter for rank columns
+               .each(function() {
+                  // Get current text
+                  let currentText = d3.select(this).text();
+                  // Capitalize the first letter of the text
+                  let capitalizedText = currentText.charAt(0).toUpperCase() + currentText.slice(1);
+                  // Set the new text
+                  d3.select(this).text(capitalizedText);
+              })
+               // adobe illustrator likes this for text rotation
+               .attr('transform', function (d, i) {
+                  return 'rotate(-45, 50, 50)';
+               });
+
+            svgSelection.selectAll('text.node-text')
+               .style('font-family', 'C059')
+               .style('font-weight', 'bold')
+               .style('font-style', 'italic')
+
+            svgSelection.selectAll('text.unassigned-text')
+               .style('font-style', 'normal')
+
+            svgSelection.selectAll('text')
+               .style('font-size', '64px')
+               .style('fill', 'black')
+
+            // Serialize the SVG to a string
+            let serializer = new XMLSerializer();
+            let svgStr = serializer.serializeToString(svg);
+
+            // Send a POST request to the server with the SVG data
+            fetch('/ictv_d3_taxonomy_visualization/pdf_export', {
+               method: 'POST',
+               headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+               },
+               body: `svg=${encodeURIComponent(svgStr)}`,
+            })
+               .then(response => response.blob())
+               .then(blob => {
+
+                  // Create a URL for the Blob object
+                  let url = URL.createObjectURL(blob);
+
+                  // Create a link element and set its href to the Blob URL
+                  let link = document.createElement('a');
+                  link.href = url;
+
+                  // Set the download attribute of the link to specify the file name
+                  link.download = 'image.pdf';
+
+                  // Append the link to the document
+                  document.body.appendChild(link);
+
+                  // Simulate a click on the link
+                  link.click();
+
+                  // Remove the link from the document
+                  document.body.removeChild(link);
+
+                  // Reset or remove the viewBox attribute to its original value
+                  if (originalViewBox) {
+                     svg.setAttribute('viewBox', originalViewBox);
+                  } else {
+                     svg.removeAttribute('viewBox');
+                  }
+
+                  // Reset font slider if it is at a value > 4
+                  // currentFontSize is a global varible assigned to the fontSliderE1 value
+                  if (currentFontSize > 4) {
+                     fontSliderEl.property("value", 4);
+                     font = "4rem";
+                     currentFontSize = 4;
+                     d3.selectAll('text').style("font-size", font);
+                  }
+
+               });
+         }
+
+      });
    }
 
    let zoom = d3.zoom()
@@ -364,6 +585,10 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       if (!releaseYear) { throw new Error("Invalid release year in getRelease (empty)"); }
 
+      // when running in local environment, use the r
+      // const release = releases.data[`r${releaseYear}`];
+
+      // when uploading to drupal, use only the year
       const release = releases.data[`${releaseYear}`];
       if (!release) { throw new Error(`No release found for release year ${releaseYear}`); }
 
@@ -434,6 +659,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          const fontSize = e.target.value;
          font = fontSize + "rem";
 
+         currentFontSize = fontSize;
+
          // Constrain the font size change to the taxonomy panel.
          const treeTextSelector = `${containerSelector} .taxonomy-panel text`;
          d3.selectAll(treeTextSelector).style("font-size", font);
@@ -483,7 +710,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          searchPanel.releaseNumber.selected = release.releaseNum;
 
          // Clear the species panel
-         clearSpeciesPanel();
+         // clearSpeciesPanel();
 
          // Display the taxonomy of the selected release.
          await displayReleaseTaxonomy(releaseYear);
@@ -532,19 +759,60 @@ window.ICTV.d3TaxonomyVisualization = function (
       // Format the release year for use as part of a JSON filename.
       let filenameReleaseYear = releaseYear_.replace(/a$/, "").replace(/b$/, ".5");
 
-      // Determine the filenames for the non-species and species JSON files.
-      const nonSpeciesFilename = `${dataURL}/data/nonSpecies_${filenameReleaseYear}.json`;
-      const speciesFilename = `${dataURL}/data/species_${filenameReleaseYear}.json`;
+      // Determine the filename for the taxonomy JSON file.
+      const jsonFilename = `${dataURL}/data/taxonomy_${filenameReleaseYear}.json`;
+      //const nonSpeciesFilename = `${dataURL}/data/nonSpecies_${filenameReleaseYear}.json`;
+      //const speciesFilename = `${dataURL}/data/species_${filenameReleaseYear}.json`;
 
       // Load the species data for this release.
-      speciesData = await d3.json(speciesFilename).then(function (s) { return s; });
+      /*speciesData = await d3.json(speciesFilename).then(function (s) { return s; });
       if (!speciesData) {
          throw new Error(`Invalid species data for release ${release_}`);
-      }
+      }*/
 
       // TODO: the non-species file shouldn't be opened twice. Improve the code below!!!
       // Load the non-species data for this release.
-      d3.json(nonSpeciesFilename).then(function (data) {
+      // d3.json(nonSpeciesFilename).then(function (data) {
+         // const ab = d3.hierarchy(data, function (d) {
+         //    if (d.children === null) { return; }
+
+         //    do {
+         //       let str = d.child_counts;
+         //       var result;
+         //       const regex = /(\d+)/;
+         //       if (typeof str === "string" && str.length > 0) {
+         //          if (str.includes("species")) {
+         //             result = str.replace(/, .*species|,.*$/, "");
+         //          } else {
+         //             result = str?.match(regex);
+         //          }
+         //       }
+         //       if (typeof result === "string" && result.length > 0) {
+         //          num = parseInt(result.match(/\d+/)[0]);
+         //          if (num > 500) {
+         //             num = temp;
+         //          } else {
+         //             if (num > temp) {
+         //                arr.push(temp);
+         //                temp = num;
+         //             }
+         //          }
+         //       }
+         //    } while (num >= 1000);
+
+         //    max = Math.max(...arr);
+         //    num_flag = true;
+         //    return d.children; 
+         // });
+      // });
+      
+      // lrm 6-20-2024
+      // nonSpeciesFilename was being loaded twice, I took the commented code above
+      // and put it where it was being loaded a 2nd time.
+      d3.json(jsonFilename).then(function (data) {
+         
+         var genus = false;
+
          const ab = d3.hierarchy(data, function (d) {
             if (d.children === null) { return; }
 
@@ -574,13 +842,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             max = Math.max(...arr);
             num_flag = true;
-            return d.children; 
+            return d.children;
          });
-      });
-
-      d3.json(nonSpeciesFilename).then(function (data) {
-
-         var genus = false;
 
          // Set the width and height available within the SVG.
          const availableHeight =
@@ -646,7 +909,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                      }
                   }
                }
-            } while (num > 1000);
+            } 
+            while (num > 1000);
             const max = Math.max(...arr);
             num_flag = true;
             return d.children;
@@ -672,6 +936,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                );
 
             let zoom = d3.zoom()
+               // zoom constraints
                // .05: Zoom out to 5% of the original size
                // .5: Zoom in to .5 times the original size
                .scaleExtent([0.05, .5])
@@ -700,43 +965,64 @@ window.ICTV.d3TaxonomyVisualization = function (
             ////ds.x0 = (availableHeight / 4);
             //ds.y0 = -100;
 
-            function pageNodes(d, maxNode) {
+            function pageNodes(d, pageSize) {
 
-               if (d.children) {
-                  d.children.forEach((c) => pageNodes(c, maxNode));
-                  if (d.children.length > maxNode) {
-                     d.pages = {};
-                     const count = maxNode - 2;
-                     const l = Math.ceil(d.children.length / count);
-                     for (let i = 0; i < l; i++) {
-                        let startRange = i * count;
-                        let endRange = i * count + count;
-                        d.pages[i] = d.children.slice(startRange, endRange);
-                        d.pages[i].unshift({
-                           ...d.pages[i][0],
-                           data: {
-                              name: "Up",
-                              rankName: "Shift",
-                              rankIndex: rankCount - 2,
-                           },
-                           page: i == 0 ? l - 1 : i - 1,
-                        });
-                        d.pages[i].push({
-                           ...d.pages[i][0],
-                           data: {
-                              name: "Down",
-                              rankName: "Shift",
-                              rankIndex: rankCount - 2,
-                           },
-                           page: i != l - 1 ? i + 1 : 0,
-                        });
-                     }
-                     d.children = d.pages[0];
+               if (!d.children) { return; }
+
+               d.children.forEach((c) => pageNodes(c, pageSize));
+               if (d.children.length > pageSize) {
+
+                  d.pages = [];
+                  const count = pageSize - 2; // dmd 070824 Are we subtracting 2 to allow for "up" and "down"?
+                  const pageCount = Math.ceil(d.children.length / count);
+
+                  // Iterate over all pages.
+                  for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+
+                     // The start and end indices for the current page.
+                     let startRange = pageIndex * count;
+                     let endRange = startRange + count;
+
+                     // Add the child nodes to the page.
+                     d.pages[pageIndex] = d.children.slice(startRange, endRange);
+
+                     // I think this adds the "up" node before the page's child nodes.
+                     d.pages[pageIndex].unshift({
+                        ...d.pages[pageIndex][0],
+                        data: {
+                           name: "More...",
+                           rankName: "Shift",
+                           // rankIndex: rankCount - 2, // dmd 070824: What is this doing?
+                        },
+                        page: pageIndex == 0 ? pageCount - 1 : pageIndex - 1,
+                     });
+
+                     // I think this adds the "down" node after the page's child nodes.
+                     d.pages[pageIndex].push({
+                        ...d.pages[pageIndex][0],
+                        data: {
+                           name: "More...",
+                           rankName: "Shift",
+                           // rankIndex: rankCount - 2,
+                        },
+                        page: pageIndex != pageCount - 1 ? pageIndex + 1 : 0,
+                     });
                   }
+
+                  // The default page index
+                  let pageIndex = 0;
+
+                  if (!!d.data.parentTaxNodeID && paginationData.parentTaxnodeID == d.data.parentTaxNodeID && !isNaN(paginationData.childDisplayOrder)) {
+                     pageIndex = Math.floor((paginationData.childDisplayOrder - 1) / count);
+                     // console.log(`pageIndex is now ${pageIndex}`)
+                  }
+
+                  // Select the current page by index.
+                  d.children = d.pages[pageIndex];
                }
             }
 
-            ds.children.forEach((c) => pageNodes(c, 90));
+            ds.children.forEach((c) => pageNodes(c, settings.pageSize));
 
             ds.children.forEach(collapse);
 
@@ -757,7 +1043,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                const dx = 21 * scaleFactor;
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
-               links = info.descendants().slice(1);
+               var links = info.descendants().slice(1);
+               // console.log(links);
                const treeNodes = treeLayout(ds);
                treeNodes.each((d) => {
                   const x = d.x; // the x-coordinate of the node in the layout
@@ -768,9 +1055,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                parent.forEach(function (d) {
                   var h = settings.svg.height / 125;
                   var w = (settings.svg.width * 5) / rankCount;
-d
+
                   let str = d.data.child_counts;
-                  
+
                   var result;
                   const regex = /(\d+)/;
                   if (typeof str === "string" && str.length > 0) {
@@ -796,20 +1083,20 @@ d
                   .enter()
                   .append("g")
                   .attr("class", "node")
-                  // add data-id atttribute fo callback function
-                  .attr("data-id", function (d) {
-                     return d.data.json_id;
-                  })
-                  .attr("data-lineage", function (d) {
-                     return d.data.json_lineage;
-                  })
+                  // add attributes to g nodes from JSON data
+                  // .attr("data-id", function (d) {
+                  //    return d.data.json_id;
+                  // })
+                  // .attr("data-lineage", function (d) {
+                  //    return d.data.json_lineage;
+                  // })
                   .attr("parent-name", function (d) {
                      return d.data.name;
                   })
                   .attr("parent-rank", function (d) {
                      return d.data.rankName;
                   })
-                  .attr("parent-taxNodeId", function (d) {
+                  .attr("taxNodeID", function (d) {
                      return d.data.taxNodeID;
                   })
                   .attr("has_species", function (d) {
@@ -821,6 +1108,17 @@ d
                   .attr("children", function (d) {
                      return d.data.children;
                   })
+                  .attr("ghost-node", function (d) {
+                     if (isGhostNode(d)) {
+                        return "true";
+                     }
+                  })
+                  .attr("parentTaxNodeID", function (d) {
+                     return d.data.parentTaxNodeID;
+                  })
+                  .attr("rank_index", function (d) {
+                     return d.data.rankIndex;
+                  })
                   .attr("transform", function (d) {
                      if (!d || isNaN(source.x0) || isNaN(source.y0)) {
                         return null;
@@ -829,73 +1127,95 @@ d
                   })
                   .on("click", click);
 
-
+               // lrm 5-22-2024
+               // Commented out this code to instead, append a circle to the nodes
+               // this is done in the update circle.node function
+               // TODO: Probably take this out, leaving it here for now
                Enter.append("rect")
                   .style("stroke", "black")
                   .style("stroke-width", "3px")
-                  .attr("width", function (d) {
-                     if (d.data.name === null) {
-                        if (
-                           d.data.rankName === "realm" &&
-                           d.data.taxNodeID !== "legend"
-                        ) {
-                           return "20px";
-                        } else if (
-                           d.data.has_assigned_siblings === true ||
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           return "20px";
-                        } else {
-                           return "0px";
-                        }
-                     }
-                  })
-                  .attr("height", function (d) {
-                     if (d.data.name === "Unassigned") {
-                        if (
-                           d.data.rankName === "realm" &&
-                           d.data.taxNodeID !== "legend"
-                        ) {
-                           return "20px";
-                        } else if (
-                           d.data.has_assigned_siblings === true &&
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           return "20px";
-                        } else {
-                           return "0px";
-                        }
-                     }
-                  })
+                  // .attr("width", function (d) {
+                  //    if (d.data.name === null) {
+                  //       // console.log(d.data.name);
+                  //       if (
+                  //          d.data.rankName === "realm" &&
+                  //          d.data.taxNodeID !== "legend"
+                  //       ) {
+                  //          return "20px";
+                  //       } else if (
+                  //          d.data.has_assigned_siblings === true ||
+                  //          d.data.has_unassigned_siblings === true
+                  //       ) {
+                  //          return "20px";
+                  //       } else {
+                  //          return "0px";
+                  //       }
+                  //    }
+                  // })
+                  // .attr("height", function (d) {
+                  //    if (d.data.name === "Unassigned") {
+                  //       // console.log(d.data.name);
+                  //       if (
+                  //          d.data.rankName === "realm" &&
+                  //          d.data.taxNodeID !== "legend"
+                  //       ) {
+                  //          return "20px";
+                  //       } else if (
+                  //          d.data.has_assigned_siblings === true &&
+                  //          d.data.has_unassigned_siblings === true
+                  //       ) {
+                  //          return "20px";
+                  //       } else {
+                  //          return "0px";
+                  //       }
+                  //    }
+                  // })
                   .style("fill", function (d) {
-                     let color = getRankColor(!!d._children, d.data.rankName);
-                     if (!!color) {
-                        return color;
-                     }
+
+                     // if (this === clickedRect) {
+                     //    console.log(clickedRect);
+                     //    // console.log(clickedCircle);
+                     //    return "#006CB5";
+                     // } else  if(this !== clickedRect){
+                     //    return "white";
+                     // }
 
                      findParent(d);
                   })
                   .attr("cursor", "pointer");
-
+               // lrm 5-22-2024
+               // this code appears to not be needed, the logic for the circle is in the update circle.node function
                Enter.append("circle")
                   .attr("class", "node")
-                  .attr("r", function (d) {
-                     if (d.data.name !== "Unassigned") {
-                        return settings.node.radius;
-                     } else {
-                        return 0;
-                     }
-                  })
+                  // .attr("r", function (d) {
+                  //    if (d.data.name !== "Unassigned") {
+                  //       return settings.node.radius;
+                  //    } else if (d.data.name === "Unassigned") {
+                  //       if (d.data.rankName === "realm" && d.data.taxNodeID !== "legend") {
+                  //          return settings.node.radius;
+                  //       } else if (d.data.has_assigned_siblings === true && d.data.has_unassigned_siblings === true) {
+                  //          console.log(d.data.has_assigned_siblings);
+                  //          return settings.node.radius;
+                  //       } else {
+                  //          return 0;
+                  //       }
+                  //    }
+                  // })
                   .style("stroke", "black")
                   .style("stroke-width", `${settings.node.strokeWidth}px`)
                   .style("fill", function (d) {
-                     let color = getRankColor(!!d._children, d.data.rankName);
-                     if (!!color) {
-                        return color;
-                     }
-
+                     
+                     // lrm 5-20-2024
+                     // update DOM element's appended circle when clicked
+                     // if (this === clickedCircle) {
+                     //    // console.log(clickedCircle);
+                     //    return "#006CB5";
+                     // } else  if(this !== clickedCircle) {
+                     //    return "white";
+                     // }
                      findParent(d);
                   })
+                  
                   .style("opacity", function (d) {
                      // TODO: what is this doing?
                      return !d.data.parentDistance ? 0 : 1;
@@ -920,8 +1240,10 @@ d
 
                      if (d.data.taxNodeID === "legend") {
                         className = "legend-node-text";
-                     } else if (d.data.name === "Unassigned") {
+                     } else if (d.data.name === "Unassigned" && !isGhostNode(d)) {
                         className = "unassigned-text";
+                     } else if(isGhostNode(d)) {
+                        className = "ghost-node-text";
                      }
 
                      return className;
@@ -939,7 +1261,7 @@ d
                      } else if (
                         d.data.has_species !== 0 &&
                         d.data.taxNodeID !== "legend" &&
-                        d.data.rankIndex === rankCount - 1
+                        d.data.rankIndex === rankCount
                      ) {
                         return d.children || d._children ? "end" : "start";
                      }
@@ -948,14 +1270,12 @@ d
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy)
                   .text(function (d) {
+                     // Do not display species in legend
                      if (d.data.name === "Unassigned" || d.data.rankName === "tree") {
                         if (d.data.taxNodeID === "legend") {
-                           // Don't display "species" in the legend.
-                           if (d.data.rankName === "species") {
-                              return "";
-                           }
                            return d.data.rankName;
-                        } else if (
+                        } 
+                        else if (
                            d.data.rankName === "realm" ||
                            d.data.has_assigned_siblings === true
                         ) {
@@ -970,25 +1290,25 @@ d
                   .attr("fill", function (d) {
                      return "#000000";
                   })
-                  .on("click", function (e, d) {
+                  // .on("click", function (e, d) {
 
-                     // TODO: why is the value reset here?
-                     fontSliderEl.attr("value", 4);
+                  //    // TODO: why is the value reset here?
+                  //    fontSliderEl.attr("value", 4);
 
-                     if (!d.data.name || d.data.name.length < 1 || d.data.name === "Unassigned" ||
-                        !d.data.rankName || d.data.rankName.length < 1 ||
-                        !d.data.taxNodeID || isNaN(parseInt(d.data.taxNodeID)) ||
-                        !d.data.has_species) {
+                  //    if (!d.data.name || d.data.name.length < 1 || d.data.name === "Unassigned" ||
+                  //       !d.data.rankName || d.data.rankName.length < 1 ||
+                  //       !d.data.taxNodeID || isNaN(parseInt(d.data.taxNodeID)) ||
+                  //       !d.data.has_species) {
 
-                        // Clear the species panel
-                        return clearSpeciesPanel();
+                  //       // Clear the species panel
+                  //       return clearSpeciesPanel();
 
-                     } else {
+                  //    } else {
 
-                        // Populate the species panel
-                        return displaySpecies(d.data.name, d.data.rankName, d.data.taxNodeID);
-                     }
-                  })
+                  //       // Populate the species panel
+                  //       return displaySpecies(d.data.name, d.data.rankName, d.data.taxNodeID);
+                  //    }
+                  // })
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy)
                   .call(getBB);
@@ -1017,101 +1337,120 @@ d
                      return "translate(" + d.y + "," + d.x + ")";
                   });
 
+               // lrm 5-22-2024
+               // instead of rect, append a circle to the nodes
+               // this is done in the update circle.node function
+               // TODO: Probably take this out, leaving it for now
                Update.select("rect")
                   .style("stroke", "black")
                   .style("stroke-width", "2px")
-                  .attr("width", function (d) {
-                     if (d.data.name === "Unassigned") {
-                        if (
-                           d.data.rankName === "realm" &&
-                           d.data.taxNodeID !== "legend"
-                        ) {
-                           return "30px";
-                        } else if (
-                           d.data.has_assigned_siblings === true ||
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           return "30px";
-                        } else {
-                           return "0px";
-                        }
-                     }
-                  })
-                  .attr("height", function (d) {
-                     if (d.data.name === "Unassigned") {
-                        if (
-                           d.data.rankName === "realm" &&
-                           d.data.taxNodeID !== "legend"
-                        ) {
-                           return "30px";
-                        } else if (
-                           d.data.has_assigned_siblings === true ||
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           return "30px";
-                        } else {
-                           return "0px";
-                        }
-                     }
-                  })
-                  .attr("x", function (d) {
-                     if (d.data.name === "Unassigned") {
-                        if (
-                           d.data.rankName === "realm" &&
-                           d.data.taxNodeID !== "legend"
-                        ) {
-                           return "-15px";
-                        } else if (
-                           d.data.has_assigned_siblings === true ||
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           return "-15px";
-                        } else {
-                           return "0px";
-                        }
-                     }
-                  })
-                  .attr("y", function (d) {
-                     if (d.data.name === "Unassigned") {
-                        if (
-                           d.data.rankName === "realm" &&
-                           d.data.taxNodeID !== "legend"
-                        ) {
-                           return "-15px";
-                        } else if (
-                           d.data.has_assigned_siblings === true ||
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           return "-15px";
-                        } else {
-                           return "0px";
-                        }
-                     }
-                  })
+                  // .attr("width", function (d) {
+                  //    if (d.data.name === "Unassigned") {
+                  //       if (
+                  //          d.data.rankName === "realm" &&
+                  //          d.data.taxNodeID !== "legend"
+                  //       ) {
+                  //          return "30px";
+                  //       } else if (
+                  //          d.data.has_assigned_siblings === true ||
+                  //          d.data.has_unassigned_siblings === true
+                  //       ) {
+                  //          return "30px";
+                  //       } else {
+                  //          return "0px";
+                  //       }
+                  //    }
+                  // })
+                  // .attr("height", function (d) {
+                  //    if (d.data.name === "Unassigned") {
+                  //       if (
+                  //          d.data.rankName === "realm" &&
+                  //          d.data.taxNodeID !== "legend"
+                  //       ) {
+                  //          return "30px";
+                  //       } else if (
+                  //          d.data.has_assigned_siblings === true ||
+                  //          d.data.has_unassigned_siblings === true
+                  //       ) {
+                  //          return "30px";
+                  //       } else {
+                  //          return "0px";
+                  //       }
+                  //    }
+                  // })
+                  // .attr("x", function (d) {
+                  //    if (d.data.name === "Unassigned") {
+                  //       if (
+                  //          d.data.rankName === "realm" &&
+                  //          d.data.taxNodeID !== "legend"
+                  //       ) {
+                  //          return "-15px";
+                  //       } else if (
+                  //          d.data.has_assigned_siblings === true ||
+                  //          d.data.has_unassigned_siblings === true
+                  //       ) {
+                  //          return "-15px";
+                  //       } else {
+                  //          return "0px";
+                  //       }
+                  //    }
+                  // })
+                  // .attr("y", function (d) {
+                  //    if (d.data.name === "Unassigned") {
+                  //       if (
+                  //          d.data.rankName === "realm" &&
+                  //          d.data.taxNodeID !== "legend"
+                  //       ) {
+                  //          return "-15px";
+                  //       } else if (
+                  //          d.data.has_assigned_siblings === true ||
+                  //          d.data.has_unassigned_siblings === true
+                  //       ) {
+                  //          return "-15px";
+                  //       } else {
+                  //          return "0px";
+                  //       }
+                  //    }
+                  // })
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy)
                   .style("fill", function (d) {
-                     let color = getRankColor(!!d._children, d.data.rankName);
-                     if (!!color) {
-                        return color;
-                     }
+
+                     // lrm 5-23-2024
+                     // this code is no longer needed, this will be taken down later
+                     // if (this === clickedRect) {
+                     //    // console.log(clickedCircle);
+                     //    return "#006CB5";
+                     // } else  if(this !== clickedRect){
+                     //    return "white";
+                     // }
 
                      findParent(d);
                   })
                   .attr("cursor", "pointer");
 
                Update.select("circle.node")
+
+                  // append circle to all nodes but the invisible ghost nodes
                   .attr("r", function (d) {
-                     if (d.data.name !== "Unassigned") {
-                        return settings.node.radius;
-                     } else {
+
+                     if (isGhostNode(d)) {
                         return 0;
+                     } else if (d.data.taxNodeID === "legend") {
+                        return 0;
+                     } else {
+                        return settings.node.radius;
                      }
                   })
+                  
                   .style("fill", function (d) {
-                     let color = getRankColor(!!d._children, d.data.rankName);
-                     if (!!color) {
-                        return color;
+
+                     // lrm 5-20-2024
+                     // update DOM element's appended circle when clicked
+                     if (this === clickedCircle) {
+                        return "#006CB5";
+                     } else  if(this !== clickedCircle){
+                        return "white";
                      }
 
                      findParent(d);
@@ -1150,8 +1489,12 @@ d
                Update.select("text.node-text")
                   .attr("cursor", "pointer")
                   .style("fill", function (d) {
-                     if (selected == d.data.name) {
-                        return d._children ? "#000000" : "#006CB5";
+
+                     // lrm 5-30-2024
+                     // clicked text is the highlighted text
+                     // clickedText is global varible assigned in the click function
+                     if(this == clickedText){
+                        return "#006CB5";
                      } else {
                         return "#000000";
                      }
@@ -1170,7 +1513,18 @@ d
                   .style("font-size", fontSliderEl.property("value") + "rem");
 
                Update.select("text.unassigned-text")
-                  .style("font-size", fontSliderEl.property("value") + "rem");
+                  .style("font-size", fontSliderEl.property("value") + "rem")
+                  .style("fill", function (d) {
+
+                     // lrm 6-10-2024
+                     // clicked text is the highlighted text
+                     // clickedText is global varible assigned in the click function
+                     if(this == clickedText){
+                        return "#006CB5";
+                     } else {
+                        return "#000000";
+                     }
+                  })
                   
                var Exit = children
                   .exit()
@@ -1194,6 +1548,7 @@ d
                   .insert("path", "g")
                   .attr("class", "link")
                   .attr("d", function (d) {
+
                      if (
                         ((d.data.rankName === "subgenus" &&
                            d.data.name == "Unassigned") ||
@@ -1201,9 +1556,13 @@ d
                         d.data.name === "Unassigned"
                      ) {
                         return diagonal(0, 0);
+
                      }
+
                      var pos = { x: source.x0, y: source.y0 };
+
                      return diagonal(pos, pos);
+
                   })
                   .style("stroke-width", "5px")
                   .style("fill", "none")
@@ -1220,20 +1579,46 @@ d
                         return "none";
                      }
                   });
+
                var linkUpdate = linkEnter.merge(link);
+                  
+
                linkUpdate
                   .transition("path.link")
                   .duration(settings.animationDuration)
                   .attr("d", function (d) {
-                     return diagonal(d, d.parent);
-                  })
-                  .style("stroke", function (d) {
-                     if (d.data.name !== "down" || d.data.name !== "up") {
-                        return d._children ? "#808080" : "#006CB5";
+
+                     // lrm 6-12-2024
+                     // Do not draw links to ghost nodes
+                     // This helps the link line colors stay consistent
+                     if (!isGhostNode(d)) {
+                        if (isGhostNode(d.parent)) {
+                           return diagonal(findNonGhostParent(d.parent), d);
+                        }
+                        return diagonal(d.parent, d);
                      }
-                     findParent(d);
+                  })
+
+                  // Code to color the links
+                  .style("stroke", function (d) {
+                     // lrm 6-17-2024
+                     // Check if the node is a leaf node and if it's the currently selected node
+                     if ((!d.children && !d._children) && d === selectedNode) {
+                        return "#006CB5";
+                     } else if (d._children) {
+                        return "#808080";
+                     } else if (d.children) {
+                        return "#006CB5";
+                     } else {
+                        return "#808080";
+                     }
+
+                     // original code for link color
+                  //    if (d.data.name !== "down" || d.data.name !== "up") {
+                  //       return d._children ? "#808080" : "#006CB5";
+                  //    }
+                  //    findParent(d);
                   });
-               // .attr('cursor', 'pointer');
 
                var linkExit = link
                   .exit()
@@ -1292,21 +1677,75 @@ d
 
                function click(event, d) {
                   selected = d.data.name;
+
+                  selectedNode = d;
+
+                  // console.log(d);
                   if (d.data.taxNodeID !== "legend") {
                      if (d.hasOwnProperty("page")) {
                         d.parent.children = d.parent.pages[d.page];
                      } else if (d.children) {
                         d._children = d.children;
                         d.children = null;
-                     } else {
+                     } else if (d._children){
                         d.children = d._children;
                         d._children = null;
                      }
 
+                     // lrm 5-20-2024
+                     // clickedCircle is a  global variable declared at the top of the script
+                     // here it is assigned for the purpose of updating the circle color when clicked
+                     clickedCircle = event.currentTarget.querySelector("circle");
+                     clickedText = event.currentTarget.querySelector("text");
+
                      update(d);
                   }
                }
+               
+               // lrm 5-20-2024
+               // function to determine what is a ghost node
+               function isGhostNode(d) {
+                  if (!d || !d.data) {
+                     return false;
+                 }
 
+                  if (d.data.rank_index === 0) {
+                     // “Tree” has a rank index of zero and a numeric comparison is faster than a string comparison.
+                     return false;
+                  } else if ((d.data.is_assigned) || d.data.has_assigned_siblings) {
+                     return false;
+                  } else if (d.data.taxNodeID === "legend") {
+                     return false;
+                  } else {
+                     return true;
+                  }
+               }
+
+               // Function used in the linkUpdate code to help draw links from non-ghost node parents
+               // Traverses the tree to check node's parents for ghost nodes
+               // It will traverse until it finds a parent that is not a ghost node
+               function findNonGhostParent(node) {
+                  if (node.parent) {
+                      if (isGhostNode(node.parent)) {
+                          return findNonGhostParent(node.parent);
+                      } else {
+                          return node.parent;
+                      }
+                  } else {
+                      return null;
+                  }
+              }
+
+               // function hasSpeciesChild(node) {
+               //    if (node.children) {
+               //       for (let i = 0; i < node.children.length; i++) {
+               //          if (node.children[i].has_species) {
+               //             return true;
+               //          }
+               //       }
+               //    }
+               //    return false;
+               // }
 
                // The first parameter is the element that acts as a delegate for child elements with
                // tippy instances. The second parameter defines the tippy instances that will be assigned
@@ -1346,12 +1785,12 @@ d
                      // The HTML content to display in the tooltip.
                      const html =
                         `<div class="ictv-tax-viz-tooltip">
-                                    <div class="rank-and-name">${rankName}&nbsp;<i>${name}</i></div>
-                                    <div class="child-count">${childHTML}</div>
-                                    <div class="history">
-                                        <a href="${taxonDetailsURL}?taxnode_id=${taxNodeID}" target="_blank">View taxon history</a>
-                                    </div>
-                                </div>`;
+                           <div class="rank-and-name">${rankName}&nbsp;<i>${name}</i></div>
+                           <div class="child-count">${childHTML}</div>
+                           <div class="history">
+                                 <a href="${taxonDetailsURL}?taxnode_id=${taxNodeID}&taxon_name=${name}" target="_blank">View taxon history</a>
+                           </div>
+                        </div>`;
 
                      instance.setContent(html);
                   },
@@ -1445,7 +1884,16 @@ d
 
    // This function is called when a search result is selected in the searchPanel. A reference to it is 
    // passed as a parameter to the search panel object's "constructor".
-   function selectSearchResult(event_, lineage_, releaseNumber_, ID_) {
+   // lrm 6-21-24
+   // Instead of passing JSON IDs and JSON Lineage, pass taxNodeIDLineage and taxNodeId from callback function in searchPanel.js
+   // JSON IDs were changing when updating DB, this caused the search to break here
+   function selectSearchResult(event_, displayOrder_, parentTaxNodeID_, taxNodeId_, releaseNumber_, taxNodeIdLineage_) {
+
+      // Update the global pagination data.
+      paginationData.childDisplayOrder = parseInt(displayOrder_);
+      paginationData.parentTaxnodeID = parseInt(parentTaxNodeID_);
+
+      // console.log(`in selectSearchResult: taxNodeId_ = ${taxNodeId_}, taxNodeIdLineage_ = ${taxNodeIdLineage_}, displayOrder_ = ${displayOrder_}`);
 
       // Select the specified release.
       releaseControlEl.value = releaseNumber_;
@@ -1457,62 +1905,112 @@ d
 
       clearButtonEl.dispatchEvent(new Event("click"));
 
+
+      // dmd testing 070224
       async function openNode(nodeId) {
-         return new Promise((resolve) => {
-            const notResultNode = document.querySelector(`g[data-id="${nodeId}"]`);
-            if (!notResultNode) { 
-               console.error(`No node found with data-id "${nodeId}"`); 
-               return; 
-            }
 
-            // Call the displaySpecies function when the node has a species
-            const hasSpecies = notResultNode.getAttribute('has_species');
-            const parentName = notResultNode.getAttribute('parent-name');
-            const parentRank = notResultNode.getAttribute('parent-rank');
-            const parentTaxNodeID = notResultNode.getAttribute('parent-taxNodeId');
-            const children_ = notResultNode.getAttribute('children');
-            
-            if (hasSpecies !== '0' && children_ === null) {
-               displaySpecies(parentName, parentRank, parentTaxNodeID);
-            }
-            
-            // when there is a ghost node, do not dispatch the click event
-            if (notResultNode) {
-               const textElement = notResultNode.querySelector('text');
-               if (textElement && textElement.textContent === '') {
-                  // console.log("Ghost Node: ", nodeId);
-                  resolve();
-                  return;
+         // The number of the current attempt to find nodeID's taxonomy node
+         let attempt = 0;
+
+         // How many times should we iterate over rank indices trying to find the taxonomy node?
+         // TODO: This should probably be the max depth from tree to species.
+         const maxAttempts = 12;
+
+         // The DOM node we're looking for.
+         let selectedNode = null;
+
+         // Keep iterating until nodeID's taxonomy node is visible.
+         while (attempt < maxAttempts) {
+
+            // Is the taxonomy node visible yet?
+            selectedNode = document.querySelector(`g[taxNodeID="${nodeId}"]`);
+            if (!!selectedNode) {
+
+               // Success: We found the taxonomy node!
+               // Update previous node with the taxonomy node's rank index and taxNode ID.
+               previousNode.parentRankIndex = parseInt(selectedNode.getAttribute("rank_index"));
+               previousNode.parentTaxNodeID = selectedNode.getAttribute("taxNodeID");
+
+               if (nodeId !== taxNodeId_) {
+                  // Click the node, pause, and resolve. 
+                  selectedNode.dispatchEvent(new Event("click"));
                }
+
+               break;
+
             } else {
-               // console.log(`No node found with data-id "${nodeId}"`);
-            }
-            
-            // when index value does not equal the data-id, open the node
-            // if it is the target node, stop the loop
-            if (nodeId !== ID_) {
-               notResultNode.dispatchEvent(new Event("click"));
-            } else {
-               //console.log("Reached the target node: ", ID_);
-               resolve();
-               return;
+
+               // Increment the previous rank index.
+               previousNode.parentRankIndex += 1;
+
+               // Try to select a ghost node.
+               selectedNode = document.querySelector(`g[parentTaxNodeId="${previousNode.parentTaxNodeID}"][is_assigned="false"][rank_index="${previousNode.parentRankIndex}"]`);
+               if (!!selectedNode) {
+
+                  const unassignedText = selectedNode.querySelector("text.unassigned-text");
+                  if (!!unassignedText) {
+
+                     // We found the "Unassigned" ghost node.
+                     // Update previous node
+                     previousNode.parentRankIndex += 1;
+
+                     // Click the ghost node and pause.
+                     selectedNode.dispatchEvent(new Event("click"));
+                     await wait(settings.animationDelay);
+                  }
+               }
             }
 
-            // waiting set time for promise to resolve
-            setTimeout(resolve, 1100);
-            return; // dmd 043024
+            attempt += 1;
+         }
+
+         // lrm 5-10-2024
+         // Reset the color of all text to the default color
+         // This ensures the search result node is the
+         // only node that is highlighted
+         document.querySelectorAll('text.node-text').forEach(textElementReset => {
+            textElementReset.style.fill = "#000000";
          });
+
+         // Highlight the last expanded node/search result node
+         // This only works for searching nodes
+         const textToHighlight = selectedNode.querySelector('text');
+         if (textToHighlight) {
+            textToHighlight.style.fill = "#006CB5";
+         }
+
+         // lrm 6-24-2024
+         // Reset the circle colors so that you only color the search result circle
+         document.querySelectorAll('circle').forEach(circleElementReset => {
+            circleElementReset.style.fill = "#FFFFFF";
+         });
+
+
+         // Ensure the search result's circle is blue
+         const circleToHighlight = selectedNode.querySelector('circle');
+         if (circleToHighlight) {
+            circleToHighlight.style.fill = "#006CB5";
+         }
+
+         await wait(settings.animationDelay);
+         return;
       }
 
       async function openNodes() {
-         // take the commas out of the array
-         const lineage_array = lineage_.split(",");
+
+         // Split the delimited string into an array.
+         const lineage_array = taxNodeIdLineage_.split(",");
+
+         // Initialize the previous node.
+         previousNode.parentRankIndex = 0;
+         previousNode.parentTaxNodeID = lineage_array[0];
+
          for (let i = 1; i < lineage_array.length; i++) {
             await openNode(lineage_array[i]);
          }
       }
 
-      setTimeout(openNodes, 1000);
+      setTimeout(openNodes, settings.animationDelay);
 
       // TODO: Use lineage to select taxa nodes after the tree has been refreshed
 
@@ -1562,8 +2060,9 @@ d
          });*/
    }
 
-
 };
+
+
 function expandTreeToNode(data) {
    let node = traverseTreeToFindNode(ds, data);
    expandTree(node);
@@ -1583,7 +2082,10 @@ function traverseTreeToFindNode(currentNode, node) {
    return null;
 }
 
-
-
+async function wait(t) {
+   return new Promise((resolve) => {
+      setTimeout(resolve, t);
+   })
+}
 
 

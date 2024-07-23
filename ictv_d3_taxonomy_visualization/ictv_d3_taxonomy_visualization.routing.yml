@@ -1,0 +1,8 @@
+ictv_d3_taxonomy_visualization.pdf_export:
+  path: '/ictv_d3_taxonomy_visualization/pdf_export'
+  defaults:
+    _controller: '\Drupal\ictv_d3_taxonomy_visualization\Controller\PdfExportController::export'
+    _title: 'PDF Export'
+  methods: [POST]
+  requirements:
+    _permission: 'access content'
