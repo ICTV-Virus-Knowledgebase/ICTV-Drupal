@@ -683,8 +683,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       // Add an option for each release year.
       releases.displayOrder.forEach((releaseKey_) => {
 
-         // Get the release corresponding to this release key. Note that a release 
-         // key is the release year prefaced by "r".
+         // Get the release corresponding to this release key.
          const release = releases.data[releaseKey_];
          if (!release) { return; }
 
@@ -960,10 +959,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             treeLayout(ds);
 
-            // TEST
-            //ds.x0 = -100;
-            ////ds.x0 = (availableHeight / 4);
-            //ds.y0 = -100;
 
             function pageNodes(d, pageSize) {
 
@@ -973,7 +968,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                if (d.children.length > pageSize) {
 
                   d.pages = [];
-                  const count = pageSize - 2; // dmd 070824 Are we subtracting 2 to allow for "up" and "down"?
+                  const count = pageSize - 2;
                   const pageCount = Math.ceil(d.children.length / count);
 
                   // Iterate over all pages.
@@ -991,8 +986,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                         ...d.pages[pageIndex][0],
                         data: {
                            name: "More...",
-                           rankName: "Shift",
-                           // rankIndex: rankCount - 2, // dmd 070824: What is this doing?
+                           rankName: "Shift"
                         },
                         page: pageIndex == 0 ? pageCount - 1 : pageIndex - 1,
                      });
@@ -1002,8 +996,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                         ...d.pages[pageIndex][0],
                         data: {
                            name: "More...",
-                           rankName: "Shift",
-                           // rankIndex: rankCount - 2,
+                           rankName: "Shift"
                         },
                         page: pageIndex != pageCount - 1 ? pageIndex + 1 : 0,
                      });
@@ -1014,7 +1007,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                   if (!!d.data.parentTaxNodeID && paginationData.parentTaxnodeID == d.data.parentTaxNodeID && !isNaN(paginationData.childDisplayOrder)) {
                      pageIndex = Math.floor((paginationData.childDisplayOrder - 1) / count);
-                     // console.log(`pageIndex is now ${pageIndex}`)
                   }
 
                   // Select the current page by index.

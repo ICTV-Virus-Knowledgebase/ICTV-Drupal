@@ -219,6 +219,8 @@ class ConfigForm extends FormBase {
    */
    public function submitForm(array &$form, FormStateInterface $form_state) {
 
+      // TODO: Instead of handling each control independently, iterate over a list of control keys!
+      
       // Get the application URL and save it.
       $value = $form_state->getValue($this->CONTROL_APPLICATION_URL);
       if (!$this->saveValue($this->CONTROL_APPLICATION_URL, $value)) {
