@@ -1889,7 +1889,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                previousNode.parentRankIndex += 1;
 
                // Try to select a ghost node.
-               selectedNode = document.querySelector(`g[parentTaxNodeId="${previousNode.parentTaxNodeID}"][is_assigned="false"][rank_index="${previousNode.parentRankIndex}"]`);
+               selectedNode = document.querySelector(`g[parentTaxNodeID="${previousNode.parentTaxNodeID}"][is_assigned="false"][rank_index="${previousNode.parentRankIndex}"]`);
                if (!!selectedNode) {
 
                   const unassignedText = selectedNode.querySelector("text.unassigned-text");
