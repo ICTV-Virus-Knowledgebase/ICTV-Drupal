@@ -34,7 +34,7 @@ BEGIN
 	
 	-- Lookup the job ID
 	SELECT id INTO jobID
-	FROM v_job
+	FROM job
 	WHERE uid = jobUID
 	LIMIT 1;
 	
@@ -51,7 +51,7 @@ BEGIN
 		
 		INTO errorCount, infoCount, successCount, warningCount
 		
-	FROM v_job_file
+	FROM job_file
 	WHERE job_id = jobID
 	GROUP BY job_id;
 

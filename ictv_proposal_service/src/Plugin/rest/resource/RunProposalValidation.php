@@ -2,7 +2,7 @@
 <?php
 
 /**
-   * Run the proposal validation script and update the database with the results.
+   * Run the sequence classifier script and update the database with the results.
    *
    * The following are the command line arguments that are expected by this script:
    * 
@@ -33,9 +33,9 @@ use Drupal\Core\DrupalKernel;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Symfony\Component\HttpFoundation\Request;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 
@@ -44,6 +44,9 @@ $resultsPath = "";
 
 // The name of the validator script.
 $scriptName = "curtish/ictv_proposal_processor";
+
+// The script version defaults to "latest" unless overridden.
+$scriptVersion = "latest";
 
 try {
    //-------------------------------------------------------------------------------------------------------
@@ -105,10 +108,10 @@ try {
    //-------------------------------------------------------------------------------------------------------
    // Validate the proposal(s)
    //-------------------------------------------------------------------------------------------------------
-   $result = ProposalValidator::runValidation($proposalsPath, $resultsPath, $scriptName, $jobPath);
+   $result = ProposalValidator::runValidation($proposalsPath, $resultsPath, $scriptName.":".$scriptVersion, $jobPath);
 
    // Validate the validation result object and its properties.
-   if (!$result || !$result["jobStatus"]) { throw new \Exception("Invalid validation result"); }
+   if (!$result) { throw new \Exception("Invalid validation result"); }
    
    $jobStatus = $result["jobStatus"];
    if (!$jobStatus) { throw new \Exception("Result.jobStatus is invalid"); }

@@ -265,7 +265,7 @@ class JobService {
       if (Utils::isNullOrEmpty($outputFilePrefix)) {
          $outputFilePrefix = "";
       } else {
-         $outputFilePrefix += ".";
+         $outputFilePrefix = $outputFilePrefix.".";
       }
 
       // We will return a new filename that includes the job UID and user UID.

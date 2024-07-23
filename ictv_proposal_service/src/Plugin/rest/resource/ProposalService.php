@@ -8,6 +8,7 @@ use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\JobType;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 use Drupal\rest\Plugin\ResourceBase;
@@ -45,7 +46,9 @@ class ProposalService extends ResourceBase {
    protected JobService $jobService;
 
    // The full path of the jobs directory.
-   protected string $jobsPath = "/var/www/dapp/files/jobs";
+   protected string $jobsPath = "/var/www/drupal/files/jobs";
+
+   protected string $validationSummaryPrefix = "ictv-proposal-file-results";
 
    // The name of the downloadable validation summary file.
    protected string $summaryFilename = "QC.pretty_summary.all.xlsx";
@@ -109,7 +112,7 @@ class ProposalService extends ResourceBase {
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
-      $this->jobService = new JobService($this->jobsPath);
+      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_proposal_service", "proposalsTest", "results");
    }
 
    /**
@@ -181,25 +184,25 @@ class ProposalService extends ResourceBase {
       switch ($actionCode) {
 
          case "get_jobs":
-               $data = $this->jobService->getJobs($this->connection, $userEmail, $userUID);
-               break;
+            $data = $this->jobService->getJobs($this->connection, JobType::proposal_validation, $userEmail, $userUID);
+            break;
 
          case "get_validation_summary":
                
-               $jobUID = $json["jobUID"];
-               if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
-               
-               $data = $this->jobService->getValidationSummary($this->summaryFilename, $jobUID, $userUID);
-               break;
+            $jobUID = $json["jobUID"];
+            if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
+            
+            $data = $this->jobService->getOutputFile($this->summaryFilename, $jobUID, $this->validationSummaryPrefix, $userUID);
+            break;
 
          case "upload_proposals":
-               $data = $this->uploadProposals($json, $userEmail, $userUID);
-               break;
+            $data = $this->uploadProposals($json, $userEmail, $userUID);
+            break;
 
          default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");
       }
 
-      return $data;
+      return $data;   // Json::encode();
    }
 
 
@@ -221,7 +224,7 @@ class ProposalService extends ResourceBase {
          //-------------------------------------------------------------------------------------------------------
          // Create a job record and get its ID and UID.
          //-------------------------------------------------------------------------------------------------------
-         $this->jobService->createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
+         $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::proposal_validation, $jobUID, $userEmail, $userUID);
          
          \Drupal::logger('ictv_proposal_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
          
@@ -229,8 +232,8 @@ class ProposalService extends ResourceBase {
          $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
 
          // Use the job path to generate the path of the proposals and results subdirectories.
-         $proposalsPath = $this->jobService->getProposalsPath($jobPath);
-         $resultsPath = $this->jobService->getResultsPath($jobPath);
+         $proposalsPath = $this->jobService->getInputPath($jobPath);
+         $resultsPath = $this->jobService->getOutputPath($jobPath);
 
          //-------------------------------------------------------------------------------------------------------
          // Create job_file records and actual files for every proposal file provided.
@@ -256,7 +259,7 @@ class ProposalService extends ResourceBase {
             $binaryData = base64_decode($base64Data);
 
             // Create the proposal file in the job directory using the data provided.
-            $fileID = $this->jobService->createProposalFile($binaryData, $filename, $jobPath);
+            $fileID = $this->jobService->createInputFile($binaryData, $filename, $jobPath);
 
             // Create a job file
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
@@ -318,13 +321,13 @@ class ProposalService extends ResourceBase {
 
       } catch (Exception $e) {
 
-         $status = JobStatus::$crashed;
+         $status = JobStatus::crashed;
 
          $errorMessage = null;
          if ($e) { 
-               $errorMessage = $e->getMessage(); 
+            $errorMessage = $e->getMessage(); 
          } else {
-               $errorMessage = "Unspecified error";
+            $errorMessage = "Unspecified error";
          }
          
          // Update the log with the job UID and this error message.

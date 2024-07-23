@@ -110,19 +110,19 @@ class ProposalFileSummary {
 
       switch ($status) {
          case "error":
-               $this->errors = $this->errors + 1;
-               break;
+            $this->errors = $this->errors + 1;
+            break;
          case "info":
-               $this->notes = $this->notes + 1;
-               break;
+            $this->notes = $this->notes + 1;
+            break;
          case "success":
-               $this->successes = $this->successes + 1;
-               break;
+            $this->successes = $this->successes + 1;
+            break;
          case "warning":
-               $this->warnings = $this->warnings + 1;
-               break;
+            $this->warnings = $this->warnings + 1;
+            break;
          default: 
-               throw new \Exception("Unhandled status ".$status);
+            throw new \Exception("Unhandled status ".$status);
       }
    }
 }
