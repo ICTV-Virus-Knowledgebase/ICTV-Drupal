@@ -1,0 +1,8 @@
+name: ICTV Sequence Classifier Service
+type: module
+description: 'A custom module that provides a RESTful web service for sequence classification'
+package: ICTV
+configure: ictv_sequence_classifier_service.settings
+core_version_requirement: ^10
+dependencies:
+  - drupal:block

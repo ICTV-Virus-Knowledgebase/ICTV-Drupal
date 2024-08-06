@@ -31,6 +31,14 @@ printf "Building the proposal submission component \n\n"
 printf "\n\n"
 
 #------------------------------------------------------------------------------
+# Sequence classifier
+#------------------------------------------------------------------------------
+printf "Building the sequence classifier component \n\n"
+"${webpack}" --config "$componentPath/SequenceClassifier/webpack.config.js"
+
+printf "\n\n"
+
+#------------------------------------------------------------------------------
 # Taxonomy browser
 #------------------------------------------------------------------------------
 printf "Building the taxonomy browser component \n\n"

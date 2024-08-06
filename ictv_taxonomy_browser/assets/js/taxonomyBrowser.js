@@ -14,23 +14,23 @@
             initialized = true;
             
             //----------------------------------------------------------------------------------------
-            // Initialize the ICTV AppSettings using drupalSettings
+            // Initialize the ICTV_TaxonomyBrowser AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
             // The website's base URL.
-            window.ICTV.AppSettings.applicationURL = settings_.applicationURL;
+            window.ICTV_TaxonomyBrowser.AppSettings.applicationURL = settings_.applicationURL;
 
             // Set the base URL for web services.
-            window.ICTV.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
+            window.ICTV_TaxonomyBrowser.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
 
             // The current MSL release number.
-            window.ICTV.AppSettings.currentMslRelease = settings_.currentMslRelease;
+            window.ICTV_TaxonomyBrowser.AppSettings.currentMslRelease = settings_.currentMslRelease;
 
             // The location of release proposal files. 
-            window.ICTV.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
+            window.ICTV_TaxonomyBrowser.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
 
             // The taxon history page name.
-            window.ICTV.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
+            window.ICTV_TaxonomyBrowser.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
 
             
             // The DOM selector of the container Element added to the page.
@@ -53,13 +53,13 @@
                 useSmallFont: false
             }
             const initialData =  {
-                displayType: window.ICTV.TaxonomyDisplayType.display_all,
+                displayType: window.ICTV_TaxonomyBrowser.TaxonomyDisplayType.display_all,
                 releaseNumber: settings_.currentMslRelease,
                 taxonName: null
             }
 
             // Create a new TaxonomyBrowser instance.
-            const taxonomyBrowser = new window.ICTV.TaxonomyBrowser(containerSelector, controlKey, ctrlSettings, initialData);
+            const taxonomyBrowser = new window.ICTV_TaxonomyBrowser.TaxonomyBrowser(containerSelector, controlKey, ctrlSettings, initialData);
             if (!taxonomyBrowser) { throw new Error("Invalid taxonomy browser"); } 
             
             // Initialize and display the taxonomy browser.

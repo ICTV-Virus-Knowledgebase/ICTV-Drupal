@@ -6,14 +6,13 @@ module.exports = {
    mode: "production",
    target: "web",
    entry: {
-      "ICTV_MemberSpeciesTable": [
-         "./node_modules/dataTables.net-dt/js/dataTables.dataTables.min.js",
+      "ICTV_SequenceClassifier": [
          path.resolve(__dirname, "./") + "/index.ts"
       ]
    },
    externals: {
       datatables: "datatables.net-dt",
-      jquery: "jQuery"
+      jquery: 'jQuery'
    },
    module: {
       rules: [

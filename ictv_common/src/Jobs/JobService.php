@@ -5,8 +5,8 @@ namespace Drupal\ictv_common\Jobs;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
 use Psr\Log\LoggerInterface;
-use Drupal\ictv_common\Types\JobStatus;
-use Drupal\ictv_common\Types\JobType;
+use Drupal\ictv_common\JobStatus;
+use Drupal\ictv_common\JobType;
 use Drupal\ictv_common\Utils;
 
 

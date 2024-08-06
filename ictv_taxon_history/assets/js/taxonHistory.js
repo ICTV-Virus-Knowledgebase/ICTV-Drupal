@@ -16,36 +16,36 @@
             initialized = true;
             
             //----------------------------------------------------------------------------------------
-            // Initialize the ICTV AppSettings using drupalSettings
+            // Initialize the ICTV_TaxonReleaseHistory AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
             // The website's base URL.
-            window.ICTV.AppSettings.applicationURL = settings_.applicationURL;
+            window.ICTV_TaxonReleaseHistory.AppSettings.applicationURL = settings_.applicationURL;
 
             // Set the base URL for web services.
-            window.ICTV.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
+            window.ICTV_TaxonReleaseHistory.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
 
             // The current MSL release number.
-            window.ICTV.AppSettings.currentMslRelease = settings_.currentMslRelease;
+            window.ICTV_TaxonReleaseHistory.AppSettings.currentMslRelease = settings_.currentMslRelease;
 
             // The location of release proposal files. 
-            window.ICTV.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
+            window.ICTV_TaxonReleaseHistory.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
 
             // The taxon history page name.
-            window.ICTV.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
+            window.ICTV_TaxonReleaseHistory.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
             
             
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#taxon_history_container";
         
             // Get the taxnode ID from the URL search parameters
-			const urlParams = (new URL(document.location)).searchParams;
-			const taxNodeID = urlParams.get("taxnode_id");
-			if (!taxNodeID) { console.log("error!"); throw new Error("Unable to display taxonomy history: Invalid tax node ID parameter"); }
+            const urlParams = (new URL(document.location)).searchParams;
+            const taxNodeID = urlParams.get("taxnode_id");
+            if (!taxNodeID) { console.log("error!"); throw new Error("Unable to display taxonomy history: Invalid tax node ID parameter"); }
 
 
             // Create a new TaxonReleaseHistory instance.
-            const taxonHistory = new window.ICTV.TaxonReleaseHistory(settings_.currentMslRelease, containerSelector);
+            const taxonHistory = new window.ICTV_TaxonReleaseHistory.TaxonReleaseHistory(settings_.currentMslRelease, containerSelector);
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();

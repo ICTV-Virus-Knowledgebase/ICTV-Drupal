@@ -5,19 +5,19 @@ import { WebServiceKey } from "../global/Types";
 export class _AppSettings {
 
     // The website's base URL.
-    applicationURL: string = null; //"https://cms.ictv.global";
+    applicationURL: string = null;
 
     // The base URL for C# web services.
-    baseWebServiceURL: string = null; //"https://dev.ictvonline.org/api/";
+    baseWebServiceURL: string = null;
 
     // The current MSL release number.
-    currentMslRelease: number = null; //"38";
+    currentMslRelease: number = null;
 
     // The URL for Drupal web services.
-    drupalWebServiceURL: string = null; //"https://cms.ictv.global/"; //"https://app.ictv.global/"; // 
+    drupalWebServiceURL: string = null;
 
     // The location of release proposal files. 
-    releaseProposalsURL: string = null; //"https://cms.ictv.global/ictv/proposals/";
+    releaseProposalsURL: string = null;
 
     // The taxon history page name.
     taxonHistoryPage: string = null; //"taxonHistory"; 
@@ -26,6 +26,7 @@ export class _AppSettings {
     webServiceLookup: {[key_ in WebServiceKey]: string } = {
         csrfToken: "session/token",
         proposal: "proposal-api",
+        sequenceClassifier: "sequence-classifier-api",
         taxonomy: "taxonomy.ashx",
         taxonomyHistory: "taxonomyHistory.ashx",
         virusIsolate: "virusIsolate.ashx"
