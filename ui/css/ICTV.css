@@ -1,0 +1,1352 @@
+﻿/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   General-purpose styles
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+.ictv-custom [data-is-visible='true'] {
+   display: initial;
+}
+
+.ictv-custom [data-is-visible='false'] {
+   display: none;
+}
+
+
+/* The spinner icon and text */
+.ictv-custom .spinner-ctrl {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+   width: 100%;
+}
+
+.ictv-custom .spinner-ctrl i {
+   font-size: 2.0rem;
+   margin-right: 0.5rem;
+}
+
+.ictv-custom .btn {
+   border: 1px solid transparent;
+   display: inline-block;
+   font-size: 12pt;
+   font-size: 0.9rem;
+   font-weight: 400;
+   padding: .375rem .75rem;
+   text-align: center;
+   user-select: none;
+   vertical-align: middle;
+   white-space: nowrap;
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+}
+
+.ictv-custom .btn i {
+   margin-right: 5px;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Buttons styles from Bootstrap
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Primary */
+.ictv-custom .btn-primary {
+   color: #fff;
+   background-color: #007bff;
+   border-color: #007bff;
+}
+
+.ictv-custom .btn-primary:hover {
+   color: #fff;
+   background-color: #0069d9;
+   border-color: #0062cc;
+}
+
+.ictv-custom .btn-primary:focus,
+.ictv-custom .btn-primary.focus {
+   box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
+}
+
+.ictv-custom .btn-primary.disabled,
+.ictv-custom .btn-primary:disabled {
+   color: #fff;
+   background-color: #007bff;
+   border-color: #007bff;
+}
+
+/* Success */
+.ictv-custom .btn-success {
+   color: #fff;
+   background-color: #28a745;
+   border-color: #28a745;
+}
+
+.ictv-custom .btn-success:hover {
+   color: #fff;
+   background-color: #218838;
+   border-color: #1e7e34;
+}
+
+.ictv-custom .btn-success:focus,
+.ictv-custom .btn-success.focus {
+   box-shadow: 0 0 0 0.2rem rgba(72, 180, 97, 0.5);
+}
+
+.ictv-custom .btn-success.disabled,
+.ictv-custom .btn-success:disabled {
+   color: #fff;
+   background-color: #28a745;
+   border-color: #28a745;
+}
+
+/* Warning */
+.ictv-custom .btn-warning {
+   color: #212529;
+   background-color: #ffc107;
+   border-color: #ffc107;
+}
+
+.ictv-custom .btn-warning:hover {
+   color: #212529;
+   background-color: #e0a800;
+   border-color: #d39e00;
+}
+
+.ictv-custom .btn-warning:focus,
+.ictv-custom .btn-warning.focus {
+   box-shadow: 0 0 0 0.2rem rgba(222, 170, 12, 0.5);
+}
+
+.ictv-custom .btn-warning.disabled,
+.ictv-custom .btn-warning:disabled {
+   color: #212529;
+   background-color: #ffc107;
+   border-color: #ffc107;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Proposal submission
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* General purpose button styles */
+#ictv_proposal_submission_container.ictv-custom button i {
+   margin-right: 0.25rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom button.download-button {
+   background-color: #0d6efd;
+   color: #fff;
+   cursor: pointer;
+   min-width: 100px;
+}
+
+#ictv_proposal_submission_container.ictv-custom button.close-button {
+   background-color: #eee;
+   color: #000;
+   cursor: pointer;
+   min-width: 100px;
+}
+
+#ictv_proposal_submission_container.ictv-custom button.close-button i {
+   color: #000;
+}
+
+/* User row and upload panel */
+#ictv_proposal_submission_container.ictv-custom .user-row {
+   margin-bottom: 1.0rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .upload-panel {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .file-control {
+   background-color: #0d6efd;
+   color: #fff;
+   margin-right: 1.0rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom #file_input {
+   opacity: 0;
+   position: absolute;
+   left: -1000px;
+}
+
+#ictv_proposal_submission_container.ictv-custom .upload-panel .job-name-label {
+   margin-right: 0.5rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .upload-panel .job-name {
+   margin-right: 1.0rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .upload-panel button.validate-button {
+   background-color: #198754;
+   color: #fff;
+}
+
+#ictv_proposal_submission_container.ictv-custom .upload-panel .hidden {
+   visibility: hidden;
+}
+
+#ictv_proposal_submission_container.ictv-custom .upload-panel .visible {
+   visibility: visible;
+}
+
+
+/* The jobs panel */
+#ictv_proposal_submission_container.ictv-custom .jobs {
+   font-size: 1.0rem;
+   margin-top: 3.0rem;
+   width: 95vw;
+}
+
+#ictv_proposal_submission_container.ictv-custom .jobs-title {
+   font-size: 1.7rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .jobs-help {
+   margin-bottom: 1.0rem;
+}
+
+/* Overriding tables.css (whatever that might be) */
+#ictv_proposal_submission_container.ictv-custom table thead+tbody tr:first-child th,
+#ictv_proposal_submission_container.ictv-custom table thead+tbody tr:first-child td {
+   border-bottom-left-radius: 0 !important;
+   /* Testing 111623*/
+   padding-top: 8px !important;
+}
+
+/* All tables in the proposal submission container */
+#ictv_proposal_submission_container.ictv-custom table {
+   border-collapse: separate;
+}
+
+#ictv_proposal_submission_container.ictv-custom table th,
+#ictv_proposal_submission_container.ictv-custom table td {
+   border-bottom-left-radius: 0 !important;
+   /* Testing 111623*/
+   border-style: solid;
+   border-bottom-color: rgb(164, 185, 195);
+   border-width: 0 0 1px 0;
+   box-sizing: border-box;
+   font-weight: normal;
+   text-align: left;
+}
+
+#ictv_proposal_submission_container.ictv-custom table td {
+   border-style: solid;
+   border-width: 1px;
+}
+
+/* The jobs table */
+#ictv_proposal_submission_container.ictv-custom table.jobs-table tr.hidden {
+   display: none;
+}
+
+/*#ictv_proposal_submission_container.ictv-custom table.jobs-table td {
+   border-color: #aaa;
+}*/
+#ictv_proposal_submission_container.ictv-custom table.jobs-table td.child-control-column i {
+   color: #999;
+}
+
+/* The jobs table header row */
+#ictv_proposal_submission_container.ictv-custom table.jobs-table th {
+   font-size: 0.9rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom table.jobs-table th.upload-col {
+   width: 160px;
+}
+
+#ictv_proposal_submission_container.ictv-custom table.jobs-table th.download-column {
+   width: 100px;
+}
+
+#ictv_proposal_submission_container.ictv-custom table.jobs-table tr.header-row {
+   background-color: #757575 !important;
+}
+
+#ictv_proposal_submission_container.ictv-custom table.jobs-table tr.header-row th {
+   background-color: #757575 !important;
+   border-left-width: 0 !important;
+   border-right-width: 0 !important;
+   color: #fff !important;
+   font-size: 0.9rem !important;
+   padding-left: 0.5rem;
+   text-align: left !important;
+}
+
+/* The jobs data rows */
+#ictv_proposal_submission_container.ictv-custom .odd-bg {
+   background-color: #fff;
+}
+
+#ictv_proposal_submission_container.ictv-custom .even-bg {
+   background-color: #eee;
+}
+
+/*#ictv_proposal_submission_container.ictv-custom .job-row-even:hover {
+    background-color: #fff3cd;
+    cursor: pointer;
+}*/
+
+/* The job files container and table */
+#ictv_proposal_submission_container.ictv-custom .job-files-container .column-0 {
+   border-right-color: rgba(0, 0, 0, 0);
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-container .column-1 {
+   border-left-color: rgba(0, 0, 0, 0);
+   padding: 1rem 1rem 1rem 0;
+}
+
+#ictv_proposal_submission_container.ictv-custom table.job-files-table {
+   margin-bottom: unset !important;
+   width: 100%;
+}
+
+/* The job files header row */
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.crashed,
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.invalid {
+   background-color: #dc3545;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.crashed th,
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.invalid th {
+   color: #fff;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.pending {
+   background-color: #ffc107;
+   border-color: #ffc107;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.pending th {
+   color: #212529;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.valid {
+   background-color: #218838;
+   border-color: #1e7e34;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row.valid th {
+   color: #fff;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row th {
+   border-left-width: 0 !important;
+   border-right-width: 0 !important;
+   font-size: 0.9rem !important;
+   padding-left: 0.5rem;
+   text-align: left !important;
+}
+
+#ictv_proposal_submission_container.ictv-custom .job-files-header-row .small {
+   width: 70px;
+}
+
+/* The status dialog */
+#ictv_proposal_submission_container.ictv-custom .modal-background {
+   align-items: center;
+   background-attachment: scroll;
+   background-clip: border-box;
+   background-color: rgba(0, 0, 0, 0.4);
+   background-image: none;
+   background-origin: padding-box;
+   background-position-x: 0%;
+   background-position-y: 0%;
+   background-size: auto;
+   bottom: 0px;
+   box-sizing: border-box;
+   display: flex;
+   justify-content: center;
+   left: 0px;
+   line-height: 24px;
+   overflow-x: hidden;
+   overflow-y: auto;
+   padding: 10px;
+   position: fixed;
+   right: 0px;
+   text-align: center;
+   top: 0px;
+   transition-delay: 0s;
+   transition-duration: 0.1s;
+   transition-property: background-color;
+   transition-timing-function: ease;
+   z-index: 1060;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-dialog {
+   background-color: rgb(255, 255, 255);
+   background-size: auto;
+   border-color: rgb(84, 84, 84);
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   box-sizing: border-box;
+   display: flex;
+   flex-flow: column nowrap;
+   height: auto;
+   max-width: 100%;
+   padding: 20px;
+   pointer-events: all !important;
+   width: 700px;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-title {
+   font-size: 1.5rem;
+   margin: 0 0 1.0rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-body {
+   font-size: 1.0rem;
+   text-align: left;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-contact {
+   font-size: 1.0rem;
+   margin-top: 1.0rem;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-instructions {
+   font-size: 1.0rem;
+   margin: 1.0rem 0;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-controls {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-around;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-button-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+}
+
+#ictv_proposal_submission_container.ictv-custom .modal-button-row .close-button {
+   background-color: #eee;
+   border-color: #999;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   color: #000;
+   cursor: pointer;
+   font-size: 0.9rem;
+   min-width: 100px;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Taxonomy browser: search panel and results
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The search panel and controls */
+.ictv-custom .search-panel .search-controls {
+   align-content: flex-start;
+   border-collapse: separate;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   line-height: 1.5;
+   margin: 0;
+   max-width: 600px;
+}
+
+.ictv-custom .search-panel .search-controls .search-text {
+   background-color: #fff;
+   background-image: none;
+   border: 1px solid #ccc;
+   border-radius: 4px 0 0 4px;
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+   color: #555;
+   font-size: 14px;
+   line-height: 1.3;
+   margin: 0;
+   padding: 6px 12px;
+   vertical-align: middle;
+   width: 345px;
+}
+
+.ictv-custom .search-panel .search-controls .search-text:focus {
+   color: #495057;
+   background-color: #fff;
+   border-color: #80bdff;
+   outline: 0;
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, .15);
+}
+
+.ictv-custom .search-panel .search-controls .search-ctrl {
+   background-color: #0062cc;
+   border-color: #005cbf;
+   border-radius: 0;
+   color: #fff;
+   cursor: pointer;
+}
+
+.ictv-custom .search-panel .search-controls .clear-search-ctrl {
+   background-color: #999;
+   border-radius: 0 .25rem .25rem 0;
+   color: #fff;
+   cursor: pointer;
+}
+
+.ictv-custom .search-controls .search-status {
+   height: 100%;
+   vertical-align: middle;
+}
+
+.ictv-custom .all-releases-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin: 0.5rem 0 0 0;
+}
+
+.ictv-custom .search-panel .all-releases-row input[type='checkbox'].all-releases-ctrl {
+   height: 1.0rem;
+   margin-right: 0.25rem;
+   width: 1.0rem;
+}
+
+.ictv-custom .all-releases-row label {
+   font-size: 11pt;
+   font-weight: normal;
+   margin-bottom: 0 !important;
+}
+
+
+/* Search results */
+.ictv-custom .search-panel .search-results {
+   margin: 15px 0 15px 0;
+}
+
+.ictv-custom .search-results-table {
+   margin: 15px 0 0 0;
+}
+
+.ictv-custom .search-results-table tr.header-row {
+   background-color: #757575 !important;
+}
+
+.ictv-custom .search-results-table tr.header-row th {
+   background-color: #757575 !important;
+   border-left-width: 0 !important;
+   border-right-width: 0 !important;
+   color: #fff !important;
+   font-size: 0.9rem !important;
+   text-align: left !important;
+}
+
+.ictv-custom .search-results-table .result-alt-row {
+   background-color: #fff;
+}
+
+.ictv-custom .search-results-table .result-row {
+   background-color: #eee;
+}
+
+.ictv-custom .search-results-table tr:hover[data-id] {
+   background-color: #ffc90e;
+   cursor: pointer;
+}
+
+.ictv-custom .search-results-table .controls {
+   width: fit-content;
+}
+
+.ictv-custom .search-results-table .view-ctrl-column {
+   max-width: 70px;
+}
+
+.ictv-custom .search-results-table .view-search-result-ctrl {
+   border: 1px solid transparent;
+   cursor: pointer;
+   display: inline-block;
+   font-size: 0.75rem;
+   font-weight: 400;
+   line-height: 1.5;
+   padding: 2px 10px;
+   text-align: center;
+   user-select: none;
+   vertical-align: middle;
+   white-space: nowrap;
+   /*width: 64px;*/
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+}
+
+.ictv-custom .search-results-table td {
+   font-size: 0.9rem;
+}
+
+.ictv-custom .search-results-table .release-name {
+   text-align: left;
+   width: 70px;
+}
+
+.ictv-custom .search-results-table .level-name {
+   text-align: left;
+   text-transform: capitalize;
+   width: 56px;
+}
+
+/*.ictv-custom .search-results-table .result-html {
+    padding-right: 15px;
+}*/
+
+.ictv-custom .search-term-result {
+   background-color: #ffc90e;
+}
+
+/* "No results" from the search panel */
+div:where(.swal2-container) .swal2-html-container .no-results-list {
+   list-style-position: outside;
+   text-align: left !important;
+}
+
+div:where(.swal2-container) .swal2-html-container .no-results-list li {
+   margin-bottom: 0.9rem;
+   text-align: left;
+}
+
+div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
+   background-color: #28a745 !important;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Taxonomy browser: Release panel
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+.ictv-custom .release-panel {
+   margin: 30px 0 15px 0;
+}
+
+.ictv-custom .release-panel .release-title {
+   color: #515151;
+   font-size: 14pt;
+   font-weight: 700;
+   margin: 0 0 5px 0;
+   padding: 10px 0 0 0;
+}
+
+.ictv-custom .release-panel .release-description {
+   color: #515151;
+   font-size: 10pt;
+   font-weight: normal;
+   line-height: 15pt;
+   margin: 0 0 0 0;
+   padding: 0;
+}
+
+.ictv-custom .release-panel .release-taxa-stats {
+   color: #515151;
+   font-size: 10pt;
+   font-weight: normal;
+   line-height: 15pt;
+   margin: 0 0 15px 0;
+   padding: 0;
+}
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Taxonomy browser
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* All taxon node containers */
+.ictv-custom .taxonomy-browser .tc-container {
+   font-size: 11pt;
+}
+
+.ictv-custom .taxonomy-browser .tc-container.small-font {
+   font-size: 9pt;
+}
+
+/* A taxon node container below the top level */
+.ictv-custom .taxonomy-browser .tc-container.left-offset {
+   margin-left: 23px;
+}
+
+/* A taxon node */
+.ictv-custom .taxonomy-browser .tc-node {
+   align-items: center;
+   border-radius: 5px;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   margin-bottom: 3px;
+}
+
+.ictv-custom .taxonomy-browser .tc-node .tc-left-side {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin: 0;
+   padding: 3px 5px;
+}
+
+.ictv-custom .taxonomy-browser .tc-node .tc-member-of {
+   margin-left: 15px;
+   opacity: 60%;
+   text-transform: capitalize;
+}
+
+/* The star that's displayed on the reference strain */
+.ictv-custom .taxonomy-browser .tc-ref-species {
+   display: inline-block;
+   height: 100%;
+   position: absolute;
+   margin: 0 0 0 -30px;
+   padding: 0;
+   vertical-align: middle;
+}
+
+.ictv-custom .taxonomy-browser .tc-ref-species .fas.fa-star {
+   color: #ffc90e;
+   font-size: 12pt;
+   left: 0.3rem;
+   margin: 0;
+   padding: 0;
+   position: absolute;
+   top: 0.25rem;
+   vertical-align: middle;
+}
+
+.ictv-custom .taxonomy-browser .tc-ctrl {
+   cursor: pointer;
+   width: 20px;
+}
+
+.ictv-custom .taxonomy-browser .tc-rank {
+   font-weight: 700;
+   margin-right: 5px;
+   text-transform: capitalize;
+}
+
+.ictv-custom .taxonomy-browser .tc-count {
+   text-align: right;
+}
+
+.ictv-custom .taxonomy-browser .tc-right-side {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+   padding: 3px 5px;
+   width: 160px;
+}
+
+.ictv-custom .taxonomy-browser .tc-node .tc-right-side .reveal-on-hover {
+   display: none;
+   margin-right: 1.0rem;
+   white-space: nowrap;
+}
+
+.ictv-custom .taxonomy-browser .tc-node:hover .tc-right-side .reveal-on-hover {
+   display: block;
+}
+
+/*.ictv-custom .taxonomy-browser .tc-right-side i {
+    margin-right: 0.5rem;
+    opacity: 60%;
+}*/
+.ictv-custom .taxonomy-browser .tc-right-side .updated {
+   font-size: 0.9rem;
+   margin-right: 1.0rem;
+   opacity: 60%;
+}
+
+/*
+.ictv-custom .taxonomy-browser .tc-right-side .fa-info-circle {
+    opacity: 60%;
+}*/
+
+.ictv-custom .taxonomy-browser .tc-children[data-is-expanded="true"] {
+   display: block;
+}
+
+.ictv-custom .taxonomy-browser .tc-children[data-is-expanded="false"] {
+   display: none;
+}
+
+
+/* Realm */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='realm'] {
+   background-color: #006600;
+   color: #fff;
+}
+
+/* Subrealm */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='subrealm'] {
+   background-color: #006600;
+   color: #fff;
+}
+
+/* Kingdom */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='kingdom'] {
+   background-color: #278627;
+   color: #fff;
+}
+
+/* Subkingdom */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='subkingdom'] {
+   background-color: #278627;
+   color: #fff;
+}
+
+/* Phylum */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='phylum'] {
+   background-color: #00426D;
+   color: #fff;
+}
+
+/* Subphylum */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='subphylum'] {
+   background-color: #00426D;
+   color: #fff;
+}
+
+/* Class */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='class'] {
+   background-color: #3D79AA;
+   color: #f6f6f6;
+}
+
+/* Subclass */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='subclass'] {
+   background-color: #3D79AA;
+   color: #f6f6f6;
+}
+
+/* Order */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='order'] {
+   background-color: #006CB5;
+   color: #fff;
+}
+
+/* Suborder */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='suborder'] {
+   background-color: #006CB5;
+   color: #fff;
+}
+
+/* Family */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='family'] {
+   background-color: #258DE4;
+   color: #fff;
+}
+
+/* Subfamily */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='subfamily'] {
+   background-color: #258DE4;
+   color: #fff;
+}
+
+/* Genus */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='genus'] {
+   background-color: #99D7FF;
+   color: #000;
+}
+
+/* Subgenus */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='subgenus'] {
+   background-color: #548EC0;
+   color: #fff;
+}
+
+/* Species */
+.ictv-custom .taxonomy-browser .tc-node[data-rank='species'] {
+   background-color: #D1EDFF;
+   color: #000;
+}
+
+.ictv-custom .taxonomy-browser .tc-history-ctrl {
+   cursor: pointer;
+   display: inline-block;
+   margin-left: 30px;
+   text-decoration: underline;
+}
+
+.ictv-custom .taxonomy-browser .tc-history-ctrl.history-available {
+   color: #3de545;
+}
+
+.ictv-custom .taxonomy-browser .tc-node.highlighted-node {
+   background-color: #ffc90e;
+   color: #000;
+}
+
+.ictv-custom .taxonomy-browser .tc-node:hover {
+   background-color: #ffc90e;
+   color: #000;
+   cursor: pointer;
+}
+
+.ictv-custom .taxonomy-browser .taxonomy-tool-tip {
+   background: #646464;
+   border-radius: 4px;
+   color: #ffc64a;
+   font-family: arial;
+   font-size: 12px;
+   padding: 6px 12px;
+   position: absolute;
+   text-shadow: 0px 1px 1px #000;
+}
+
+.ictv-custom .taxonomy-browser .taxonomy-tool-tip .hidden {
+   display: none;
+}
+
+.ictv-custom .taxonomy-browser .taxonomy-tool-tip .visible {
+   display: block;
+}
+
+.ictv-custom .taxonomy-browser .taxonomy-tool-tip:before {
+   content: " ";
+   width: 0;
+   height: 0;
+   border-left: 10px solid transparent;
+   border-right: 10px solid transparent;
+   border-top: 10px solid #646464;
+   position: absolute;
+   bottom: -5px;
+   left: 5px;
+}
+
+
+/* Release History */
+.ictv-custom .release-history {
+   margin: 15px 0 30px 0;
+}
+
+.ictv-custom .release-history .release-ctrl {
+   color: #03a9f4;
+   cursor: pointer;
+   text-decoration: underline;
+}
+
+.ictv-custom .release-history .release-notes {
+   width: 130px;
+}
+
+
+/* Rank controls */
+.ictv-custom .rank-controls-container {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+   width: 100%;
+}
+
+.ictv-custom .rank-controls-container .rank-control {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-right: 1.0rem;
+}
+
+.ictv-custom .rank-controls-container .rank-control label {
+   font-weight: normal;
+   margin-right: 0.25rem;
+   white-space: nowrap;
+}
+
+.ictv-custom .rank-controls-container .rank-control select {
+   border-radius: 0 !important;
+   font-size: 1.0rem;
+   padding: 0.25rem !important;
+   -moz-border-radius: 0 !important;
+   -webkit-border-radius: 0 !important;
+}
+
+/*.ictv-custom .rank-controls-container .hide-above-rank-control {
+}
+.ictv-custom .rank-controls-container .pre-expand-to-rank-ctrl {
+}*/
+
+.ictv-custom .rank-controls-container .filter-ranks-control {
+   background-color: #0062cc;
+   border-color: #005cbf;
+   border-radius: 0.25rem;
+   color: #fff;
+}
+
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Taxon release history
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The message panel */
+.ictv-custom .taxon-release-history-message {
+   margin-top: 2.0rem;
+   width: 100%;
+}
+
+/* The title */
+.ictv-custom .taxon-release-history .title-row {
+   display: flex;
+   font-size: 16pt;
+   margin: 1.5rem 0 0 0;
+}
+
+.ictv-custom .taxon-release-history .title-row .title-rank {
+   font-weight: 700;
+   text-transform: capitalize;
+}
+
+.ictv-custom .taxon-release-history .title-row .title-name {
+   font-style: italic;
+   margin-left: 0.25rem;
+}
+
+.ictv-custom .taxon-release-history .title-row .title-release {
+   margin-left: 0.25rem;
+}
+
+.ictv-custom .taxon-release-history .title-lineage {
+   color: #777;
+   font-size: 11pt;
+   font-weight: normal;
+   margin: 5px 0 0 0;
+}
+
+.ictv-custom .taxon-release-history .title-lineage .lineage-chevron {
+   color: #999;
+   margin: 0 0.25rem;
+}
+
+/* A vertically-oriented taxon row */
+.ictv-custom .taxon-release-history .lineage-row {
+   margin-bottom: 5px;
+}
+
+.ictv-custom .taxon-release-history .lineage-row .rank-name {
+   display: inline-block;
+   font-weight: 700;
+   text-transform: capitalize;
+}
+
+.ictv-custom .taxon-release-history .lineage-row .taxon-name {
+   display: inline-block;
+}
+
+
+/* The settings panel */
+.ictv-custom .taxon-release-history .settings-panel {
+   background-color: #efefef;
+   border-color: #ddd;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   margin: 1.5rem 0 2.0rem 0rem;
+   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+   width: fit-content;
+}
+
+.ictv-custom .taxon-release-history .settings-title {
+   font-size: 1.1rem;
+   font-weight: 700;
+   /*margin-bottom: 0.25rem;*/
+}
+
+.ictv-custom .taxon-release-history .settings-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-top: 0.5rem;
+   min-width: 500px;
+}
+
+.ictv-custom .taxon-release-history .settings-row .settings-label {
+   margin-right: 0.25rem;
+   white-space: nowrap;
+}
+
+.ictv-custom .taxon-release-history .settings-row select {
+   font-size: 0.9rem !important;
+   margin-right: 0.25rem;
+   padding: 2px 5px !important;
+}
+
+.ictv-custom .taxon-release-history .settings-row .include-empty-control {
+   height: 16px;
+   width: 16px;
+}
+
+
+/* Panels for the MSL releases */
+.ictv-custom .taxon-release-history .releases {
+   display: block;
+}
+
+.ictv-custom .taxon-release-history .release {
+   background-color: #eee;
+   border-radius: 5px;
+   margin-bottom: 30px;
+}
+
+.ictv-custom .taxon-release-history .release .release-header {
+   align-items: center;
+   background-color: #4aa3df;
+   border-radius: 5px 5px 0 0;
+   color: #fff;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   padding: 0 0.5rem;
+}
+
+.ictv-custom .taxon-release-history .release .release-header .release-year {
+   font-size: 30pt;
+   margin-right: 1rem;
+}
+
+.ictv-custom .taxon-release-history .release .release-header .release-title {
+   font-size: 12pt;
+}
+
+.ictv-custom .taxon-release-history .release .release-body {
+   padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+}
+
+.ictv-custom .taxon-release-history .release .release-body hr {
+   background-color: #fff;
+   border-color: #fff;
+   margin: 0.9rem 0 0.5rem 0;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-tags {
+   font-size: 15pt;
+   font-weight: 700;
+   margin: 0 0 10px 0;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-lineage {
+   font-size: 1.0rem;
+   margin: 10px 0 25px 0;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-lineage .lineage-chevron {
+   color: #aaa;
+   font-size: 1.0rem;
+   font-weight: normal;
+   margin: 0 0.25rem;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-proposal {
+   margin: 0 0 0.5rem 0;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-proposal .download-proposals-title {
+   color: #555;
+   font-size: 0.9rem;
+   font-weight: 700;
+   margin: 0 0.25rem 0 0;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-proposal i {
+   font-size: 14pt;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-proposal-link:hover {
+   text-decoration: underline;
+}
+
+.ictv-custom .taxon-release-history .release .taxon-proposal-link i:hover {
+   text-decoration: none;
+}
+
+.ictv-custom .taxon-release-history .release .lineage-export-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row;
+   justify-content: flex-start;
+   margin-bottom: 0.5rem;
+}
+
+.ictv-custom .taxon-release-history .release .lineage-title {
+   color: #555;
+   font-size: 0.9rem;
+   font-weight: 700;
+   margin-right: 0.25rem;
+}
+
+.ictv-custom .taxon-release-history .release .lineage-export-row button {
+   border-radius: 5px;
+   padding: .2rem .5rem;
+}
+
+.ictv-custom .taxon-release-history .release .lineage-export-row .between-buttons {
+   margin: 0 0.25rem;
+}
+
+.ictv-custom .taxon-release-history .release .lineage-export-row .copy-status i {
+   color: rgb(40, 167, 69);
+}
+
+.ictv-custom .taxon-release-history .release .lineage-export-row .copy-status {
+   margin-left: 1.0rem;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Member species table
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+.ictv-custom .virus-isolates-table {
+   background-color: rgba(255, 255, 255, 1.0) !important;
+   border-collapse: collapse;
+}
+
+.ictv-custom .virus-isolates-table th,
+.ictv-custom .virus-isolates-table td {
+   border-style: solid;
+   border-bottom-color: rgb(164, 185, 195);
+   border-width: 0 0 1px 0;
+}
+
+.ictv-custom .virus-isolates-table tr.header-row {
+   background-color: #757575 !important;
+}
+
+/*.ictv-custom .virus-isolates-table tr:first-child td {
+    padding-top: unset;
+}*/
+.ictv-custom .virus-isolates-table tr.header-row th {
+   color: #fff;
+   font-size: 0.7rem !important;
+   font-weight: normal;
+}
+
+.ictv-custom .virus-isolates-table .virus-row {
+   background-color: #fff;
+}
+
+.ictv-custom .virus-isolates-table .alt-virus-row {
+   background-color: #fdfdfd;
+}
+
+.ictv-custom .virus-isolates-table td {
+   font-size: 0.7rem !important;
+}
+
+/* Column classes (both TH and TD) */
+/*.ictv-custom .virus-isolates-table .col-species {
+}*/
+.ictv-custom .virus-isolates-table td.col-species {
+   min-width: 15ch;
+}
+
+.ictv-custom .virus-isolates-table .col-exemplar i {
+   color: #000;
+}
+
+/*
+.ictv-custom .virus-isolates-table .col-species {
+}
+
+.ictv-custom .virus-isolates-table .col-alternativeNameCSV {
+}*/
+
+.ictv-custom .virus-isolates-table td.col-isolate {
+   word-break: break-word;
+}
+
+
+.ictv-custom .virus-isolates-table td.col-accessionNumber,
+.ictv-custom .virus-isolates-table td.col-refSeqAccession {
+   font-family: monospace;
+   white-space: nowrap;
+}
+
+.ictv-custom .virus-isolates-table .col-accessionNumber a,
+.ictv-custom .virus-isolates-table .col-refSeqAccession a {
+   color: #2196f3;
+   text-decoration: none;
+}
+
+/*
+.ictv-custom .virus-isolates-table .col-availableSequence {
+}*/
+
+.ictv-custom .virus-isolates-table td.col-abbrev {
+   word-break: normal;
+}
+
+.ictv-custom .virus-isolates-lower-hr {
+   margin: 0.25rem 0;
+}
+
+.ictv-custom .virus-isolates-disclaimer {
+   font-size: 0.9rem;
+}
+
+.ictv-custom .virus-isolates-table-legend {
+   font-size: 0.9rem;
+}
+
+.ictv-custom .virus-isolates-table-legend i {
+   color: #000;
+   font-size: 0.75rem;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Overriding DataTables CSS
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The "Show ___ entries" row above the table */
+.dataTables_length {
+   margin-bottom: 1.0rem;
+}
+
+.dataTables_length label {
+   align-items: center;
+   font-weight: normal;
+   display: flex !important;
+   flex-flow: row nowrap !important;
+   justify-content: flex-start;
+}
+
+.dataTables_length select {
+   background-color: transparent;
+   border: 1px solid #aaa;
+   border-radius: 3px;
+   font-size: 1.0rem;
+   padding: 0 5px !important;
+   margin: 0 0.25rem;
+   min-width: 4rem;
+   text-align: left;
+}
+
+/* Table TH and TD */
+table.dataTable.compact thead th,
+table.dataTable.compact thead td {
+   padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
+}
+
+/* dmd 102323 */
+table.dataTable.compact thead th {
+   text-align: left !important;
+}

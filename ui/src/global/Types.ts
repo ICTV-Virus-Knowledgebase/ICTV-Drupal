@@ -101,6 +101,7 @@ export enum TopLevelRank {
 export enum WebServiceKey {
    csrfToken = "csrfToken",
    proposal = "proposal",
+   sequenceClassifier = "sequenceClassifier",
    taxonomy = "taxonomy",
    taxonomyHistory = "taxonomyHistory",
    virusIsolate = "virusIsolate"

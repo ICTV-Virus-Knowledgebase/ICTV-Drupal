@@ -1,0 +1,128 @@
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   General-purpose styles
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+.ictv-custom [data-is-visible='true'] {
+   display: initial;
+}
+
+.ictv-custom [data-is-visible='false'] {
+   display: none;
+}
+
+
+/* The spinner icon and text */
+.ictv-custom .spinner-ctrl {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+   width: 100%;
+}
+
+.ictv-custom .spinner-ctrl i {
+   font-size: 2.0rem;
+   margin-right: 0.5rem;
+}
+
+.ictv-custom .btn {
+   border: 1px solid transparent;
+   display: inline-block;
+   font-size: 12pt;
+   font-size: 0.9rem;
+   font-weight: 400;
+   padding: .375rem .75rem;
+   text-align: center;
+   user-select: none;
+   vertical-align: middle;
+   white-space: nowrap;
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+}
+
+.ictv-custom .btn i {
+   margin-right: 5px;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Buttons styles from Bootstrap
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Primary */
+.ictv-custom .btn-primary {
+   color: #fff;
+   background-color: #007bff;
+   border-color: #007bff;
+}
+
+.ictv-custom .btn-primary:hover {
+   color: #fff;
+   background-color: #0069d9;
+   border-color: #0062cc;
+}
+
+.ictv-custom .btn-primary:focus,
+.ictv-custom .btn-primary.focus {
+   box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
+}
+
+.ictv-custom .btn-primary.disabled,
+.ictv-custom .btn-primary:disabled {
+   color: #fff;
+   background-color: #007bff;
+   border-color: #007bff;
+}
+
+/* Success */
+.ictv-custom .btn-success {
+   color: #fff;
+   background-color: #28a745;
+   border-color: #28a745;
+}
+
+.ictv-custom .btn-success:hover {
+   color: #fff;
+   background-color: #218838;
+   border-color: #1e7e34;
+}
+
+.ictv-custom .btn-success:focus,
+.ictv-custom .btn-success.focus {
+   box-shadow: 0 0 0 0.2rem rgba(72, 180, 97, 0.5);
+}
+
+.ictv-custom .btn-success.disabled,
+.ictv-custom .btn-success:disabled {
+   color: #fff;
+   background-color: #28a745;
+   border-color: #28a745;
+}
+
+/* Warning */
+.ictv-custom .btn-warning {
+   color: #212529;
+   background-color: #ffc107;
+   border-color: #ffc107;
+}
+
+.ictv-custom .btn-warning:hover {
+   color: #212529;
+   background-color: #e0a800;
+   border-color: #d39e00;
+}
+
+.ictv-custom .btn-warning:focus,
+.ictv-custom .btn-warning.focus {
+   box-shadow: 0 0 0 0.2rem rgba(222, 170, 12, 0.5);
+}
+
+.ictv-custom .btn-warning.disabled,
+.ictv-custom .btn-warning:disabled {
+   color: #212529;
+   background-color: #ffc107;
+   border-color: #ffc107;
+}

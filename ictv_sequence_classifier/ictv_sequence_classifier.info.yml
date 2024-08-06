@@ -1,0 +1,8 @@
+name: ICTV Sequence Classifier
+type: module
+description: 'A custom module that displays a form to submit sequences for classification'
+package: ICTV
+configure: ictv_sequence_classifier.settings
+core_version_requirement: ^10
+dependencies:
+  - drupal:block

@@ -3,7 +3,7 @@
 
     let initialized = false;
 
-    Drupal_.behaviors.ictv_proposal_submission = {
+    Drupal_.behaviors.ictv_sequence_classifier = {
 
         // This function will be run on page load and ajax load.
         attach: function (context_, settings_) {
@@ -20,24 +20,26 @@
             const userUID = settings_.userUID;
 
             //----------------------------------------------------------------------------------------
-            // Initialize the ICTV_ProposalSubmission AppSettings using drupalSettings
+            // Initialize the ICTV AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
             // The Drupal web service base URL.
-            window.ICTV_ProposalSubmission.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+            window.ICTV_SequenceClassifier.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
 
             // The DOM selector of the container Element added to the page.
-            const containerSelector = "#ictv_proposal_submission_container";
+            const containerSelector = "#ictv_sequence_classifier_container";
 
-            // Create a new ProposalSubmission instance.
-            const proposalSubmission = new window.ICTV_ProposalSubmission.ProposalSubmission(authToken, contactEmail, 
+            console.log("About to create a new SequenceClassifier")
+
+            // Create a new SequenceClassifier instance.
+            const sequenceClassifier = new window.ICTV_SequenceClassifier.SequenceClassifier(authToken, contactEmail, 
                 containerSelector, userEmail, userName, userUID);
 
             // Initialize and display the UI.
-            proposalSubmission.initialize();
+            sequenceClassifier.initialize();
 
             // Get this user's jobs.
-            proposalSubmission.getJobs();
+            //sequenceClassifier.getJobs();
         }
     };
     
