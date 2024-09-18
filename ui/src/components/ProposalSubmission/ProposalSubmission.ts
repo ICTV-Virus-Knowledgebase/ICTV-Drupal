@@ -322,7 +322,7 @@ export class ProposalSubmission {
          <div class=\"upload-panel\">
                <button class=\"btn file-control\">${this.icons.browse} Browse for files</button>
                <input type=\"file\" id=\"file_input\" multiple
-                  accept=".xlsx,.csv,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                  accept=".xlsx,.csv,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.docx" />
                <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
                <button class=\"btn validate-button hidden\">Validate</button>
          </div>
