@@ -4,19 +4,34 @@ DELIMITER //
 DROP PROCEDURE IF EXISTS `searchTaxonHistogram`;
 
 CREATE PROCEDURE `searchTaxonHistogram`(
-	IN `countOffset` INT,
-	IN `lengthOffset` INT,
+
+	-- Successful symbol counts will be within the range from symbolCount - countVariance to symbolCount + countVariance.
+	IN `countVariance` INT,
+	
+	-- Successful text lengths will be within the range from textLength - lengthVariance to textLength + lengthVariance.
+	IN `lengthVariance` INT,
+	
+	-- The maximum number of total symbol count differences.
 	IN `maxCountDiff` INT,
+	
+	-- The maximum difference between the search text and test text.
 	IN `maxLengthDiff` INT,
+	
+	-- The maximum number of results to return.
 	IN `maxResultCount` INT,
+	
+	-- Search for this text.
 	IN `searchText` NVARCHAR(500)
 )
 BEGIN
 
+	-- The first character in the search text.
 	DECLARE firstCharacter VARCHAR(1);
-   DECLARE searchLength INT;
+	
+	-- The length of the search text.
+   DECLARE searchTextLength INT;
 
-	-- Variables to store character counts.
+	-- Variables to store symbol counts.
 	DECLARE aCount INT;
 	DECLARE bCount INT; 
 	DECLARE cCount INT; 
@@ -66,55 +81,53 @@ BEGIN
 	SET firstCharacter = LEFT(searchText, 1);
 	
 	-- Get the length of the search text.
-	SET searchLength = LENGTH(searchText);
+	SET searchTextLength = LENGTH(searchText);
 	
 	
 	-- Calculate a count for every symbol.
-	SET aCount = searchLength - LENGTH(REPLACE(searchText, 'a', ''));
-	SET bCount = searchLength - LENGTH(REPLACE(searchText, 'b', ''));
-	SET cCount = searchLength - LENGTH(REPLACE(searchText, 'c', ''));
-	SET dCount = searchLength - LENGTH(REPLACE(searchText, 'd', ''));
-	SET eCount = searchLength - LENGTH(REPLACE(searchText, 'e', ''));
-	SET fCount = searchLength - LENGTH(REPLACE(searchText, 'f', ''));
-	SET gCount = searchLength - LENGTH(REPLACE(searchText, 'g', ''));
-	SET hCount = searchLength - LENGTH(REPLACE(searchText, 'h', ''));
-	SET iCount = searchLength - LENGTH(REPLACE(searchText, 'i', ''));
-	SET jCount = searchLength - LENGTH(REPLACE(searchText, 'j', ''));
-	SET kCount = searchLength - LENGTH(REPLACE(searchText, 'k', ''));
-	SET lCount = searchLength - LENGTH(REPLACE(searchText, 'l', ''));
-	SET mCount = searchLength - LENGTH(REPLACE(searchText, 'm', ''));
-	SET nCount = searchLength - LENGTH(REPLACE(searchText, 'n', ''));
-	SET oCount = searchLength - LENGTH(REPLACE(searchText, 'o', ''));
-	SET pCount = searchLength - LENGTH(REPLACE(searchText, 'p', ''));
-	SET qCount = searchLength - LENGTH(REPLACE(searchText, 'q', ''));
-	SET rCount = searchLength - LENGTH(REPLACE(searchText, 'r', ''));
-	SET sCount = searchLength - LENGTH(REPLACE(searchText, 's', ''));
-	SET tCount = searchLength - LENGTH(REPLACE(searchText, 't', ''));
-	SET uCount = searchLength - LENGTH(REPLACE(searchText, 'u', ''));
-	SET vCount = searchLength - LENGTH(REPLACE(searchText, 'v', ''));
-	SET wCount = searchLength - LENGTH(REPLACE(searchText, 'w', ''));
-	SET xCount = searchLength - LENGTH(REPLACE(searchText, 'x', ''));
-	SET yCount = searchLength - LENGTH(REPLACE(searchText, 'y', ''));
-	SET zCount = searchLength - LENGTH(REPLACE(searchText, 'z', ''));
-	SET 1Count = searchLength - LENGTH(REPLACE(searchText, '1', ''));
-	SET 2Count = searchLength - LENGTH(REPLACE(searchText, '2', ''));
-	SET 3Count = searchLength - LENGTH(REPLACE(searchText, '3', ''));
-	SET 4Count = searchLength - LENGTH(REPLACE(searchText, '4', ''));
-	SET 5Count = searchLength - LENGTH(REPLACE(searchText, '5', ''));
-	SET 6Count = searchLength - LENGTH(REPLACE(searchText, '6', ''));
-	SET 7Count = searchLength - LENGTH(REPLACE(searchText, '7', ''));
-	SET 8Count = searchLength - LENGTH(REPLACE(searchText, '8', ''));
-	SET 9Count = searchLength - LENGTH(REPLACE(searchText, '9', ''));
-	SET 0Count = searchLength - LENGTH(REPLACE(searchText, '0', ''));
-	SET spaceCount = searchLength - LENGTH(REPLACE(searchText, ' ', ''));
+	SET aCount = searchTextLength - LENGTH(REPLACE(searchText, 'a', ''));
+	SET bCount = searchTextLength - LENGTH(REPLACE(searchText, 'b', ''));
+	SET cCount = searchTextLength - LENGTH(REPLACE(searchText, 'c', ''));
+	SET dCount = searchTextLength - LENGTH(REPLACE(searchText, 'd', ''));
+	SET eCount = searchTextLength - LENGTH(REPLACE(searchText, 'e', ''));
+	SET fCount = searchTextLength - LENGTH(REPLACE(searchText, 'f', ''));
+	SET gCount = searchTextLength - LENGTH(REPLACE(searchText, 'g', ''));
+	SET hCount = searchTextLength - LENGTH(REPLACE(searchText, 'h', ''));
+	SET iCount = searchTextLength - LENGTH(REPLACE(searchText, 'i', ''));
+	SET jCount = searchTextLength - LENGTH(REPLACE(searchText, 'j', ''));
+	SET kCount = searchTextLength - LENGTH(REPLACE(searchText, 'k', ''));
+	SET lCount = searchTextLength - LENGTH(REPLACE(searchText, 'l', ''));
+	SET mCount = searchTextLength - LENGTH(REPLACE(searchText, 'm', ''));
+	SET nCount = searchTextLength - LENGTH(REPLACE(searchText, 'n', ''));
+	SET oCount = searchTextLength - LENGTH(REPLACE(searchText, 'o', ''));
+	SET pCount = searchTextLength - LENGTH(REPLACE(searchText, 'p', ''));
+	SET qCount = searchTextLength - LENGTH(REPLACE(searchText, 'q', ''));
+	SET rCount = searchTextLength - LENGTH(REPLACE(searchText, 'r', ''));
+	SET sCount = searchTextLength - LENGTH(REPLACE(searchText, 's', ''));
+	SET tCount = searchTextLength - LENGTH(REPLACE(searchText, 't', ''));
+	SET uCount = searchTextLength - LENGTH(REPLACE(searchText, 'u', ''));
+	SET vCount = searchTextLength - LENGTH(REPLACE(searchText, 'v', ''));
+	SET wCount = searchTextLength - LENGTH(REPLACE(searchText, 'w', ''));
+	SET xCount = searchTextLength - LENGTH(REPLACE(searchText, 'x', ''));
+	SET yCount = searchTextLength - LENGTH(REPLACE(searchText, 'y', ''));
+	SET zCount = searchTextLength - LENGTH(REPLACE(searchText, 'z', ''));
+	SET 1Count = searchTextLength - LENGTH(REPLACE(searchText, '1', ''));
+	SET 2Count = searchTextLength - LENGTH(REPLACE(searchText, '2', ''));
+	SET 3Count = searchTextLength - LENGTH(REPLACE(searchText, '3', ''));
+	SET 4Count = searchTextLength - LENGTH(REPLACE(searchText, '4', ''));
+	SET 5Count = searchTextLength - LENGTH(REPLACE(searchText, '5', ''));
+	SET 6Count = searchTextLength - LENGTH(REPLACE(searchText, '6', ''));
+	SET 7Count = searchTextLength - LENGTH(REPLACE(searchText, '7', ''));
+	SET 8Count = searchTextLength - LENGTH(REPLACE(searchText, '8', ''));
+	SET 9Count = searchTextLength - LENGTH(REPLACE(searchText, '9', ''));
+	SET 0Count = searchTextLength - LENGTH(REPLACE(searchText, '0', ''));
+	SET spaceCount = searchTextLength - LENGTH(REPLACE(searchText, ' ', ''));
 
 
 	SELECT 
 		division,
 		first_character_match,
-		CASE 
-			WHEN tn.`name` = searchText THEN 1 ELSE 0
-		END AS is_exact_match,
+		is_exact_match,
 		is_valid,
 		length_diff,
 		length_within_range,
@@ -127,29 +140,40 @@ BEGIN
 		version_id
 		
 	FROM (
-		SELECT *, 
+		SELECT *,
+		
+			-- Add symbol diffs to calculate the total count diff.
 			(aDiff + bDiff + cDiff + dDiff + eDiff + fDiff + gDiff + hDiff + iDiff + jDiff + 
 			kDiff + lDiff + mDiff + nDiff + oDiff + pDiff + qDiff + rDiff + sDiff + tDiff + 
 			uDiff + vDiff + wDiff + xDiff + yDiff + zDiff + 1Diff + 2Diff + 3Diff + 4Diff + 
 			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS total_count_diff,
+			
 			CASE
+				-- If the length difference is 0, the length is definitely within range.
 				WHEN length_diff = 0 THEN 1
-				WHEN length_diff >= GREATEST(searchLength - lengthOffset, 0) AND length_diff <= searchLength + lengthOffset THEN 1 ELSE 0
+				
+				-- Is the difference between the search text and test text length within the allowable range?
+				WHEN length_diff >= (searchTextLength - lengthVariance) AND length_diff <= (searchTextLength + lengthVariance) THEN 1 
+				
+				ELSE 0
+				
 			END AS length_within_range
+			
 		FROM (
 			
 			SELECT
-			
-				-- The test record's taxon name ID.
-				taxon_name_id,
-				
+
 				-- Does the first character of the search text match the first character in the test row?
 				CASE
 					WHEN first_character = firstCharacter THEN 1 ELSE 0
 				END AS first_character_match,
 				
+				CASE 
+					WHEN filtered_text = searchText THEN 1 ELSE 0
+				END AS is_exact_match,
+				
 				-- The difference in length between the search text and test record.
-				ABS(searchLength - text_length) AS length_diff,
+				ABS(searchTextLength - text_length) AS length_diff,
 
 				/* 
 				For every character:
@@ -193,50 +217,64 @@ BEGIN
 				_8, 8Count, ABS(8Count - _8) AS 8Diff, 
 				_9, 9Count, ABS(9Count - _9) AS 9Diff, 
 				_0, 0Count, ABS(0Count - _0) AS 0Diff, 
-				_, spaceCount, ABS(spaceCount - _) AS spaceDiff
+				_, 
+				spaceCount, 
+				ABS(spaceCount - _) AS spaceDiff,
+				
+				-- The test record's taxon name ID.
+				taxon_name_id
 				
 			FROM taxon_histogram
 			
-			-- Constrain by the difference in text lengths.
-			WHERE (ABS(searchLength - text_length) <= maxLengthDiff) AND
-			(_a >= aCount - countOffset AND _a <= aCount + countOffset) AND 
-			(_b >= bCount - countOffset AND _b <= bCount + countOffset) AND 
-			(_c >= cCount - countOffset AND _c <= cCount + countOffset) AND 
-			(_d >= dCount - countOffset AND _d <= dCount + countOffset) AND 
-			(_e >= eCount - countOffset AND _e <= eCount + countOffset) AND 
-			(_f >= fCount - countOffset AND _f <= fCount + countOffset) AND 
-			(_g >= gCount - countOffset AND _g <= gCount + countOffset) AND 
-			(_h >= hCount - countOffset AND _h <= hCount + countOffset) AND 
-			(_i >= iCount - countOffset AND _i <= iCount + countOffset) AND 
-			(_j >= jCount - countOffset AND _j <= jCount + countOffset) AND 
-			(_k >= kCount - countOffset AND _k <= kCount + countOffset) AND 
-			(_l >= lCount - countOffset AND _l <= lCount + countOffset) AND 
-			(_m >= mCount - countOffset AND _m <= mCount + countOffset) AND 
-			(_n >= nCount - countOffset AND _n <= nCount + countOffset) AND 
-			(_o >= oCount - countOffset AND _o <= oCount + countOffset) AND 
-			(_p >= pCount - countOffset AND _p <= pCount + countOffset) AND 
-			(_q >= qCount - countOffset AND _q <= qCount + countOffset) AND 
-			(_r >= rCount - countOffset AND _r <= rCount + countOffset) AND 
-			(_s >= sCount - countOffset AND _s <= sCount + countOffset) AND 
-			(_t >= tCount - countOffset AND _t <= tCount + countOffset) AND 
-			(_u >= uCount - countOffset AND _u <= uCount + countOffset) AND 
-			(_v >= vCount - countOffset AND _v <= vCount + countOffset) AND 
-			(_w >= wCount - countOffset AND _w <= wCount + countOffset) AND 
-			(_x >= xCount - countOffset AND _x <= xCount + countOffset) AND 
-			(_y >= yCount - countOffset AND _y <= yCount + countOffset) AND 
-			(_z >= zCount - countOffset AND _z <= zCount + countOffset) AND 
-			(_1 >= 1Count - countOffset AND _1 <= 1Count + countOffset) AND 
-			(_2 >= 2Count - countOffset AND _2 <= 2Count + countOffset) AND 
-			(_3 >= 3Count - countOffset AND _3 <= 3Count + countOffset) AND 
-			(_4 >= 4Count - countOffset AND _4 <= 4Count + countOffset) AND 
-			(_5 >= 5Count - countOffset AND _5 <= 5Count + countOffset) AND 
-			(_6 >= 6Count - countOffset AND _6 <= 6Count + countOffset) AND 
-			(_7 >= 7Count - countOffset AND _7 <= 7Count + countOffset) AND 
-			(_8 >= 8Count - countOffset AND _8 <= 8Count + countOffset) AND 
-			(_9 >= 9Count - countOffset AND _9 <= 9Count + countOffset) AND 
-			(_0 >= 0Count - countOffset AND _0 <= 0Count + countOffset) AND 
-			(_ >= spaceCount - countOffset AND _ <= spaceCount + countOffset)
 			
+			WHERE
+				-- If the search text and filtered text are an exact match, there's no need to check the other constraints.
+				searchText = filtered_text
+				
+				OR (
+			
+					-- The difference between the search text length and test text length must be <= the maxLengthDiff value.
+					(ABS(searchTextLength - text_length) <= maxLengthDiff) AND
+					
+					-- For a given symbol, the test count must be within the range of the search count +/- countVariance.
+					(_a >= aCount - countVariance AND _a <= aCount + countVariance) AND 
+					(_b >= bCount - countVariance AND _b <= bCount + countVariance) AND 
+					(_c >= cCount - countVariance AND _c <= cCount + countVariance) AND 
+					(_d >= dCount - countVariance AND _d <= dCount + countVariance) AND 
+					(_e >= eCount - countVariance AND _e <= eCount + countVariance) AND 
+					(_f >= fCount - countVariance AND _f <= fCount + countVariance) AND 
+					(_g >= gCount - countVariance AND _g <= gCount + countVariance) AND 
+					(_h >= hCount - countVariance AND _h <= hCount + countVariance) AND 
+					(_i >= iCount - countVariance AND _i <= iCount + countVariance) AND 
+					(_j >= jCount - countVariance AND _j <= jCount + countVariance) AND 
+					(_k >= kCount - countVariance AND _k <= kCount + countVariance) AND 
+					(_l >= lCount - countVariance AND _l <= lCount + countVariance) AND 
+					(_m >= mCount - countVariance AND _m <= mCount + countVariance) AND 
+					(_n >= nCount - countVariance AND _n <= nCount + countVariance) AND 
+					(_o >= oCount - countVariance AND _o <= oCount + countVariance) AND 
+					(_p >= pCount - countVariance AND _p <= pCount + countVariance) AND 
+					(_q >= qCount - countVariance AND _q <= qCount + countVariance) AND 
+					(_r >= rCount - countVariance AND _r <= rCount + countVariance) AND 
+					(_s >= sCount - countVariance AND _s <= sCount + countVariance) AND 
+					(_t >= tCount - countVariance AND _t <= tCount + countVariance) AND 
+					(_u >= uCount - countVariance AND _u <= uCount + countVariance) AND 
+					(_v >= vCount - countVariance AND _v <= vCount + countVariance) AND 
+					(_w >= wCount - countVariance AND _w <= wCount + countVariance) AND 
+					(_x >= xCount - countVariance AND _x <= xCount + countVariance) AND 
+					(_y >= yCount - countVariance AND _y <= yCount + countVariance) AND 
+					(_z >= zCount - countVariance AND _z <= zCount + countVariance) AND 
+					(_1 >= 1Count - countVariance AND _1 <= 1Count + countVariance) AND 
+					(_2 >= 2Count - countVariance AND _2 <= 2Count + countVariance) AND 
+					(_3 >= 3Count - countVariance AND _3 <= 3Count + countVariance) AND 
+					(_4 >= 4Count - countVariance AND _4 <= 4Count + countVariance) AND 
+					(_5 >= 5Count - countVariance AND _5 <= 5Count + countVariance) AND 
+					(_6 >= 6Count - countVariance AND _6 <= 6Count + countVariance) AND 
+					(_7 >= 7Count - countVariance AND _7 <= 7Count + countVariance) AND 
+					(_8 >= 8Count - countVariance AND _8 <= 8Count + countVariance) AND 
+					(_9 >= 9Count - countVariance AND _9 <= 9Count + countVariance) AND 
+					(_0 >= 0Count - countVariance AND _0 <= 0Count + countVariance) AND 
+					(_ >= spaceCount - countVariance AND _ <= spaceCount + countVariance)
+				)
 		) initialMatches
 		
 	) matchesWithConstraints
