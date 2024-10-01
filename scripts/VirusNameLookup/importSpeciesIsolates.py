@@ -8,12 +8,17 @@ from taxonName import TaxonName
 # The name of the MariaDB database with the table "taxon_name".
 databaseName = "virus_name_lookup"
 
-# https://mariadb.com/docs/server/connect/programming-languages/python/connect/
-# https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+"""
+Helpful links:
+
+- Python db connection to MariaDB: https://mariadb.com/docs/server/connect/programming-languages/python/connect/
+- Pandas read_csv: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+
+"""
 
 
-# The header columns in the CSV file. Note that the order is important!
-csvColumns = [ 
+# The header columns in the TSV file. Note that the order is important!
+columns = [ 
    "isolate_id",
    "taxnode_id",
    "species_name",
@@ -29,12 +34,12 @@ csvColumns = [
 
 
 #--------------------------------------------------------------------------------
-# Load the CSV file and import the contents into the taxon_name DB table.
+# Load the TSV file and import the contents into the taxon_name DB table.
 #--------------------------------------------------------------------------------
 def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
 
-   # Read the contents of the CSV file.
-   df = pd.read_csv(filename_, header=0, index_col=False, names=csvColumns, encoding="latin-1", keep_default_na=False)
+   # Read the contents of the TSV file.
+   df = pd.read_csv(filename_, header=0, sep="\t", index_col=False, names=columns, encoding="latin-1", keep_default_na=False)
    # TODO: validate!
 
    # Iterate over every row.
@@ -113,8 +118,8 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
 
 if __name__ == '__main__':
 
-   parser = argparse.ArgumentParser(description="Import species_isolate data from a CSV file and create records in MariaDB.")
-   parser.add_argument("--filename", dest="filename", metavar='FILENAME', nargs=1, required=True, help="The CSV filename")
+   parser = argparse.ArgumentParser(description="Import species_isolate data from a TSV file and create records in MariaDB.")
+   parser.add_argument("--filename", dest="filename", metavar='FILENAME', nargs=1, required=True, help="The TSV filename")
    parser.add_argument("--dbName", dest="dbName", metavar='DB_NAME', nargs=1, required=True, help="The database name")
    parser.add_argument("--host", dest="host", metavar='HOST', nargs=1, required=True, help="The database hostname")
    parser.add_argument("--username", dest="username", metavar='USERNAME', nargs=1, required=True, help="The database username")
@@ -133,5 +138,5 @@ if __name__ == '__main__':
    # Create a taxon name instance using the database parameters.
    taxonName = TaxonName(dbName, host, username, password, port)
 
-   # Load the CSV file and import the contents into the taxon_name DB table.
+   # Load the TSV file and import the contents into the taxon_name DB table.
    importSpeciesIsolates(filename, taxonName)

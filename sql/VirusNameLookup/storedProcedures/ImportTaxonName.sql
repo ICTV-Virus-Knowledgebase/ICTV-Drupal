@@ -34,9 +34,10 @@ BEGIN
 	
 	SET parentTaxonomyDB = TRIM(parentTaxonomyDB);
 	
-	SET rankName = TRIM(rankName);
+	SET rankName = REPLACE(TRIM(rankName), ' ', '_');
 	IF rankName IS NULL OR LENGTH(rankName) < 1 THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid rank name parameter';
+      SET rankName = "no_rank";
+      -- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid rank name parameter';
    END IF;
 	
 	SET taxonomyDB = TRIM(taxonomyDB);

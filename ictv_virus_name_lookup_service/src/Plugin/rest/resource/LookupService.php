@@ -97,9 +97,22 @@ class LookupService extends ResourceBase {
    }
 
    /**
-    * Search the database for this name.
+    * Search the database to find taxon name matches.
+    * 
+    * @param int maxCountDiff
+    *    The maximum number of total symbol count differences.
+    *
+    * @param int maxLengthDiff
+    *    The maximum difference between the search text and test text.
+    *
+    * @param int maxResultCount
+    *    The maximum number of results to return.
+    *
+    * @param string searchText
+    *    Search for this text.  
     */
-   public function lookupName(string $name) {
+   public function lookupName(int $maxCountDiff, int $maxLengthDiff, int $maxResultCount, string $searchText) {
+
 
    }
 
@@ -123,7 +136,7 @@ class LookupService extends ResourceBase {
       return new ResourceResponse($data);
    }
 
-
+   /*
    public function processRequest(Request $request) {
 
       // Get and validate the JSON in the request body.
@@ -137,6 +150,30 @@ class LookupService extends ResourceBase {
       $data = $this->lookupName($searchText);
 
       return $data;
-   }
+   }*/
 
+
+   public function processAction(Request $request) {
+
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+
+      // Get and validate the action code.
+      $actionCode = $json["actionCode"];
+      if (Utils::isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
+
+      $data = null;
+
+      switch ($actionCode) {
+
+         case "lookup_name":
+            $data = $this->jobService->getJobs($this->connection, JobType::proposal_validation, $userEmail, $userUID);
+            break;
+
+         default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");
+      }
+
+      return $data;   // Json::encode();
+   }
 }

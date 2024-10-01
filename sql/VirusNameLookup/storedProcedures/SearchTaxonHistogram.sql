@@ -4,12 +4,6 @@ DELIMITER //
 DROP PROCEDURE IF EXISTS `searchTaxonHistogram`;
 
 CREATE PROCEDURE `searchTaxonHistogram`(
-
-	-- Successful symbol counts will be within the range from symbolCount - countVariance to symbolCount + countVariance.
-	IN `countVariance` INT,
-	
-	-- Successful text lengths will be within the range from textLength - lengthVariance to textLength + lengthVariance.
-	IN `lengthVariance` INT,
 	
 	-- The maximum number of total symbol count differences.
 	IN `maxCountDiff` INT,
@@ -124,165 +118,169 @@ BEGIN
 	SET spaceCount = searchTextLength - LENGTH(REPLACE(searchText, ' ', ''));
 
 
-	SELECT 
-		division,
-		first_character_match,
-		is_exact_match,
-		is_valid,
-		length_diff,
-		length_within_range,
-		`name`,
-		name_class,
-		rank_name,
-		taxonomy_db,
-		taxonomy_id,
-		total_count_diff,
-		version_id
-		
+
+	SELECT *
+	
 	FROM (
-		SELECT *,
-		
-			-- Add symbol diffs to calculate the total count diff.
-			(aDiff + bDiff + cDiff + dDiff + eDiff + fDiff + gDiff + hDiff + iDiff + jDiff + 
-			kDiff + lDiff + mDiff + nDiff + oDiff + pDiff + qDiff + rDiff + sDiff + tDiff + 
-			uDiff + vDiff + wDiff + xDiff + yDiff + zDiff + 1Diff + 2Diff + 3Diff + 4Diff + 
-			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS total_count_diff,
+		SELECT 
+			countDiff,
+			division,
+			firstCharacterMatch,
+			isExactMatch,
+			is_valid,
+			lengthDiff,
+			`name`,
+			name_class,
 			
 			CASE
-				-- If the length difference is 0, the length is definitely within range.
-				WHEN length_diff = 0 THEN 1
+			
+				WHEN name_class = 'isolate_name' THEN 12
+				WHEN name_class = 'isolate_exemplar' THEN 11
+
+				WHEN name_class = 'scientific_name' THEN 10
+				WHEN name_class IN ('synonym', 'equivalent_name') THEN 9
 				
-				-- Is the difference between the search text and test text length within the allowable range?
-				WHEN length_diff >= (searchTextLength - lengthVariance) AND length_diff <= (searchTextLength + lengthVariance) THEN 1 
+				WHEN name_class = 'genbank_common_name' THEN 8
+				WHEN name_class = 'common_name' THEN 7
+				WHEN name_class = 'blast_name' THEN 6
 				
+				WHEN name_class = 'isolate_designation' THEN 5
+				
+				WHEN name_class IN ('isolate_abbreviation', 'genbank_acronym') THEN 4
+				WHEN name_class IN ('abbreviation', 'acronym') THEN 3
+				
+				WHEN name_class = 'genbank_accession' THEN 2
+				WHEN name_class = 'refseq_accession' THEN 1
 				ELSE 0
+
+			END AS name_class_score,
+			
+			
+			rank_name,
+			
+			-- Prefer lower ranks over higher ranks.
+			CASE
+				WHEN rank_name IN ('no rank', 'clade') THEN 0
+				WHEN rank_name = 'superkingdom' THEN 1
+				WHEN rank_name = 'kingdom' THEN 2
+				WHEN rank_name = 'phylum' THEN 3
+				WHEN rank_name = 'subphylum' THEN 4
+				WHEN rank_name = 'class' THEN 5
+				WHEN rank_name = 'subclass' THEN 6
+				WHEN rank_name = 'order' THEN 7
+				WHEN rank_name = 'suborder' THEN 8
+				WHEN rank_name = 'family' THEN 9
+				WHEN rank_name = 'subfamily' THEN 10
+				WHEN rank_name = 'genus' THEN 11
+				WHEN rank_name = 'subgenus' THEN 12
+				WHEN rank_name = 'species group' THEN 13
+				WHEN rank_name = 'species' THEN 14
+				WHEN rank_name IN ('subspecies, species subgroup') THEN 15
+				WHEN rank_name = 'strain' THEN 16
+				WHEN rank_name = 'isolate' THEN 17
 				
-			END AS length_within_range
+				-- Where do these go?
+				WHEN rank_name = 'genotype' THEN 18
+				WHEN rank_name = 'serogroup' THEN 19
+				WHEN rank_name = 'serotype' THEN 20 
+				
+				ELSE -1
+				
+				/*
+				-- ???
+				biotype
+				forma
+				forma specialis
+				pathogroup
+				tribe
+				varietas
+				*/
+			
+			END AS rank_score,
+			
+			taxonomy_db,
+			taxonomy_id,
+			version_id,
+			
+			parent_taxonomy_db,
+			parent_taxonomy_id
 			
 		FROM (
 			
 			SELECT
-
-				-- Does the first character of the search text match the first character in the test row?
+	
+				-- The total number of symbol differences between the search text and taxon name.
+				(
+					ABS(aCount - _a) +
+					ABS(bCount - _b) +
+					ABS(cCount - _c) +
+					ABS(dCount - _d) +
+					ABS(eCount - _e) +
+					ABS(fCount - _f) +
+					ABS(gCount - _g) +
+					ABS(hCount - _h) +
+					ABS(iCount - _i) +
+					ABS(jCount - _j) +
+					ABS(kCount - _k) +
+					ABS(lCount - _l) +
+					ABS(mCount - _m) +
+					ABS(nCount - _n) +
+					ABS(oCount - _o) +
+					ABS(pCount - _p) +
+					ABS(qCount - _q) +
+					ABS(rCount - _r) +
+					ABS(sCount - _s) +
+					ABS(tCount - _t) +
+					ABS(uCount - _u) +
+					ABS(vCount - _v) +
+					ABS(wCount - _w) +
+					ABS(xCount - _x) +
+					ABS(yCount - _y) +
+					ABS(zCount - _z) +
+					ABS(1Count - _1) +
+					ABS(2Count - _2) +
+					ABS(3Count - _3) +
+					ABS(4Count - _4) +
+					ABS(5Count - _5) +
+					ABS(6Count - _6) +
+					ABS(7Count - _7) +
+					ABS(8Count - _8) +
+					ABS(9Count - _9) +
+					ABS(0Count - _0) +
+					ABS(spaceCount - _)
+				) AS countDiff,
+				
+				-- Does the first character of the search text match the first character of the taxon name?
 				CASE
 					WHEN first_character = firstCharacter THEN 1 ELSE 0
-				END AS first_character_match,
+				END AS firstCharacterMatch,
 				
 				CASE 
 					WHEN filtered_text = searchText THEN 1 ELSE 0
-				END AS is_exact_match,
+				END AS isExactMatch,
 				
-				-- The difference in length between the search text and test record.
-				ABS(searchTextLength - text_length) AS length_diff,
-
-				/* 
-				For every character:
-				- The number of occurrences in the test record.
-				- The number of occurrences in the search text.
-				- The difference between the test record and search text counts.	
-				*/
-				_a, aCount, ABS(aCount - _a) AS aDiff, 
-				_b, bCount, ABS(bCount - _b) AS bDiff, 
-				_c, cCount, ABS(cCount - _c) AS cDiff, 
-				_d, dCount, ABS(dCount - _d) AS dDiff, 
-				_e, eCount, ABS(eCount - _e) AS eDiff, 
-				_f, fCount, ABS(fCount - _f) AS fDiff, 
-				_g, gCount, ABS(gCount - _g) AS gDiff, 
-				_h, hCount, ABS(hCount - _h) AS hDiff, 
-				_i, iCount, ABS(iCount - _i) AS iDiff, 
-				_j, jCount, ABS(jCount - _j) AS jDiff, 
-				_k, kCount, ABS(kCount - _k) AS kDiff, 
-				_l, lCount, ABS(lCount - _l) AS lDiff, 
-				_m, mCount, ABS(mCount - _m) AS mDiff, 
-				_n, nCount, ABS(nCount - _n) AS nDiff, 
-				_o, oCount, ABS(oCount - _o) AS oDiff, 
-				_p, pCount, ABS(pCount - _p) AS pDiff, 
-				_q, qCount, ABS(qCount - _q) AS qDiff, 
-				_r, rCount, ABS(rCount - _r) AS rDiff, 
-				_s, sCount, ABS(sCount - _s) AS sDiff, 
-				_t, tCount, ABS(tCount - _t) AS tDiff, 
-				_u, uCount, ABS(uCount - _u) AS uDiff, 
-				_v, vCount, ABS(vCount - _v) AS vDiff, 
-				_w, wCount, ABS(wCount - _w) AS wDiff, 
-				_x, xCount, ABS(xCount - _x) AS xDiff, 
-				_y, yCount, ABS(yCount - _y) AS yDiff, 
-				_z, zCount, ABS(zCount - _z) AS zDiff, 
-				_1, 1Count, ABS(1Count - _1) AS 1Diff, 
-				_2, 2Count, ABS(2Count - _2) AS 2Diff, 
-				_3, 3Count, ABS(3Count - _3) AS 3Diff, 
-				_4, 4Count, ABS(4Count - _4) AS 4Diff, 
-				_5, 5Count, ABS(5Count - _5) AS 5Diff, 
-				_6, 6Count, ABS(6Count - _6) AS 6Diff, 
-				_7, 7Count, ABS(7Count - _7) AS 7Diff, 
-				_8, 8Count, ABS(8Count - _8) AS 8Diff, 
-				_9, 9Count, ABS(9Count - _9) AS 9Diff, 
-				_0, 0Count, ABS(0Count - _0) AS 0Diff, 
-				_, 
-				spaceCount, 
-				ABS(spaceCount - _) AS spaceDiff,
-				
+				-- The difference in length between the search text and taxon name.
+				ABS(searchTextLength - text_length) AS lengthDiff,
+	
 				-- The test record's taxon name ID.
 				taxon_name_id
 				
 			FROM taxon_histogram
 			
 			
-			WHERE
-				-- If the search text and filtered text are an exact match, there's no need to check the other constraints.
-				searchText = filtered_text
+			-- Limit the number of results using differences in length.
+			WHERE ABS(searchTextLength - text_length) <= maxLengthDiff
 				
-				OR (
 			
-					-- The difference between the search text length and test text length must be <= the maxLengthDiff value.
-					(ABS(searchTextLength - text_length) <= maxLengthDiff) AND
-					
-					-- For a given symbol, the test count must be within the range of the search count +/- countVariance.
-					(_a >= aCount - countVariance AND _a <= aCount + countVariance) AND 
-					(_b >= bCount - countVariance AND _b <= bCount + countVariance) AND 
-					(_c >= cCount - countVariance AND _c <= cCount + countVariance) AND 
-					(_d >= dCount - countVariance AND _d <= dCount + countVariance) AND 
-					(_e >= eCount - countVariance AND _e <= eCount + countVariance) AND 
-					(_f >= fCount - countVariance AND _f <= fCount + countVariance) AND 
-					(_g >= gCount - countVariance AND _g <= gCount + countVariance) AND 
-					(_h >= hCount - countVariance AND _h <= hCount + countVariance) AND 
-					(_i >= iCount - countVariance AND _i <= iCount + countVariance) AND 
-					(_j >= jCount - countVariance AND _j <= jCount + countVariance) AND 
-					(_k >= kCount - countVariance AND _k <= kCount + countVariance) AND 
-					(_l >= lCount - countVariance AND _l <= lCount + countVariance) AND 
-					(_m >= mCount - countVariance AND _m <= mCount + countVariance) AND 
-					(_n >= nCount - countVariance AND _n <= nCount + countVariance) AND 
-					(_o >= oCount - countVariance AND _o <= oCount + countVariance) AND 
-					(_p >= pCount - countVariance AND _p <= pCount + countVariance) AND 
-					(_q >= qCount - countVariance AND _q <= qCount + countVariance) AND 
-					(_r >= rCount - countVariance AND _r <= rCount + countVariance) AND 
-					(_s >= sCount - countVariance AND _s <= sCount + countVariance) AND 
-					(_t >= tCount - countVariance AND _t <= tCount + countVariance) AND 
-					(_u >= uCount - countVariance AND _u <= uCount + countVariance) AND 
-					(_v >= vCount - countVariance AND _v <= vCount + countVariance) AND 
-					(_w >= wCount - countVariance AND _w <= wCount + countVariance) AND 
-					(_x >= xCount - countVariance AND _x <= xCount + countVariance) AND 
-					(_y >= yCount - countVariance AND _y <= yCount + countVariance) AND 
-					(_z >= zCount - countVariance AND _z <= zCount + countVariance) AND 
-					(_1 >= 1Count - countVariance AND _1 <= 1Count + countVariance) AND 
-					(_2 >= 2Count - countVariance AND _2 <= 2Count + countVariance) AND 
-					(_3 >= 3Count - countVariance AND _3 <= 3Count + countVariance) AND 
-					(_4 >= 4Count - countVariance AND _4 <= 4Count + countVariance) AND 
-					(_5 >= 5Count - countVariance AND _5 <= 5Count + countVariance) AND 
-					(_6 >= 6Count - countVariance AND _6 <= 6Count + countVariance) AND 
-					(_7 >= 7Count - countVariance AND _7 <= 7Count + countVariance) AND 
-					(_8 >= 8Count - countVariance AND _8 <= 8Count + countVariance) AND 
-					(_9 >= 9Count - countVariance AND _9 <= 9Count + countVariance) AND 
-					(_0 >= 0Count - countVariance AND _0 <= 0Count + countVariance) AND 
-					(_ >= spaceCount - countVariance AND _ <= spaceCount + countVariance)
-				)
-		) initialMatches
+		) constrainedMatches
 		
-	) matchesWithConstraints
+		JOIN v_taxon_name tn ON tn.id = taxon_name_id
+		WHERE countDiff <= maxCountDiff
 	
-	JOIN v_taxon_name tn ON tn.id = taxon_name_id
-	WHERE total_count_diff <= maxCountDiff
+	) matchesWithinRange
 	
-	ORDER BY is_exact_match DESC, first_character_match DESC, total_count_diff ASC, length_within_range DESC, length_diff ASC, tn.version_id DESC
+	ORDER BY isExactMatch DESC, firstCharacterMatch DESC, countDiff ASC, lengthDiff ASC, version_id DESC, is_valid DESC
+	
 	LIMIT maxResultCount;
 	
 END//
