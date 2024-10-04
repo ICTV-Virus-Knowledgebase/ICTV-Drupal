@@ -31,7 +31,7 @@ class TaxonName:
    #--------------------------------------------------------------------------------------------------------
    # Import data into the taxon_name database table.
    #--------------------------------------------------------------------------------------------------------
-   def importTaxonName(self, name: str, nameClass: str, parentTaxonomyDB: str, parentTaxonomyID: int, 
+   def importTaxonName(self, ictvTaxNodeID: int, name: str, nameClass: str, parentTaxonomyDB: str, parentTaxonomyID: int, 
                        rankName: str, taxonomyDB: str, taxonomyID: int, versionID: int):
 
       # Validate the database name, username, and password member variables.
@@ -46,6 +46,9 @@ class TaxonName:
       elif self.username in (None, ""):
          raise Exception("Invalid database username")
       
+      if not isinstance(ictvTaxNodeID, int):
+         ictvTaxNodeID = None
+
       # Name
       name = safeTrim(name)
       if name in (None, ''):
@@ -66,12 +69,13 @@ class TaxonName:
       
       # Parent taxonomy DB
       if parentTaxonomyDB in (None, '') or not TaxonomyDB.hasKey(parentTaxonomyDB):
-         parentTaxonomyDB = "NULL"
+         # parentTaxonomyDB = "NULL"
+         raise Exception("Invalid parent taxonomy DB")
       else:
          parentTaxonomyDB = f"'{parentTaxonomyDB}'"
 
       # Parent taxonomy ID
-      if not parentTaxonomyID:
+      if not isinstance(parentTaxonomyID, int):
          parentTaxonomyID = "NULL"
       
       # Rank name
@@ -87,10 +91,12 @@ class TaxonName:
       else:
          taxonomyDB = f"'{taxonomyDB}'"
 
-      # TODO: validate taxonomyID and versionID as integers?
+      # Taxonomy ID
+      if not isinstance(taxonomyID, int):
+         raise Exception("Invalid taxonomy ID")
 
       # Create SQL that calls the stored procedure.
-      sql = f"CALL importTaxonName({name}, {nameClass}, {parentTaxonomyDB}, {parentTaxonomyID}, {rankName}, {taxonomyDB}, {taxonomyID}, {versionID});"
+      sql = f"CALL importTaxonName({ictvTaxNodeID}, {name}, {nameClass}, {parentTaxonomyDB}, {parentTaxonomyID}, {rankName}, {taxonomyDB}, {taxonomyID}, {versionID});"
 
       # TODO: this would be a better approach
       #with contextlib.closing(conn) as dbConnection:

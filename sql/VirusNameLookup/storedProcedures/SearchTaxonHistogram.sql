@@ -120,20 +120,45 @@ BEGIN
 
 
 	SELECT *
-	
 	FROM (
 		SELECT 
+			-- How many characters were different between the search text and match?
 			countDiff,
+			
+			-- The NCBI division (phages, viruses)
 			division,
+			
+			-- Prefer virus and phage results over anything else.
+			CASE
+				WHEN division IN ('viruses', 'phages') THEN 1 ELSE 0
+			END AS divisionScore,
+			
+			-- Were the first characters of the search text and match the same?
 			firstCharacterMatch,
+			
+			-- Prefer results that have an ICTV taxnode ID.
+			CASE
+				WHEN ictv_taxnode_id IS NOT NULL THEN 1 ELSE 0
+			END AS has_taxnode_id,
+				
+			ictv_taxnode_id,
+			
+			-- Is this an exact match?
 			isExactMatch,
+			
+			-- Is this a valid taxon (not obsolete)?
 			is_valid,
+			
+			-- How much did the search text's length differ from the match's length?
 			lengthDiff,
+			
+			-- The matching name
 			`name`,
+			
+			-- The name class/type, inspired by NCBI name class.
 			name_class,
 			
 			CASE
-			
 				WHEN name_class = 'isolate_name' THEN 12
 				WHEN name_class = 'isolate_exemplar' THEN 11
 
@@ -152,53 +177,46 @@ BEGIN
 				WHEN name_class = 'genbank_accession' THEN 2
 				WHEN name_class = 'refseq_accession' THEN 1
 				ELSE 0
-
 			END AS name_class_score,
 			
 			
 			rank_name,
 			
+			-- Ranks found in ICTV, VMR, and NCBI Taxonomy (virus and phage divisions only).
 			-- Prefer lower ranks over higher ranks.
 			CASE
-				WHEN rank_name IN ('no rank', 'clade') THEN 0
-				WHEN rank_name = 'superkingdom' THEN 1
-				WHEN rank_name = 'kingdom' THEN 2
-				WHEN rank_name = 'phylum' THEN 3
-				WHEN rank_name = 'subphylum' THEN 4
-				WHEN rank_name = 'class' THEN 5
-				WHEN rank_name = 'subclass' THEN 6
-				WHEN rank_name = 'order' THEN 7
-				WHEN rank_name = 'suborder' THEN 8
-				WHEN rank_name = 'family' THEN 9
-				WHEN rank_name = 'subfamily' THEN 10
-				WHEN rank_name = 'genus' THEN 11
-				WHEN rank_name = 'subgenus' THEN 12
-				WHEN rank_name = 'species group' THEN 13
-				WHEN rank_name = 'species' THEN 14
-				WHEN rank_name IN ('subspecies, species subgroup') THEN 15
-				WHEN rank_name = 'strain' THEN 16
-				WHEN rank_name = 'isolate' THEN 17
-				
-				-- Where do these go?
-				WHEN rank_name = 'genotype' THEN 18
-				WHEN rank_name = 'serogroup' THEN 19
-				WHEN rank_name = 'serotype' THEN 20 
-				
-				ELSE -1
-				
-				/*
-				-- ???
-				biotype
-				forma
-				forma specialis
-				pathogroup
-				tribe
-				varietas
-				*/
-			
+				WHEN rank_name IN ('no rank','tree') THEN 0
+				WHEN rank_name = 'realm' THEN 1
+				WHEN rank_name = 'subrealm' THEN 2
+				WHEN rank_name = 'superkingdom' THEN 3
+				WHEN rank_name = 'kingdom' THEN 4
+				WHEN rank_name = 'subkingdom' THEN 5
+				WHEN rank_name = 'phylum' THEN 6
+				WHEN rank_name = 'subphylum' THEN 7
+				WHEN rank_name = 'class' THEN 8
+				WHEN rank_name = 'subclass' THEN 9
+				WHEN rank_name = 'order' THEN 10
+				WHEN rank_name = 'suborder' THEN 11
+				WHEN rank_name = 'family' THEN 12
+				WHEN rank_name = 'subfamily' THEN 13
+				WHEN rank_name = 'genus' THEN 14
+				WHEN rank_name = 'subgenus' THEN 15
+				WHEN rank_name = 'species' THEN 16
+				-- WHEN rank_name = 'clade' THEN
+				WHEN rank_name IN ('genotype', 'isolate', 'serogroup', 'serotype', 'species group', 'species subgroup', 'strain', 'subspecies') THEN 17
+				ELSE 0
 			END AS rank_score,
 			
 			taxonomy_db,
+			
+			-- Taxonomy databases in order of preference.
+			CASE
+				WHEN taxonomy_db = 'ictv_taxonomy' THEN 3
+				WHEN taxonomy_db = 'ictv_vmr' THEN 2
+				WHEN taxonomy_db = 'ncbi_taxonomy' THEN 1
+				ELSE 0
+			END AS taxonomy_db_score,
+			
 			taxonomy_id,
 			version_id,
 			
@@ -267,7 +285,6 @@ BEGIN
 				
 			FROM taxon_histogram
 			
-			
 			-- Limit the number of results using differences in length.
 			WHERE ABS(searchTextLength - text_length) <= maxLengthDiff
 				
@@ -279,7 +296,7 @@ BEGIN
 	
 	) matchesWithinRange
 	
-	ORDER BY isExactMatch DESC, firstCharacterMatch DESC, countDiff ASC, lengthDiff ASC, version_id DESC, is_valid DESC
+	ORDER BY isExactMatch DESC, divisionScore DESC, countDiff ASC, lengthDiff ASC, is_valid DESC, firstCharacterMatch DESC, version_id DESC
 	
 	LIMIT maxResultCount;
 	
