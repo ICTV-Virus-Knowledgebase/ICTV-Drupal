@@ -38,6 +38,7 @@ columns = [
 def importAllTaxonomyNodes(taxonName_: TaxonName):
 
    for filename in glob.glob("taxonomyNodes_msl*.tsv", root_dir="output"):
+      print(f"Importing {filename}")
       importTaxonomyNodes(f"output/{filename}", taxonName_)
 
 
@@ -49,7 +50,6 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
 
    # Read the contents of the TSV file.
    df = pd.read_csv(filename_, header=0, sep="\t", index_col=False, names=columns, encoding="latin-1", keep_default_na=False)
-   # TODO: validate!
 
    # Iterate over every row.
    for row in df.itertuples(index=False):
@@ -57,7 +57,6 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
          # MSL release number, rank name, and taxnode ID will be used in every import below.
          mslReleaseNum = row.msl_release_num
          if mslReleaseNum in (None, ''):
-            print(f"mslReleaseNum={mslReleaseNum}.")
             raise Exception("MSL release number is invalid")
 
          taxNodeID = row.taxnode_id
@@ -81,7 +80,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
          trimmedName = name.strip()
          if len(trimmedName) < 1:
             raise Exception("Invalid name")
-         taxonName_.importTaxonName(trimmedName, NameClass.scientific_name.name, TaxonomyDB.ictv_taxonomy, 
+         taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.scientific_name.name, TaxonomyDB.ictv_taxonomy.name, 
                                     parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
          
          abbrevCSVs = row.abbrev_csv
@@ -94,7 +93,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for abbrevCSV in abbrevCSVs.split(";"):
                trimmedName = abbrevCSV.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(trimmedName, NameClass.abbreviation.name, TaxonomyDB.ictv_taxonomy, 
+                  taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.abbreviation.name, TaxonomyDB.ictv_taxonomy.name, 
                                     parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
 
          cleanedName = row.cleaned_name
@@ -106,7 +105,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
          if exemplarName not in (None, ''):
             trimmedName = exemplarName.strip()
             if len(trimmedName) > 0:
-               taxonName_.importTaxonName(trimmedName, NameClass.isolate_exemplar.name, TaxonomyDB.ictv_taxonomy, 
+               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_exemplar.name, TaxonomyDB.ictv_taxonomy.name, 
                                           parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
          
          genbankAccessions = row.genbank_accession_csv
@@ -119,7 +118,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for genbankAccession in genbankAccessions.split(";"):
                trimmedName = genbankAccession.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(trimmedName, NameClass.genbank_accession.name, TaxonomyDB.ictv_taxonomy, 
+                  taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.genbank_accession.name, TaxonomyDB.ictv_taxonomy.name, 
                                              parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
                   
          isolateNames = row.isolate_csv
@@ -132,7 +131,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for isolateName in isolateNames.split(";"):
                trimmedName = isolateName.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(trimmedName, NameClass.isolate_name.name, TaxonomyDB.ictv_taxonomy, 
+                  taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_name.name, TaxonomyDB.ictv_taxonomy.name, 
                                              parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
 
          refseqAccessions = row.refseq_accession_csv
@@ -145,7 +144,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for refseqAccession in refseqAccessions.split(";"):
                trimmedName = refseqAccession.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(trimmedName, NameClass.refseq_accession.name, TaxonomyDB.ictv_taxonomy, 
+                  taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.refseq_accession.name, TaxonomyDB.ictv_taxonomy.name, 
                                              parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
                   
       except Exception as e:
@@ -194,10 +193,10 @@ if __name__ == '__main__':
       if args.filename == None:
          raise Exception("The filename parameter is required")
       
-      #filename = args.filename[0]
-      #if filename in (None, ""):
-      #   raise Exception("A non-empty filename parameter is required")
+      filename = args.filename[0]
+      if filename in (None, ""):
+         raise Exception("A non-empty filename parameter is required")
       
-      #importTaxonomyNodes(filename, taxonName)
+      importTaxonomyNodes(filename, taxonName)
 
    

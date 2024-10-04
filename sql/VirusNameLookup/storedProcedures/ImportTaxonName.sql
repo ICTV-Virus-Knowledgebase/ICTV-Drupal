@@ -1,5 +1,6 @@
 DELIMITER //
 CREATE PROCEDURE `importTaxonName`(
+   IN `ictvTaxNodeID` INT,
 	IN `name` NVARCHAR(300),
 	IN `nameClass` VARCHAR(100),
 	IN `parentTaxonomyDB` VARCHAR(100),
@@ -85,6 +86,7 @@ BEGIN
 	INSERT INTO taxon_name (
 		division_tid,
 		filtered_name,
+      ictv_taxnode_id,
 		`name`,
 		name_class_tid,
 		parent_taxonomy_db_tid,
@@ -97,6 +99,7 @@ BEGIN
 	) VALUES (
 		virusDivisionTID,
 		filteredName,
+      ictvTaxNodeID,
 		name,
 		nameClassTID,
 		parentTaxonomyDbTID,

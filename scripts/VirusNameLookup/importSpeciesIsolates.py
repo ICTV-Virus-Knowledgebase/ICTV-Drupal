@@ -40,7 +40,6 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
 
    # Read the contents of the TSV file.
    df = pd.read_csv(filename_, header=0, sep="\t", index_col=False, names=columns, encoding="latin-1", keep_default_na=False)
-   # TODO: validate!
 
    # Iterate over every row.
    for row in df.itertuples(index=False):
@@ -67,7 +66,7 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
          for genbankAccession in genbankAccessions.split(";"):
             trimmedName = genbankAccession.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(trimmedName, NameClass.genbank_accession.name,
+               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.genbank_accession.name,
                                           TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                           TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
@@ -76,7 +75,7 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
          for isolateAbbrev in isolateAbbrevs.split(";"):
             trimmedName = isolateAbbrev.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(trimmedName, NameClass.isolate_abbreviation.name,
+               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_abbreviation.name,
                                           TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                           TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
@@ -85,7 +84,7 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
          for isolateDesignation in isolateDesignations.split(";"):
             trimmedName = isolateDesignation.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(trimmedName, NameClass.isolate_designation.name,
+               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_designation.name,
                                           TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                           TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
@@ -94,7 +93,7 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
          for isolateName in isolateNames.split(";"):
             trimmedName = isolateName.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(trimmedName, NameClass.isolate_name.name,
+               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_name.name,
                                           TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                           TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
@@ -103,13 +102,13 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
          for refseqAccession in refseqAccessions.split(";"):
             trimmedName = refseqAccession.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(trimmedName, NameClass.refseq_accession.name,
+               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.refseq_accession.name,
                                           TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                           TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       refseqOrganism = row.refseq_organism
       if refseqOrganism not in (None, '') and len(refseqOrganism.strip()) > 0: 
-         taxonName_.importTaxonName(trimmedName, NameClass.refseq_organism.name,
+         taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.refseq_organism.name,
                                     TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                     TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
