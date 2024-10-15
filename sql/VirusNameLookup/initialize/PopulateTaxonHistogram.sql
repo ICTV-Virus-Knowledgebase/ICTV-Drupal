@@ -2,6 +2,9 @@
 -- Create a taxon_histogram record for every taxon_name.
 
 DELIMITER //
+
+DROP PROCEDURE IF EXISTS `populateTaxonHistogram`;
+
 CREATE PROCEDURE `populateTaxonHistogram`()
     MODIFIES SQL DATA
 BEGIN
@@ -27,7 +30,7 @@ BEGIN
 	
 		FETCH taxonCursor INTO id, filteredName;
 		
-		CALL createTaxonHistogram(filteredName, id);
+		CALL addNameToTaxonHistogram(filteredName, id);
 	
 		IF done THEN
 			LEAVE read_loop;

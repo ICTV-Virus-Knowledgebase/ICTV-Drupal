@@ -25,8 +25,9 @@ class ExportToTSV:
       if ictvDB_ in (None, '') or not ictvDB_.strip():
          raise Exception("The ictvDB parameter is invalid")
       
-      # Create a filename using the current time.
-      filename = (f"output\\speciesIsolates_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv")
+      # Create the filename (the commented line incorporates the current time).
+      filename = ("output\\speciesIsolates.tsv")
+      #filename = (f"output\\speciesIsolates_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv")
 
       # Create the command line text to run sqlcmd.
       cmd = (f"sqlcmd -S {dbServer_} "
@@ -87,8 +88,9 @@ class ExportToTSV:
       if mslRelease_ not in (None, '') and isinstance(mslRelease_, int) and mslRelease_ == mslRelease_:
          mslRelease = str(mslRelease_)
       
-      # Create a filename using the current time.
-      filename = (f"output\\taxonomyNodes_msl{mslRelease_}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv")
+      # Create the filename (the commented line incorporates the current time).
+      filename = (f"output\\taxonomyNodes_msl{mslRelease_}.tsv")
+      #filename = (f"output\\taxonomyNodes_msl{mslRelease_}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv")
 
       # Create the command line text to run sqlcmd.
       cmd = (f"sqlcmd -S {dbServer_} "
@@ -100,8 +102,18 @@ class ExportToTSV:
       subprocess.run(cmd, shell=True)
 
 
-# Example usage: py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "species_isolates"
+"""Examples:
 
+Export all species_isolates: 
+py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "species_isolates"
+
+Export all taxonomy_node records: 
+py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "all_taxonomy_nodes"
+
+Export taxonomy_node records for a single MSL: 
+py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "taxonomy_node" --msl 39
+
+"""
 if __name__ == '__main__':
 
    parser = argparse.ArgumentParser(description="Export the contents of an ICTV table to a TSV file.")

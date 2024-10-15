@@ -54,25 +54,21 @@ class TaxonName:
       if name in (None, ''):
          raise Exception("Invalid name parameter")
       else:
-         name = f"'{formatForSQL(name)}'"
-      
-      # Truncate the name at 300 characters.
-      name = name[0:299]
+         # Truncate the name at 300 characters.
+         name = name[0:299]
+         
+         name = formatForSQL(name)
       
       # Name class
       if nameClass in (None, ''):
          raise Exception("Invalid name class parameter")
       elif not NameClass.hasKey(nameClass):
          raise Exception("Unrecognized name class parameter")
-      else:
-         nameClass = f"'{nameClass}'"
       
       # Parent taxonomy DB
       if parentTaxonomyDB in (None, '') or not TaxonomyDB.hasKey(parentTaxonomyDB):
          # parentTaxonomyDB = "NULL"
          raise Exception("Invalid parent taxonomy DB")
-      else:
-         parentTaxonomyDB = f"'{parentTaxonomyDB}'"
 
       # Parent taxonomy ID
       if not isinstance(parentTaxonomyID, int):
@@ -82,21 +78,17 @@ class TaxonName:
       rankName = safeTrim(rankName)
       if rankName in (None, '') or not TaxonomyRank.hasKey(rankName):
          raise Exception("Invalid rank name parameter")
-      else:
-         rankName = f"'{rankName}'"
 
       # Taxonomy DB
       if taxonomyDB in (None, '') or not TaxonomyDB.hasKey(taxonomyDB):
          raise Exception("Invalid taxonomyDB parameter")
-      else:
-         taxonomyDB = f"'{taxonomyDB}'"
-
+      
       # Taxonomy ID
       if not isinstance(taxonomyID, int):
          raise Exception("Invalid taxonomy ID")
 
       # Create SQL that calls the stored procedure.
-      sql = f"CALL importTaxonName({ictvTaxNodeID}, {name}, {nameClass}, {parentTaxonomyDB}, {parentTaxonomyID}, {rankName}, {taxonomyDB}, {taxonomyID}, {versionID});"
+      sql = f"CALL importTaxonName({ictvTaxNodeID}, '{name}', '{nameClass}', '{parentTaxonomyDB}', {parentTaxonomyID}, '{rankName}', '{taxonomyDB}', {taxonomyID}, {versionID});"
 
       # TODO: this would be a better approach
       #with contextlib.closing(conn) as dbConnection:
@@ -121,7 +113,8 @@ class TaxonName:
          cursor.execute(sql)
 
       except mariadb.Error as e:
-         print(f"Error connecting to the database: {e}")
+         print(e)
+         print(f"SQL: {sql}")
          sys.exit(1)
 
       finally:
