@@ -1,0 +1,27 @@
+
+CREATE TABLE `taxon_name` (
+	`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'The unique identifier of the taxon record',
+	`division_tid` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The NCBI Division ID (bacteria, mammals, viruses, etc.)',
+	`filtered_name` VARCHAR(500) NOT NULL COMMENT 'The name with punctuation removed' COLLATE 'utf8mb4_general_ci',
+	`is_valid` BIT(1) NOT NULL DEFAULT b'1' COMMENT 'Is this taxon information current/valid or obsolete?',
+	`ictv_taxnode_id` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The ICTV taxnode ID',
+	`name` VARCHAR(500) NOT NULL COMMENT 'The taxon name' COLLATE 'utf8mb4_general_ci',
+	`name_class_tid` INT(10) UNSIGNED NOT NULL COMMENT 'The category or type of name (ex. "scientific name"), inspired by NCBI name class',
+	`parent_taxonomy_db_tid` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The taxonomy database source of the taxon\'s parent (optional)',
+	`parent_taxonomy_id` INT(11) UNSIGNED NULL DEFAULT NULL COMMENT 'The parent\'s unique identifier within the parent taxonomy database',
+	`rank_name` VARCHAR(30) NOT NULL COMMENT 'The taxonomic rank' COLLATE 'utf8mb4_general_ci',
+	`rank_name_tid` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The term ID of the taxonomic rank',
+	`taxonomy_db_tid` INT(10) UNSIGNED NOT NULL COMMENT 'The taxonomy database source of this taxon\'s information',
+	`taxonomy_id` INT(11) UNSIGNED NOT NULL COMMENT 'The taxon\'s unique identifier within the source taxonomy database',
+	`version_id` INT(10) NULL DEFAULT NULL COMMENT 'For ICTV taxa, this corresponds to MSL release number',
+	`created_on` DATETIME NOT NULL DEFAULT current_timestamp() COMMENT 'The date/time when this row was added to the database',
+	PRIMARY KEY (`id`) USING BTREE,
+	INDEX `FK_taxon_name_term` (`name_class_tid`) USING BTREE,
+	INDEX `FK_taxon_name_division` (`division_tid`) USING BTREE,
+	INDEX `FK_taxon_name_taxonomy_db` (`taxonomy_db_tid`) USING BTREE,
+	INDEX `FK_taxon_name_rank` (`rank_name_tid`) USING BTREE,
+	CONSTRAINT `FK_taxon_name_division` FOREIGN KEY (`division_tid`) REFERENCES `term` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION,
+	CONSTRAINT `FK_taxon_name_rank_name` FOREIGN KEY (`rank_name_tid`) REFERENCES `term` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION,
+	CONSTRAINT `FK_taxon_name_taxonomy_db` FOREIGN KEY (`taxonomy_db_tid`) REFERENCES `term` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION,
+	CONSTRAINT `FK_taxon_name_term` FOREIGN KEY (`name_class_tid`) REFERENCES `term` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+)

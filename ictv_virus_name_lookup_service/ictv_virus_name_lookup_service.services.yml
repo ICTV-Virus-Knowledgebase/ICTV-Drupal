@@ -1,0 +1,6 @@
+services:
+  ictv_virus_name_lookup_service.lookup_service:
+    class: '\Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource\LookupService'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

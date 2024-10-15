@@ -123,7 +123,7 @@ BEGIN
 	FROM (
 		SELECT 
 			-- How many characters were different between the search text and match?
-			countDiff,
+			maxCountDiff - count_diff AS accuracy_score,
 			
 			-- The NCBI division (phages, viruses)
 			division,
@@ -131,10 +131,10 @@ BEGIN
 			-- Prefer virus and phage results over anything else.
 			CASE
 				WHEN division IN ('viruses', 'phages') THEN 1 ELSE 0
-			END AS divisionScore,
+			END AS division_score,
 			
 			-- Were the first characters of the search text and match the same?
-			firstCharacterMatch,
+			first_character_match,
 			
 			-- Prefer results that have an ICTV taxnode ID.
 			CASE
@@ -144,13 +144,13 @@ BEGIN
 			ictv_taxnode_id,
 			
 			-- Is this an exact match?
-			isExactMatch,
+			is_exact_match,
 			
 			-- Is this a valid taxon (not obsolete)?
 			is_valid,
 			
 			-- How much did the search text's length differ from the match's length?
-			lengthDiff,
+			maxLengthDiff - length_diff AS size_score,
 			
 			-- The matching name
 			`name`,
@@ -158,27 +158,20 @@ BEGIN
 			-- The name class/type, inspired by NCBI name class.
 			name_class,
 			
+			-- Name classes ordered from most specific to least specific.
 			CASE
-				WHEN name_class = 'isolate_name' THEN 12
-				WHEN name_class = 'isolate_exemplar' THEN 11
-
-				WHEN name_class = 'scientific_name' THEN 10
-				WHEN name_class IN ('synonym', 'equivalent_name') THEN 9
-				
-				WHEN name_class = 'genbank_common_name' THEN 8
-				WHEN name_class = 'common_name' THEN 7
-				WHEN name_class = 'blast_name' THEN 6
-				
-				WHEN name_class = 'isolate_designation' THEN 5
-				
-				WHEN name_class IN ('isolate_abbreviation', 'genbank_acronym') THEN 4
-				WHEN name_class IN ('abbreviation', 'acronym') THEN 3
-				
-				WHEN name_class = 'genbank_accession' THEN 2
-				WHEN name_class = 'refseq_accession' THEN 1
+				WHEN name_class IN ('genbank_accession', 'refseq_accession') THEN 10
+				WHEN name_class IN ('isolate_name', 'isolate_exemplar') THEN 9
+				WHEN name_class IN ('isolate_abbreviation', 'genbank_acronym') THEN 8
+				WHEN name_class = 'scientific_name' THEN 7
+				WHEN name_class IN ('synonym, equivalent_name') THEN 6
+				WHEN name_class = 'genbank_common_name' THEN 5
+				WHEN name_class = 'common_name' THEN 4
+				WHEN name_class = 'blast_name' THEN 3
+				WHEN name_class IN ('abbreviation', 'acronym') THEN 2
+				WHEN name_class = 'isolate_designation' THEN 1
 				ELSE 0
 			END AS name_class_score,
-			
 			
 			rank_name,
 			
@@ -202,8 +195,14 @@ BEGIN
 				WHEN rank_name = 'genus' THEN 14
 				WHEN rank_name = 'subgenus' THEN 15
 				WHEN rank_name = 'species' THEN 16
-				-- WHEN rank_name = 'clade' THEN
-				WHEN rank_name IN ('genotype', 'isolate', 'serogroup', 'serotype', 'species group', 'species subgroup', 'strain', 'subspecies') THEN 17
+				WHEN rank_name = 'species group' THEN 17
+				WHEN rank_name = 'species subgroup' THEN 18
+				WHEN rank_name = 'subspecies' THEN 19
+				WHEN rank_name = 'serogroup' THEN 20
+				WHEN rank_name = 'serotype' THEN 21
+				WHEN rank_name = 'genotype' THEN 22
+				WHEN rank_name = 'strain' THEN 23
+				WHEN rank_name = 'isolate' THEN 24
 				ELSE 0
 			END AS rank_score,
 			
@@ -266,19 +265,19 @@ BEGIN
 					ABS(9Count - _9) +
 					ABS(0Count - _0) +
 					ABS(spaceCount - _)
-				) AS countDiff,
+				) AS count_diff,
 				
 				-- Does the first character of the search text match the first character of the taxon name?
 				CASE
 					WHEN first_character = firstCharacter THEN 1 ELSE 0
-				END AS firstCharacterMatch,
+				END AS first_character_match,
 				
 				CASE 
 					WHEN filtered_text = searchText THEN 1 ELSE 0
-				END AS isExactMatch,
+				END AS is_exact_match,
 				
 				-- The difference in length between the search text and taxon name.
-				ABS(searchTextLength - text_length) AS lengthDiff,
+				ABS(searchTextLength - text_length) AS length_diff,
 	
 				-- The test record's taxon name ID.
 				taxon_name_id
@@ -292,11 +291,22 @@ BEGIN
 		) constrainedMatches
 		
 		JOIN v_taxon_name tn ON tn.id = taxon_name_id
-		WHERE countDiff <= maxCountDiff
+		WHERE count_diff <= maxCountDiff
 	
 	) matchesWithinRange
 	
-	ORDER BY isExactMatch DESC, divisionScore DESC, countDiff ASC, lengthDiff ASC, is_valid DESC, firstCharacterMatch DESC, version_id DESC
+	ORDER BY 
+      is_exact_match DESC, 
+      division_score DESC, 
+      accuracy_score DESC, 
+      size_score DESC, 
+      is_valid DESC,
+      name_class_score DESC,
+      rank_score DESC,
+      first_character_match DESC,
+      has_taxnode_id DESC, 
+      version_id DESC,
+      taxonomy_db_score DESC
 	
 	LIMIT maxResultCount;
 	

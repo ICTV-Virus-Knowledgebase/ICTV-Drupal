@@ -113,7 +113,7 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
                                     TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
 
-# Example: py ./importSpeciesIsolates.py --filename data/speciesIsolatesTest.csv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
+# Example: py ./importSpeciesIsolates.py --filename data/speciesIsolatesTest.tsv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
 
 if __name__ == '__main__':
 

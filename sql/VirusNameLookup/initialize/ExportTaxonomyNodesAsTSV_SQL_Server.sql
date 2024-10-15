@@ -7,7 +7,7 @@ GO
 -- Author: don dempsey
 -- Created on: 07/05/24
 -- Description: Export the contents of taxonomy_node to a TSV file. NOTE: this is a SQL Server script!
--- Updated:
+-- Updated: 10/10/24 dmd: Including current_taxnode_id.
 -- ==========================================================================================================
 
 -- Delete any existing versions.
@@ -25,6 +25,7 @@ BEGIN
       'taxnode_id'+Char(9)+
       'abbrev_csv'+Char(9)+
       'cleaned_name'+Char(9)+
+	   'current_taxnode_id'+Char(9)+
       'exemplar_name'+Char(9)+
       'genbank_accession_csv'+Char(9)+
       'isolate_csv'+Char(9)+
@@ -40,6 +41,12 @@ BEGIN
          CAST(tn.taxnode_id AS VARCHAR(12))+Char(9)+
          CASE WHEN tn.abbrev_csv IS NULL THEN '' ELSE '"'+REPLACE(tn.abbrev_csv, '"', '')+'"' END+Char(9)+
          CASE WHEN tn.cleaned_name IS NULL THEN '' ELSE '"'+REPLACE(tn.cleaned_name, '"', '')+'"' END+Char(9)+
+         CAST((
+            SELECT TOP 1 ctn.taxnode_id
+            FROM taxonomy_node ctn
+            WHERE ctn.ictv_id = tn.ictv_id
+            ORDER BY ctn.msl_release_num DESC
+         ) AS VARCHAR(12))+Char(9)+
          CASE WHEN tn.exemplar_name IS NULL THEN '' ELSE '"'+REPLACE(tn.exemplar_name, '"', '')+'"' END+Char(9)+
          CASE WHEN tn.genbank_accession_csv IS NULL THEN '' ELSE '"'+REPLACE(tn.genbank_accession_csv, '"', '')+'"' END+Char(9)+
          CASE WHEN tn.isolate_csv IS NULL THEN '' ELSE '"'+REPLACE(tn.isolate_csv, '"', '')+'"' END+Char(9)+
