@@ -137,9 +137,11 @@ BEGIN
 		_9, 
 		_0, 
 		_,
+
+      `filtered_text`,
 		`first_character`,
-		`length`,
-		taxon_name_id
+		taxon_name_id,
+      `text_length`
 	) VALUES (
 		aCount, 
 		bCount, 
@@ -178,9 +180,11 @@ BEGIN
 		9Count, 
 		0Count, 
 		spaceCount,
+
+      taxonName,
 		firstCharacter,
-		nameLength,
-		taxonNameID 
+		taxonNameID,
+      nameLength 
 	); 
 	
 END//

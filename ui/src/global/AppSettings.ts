@@ -29,7 +29,8 @@ export class _AppSettings {
         sequenceClassifier: "sequence-classifier-api",
         taxonomy: "taxonomy.ashx",
         taxonomyHistory: "taxonomyHistory.ashx",
-        virusIsolate: "virusIsolate.ashx"
+        virusIsolate: "virusIsolate.ashx",
+        virusNameLookup: "virus-name-lookup"
     }
 }
 

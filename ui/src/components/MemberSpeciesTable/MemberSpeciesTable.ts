@@ -48,7 +48,7 @@ export class MemberSpeciesTable {
       exemplar: string
    }
 
-   // CSS selectors
+   // DOM selectors
    selectors: { [key: string]: string; } = {
       container: null
    }

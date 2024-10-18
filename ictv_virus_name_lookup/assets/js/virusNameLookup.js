@@ -1,0 +1,40 @@
+
+(function ($, Drupal_, drupalSettings_) {
+
+    let initialized = false;
+
+    Drupal_.behaviors.ictv_virus_name_lookup = {
+
+        // This function will be run on page load and ajax load.
+        attach: function (context_, settings_) {
+
+            // Exit if this has already been initialized.
+            if (initialized) { return; }
+
+            initialized = true;
+            
+            const contactEmail = "info@ictv.global";
+
+            //----------------------------------------------------------------------------------------
+            // Initialize the ICTV_VirusNameLookup AppSettings using drupalSettings
+            //----------------------------------------------------------------------------------------
+
+            // The Drupal web service base URL.
+            window.ICTV_VirusNameLookup.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+
+            // The DOM selector of the container Element added to the page.
+            const containerSelector = "#ictv_virus_name_lookup_container";
+
+            // Create a new VirusNameLookup component instance.
+            const virusNameLookup = new window.ICTV_VirusNameLookup.VirusNameLookup(containerSelector);
+
+            // Initialize and display the UI.
+            virusNameLookup.initialize();
+        }
+    };
+    
+})(jQuery, Drupal, drupalSettings);
+
+
+
+

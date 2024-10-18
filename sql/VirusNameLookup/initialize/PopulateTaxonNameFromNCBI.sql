@@ -29,7 +29,7 @@ BEGIN
 		name_class_tid,
 		parent_taxonomy_id,
 		rank_name,
-		rank_tid,
+		rank_name_tid,
 		taxonomy_db_tid,
 		taxonomy_id,
 		version_id

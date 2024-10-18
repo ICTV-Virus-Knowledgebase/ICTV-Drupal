@@ -76,8 +76,6 @@ class LookupService extends ResourceBase {
 
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
-
-      // TODO: do we need to create any services here?
    }
 
    /**
@@ -125,27 +123,20 @@ class LookupService extends ResourceBase {
 
       $searchResults = [];
 
+      // Populate the stored procedure's parameters.
+      $parameters = [":maxCountDiff" => $maxCountDiff, ":maxLengthDiff" => $maxLengthDiff, ":maxResultCount" => $maxResultCount, ":searchText" => $searchText];
 
-      // TEST
-      $test = new SearchResult();
-
-      $test->accuracyScore = 3;
-      $test->division = "Viruses";
-      $test->divisionScore = 5;
-      $test->firstCharacterMatch = 1;
-
-      array_push($searchResults, $test->normalize());
-
-      /*
       // Generate SQL to search taxon names for the search text.
-      $sql = "CALL searchTaxonHistogram({$maxCountDiff}, {$maxLengthDiff}, {$maxResultCount}, '{$searchText}');";
+      $sql = "CALL searchTaxonHistogram(:maxCountDiff, :maxLengthDiff, :maxResultCount, :searchText);";
 
       // Execute the query and process the results.
-      $result = $connection->query($sql);
+      $result = $this->connection->query($sql, $parameters);
 
-      foreach($result->getIterator() as $row) {
-         $searchResults.push(SearchResult.fromArray($row));
-      }*/
+      // Iterate over the result rows and add each row to the search results.
+      foreach($result as $row) {
+         $searchResult = SearchResult::fromArray((array) $row);
+         array_push($searchResults, $searchResult->normalize());
+      }
 
       return $searchResults;
    }
@@ -171,8 +162,6 @@ class LookupService extends ResourceBase {
    }
 
    public function processAction(Request $request) {
-
-      
 
       // Get and validate the JSON in the request body.
       //$json = Json::decode($request->getContent());
