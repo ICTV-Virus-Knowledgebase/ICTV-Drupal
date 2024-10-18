@@ -161,7 +161,7 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
 Examples: 
 
 Import a single TSV file:
-py ./importTaxonomyNodes.py --filename data/taxonomyNodesTest.tsv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
+py ./importTaxonomyNodes.py --filename output/taxonomyNodes_msl[release].tsv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
 
 Import all taxonomy node TSV files in the output directory:
 py ./importTaxonomyNodes.py --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306 --all 1

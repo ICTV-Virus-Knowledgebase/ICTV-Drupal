@@ -1,0 +1,8 @@
+name: ICTV Virus Name Lookup
+type: module
+description: 'A custom module that provides a UI for the virus name lookup service'
+package: ICTV
+configure: ictv_virus_name_lookup.settings
+core_version_requirement: ^10
+dependencies:
+  - drupal:block

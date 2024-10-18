@@ -20,7 +20,7 @@ class SearchResult {
    // Prefer results that have an ICTV taxnode ID.
    public int $hasTaxnodeID;
 
-   public int $ictvTaxnodeID;
+   public ?int $ictvTaxnodeID;
 
    // Is this an exact match?
    public int $isExactMatch;
@@ -38,8 +38,8 @@ class SearchResult {
    public string $nameClass;
    public float $nameClassScore;
 
-   public string $parentTaxonomyDB;
-   public int $parentTaxonomyID;
+   public ?string $parentTaxonomyDB;
+   public ?int $parentTaxonomyID;
 
    public string $rankName;
 
@@ -56,6 +56,31 @@ class SearchResult {
    public int $versionID;
    
 
+   // C-tor
+   public function __construct() {
+
+      // Provide defaults for all member variables.
+      $this->accuracyScore = 0;
+      $this->division = "";
+      $this->divisionScore = 0;
+      $this->firstCharacterMatch = 0;
+      $this->hasTaxnodeID = 0;
+      $this->ictvTaxnodeID = 0;
+      $this->isExactMatch = 0;
+      $this->isValid = 0;
+      $this->sizeScore = 0;
+      $this->name = "";
+      $this->nameClass = "";
+      $this->nameClassScore = 0;
+      $this->parentTaxonomyDB = "";
+      $this->parentTaxonomyID = 0;
+      $this->rankName = "";
+      $this->rankScore = 0;
+      $this->taxonomyDB = "";
+      $this->taxonomyDbScore = 0;
+      $this->taxonomyID = 0;
+      $this->versionID = -1;
+   }
 
    // Method to populate the object from an associative array
    public static function fromArray(array $data): SearchResult {

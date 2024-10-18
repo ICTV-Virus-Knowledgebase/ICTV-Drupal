@@ -52,6 +52,8 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.equivalent_name', 'equivalent name', 'equivalent_name', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.genbank_acronym', 'GenBank acronym', 'genbank_acronym', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.genbank_common_name', 'GenBank common name', 'genbank_common_name', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.in_part', 'in-part', 'in_part', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.includes', 'includes', 'includes', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.scientific_name', 'scientific name', 'scientific_name', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.synonym', 'synonym', 'synonym', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_name', 'isolate name', 'isolate_name', vocabID);

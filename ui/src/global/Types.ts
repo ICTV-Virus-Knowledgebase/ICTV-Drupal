@@ -104,5 +104,6 @@ export enum WebServiceKey {
    sequenceClassifier = "sequenceClassifier",
    taxonomy = "taxonomy",
    taxonomyHistory = "taxonomyHistory",
-   virusIsolate = "virusIsolate"
+   virusIsolate = "virusIsolate",
+   virusNameLookup = "virusNameLookup"
 }
