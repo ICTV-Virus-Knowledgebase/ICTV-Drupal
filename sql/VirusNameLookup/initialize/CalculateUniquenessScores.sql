@@ -15,10 +15,7 @@ BEGIN
 
    DECLARE sameCountScore INT;
    
-   SET sameCountScore = 0;
-
-
-   SELECT * -- COUNT(*) INTO sameCountScore
+   SELECT COUNT(*) INTO sameCountScore
    FROM taxon_histogram searchName
    JOIN taxon_histogram potentialMatch ON (
       searchName._a = potentialMatch._a
@@ -63,11 +60,8 @@ BEGIN
    AND potentialMatch.id <> taxonNameID;
 
    -- Update the taxon histogram with the same count score.
-   -- UPDATE taxon_histogram SET same_count_score = sameCountScore WHERE taxon_name_id = taxonNameID;
+   UPDATE taxon_histogram SET same_count_score = sameCountScore WHERE taxon_name_id = taxonNameID;
 
-
-   -- SELECT sameCountScore;
-   
 
    /*
    _a INTO aCount,
@@ -107,8 +101,6 @@ BEGIN
       _9 INTO 9Count,
       _0 INTO 0Count,
       _ INTO spaceCount
-
-
 
    */
 

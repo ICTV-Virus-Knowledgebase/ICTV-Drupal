@@ -15,12 +15,24 @@ webpack="node_modules/.bin/webpack"
 printf "\n"
 
 #------------------------------------------------------------------------------
-# Virus name lookup
+# Build the TypeScript component.
 #------------------------------------------------------------------------------
 printf "Building the virus name lookup component \n\n"
 "${webpack}" --config "$componentPath/VirusNameLookup/webpack.config.js"
 
 printf "\n\n"
 
+#------------------------------------------------------------------------------
+# Copy the generated JavaScript file to the module's asset directory.
+#------------------------------------------------------------------------------
+printf "Copying ICTV_VirusNameLookup.js to ictv_virus_name_lookup/assets/js\n\n"
 
+cp ./dist/ICTV_VirusNameLookup.js ../ictv_virus_name_lookup/assets/js/
+
+#------------------------------------------------------------------------------
+# Copy the virus name lookup's CSS file to the module's asset directory.
+#------------------------------------------------------------------------------
+printf "Copying VirusNameLookup.css to ictv_virus_name_lookup/assets/css\n"
+
+cp ./css/VirusNameLookup.css ../ictv_virus_name_lookup/assets/css/
 

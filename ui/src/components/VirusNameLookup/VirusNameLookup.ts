@@ -39,6 +39,10 @@ export class VirusNameLookup {
       searchText: null
    }
 
+   settings: {
+      defaultRowsPerPage: 50
+   }
+
    // C-tor
    constructor(containerSelector_: string) {
 
@@ -76,14 +80,16 @@ export class VirusNameLookup {
                   <th>Name</th>
                   <th>Rank</th>
                   <th>Tax DB/ID</th>
-                  <th>Accuracy</th>
+                  <th>Count diff</th>
                   <th>Division</th>
                   <th>Exact match</th>
                   <th>Is valid</th>
-                  <th>Size score</th>
+                  <th>Length diff</th>
                   <th>Name class</th>
                   <th>Name class score</th>
+                  <th>Pair count</th>
                   <th>Rank score</th>
+                  <th>Score</th>
                   <th>Version</th>
                </tr>
             </thead>
@@ -109,18 +115,22 @@ export class VirusNameLookup {
             default: taxDbID = "??? "
          }
 
+         const nameClass = result_.nameClass.replace("_", " ");
+
          let row = `<tr class="${rowClass}">
             <td>${result_.name}</td>
             <td>${result_.rankName}</td>
             <td>${taxDbID} ${result_.taxonomyID}</td>
-            <td>${result_.accuracyScore}</td>
+            <td>${result_.countDifferences}</td>
             <td>${result_.division}</td>
             <td>${result_.isExactMatch}</td>
             <td>${result_.isValid}</td>
-            <td>${result_.sizeScore}</td>
-            <td>${result_.nameClass}</td>
+            <td>${result_.lengthDifference}</td>
+            <td>${nameClass}</td>
             <td>${result_.nameClassScore}</td>
+            <td>${result_.orderedPairCount}</td>
             <td>${result_.rankScore}</td>
+            <td>${result_.score}</td>
             <td>${result_.versionID}</td>
          </tr>`;
 
@@ -142,6 +152,7 @@ export class VirusNameLookup {
          ],*/
          dom: "ltip",
          order: [], // Important: If this isn't an empty array it will move the child rows to the end!
+         pageLength: this.settings.defaultRowsPerPage,
          searching: false,
          stripeClasses: []
       });
