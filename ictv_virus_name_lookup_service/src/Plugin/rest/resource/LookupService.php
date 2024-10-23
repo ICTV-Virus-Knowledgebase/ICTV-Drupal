@@ -38,6 +38,8 @@ class LookupService extends ResourceBase {
    // The name of the database used by this web service.
    protected string $databaseName = "ictv_apps";
 
+   // The maximum number of records to return from the database.
+   //protected int $maxDbResultCount = 100;
 
    /**
     * A current user instance which is logged in the session.
@@ -77,6 +79,28 @@ class LookupService extends ResourceBase {
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
    }
+
+   
+   /**
+    * Calculate the number of ordered pairs found in the search result's name.
+    * 
+    * @param array $pairs
+    *    An array of strings that contain 2 characters.
+    *
+    * @param SearchResult
+    *    A reference to a search result object.
+    */
+   public function calculateOrderedPairCount(array $pairs, SearchResult &$searchResult) {
+
+      $count = 0;
+
+      foreach($pairs as $pair) {
+         if (stripos($searchResult->name, $pair) !== false) { $count += 1; }
+      }
+
+      $searchResult->orderedPairCount = $count;
+   }
+
 
    /**
     * {@inheritdoc}
@@ -121,7 +145,14 @@ class LookupService extends ResourceBase {
     */
    public function lookupName(int $maxCountDiff, int $maxLengthDiff, int $maxResultCount, string $searchText) {
 
-      $searchResults = [];
+      // Create an array of ordered symbol pairs from the search text.
+      $pairs = [];
+
+      $symbols = " ".trim($searchText)." ";
+
+      for ($s = 0; $s < strlen($symbols); $s++) {
+         array_push($pairs, substr($symbols, $s, 2));
+      }
 
       // Populate the stored procedure's parameters.
       $parameters = [":maxCountDiff" => $maxCountDiff, ":maxLengthDiff" => $maxLengthDiff, ":maxResultCount" => $maxResultCount, ":searchText" => $searchText];
@@ -132,13 +163,43 @@ class LookupService extends ResourceBase {
       // Execute the query and process the results.
       $result = $this->connection->query($sql, $parameters);
 
+      $searchResults = [];
+
       // Iterate over the result rows and add each row to the search results.
       foreach($result as $row) {
+         
+         // Create a search result instance from the row of data.
          $searchResult = SearchResult::fromArray((array) $row);
-         array_push($searchResults, $searchResult->normalize());
+
+         // Calculate the number of ordered pairs found in the search result's name.
+         $this->calculateOrderedPairCount($pairs, $searchResult);
+
+         // TODO: calculate the score based on ordered pair count and length diff?
+
+         // NOTE: 
+         // https://www.php.net/manual/en/function.similar-text.php
+         // https://www.php.net/manual/en/function.levenshtein.php
+
+         // Only add the search result if has at least one ordered pair match.
+         if ($searchResult->orderedPairCount > 0) { array_push($searchResults, $searchResult); }
       }
 
-      return $searchResults;
+      // Sort the search results by descending ordered pair count.
+      usort($searchResults, function(SearchResult $a, SearchResult $b) {
+         if ($a->orderedPairCount == $b->orderedPairCount) {
+            return 0;
+         }
+         return ($a->orderedPairCount < $b->orderedPairCount) ? 1 : -1;
+      });
+
+      // Create an array of normalized search results.
+      $normalizedResults = [];
+
+      foreach($searchResults as $searchResult) {
+         array_push($normalizedResults, $searchResult->normalize());
+      }
+
+      return $normalizedResults;
    }
 
    /** 
@@ -163,12 +224,8 @@ class LookupService extends ResourceBase {
 
    public function processAction(Request $request) {
 
-      // Get and validate the JSON in the request body.
-      //$json = Json::decode($request->getContent());
-      //if (!$json) { throw new BadRequestHttpException("Invalid JSON parameter"); }
-
       // Get and validate the action code.
-      $actionCode = $request->get("actionCode"); //$json["actionCode"];
+      $actionCode = $request->get("actionCode");
       if (Utils::isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
 
       $data = null;
@@ -177,14 +234,16 @@ class LookupService extends ResourceBase {
 
          case "lookup_name":
 
-            $maxCountDiff = $request->get("maxCountDiff"); //$json["maxCountDiff"];
-            $maxLengthDiff = $request->get("maxLengthDiff"); //$json["maxLengthDiff"];
-            $maxResultCount = $request->get("maxResultCount"); //$json["maxResultCount"];
-            $searchText = $request->get("searchText"); //$json["searchText"];
-            if (Utils::isNullOrEmpty($searchText)) { throw new BadRequestHttpException("Invalid search text"); }
+            $maxCountDiff = $request->get("maxCountDiff");
+            $maxLengthDiff = $request->get("maxLengthDiff");
+            $maxResultCount = $request->get("maxResultCount");
+            $searchText = $request->get("searchText");
+            if (Utils::isEmptyElseTrim($searchText)) { throw new BadRequestHttpException("Invalid search text (empty)"); }
+            // if (Utils::isNullOrEmpty($searchText)) 
 
             // TODO: validate parameters and provide defaults where appropriate
 
+            // Look for the search text as a taxon name.
             $data = $this->lookupName($maxCountDiff, $maxLengthDiff, $maxResultCount, $searchText);
             break;
 

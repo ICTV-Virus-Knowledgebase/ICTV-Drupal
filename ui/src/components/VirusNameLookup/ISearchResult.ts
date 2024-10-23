@@ -4,7 +4,7 @@
 export interface ISearchResult {
 
    // How many characters were different between the search text and match?
-   accuracyScore: number;
+   countDifferences: number;
 
    // The NCBI division (phages, viruses)
    division: string;
@@ -27,7 +27,7 @@ export interface ISearchResult {
    isValid: number;
 
    // How much did the search text's length differ from the match's length?
-   sizeScore: number;
+   lengthDifference: number;
 
    // The matching name
    name: string;
@@ -35,6 +35,9 @@ export interface ISearchResult {
    // The name class/type, inspired by NCBI name class.
    nameClass: string;
    nameClassScore: number;
+
+   // The number of matching ordered string pairs from the search text.
+   orderedPairCount: number;
 
    parentTaxonomyDB: string;
    parentTaxonomyID: number;
@@ -45,6 +48,9 @@ export interface ISearchResult {
    // Prefer lower ranks over higher ranks.
    rankScore: number;
 
+   // The overall score.
+   score: number;
+   
    taxonomyDB: string;
 
    // Taxonomy databases in order of preference.

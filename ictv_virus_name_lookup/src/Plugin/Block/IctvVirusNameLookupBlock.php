@@ -84,22 +84,6 @@ class IctvVirusNameLookupBlock extends BlockBase {
       foreach ($result as $setting) {
          $this->drupalWebServiceURL = $setting->drupalWebServiceURL;
       }
-      
-      /*
-      $result = $query->execute();
-      if ($result) {
-         $this->drupalWebServiceURL = $result->fetchAssoc()["drupalWebServiceURL"];
-      } else {
-         // TODO: handle error!
-      }  */
-
-      /*
-      $result = $query->fetchAll();
-      if (!$result) { \Drupal::logger('ictv_virus_name_lookup')->error("Invalid result object"); }
-
-      foreach ($result as $setting) {
-         $this->drupalWebServiceURL = $setting->drupalWebServiceURL;
-      }*/
     }
 
 }

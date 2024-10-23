@@ -6,7 +6,7 @@ namespace Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource;
 class SearchResult {
 
    // How many characters were different between the search text and match?
-   public float $accuracyScore;
+   public float $countDifferences;
 
    // The NCBI division (phages, viruses)
    public string $division;
@@ -29,7 +29,7 @@ class SearchResult {
    public int $isValid;
 
    // How much did the search text's length differ from the match's length?
-   public float $sizeScore;
+   public float $lengthDifference;
 
    // The matching name
    public string $name;
@@ -37,6 +37,9 @@ class SearchResult {
    // The name class/type, inspired by NCBI name class.
    public string $nameClass;
    public float $nameClassScore;
+
+   // This will be calculated after the search result has been populated.
+   public int $orderedPairCount;
 
    public ?string $parentTaxonomyDB;
    public ?int $parentTaxonomyID;
@@ -46,6 +49,9 @@ class SearchResult {
    // Ranks found in ICTV, VMR, and NCBI Taxonomy (virus and phage divisions only).
    // Prefer lower ranks over higher ranks.
    public float $rankScore;
+
+   // The overall score (calculated after the search result has been populated).
+   public float $score;
 
    public string $taxonomyDB;
 
@@ -60,7 +66,7 @@ class SearchResult {
    public function __construct() {
 
       // Provide defaults for all member variables.
-      $this->accuracyScore = 0;
+      $this->countDifferences = 0;
       $this->division = "";
       $this->divisionScore = 0;
       $this->firstCharacterMatch = 0;
@@ -68,14 +74,16 @@ class SearchResult {
       $this->ictvTaxnodeID = 0;
       $this->isExactMatch = 0;
       $this->isValid = 0;
-      $this->sizeScore = 0;
+      $this->lengthDifference = 0;
       $this->name = "";
       $this->nameClass = "";
       $this->nameClassScore = 0;
+      $this->orderedPairCount = 0;
       $this->parentTaxonomyDB = "";
       $this->parentTaxonomyID = 0;
       $this->rankName = "";
       $this->rankScore = 0;
+      $this->score = 0;
       $this->taxonomyDB = "";
       $this->taxonomyDbScore = 0;
       $this->taxonomyID = 0;
@@ -87,7 +95,7 @@ class SearchResult {
 
       $instance = new self();
       
-      $instance->accuracyScore = $data["accuracy_score"];
+      $instance->countDifferences = $data["count_differences"];
       $instance->division = $data["division"];
       $instance->divisionScore = $data["division_score"];
       $instance->firstCharacterMatch = $data["first_character_match"];
@@ -95,7 +103,7 @@ class SearchResult {
       $instance->ictvTaxnodeID = $data["ictv_taxnode_id"];
       $instance->isExactMatch = $data["is_exact_match"];
       $instance->isValid = $data["is_valid"];
-      $instance->sizeScore = $data["size_score"];
+      $instance->lengthDifference = $data["length_difference"];
       $instance->name = $data["name"];
       $instance->nameClass = $data["name_class"];
       $instance->nameClassScore = $data["name_class_score"];
@@ -117,7 +125,7 @@ class SearchResult {
     */
    public function normalize() {
       return [
-         "accuracyScore" => $this->accuracyScore,
+         "countDifferences" => $this->countDifferences,
          "division" => $this->division,
          "divisionScore" => $this->divisionScore,
          "firstCharacterMatch" => $this->firstCharacterMatch,
@@ -125,14 +133,16 @@ class SearchResult {
          "ictvTaxnodeID" => $this->ictvTaxnodeID,
          "isExactMatch" => $this->isExactMatch,
          "isValid" => $this->isValid,
-         "sizeScore" => $this->sizeScore,
+         "lengthDifference" => $this->lengthDifference,
          "name" => $this->name,
          "nameClass" => $this->nameClass,
          "nameClassScore" => $this->nameClassScore,
+         "orderedPairCount" => $this->orderedPairCount,
          "parentTaxonomyDB" => $this->parentTaxonomyDB,
          "parentTaxonomyID" => $this->parentTaxonomyID,
          "rankName" => $this->rankName,
          "rankScore" => $this->rankScore,
+         "score" => $this->score,
          "taxonomyDB" => $this->taxonomyDB,
          "taxonomyDbScore" => $this->taxonomyDbScore,
          "taxonomyID" => $this->taxonomyID,
