@@ -47,7 +47,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    
    // Configuration settings (to replace hard-coded values below)
    const settings = {
-      pageSize: 50,
+      pageSize: 60,
       animationDuration: 900,
       animationDelay: 1100,
       node: {
@@ -117,19 +117,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    var counter = 0;
    var len = 0;
    var res = [];
-   // var zoom = d3.zoom().on("zoom", handleZoom);
-   // function handleZoom(e) {
-   //     d3.select(`${containerSelector} svg g`).attr("transform", e.transform);
-   // }
-
-   // Get and validate the species panel's parent name Element.
-   // const speciesParentEl = document.querySelector(`${containerSelector} .species-panel .parent-name`);
-   // if (!speciesParentEl) { throw new Error("Invalid parent name element"); }
-
-   // Get and validate the species panel's species list Element.
-   // const speciesListEl = document.querySelector(`${containerSelector} .species-panel .species-list`);
-   // if (!speciesListEl) { throw new Error("Invalid species list element"); }
-
+   
    // The DOM Element for the font size panel and slider (these are assigned in "iniitializeFontSizePanel").
    let fontSizePanelEl = null;
    let fontSliderEl = null;
@@ -168,55 +156,6 @@ window.ICTV.d3TaxonomyVisualization = function (
    initializeReleaseControl();
 
    
-   // Clear the contents of the species panel.
-   // function clearSpeciesPanel() {
-   //    speciesParentEl.innerHTML = "";
-   //    speciesListEl.innerHTML = "";
-   // }
-
-   // Populate the species panel.
-   // Note: The parameters should've been validated before this function is called.
-   // function displaySpecies(parentName, parentRank, parentTaxNodeID) {
-
-   //    // Populate the parent name panel.
-   //    speciesParentEl.innerHTML = `Species of <span class="parent-rank">${parentRank}</span><br/><em>${parentName}<\em>`;
-
-   //    // Convert the taxnode ID to a string so it can be used as a key in the species data.
-   //    const strTaxNodeID = new String(parentTaxNodeID);
-
-   //    // Get all species associated with the parent.
-   //    const speciesArray = speciesData[strTaxNodeID];
-   //    if (!speciesArray || speciesArray.length < 1) {
-
-   //       // Display a message in the species list.
-   //       speciesListEl.innerHTML = "No species available";
-   //       return;
-   //    }
-
-   //    // Initialize the species list panel.
-   //    speciesListEl.innerHTML = "";
-
-   //    // Iterate over every species
-   //    speciesArray.forEach(function (species) {
-
-   //       // Create and populate a species Element.
-   //       const speciesEl = document.createElement("div");
-   //       speciesEl.className = "species-row";
-   //       speciesEl.innerHTML = species.name;
-   //       speciesEl.setAttribute("data-taxnode-id", species.taxNodeID);
-
-   //       speciesEl.addEventListener("click", function (e) {
-            
-   //          const taxNodeID = e.target.getAttribute("data-taxnode-id");
-
-   //          window.open(`${taxonDetailsURL}?taxnode_id=${taxNodeID}`, "_blank");
-   //       });
-
-   //       // Add the species Element to the list.
-   //       speciesListEl.appendChild(speciesEl);
-   //    });
-   // }
-
    // TODO: What button? Give this a better name!
    function initializeButton() {
 
@@ -664,7 +603,6 @@ window.ICTV.d3TaxonomyVisualization = function (
          // Constrain the font size change to the taxonomy panel.
          const treeTextSelector = `${containerSelector} .taxonomy-panel text`;
          d3.selectAll(treeTextSelector).style("font-size", font);
-         // getBBox(ds);
       });
    }
 
@@ -707,9 +645,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          // Update the search panel's selected release.
          searchPanel.releaseNumber.selected = release.releaseNum;
-
-         // Clear the species panel
-         // clearSpeciesPanel();
 
          // Display the taxonomy of the selected release.
          await displayReleaseTaxonomy(releaseYear);
@@ -1028,13 +963,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .enter()
                   .append("g")
                   .attr("class", "node")
-                  // add attributes to g nodes from JSON data
-                  // .attr("data-id", function (d) {
-                  //    return d.data.json_id;
-                  // })
-                  // .attr("data-lineage", function (d) {
-                  //    return d.data.json_lineage;
-                  // })
                   .attr("parent-name", function (d) {
                      return d.data.name;
                   })
@@ -1079,85 +1007,18 @@ window.ICTV.d3TaxonomyVisualization = function (
                Enter.append("rect")
                   .style("stroke", "black")
                   .style("stroke-width", "3px")
-                  // .attr("width", function (d) {
-                  //    if (d.data.name === null) {
-                  //       // console.log(d.data.name);
-                  //       if (
-                  //          d.data.rankName === "realm" &&
-                  //          d.data.taxNodeID !== "legend"
-                  //       ) {
-                  //          return "20px";
-                  //       } else if (
-                  //          d.data.has_assigned_siblings === true ||
-                  //          d.data.has_unassigned_siblings === true
-                  //       ) {
-                  //          return "20px";
-                  //       } else {
-                  //          return "0px";
-                  //       }
-                  //    }
-                  // })
-                  // .attr("height", function (d) {
-                  //    if (d.data.name === "Unassigned") {
-                  //       // console.log(d.data.name);
-                  //       if (
-                  //          d.data.rankName === "realm" &&
-                  //          d.data.taxNodeID !== "legend"
-                  //       ) {
-                  //          return "20px";
-                  //       } else if (
-                  //          d.data.has_assigned_siblings === true &&
-                  //          d.data.has_unassigned_siblings === true
-                  //       ) {
-                  //          return "20px";
-                  //       } else {
-                  //          return "0px";
-                  //       }
-                  //    }
-                  // })
                   .style("fill", function (d) {
-
-                     // if (this === clickedRect) {
-                     //    console.log(clickedRect);
-                     //    // console.log(clickedCircle);
-                     //    return "#006CB5";
-                     // } else  if(this !== clickedRect){
-                     //    return "white";
-                     // }
-
                      findParent(d);
                   })
                   .attr("cursor", "pointer");
+
                // lrm 5-22-2024
                // this code appears to not be needed, the logic for the circle is in the update circle.node function
                Enter.append("circle")
                   .attr("class", "node")
-                  // .attr("r", function (d) {
-                  //    if (d.data.name !== "Unassigned") {
-                  //       return settings.node.radius;
-                  //    } else if (d.data.name === "Unassigned") {
-                  //       if (d.data.rankName === "realm" && d.data.taxNodeID !== "legend") {
-                  //          return settings.node.radius;
-                  //       } else if (d.data.has_assigned_siblings === true && d.data.has_unassigned_siblings === true) {
-                  //          console.log(d.data.has_assigned_siblings);
-                  //          return settings.node.radius;
-                  //       } else {
-                  //          return 0;
-                  //       }
-                  //    }
-                  // })
                   .style("stroke", "black")
                   .style("stroke-width", `${settings.node.strokeWidth}px`)
                   .style("fill", function (d) {
-                     
-                     // lrm 5-20-2024
-                     // update DOM element's appended circle when clicked
-                     // if (this === clickedCircle) {
-                     //    // console.log(clickedCircle);
-                     //    return "#006CB5";
-                     // } else  if(this !== clickedCircle) {
-                     //    return "white";
-                     // }
                      findParent(d);
                   })
                   
@@ -1235,25 +1096,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .attr("fill", function (d) {
                      return "#000000";
                   })
-                  // .on("click", function (e, d) {
-
-                  //    // TODO: why is the value reset here?
-                  //    fontSliderEl.attr("value", 4);
-
-                  //    if (!d.data.name || d.data.name.length < 1 || d.data.name === "Unassigned" ||
-                  //       !d.data.rankName || d.data.rankName.length < 1 ||
-                  //       !d.data.taxNodeID || isNaN(parseInt(d.data.taxNodeID)) ||
-                  //       !d.data.has_species) {
-
-                  //       // Clear the species panel
-                  //       return clearSpeciesPanel();
-
-                  //    } else {
-
-                  //       // Populate the species panel
-                  //       return displaySpecies(d.data.name, d.data.rankName, d.data.taxNodeID);
-                  //    }
-                  // })
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy)
                   .call(getBB);
@@ -1289,87 +1131,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                Update.select("rect")
                   .style("stroke", "black")
                   .style("stroke-width", "2px")
-                  // .attr("width", function (d) {
-                  //    if (d.data.name === "Unassigned") {
-                  //       if (
-                  //          d.data.rankName === "realm" &&
-                  //          d.data.taxNodeID !== "legend"
-                  //       ) {
-                  //          return "30px";
-                  //       } else if (
-                  //          d.data.has_assigned_siblings === true ||
-                  //          d.data.has_unassigned_siblings === true
-                  //       ) {
-                  //          return "30px";
-                  //       } else {
-                  //          return "0px";
-                  //       }
-                  //    }
-                  // })
-                  // .attr("height", function (d) {
-                  //    if (d.data.name === "Unassigned") {
-                  //       if (
-                  //          d.data.rankName === "realm" &&
-                  //          d.data.taxNodeID !== "legend"
-                  //       ) {
-                  //          return "30px";
-                  //       } else if (
-                  //          d.data.has_assigned_siblings === true ||
-                  //          d.data.has_unassigned_siblings === true
-                  //       ) {
-                  //          return "30px";
-                  //       } else {
-                  //          return "0px";
-                  //       }
-                  //    }
-                  // })
-                  // .attr("x", function (d) {
-                  //    if (d.data.name === "Unassigned") {
-                  //       if (
-                  //          d.data.rankName === "realm" &&
-                  //          d.data.taxNodeID !== "legend"
-                  //       ) {
-                  //          return "-15px";
-                  //       } else if (
-                  //          d.data.has_assigned_siblings === true ||
-                  //          d.data.has_unassigned_siblings === true
-                  //       ) {
-                  //          return "-15px";
-                  //       } else {
-                  //          return "0px";
-                  //       }
-                  //    }
-                  // })
-                  // .attr("y", function (d) {
-                  //    if (d.data.name === "Unassigned") {
-                  //       if (
-                  //          d.data.rankName === "realm" &&
-                  //          d.data.taxNodeID !== "legend"
-                  //       ) {
-                  //          return "-15px";
-                  //       } else if (
-                  //          d.data.has_assigned_siblings === true ||
-                  //          d.data.has_unassigned_siblings === true
-                  //       ) {
-                  //          return "-15px";
-                  //       } else {
-                  //          return "0px";
-                  //       }
-                  //    }
-                  // })
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy)
                   .style("fill", function (d) {
-
-                     // lrm 5-23-2024
-                     // this code is no longer needed, this will be taken down later
-                     // if (this === clickedRect) {
-                     //    // console.log(clickedCircle);
-                     //    return "#006CB5";
-                     // } else  if(this !== clickedRect){
-                     //    return "white";
-                     // }
-
                      findParent(d);
                   })
                   .attr("cursor", "pointer");
@@ -1557,12 +1321,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                      } else {
                         return "#808080";
                      }
-
-                     // original code for link color
-                  //    if (d.data.name !== "down" || d.data.name !== "up") {
-                  //       return d._children ? "#808080" : "#006CB5";
-                  //    }
-                  //    findParent(d);
                   });
 
                var linkExit = link
@@ -1681,17 +1439,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   }
               }
 
-               // function hasSpeciesChild(node) {
-               //    if (node.children) {
-               //       for (let i = 0; i < node.children.length; i++) {
-               //          if (node.children[i].has_species) {
-               //             return true;
-               //          }
-               //       }
-               //    }
-               //    return false;
-               // }
-
                // The first parameter is the element that acts as a delegate for child elements with
                // tippy instances. The second parameter defines the tippy instances that will be assigned
                // to the child elements (qualified by the "target" attribute). 
@@ -1739,15 +1486,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      instance.setContent(html);
                   },
-                  /*onTrigger(instance) {
-                      // If the node's name is "Unassigned", disable the instance so it won't show a tooltip.
-                      try {
-                          if (instance.reference.__data__.data.name === "Unassigned") { instance.disable(); }
-                      }
-                      catch (error) {
-                          // Nothing to do, really.
-                      }
-                  },*/
                   placement: "left-start",
                   target: "g.node text.node-text",
                   theme: "ICTV-Tooltip"
@@ -1838,8 +1576,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       paginationData.childDisplayOrder = parseInt(displayOrder_);
       paginationData.parentTaxnodeID = parseInt(parentTaxNodeID_);
 
-      // console.log(`in selectSearchResult: taxNodeId_ = ${taxNodeId_}, taxNodeIdLineage_ = ${taxNodeIdLineage_}, displayOrder_ = ${displayOrder_}`);
-
       // Select the specified release.
       releaseControlEl.value = releaseNumber_;
       releaseControlEl.dispatchEvent(new Event("change"));
@@ -1851,7 +1587,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       clearButtonEl.dispatchEvent(new Event("click"));
 
 
-      // dmd testing 070224
       async function openNode(nodeId) {
 
          // The number of the current attempt to find nodeID's taxonomy node
@@ -1956,53 +1691,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       }
 
       setTimeout(openNodes, settings.animationDelay);
-
-      // TODO: Use lineage to select taxa nodes after the tree has been refreshed
-
-      /*-------------------------------------------------------------------------------------------------------------------
-
-      NOTE: this commented code is the previous attempt to select a node using taxnodeID. It worked in 
-      some cases, but broke when there was a "ghost node". Ghost nodes are ranks that are missing 
-      in a lineage. For example, in the lineage of species "White spot syndrome virus", there isn't a
-      taxon with the rank "Order" between Class and Family:
-
-         Class: Naldaviricetes
-         Family: Nimaviridae
-         Genus: Whispovirus
-         Species: White spot syndrome virus
-
-      I left the code here in case it provides any inspiration.
-      
-      -------------------------------------------------------------------------------------------------------------------
-
-
-      // Older code
-      name = "";
-      const taxa = lineage_.split(">");
-      taxa.forEach((taxon_) => {
-         console.log(taxon_)
-         name = taxa[0];
-         collapse(name);
-         console.log("name", taxon_.pa);
-
-      })
-      console.log(taxa.length)
-      len = taxa.length
-      Sflag = true;
-      res = taxa;
-      svg_zoom
-         .transition()
-         .call(
-            zoom.transform,
-            d3.zoomIdentity
-               .translate(settings.zoom.translateX, settings.zoom.translateY)
-               .scale(1 / 0.19)
-         )
-         .on("end", function () {
-            svg_zoom.transition()
-               .duration(750)
-               .call(zoom.scaleBy, settings.zoom.scaleFactor);
-         });*/
    }
 
 };

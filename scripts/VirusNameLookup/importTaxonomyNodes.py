@@ -6,9 +6,6 @@ from terms import NameClass, TaxonomyDB, TaxonomyRank
 import pandas as pd
 from taxonName import TaxonName
 
-# The name of the MariaDB database with the table "taxon_name".
-databaseName = "virus_name_lookup"
-
 """
 Helpful links:
 
@@ -32,16 +29,6 @@ columns = [
    "rank_name",
    "refseq_accession_csv"
 ]
-
-
-# Import taxonomy nodes from every file in the output directory whose name starts with 
-# "taxonomyNodes_msl" and ends with .tsv.
-def importAllTaxonomyNodes(taxonName_: TaxonName):
-
-   for filename in glob.glob("taxonomyNodes_msl*.tsv", root_dir="output"):
-      print(f"Importing {filename}")
-      importTaxonomyNodes(f"output/{filename}", taxonName_)
-
 
 
 #--------------------------------------------------------------------------------
@@ -85,7 +72,8 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
          trimmedName = name.strip()
          if len(trimmedName) < 1:
             raise Exception("Invalid name")
-         taxonName_.importTaxonName(currentTaxNodeID, trimmedName, NameClass.scientific_name.name, TaxonomyDB.ictv_taxonomy.name, 
+         taxonName_.importTaxonName(mslReleaseNum, trimmedName, rankName, currentTaxNodeID, 
+                                    trimmedName, NameClass.scientific_name.name, TaxonomyDB.ictv_taxonomy.name, 
                                     parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
          
          abbrevCSVs = row.abbrev_csv
@@ -98,7 +86,8 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for abbrevCSV in abbrevCSVs.split(";"):
                trimmedName = abbrevCSV.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(currentTaxNodeID, trimmedName, NameClass.abbreviation.name, TaxonomyDB.ictv_taxonomy.name, 
+                  taxonName_.importTaxonName(mslReleaseNum, trimmedName, rankName, currentTaxNodeID, 
+                                    trimmedName, NameClass.abbreviation.name, TaxonomyDB.ictv_taxonomy.name, 
                                     parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
 
          cleanedName = row.cleaned_name
@@ -110,8 +99,9 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
          if exemplarName not in (None, ''):
             trimmedName = exemplarName.strip()
             if len(trimmedName) > 0:
-               taxonName_.importTaxonName(currentTaxNodeID, trimmedName, NameClass.isolate_exemplar.name, TaxonomyDB.ictv_taxonomy.name, 
-                                          parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
+               taxonName_.importTaxonName(mslReleaseNum, trimmedName, rankName, currentTaxNodeID, 
+                                    trimmedName, NameClass.isolate_exemplar.name, TaxonomyDB.ictv_taxonomy.name, 
+                                    parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
          
          genbankAccessions = row.genbank_accession_csv
          if genbankAccessions not in (None, ''):
@@ -123,8 +113,9 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for genbankAccession in genbankAccessions.split(";"):
                trimmedName = genbankAccession.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(currentTaxNodeID, trimmedName, NameClass.genbank_accession.name, TaxonomyDB.ictv_taxonomy.name, 
-                                             parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
+                  taxonName_.importTaxonName(mslReleaseNum, trimmedName, rankName, currentTaxNodeID, 
+                                    trimmedName, NameClass.genbank_accession.name, TaxonomyDB.ictv_taxonomy.name, 
+                                    parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
                   
          isolateNames = row.isolate_csv
          if isolateNames not in (None, ''):
@@ -136,8 +127,9 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for isolateName in isolateNames.split(";"):
                trimmedName = isolateName.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(currentTaxNodeID, trimmedName, NameClass.isolate_name.name, TaxonomyDB.ictv_taxonomy.name, 
-                                             parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
+                  taxonName_.importTaxonName(mslReleaseNum, trimmedName, rankName, currentTaxNodeID, 
+                                    trimmedName, NameClass.isolate_name.name, TaxonomyDB.ictv_taxonomy.name, 
+                                    parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
 
          refseqAccessions = row.refseq_accession_csv
          if refseqAccessions not in (None, '') and len(refseqAccessions.strip()) > 0:
@@ -149,8 +141,9 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
             for refseqAccession in refseqAccessions.split(";"):
                trimmedName = refseqAccession.strip()
                if len(trimmedName) > 0: 
-                  taxonName_.importTaxonName(currentTaxNodeID, trimmedName, NameClass.refseq_accession.name, TaxonomyDB.ictv_taxonomy.name, 
-                                             parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
+                  taxonName_.importTaxonName(mslReleaseNum, trimmedName, rankName, currentTaxNodeID, 
+                                    trimmedName, NameClass.refseq_accession.name, TaxonomyDB.ictv_taxonomy.name, 
+                                    parentID, rankName, TaxonomyDB.ictv_taxonomy.name, taxNodeID, mslReleaseNum)
                   
       except Exception as e:
          print(f"The following error occurred: {e}")
@@ -160,11 +153,8 @@ def importTaxonomyNodes(filename_: str, taxonName_: TaxonName):
 """
 Examples: 
 
-Import a single TSV file:
-py ./importTaxonomyNodes.py --filename output/taxonomyNodes_msl[release].tsv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
-
-Import all taxonomy node TSV files in the output directory:
-py ./importTaxonomyNodes.py --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306 --all 1
+Import the taxonomy nodes TSV file:
+py ./importTaxonomyNodes.py --filename output/taxonomyNodes.tsv --dbName virus_name_lookup --host localhost --username drupal_user --password TODO --port 3306
 
 """ 
 
@@ -177,7 +167,6 @@ if __name__ == '__main__':
    parser.add_argument("--username", dest="username", metavar='USERNAME', nargs=1, required=True, help="The database username")
    parser.add_argument("--password", dest="password", metavar='PASSWORD', nargs=1, required=True, help="The database password")
    parser.add_argument("--port", default="3306", dest="port", metavar='PORT', nargs=1, required=False, help="The database port")
-   parser.add_argument("--all", default="0", dest="all", metavar='ALL', nargs=1, required=False, help="Should taxonomy nodes be imported from all taxonomy-related files?")
 
    args = parser.parse_args()
 
@@ -187,21 +176,17 @@ if __name__ == '__main__':
    port = int(args.port[0])
    username = args.username[0]
    
+   if args.filename == None:
+      raise Exception("The filename parameter is required")
+   
+   filename = args.filename[0]
+   if filename in (None, ""):
+      raise Exception("A non-empty filename parameter is required")
+   
    # Create a taxon name instance using the database parameters.
    taxonName = TaxonName(dbName, host, username, password, port)
 
-   if args.all != None and args.all[0] == "1":
-      importAllTaxonomyNodes(taxonName)
-
-   else:
-
-      if args.filename == None:
-         raise Exception("The filename parameter is required")
-      
-      filename = args.filename[0]
-      if filename in (None, ""):
-         raise Exception("A non-empty filename parameter is required")
-      
-      importTaxonomyNodes(filename, taxonName)
+   # Import taxonomy nodes from the specified filename.
+   importTaxonomyNodes(filename, taxonName)
 
    

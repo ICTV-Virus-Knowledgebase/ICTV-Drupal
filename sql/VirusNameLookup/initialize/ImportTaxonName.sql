@@ -1,10 +1,14 @@
 DELIMITER //
 
-DROP PROCEDURE IF EXISTS `importTaxonName`;
+-- dmd 10/29/24: This line prevented the script from running on test.ictv.global.
+-- DROP PROCEDURE IF EXISTS `importTaxonName`;
 
 CREATE PROCEDURE `importTaxonName`(
+   IN `ictvMslRelease` INT,
+   IN `ictvName` VARCHAR(300),
+   IN `ictvRankName` VARCHAR(100),
    IN `ictvTaxNodeID` INT,
-	IN `name` NVARCHAR(300),
+	IN `name` VARCHAR(300),
 	IN `nameClass` VARCHAR(100),
 	IN `parentTaxonomyDB` VARCHAR(100),
 	IN `parentTaxonomyID` INT,
@@ -13,7 +17,7 @@ CREATE PROCEDURE `importTaxonName`(
 	IN `taxonomyID` INT,
 	IN `versionID` INT
 )
-    MODIFIES SQL DATA
+   MODIFIES SQL DATA
 BEGIN
 
 	-- Declare variables used below.
@@ -26,6 +30,16 @@ BEGIN
 	
 
 	-- Validate the input variables
+   SET ictvName = TRIM(ictvName);
+   IF LENGTH(ictvName) < 1 THEN
+      SET ictvName = NULL;
+   END IF;
+
+   SET ictvRankName = TRIM(ictvRankName);
+   IF LENGTH(ictvRankName) < 1 THEN
+      SET ictvRankName = NULL;
+   END IF;
+
 	SET name = TRIM(name);
    IF name IS NULL OR LENGTH(name) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid name parameter';
@@ -41,7 +55,6 @@ BEGIN
 	SET rankName = REPLACE(TRIM(rankName), ' ', '_');
 	IF rankName IS NULL OR LENGTH(rankName) < 1 THEN
       SET rankName = "no_rank";
-      -- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid rank name parameter';
    END IF;
 	
 	SET taxonomyDB = TRIM(taxonomyDB);
@@ -80,7 +93,6 @@ BEGIN
 		END;
 	END IF;
 	
-	
 	-- Filter the name
 	SET filteredName = getFilteredName(name);
 	
@@ -89,6 +101,9 @@ BEGIN
 	INSERT INTO taxon_name (
 		division_tid,
 		filtered_name,
+      ictv_msl_release,
+      ictv_name,
+      ictv_rank_name,
       ictv_taxnode_id,
 		`name`,
 		name_class_tid,
@@ -102,6 +117,9 @@ BEGIN
 	) VALUES (
 		virusDivisionTID,
 		filteredName,
+      ictvMslRelease,
+      ictvName,
+      ictvRankName,
       ictvTaxNodeID,
 		name,
 		nameClassTID,

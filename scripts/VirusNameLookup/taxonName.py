@@ -31,7 +31,8 @@ class TaxonName:
    #--------------------------------------------------------------------------------------------------------
    # Import data into the taxon_name database table.
    #--------------------------------------------------------------------------------------------------------
-   def importTaxonName(self, ictvTaxNodeID: int, name: str, nameClass: str, parentTaxonomyDB: str, parentTaxonomyID: int, 
+   def importTaxonName(self, ictvMslRelease: int, ictvName: str, ictvRankName: str, ictvTaxNodeID: int, 
+                       name: str, nameClass: str, parentTaxonomyDB: str, parentTaxonomyID: int, 
                        rankName: str, taxonomyDB: str, taxonomyID: int, versionID: int):
 
       # Validate the database name, username, and password member variables.
@@ -49,6 +50,24 @@ class TaxonName:
       if not isinstance(ictvTaxNodeID, int):
          ictvTaxNodeID = None
 
+      # ICTV MSL release
+      if not isinstance(ictvMslRelease, int):
+         ictvMslRelease = "NULL"
+
+      # ICTV name
+      ictvName = safeTrim(ictvName)
+      if ictvName in (None, ''):
+         ictvName = "NULL"
+      else:
+         ictvName = f"'{ictvName}'"
+
+      # ICTV rank name
+      ictvRankName = safeTrim(ictvRankName)
+      if ictvRankName in (None, ''):
+         ictvRankName = "NULL"
+      else:
+         ictvRankName = f"'{ictvRankName}'"
+
       # Name
       name = safeTrim(name)
       if name in (None, ''):
@@ -56,7 +75,6 @@ class TaxonName:
       else:
          # Truncate the name at 300 characters.
          name = name[0:299]
-         
          name = formatForSQL(name)
       
       # Name class
@@ -88,7 +106,10 @@ class TaxonName:
          raise Exception("Invalid taxonomy ID")
 
       # Create SQL that calls the stored procedure.
-      sql = f"CALL importTaxonName({ictvTaxNodeID}, '{name}', '{nameClass}', '{parentTaxonomyDB}', {parentTaxonomyID}, '{rankName}', '{taxonomyDB}', {taxonomyID}, {versionID});"
+      sql = (f"CALL importTaxonName({ictvMslRelease}, {ictvName}, {ictvRankName}, {ictvTaxNodeID}, "
+            f"'{name}', '{nameClass}', '{parentTaxonomyDB}', {parentTaxonomyID}, '{rankName}', "
+            f"'{taxonomyDB}', {taxonomyID}, {versionID});")
+
 
       # TODO: this would be a better approach
       #with contextlib.closing(conn) as dbConnection:

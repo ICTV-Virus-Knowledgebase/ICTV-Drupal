@@ -12,7 +12,7 @@ export class VirusNameLookup {
    defaults = {
       maxCountDiff: 5,
       maxLengthDiff: 5,
-      maxResultCount: 50
+      maxResultCount: 100
    }
 
    elements: {
@@ -26,7 +26,8 @@ export class VirusNameLookup {
    }
 
    icons: {
-      search: string
+      search: string,
+      spinner: string
    }
 
    results: ISearchResult[];
@@ -39,7 +40,7 @@ export class VirusNameLookup {
       searchText: null
    }
 
-   settings: {
+   settings = {
       defaultRowsPerPage: 50
    }
 
@@ -61,12 +62,13 @@ export class VirusNameLookup {
       }
 
       this.icons = {
-         search: `<i class="fa-solid fa-magnifying-glass"></i>`
+         search: `<i class="fa-solid fa-magnifying-glass"></i>`,
+         spinner: `<i class="fa fa-spinner fa-spin spinner-icon"></i>`
       }
    }
 
 
-   displayResults() {
+   async displayResults() {
 
       if (!Array.isArray(this.results) || !this.results || this.results.length < 1) {
          this.elements.resultsPanel.innerHTML = "No results";
@@ -143,6 +145,8 @@ export class VirusNameLookup {
 
       if (!!this.dataTable) { this.dataTable = null; /* TODO: destroy? */ }
 
+      console.log("this = ", this)
+
       // Create a DataTable instance using the table Element.
       this.dataTable = new DataTables(`${this.selectors.container} table.results-table`, {
          /*columnDefs: [
@@ -156,6 +160,8 @@ export class VirusNameLookup {
          searching: false,
          stripeClasses: []
       });
+
+      return;
    }
 
    async initialize() {
@@ -222,8 +228,6 @@ export class VirusNameLookup {
    // Lookup the virus name using the web service.
    async search() {
 
-      console.log("about to search")
-
       let maxCountDiff = parseInt(this.elements.maxCountDiff.value);
       if (isNaN(maxCountDiff)) { maxCountDiff = this.defaults.maxCountDiff; }
 
@@ -235,6 +239,8 @@ export class VirusNameLookup {
 
       this.elements.searchButton.disabled = true;
 
+      this.elements.resultsPanel.innerHTML = `${this.icons.spinner} <span class="spinner-message">Searching...</span>`;
+
       try {
          let searchText = this.elements.searchText.value;
          if (!searchText) { throw new Error("Please enter valid search text"); }
@@ -245,12 +251,10 @@ export class VirusNameLookup {
          this.elements.searchButton.disabled = false;
          return await AlertBuilder.displayError(error_);
       }
-      
-      this.elements.resultsPanel.innerHTML = `<i class="fa fa-spinner fa-spin spinner-icon"></i> <span class="spinner-message">Searching...</span>`;
-
-      this.displayResults();
 
       this.elements.searchButton.disabled = false;
+
+      await this.displayResults();
 
       return;
    }

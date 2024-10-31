@@ -123,7 +123,7 @@ BEGIN
 	FROM (
 		SELECT 
 			-- How many characters were different between the search text and match?
-			maxCountDiff - count_diff AS count_differences,
+			/*maxCountDiff -*/ count_diff AS count_differences,
 			
 			-- The NCBI division (phages, viruses)
 			division,
@@ -150,7 +150,7 @@ BEGIN
 			is_valid,
 			
 			-- How much did the search text's length differ from the match's length?
-			maxLengthDiff - length_diff AS length_difference,
+			/*maxLengthDiff -*/ length_diff AS length_difference,
 			
 			-- The matching name
 			`name`,
@@ -284,8 +284,11 @@ BEGIN
 				
 			FROM taxon_histogram
 			
-			-- Limit the number of results using differences in length.
-			WHERE ABS(searchTextLength - text_length) <= maxLengthDiff
+			-- The length of the matching text should at least be the search text length - the max count diff.
+			WHERE text_length >= searchTextLength - maxCountDiff
+
+         -- We can use the max length diff as a hard limit. 
+         AND ABS(searchTextLength - text_length) <= maxLengthDiff
 				
 		) constrainedMatches
 		
@@ -297,15 +300,17 @@ BEGIN
 	ORDER BY 
       is_exact_match DESC, 
       count_differences DESC, 
-      length_difference DESC /*, 
+      length_difference DESC,
+      taxonomy_db_score DESC,
+      version_id DESC
+      /*, 
       division_score DESC, 
       is_valid DESC,
       name_class_score DESC,
       rank_score DESC,
       first_character_match DESC,
       has_taxnode_id DESC, 
-      version_id DESC,
-      taxonomy_db_score DESC*/
+      */
 	
 	LIMIT maxResultCount;
 	
