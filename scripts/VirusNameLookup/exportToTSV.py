@@ -73,6 +73,31 @@ class ExportToTSV:
 
 
    #-----------------------------------------------------------------------------------
+   # Export the latest version of each unique name in taxonomy_node to a TSV file.
+   #-----------------------------------------------------------------------------------
+   def exportLatestTaxonomyNodes(self,dbServer_, ictvDB_):
+
+      # Validate parameters
+      if dbServer_ in (None, ''):
+         raise Exception("The dbServer parameter is invalid")
+      
+      if ictvDB_ in (None, ''):
+         raise Exception("The ictvDB parameter is invalid")
+      
+      # Create the filename
+      filename = (f"output\\taxonomyNodes.tsv")
+
+      # Create the command line text to run sqlcmd.
+      cmd = (f"sqlcmd -S {dbServer_} "
+            f"-Q \"EXEC [{ictvDB_}].dbo.exportLatestTaxonomyNodesAsTSV \" "
+            f"-o \"{filename}\" "
+            "-y 0 ")
+
+      # Run the command
+      subprocess.run(cmd, shell=True)
+
+
+   #-----------------------------------------------------------------------------------
    # Export the contents of taxonomy_node to a TSV file.
    #-----------------------------------------------------------------------------------
    def exportTaxonomyNode(self, dbServer_, ictvDB_, mslRelease_):
@@ -109,6 +134,9 @@ py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "species_
 
 Export all taxonomy_node records: 
 py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "all_taxonomy_nodes"
+
+Export the latest version of each unique name in taxonomy_node
+py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "latest_taxonomy_nodes"
 
 Export taxonomy_node records for a single MSL: 
 py exportToTSV.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --table "taxonomy_node" --msl 39
@@ -148,6 +176,9 @@ if __name__ == '__main__':
    match table:
       case "all_taxonomy_nodes":
          exportToTSV.exportAllTaxonomyNodes(dbServer, ictvDB)
+
+      case "latest_taxonomy_nodes":
+         exportToTSV.exportLatestTaxonomyNodes(dbServer, ictvDB)
 
       case "species_isolates":
          exportToTSV.exportSpeciesIsolates(dbServer, ictvDB)

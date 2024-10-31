@@ -125,8 +125,32 @@ class LookupService extends ResourceBase {
     */
    public function get(Request $request) {
       $data = $this->processAction($request);
-      return new ResourceResponse($data);
+
+
+      $build = array(
+         '#cache' => array(
+            'max-age' => 0,
+         ),
+      );
+       
+      return (new ResourceResponse($data))->addCacheableDependency($build);
+      //return new ResourceResponse($data);
    }
+
+   
+   /**
+    * {@inheritdoc}
+    * 
+    * Prevent this block from being cached.
+    */
+   public function getCacheMaxAge() {
+      return 2;
+
+      // NOTE: this is what ChatGPT suggested:
+      // Disable caching by setting the max-age to permanent (no expiration).
+      // return Cache::PERMANENT;
+   }
+
 
    /**
     * Search the database to find taxon name matches.

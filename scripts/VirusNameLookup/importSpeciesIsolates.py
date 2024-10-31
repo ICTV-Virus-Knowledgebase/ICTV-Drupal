@@ -5,9 +5,6 @@ import pandas as pd
 from taxonName import TaxonName
 
 
-# The name of the MariaDB database with the table "taxon_name".
-databaseName = "virus_name_lookup"
-
 """
 Helpful links:
 
@@ -15,7 +12,6 @@ Helpful links:
 - Pandas read_csv: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
 
 """
-
 
 # The header columns in the TSV file. Note that the order is important!
 columns = [ 
@@ -48,17 +44,22 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
       if isolateID in (None, '') or not isinstance(isolateID, int):
          raise Exception("Isolate ID is invalid")
       
+      ictvName = row.species_name
+      if ictvName in (None, ''):
+         ictvName = None
+      
       mslReleaseNum = row.msl_release_num
       if mslReleaseNum in (None, ''):
          print(f"mslReleaseNum={mslReleaseNum}.")
          raise Exception("MSL release number is invalid")
       
+      rankName = "species"
+
       taxNodeID = row.taxnode_id
       if taxNodeID in (None, ''):
          raise Exception("Taxnode ID is invalid")
       
-      # Don't include row._isolate_name as it's just the first token in row.isolate_names
-      # Don't include row.species_name since it will be in taxonomy_node data
+      # Don't include row._isolate_name as it's just the first token in row.isolate_names.
       # For now, all values of row.refseq_organism are null
 
       genbankAccessions = row.genbank_accessions
@@ -66,49 +67,55 @@ def importSpeciesIsolates(filename_: str, taxonName_: TaxonName):
          for genbankAccession in genbankAccessions.split(";"):
             trimmedName = genbankAccession.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.genbank_accession.name,
-                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
-                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
+               taxonName_.importTaxonName(mslReleaseNum, ictvName, rankName, taxNodeID, 
+                                    trimmedName, NameClass.genbank_accession.name,
+                                    TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                    TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       isolateAbbrevs = row.isolate_abbrevs
       if isolateAbbrevs not in (None, '') and len(isolateAbbrevs.strip()) > 0:
          for isolateAbbrev in isolateAbbrevs.split(";"):
             trimmedName = isolateAbbrev.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_abbreviation.name,
-                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
-                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
+               taxonName_.importTaxonName(mslReleaseNum, ictvName, rankName, taxNodeID, 
+                                    trimmedName, NameClass.isolate_abbreviation.name,
+                                    TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                    TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       isolateDesignations = row.isolate_designation
       if isolateDesignations not in (None, ''):
          for isolateDesignation in isolateDesignations.split(";"):
             trimmedName = isolateDesignation.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_designation.name,
-                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
-                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
+               taxonName_.importTaxonName(mslReleaseNum, ictvName, rankName, taxNodeID, 
+                                    trimmedName, NameClass.isolate_designation.name,
+                                    TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                    TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       isolateNames = row.isolate_names
       if isolateNames not in (None, '') and len(isolateNames.strip()) > 0:
          for isolateName in isolateNames.split(";"):
             trimmedName = isolateName.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.isolate_name.name,
-                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
-                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
+               taxonName_.importTaxonName(mslReleaseNum, ictvName, rankName, taxNodeID, 
+                                    trimmedName, NameClass.isolate_name.name,
+                                    TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                    TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       refseqAccessions = row.refseq_accessions
       if refseqAccessions not in (None, '') and len(refseqAccessions.strip()) > 0:
          for refseqAccession in refseqAccessions.split(";"):
             trimmedName = refseqAccession.strip()
             if len(trimmedName) > 0: 
-               taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.refseq_accession.name,
-                                          TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
-                                          TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
+               taxonName_.importTaxonName(mslReleaseNum, ictvName, rankName, taxNodeID, 
+                                    trimmedName, NameClass.refseq_accession.name,
+                                    TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
+                                    TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
       refseqOrganism = row.refseq_organism
       if refseqOrganism not in (None, '') and len(refseqOrganism.strip()) > 0: 
-         taxonName_.importTaxonName(taxNodeID, trimmedName, NameClass.refseq_organism.name,
+         taxonName_.importTaxonName(mslReleaseNum, ictvName, rankName, taxNodeID, 
+                                    trimmedName, NameClass.refseq_organism.name,
                                     TaxonomyDB.ictv_taxonomy.name, taxNodeID, TaxonomyRank.isolate.name,
                                     TaxonomyDB.ictv_vmr.name, isolateID, mslReleaseNum)
 
