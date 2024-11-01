@@ -17,6 +17,7 @@
   - Divisions file: division.dmp
 
 - Import the dmp files into the NCBI Taxonomy tables.
+- Run **DeleteOutOfScopeNcbiEntries.sql** to delete all names and nodes that are not Bacteria, Phages, Synthetic and Chimeric, Unassigned, Viruses, or Environmental samples.
 - After the tables have been populated, run **InitializeNcbiTermIdColumns.sql** to initialize their (custom) term ID columns.
 - Run **PopulateTaxonNameFromNCBI.sql** to import NCBI Taxonomy into the taxon_name table.
 
