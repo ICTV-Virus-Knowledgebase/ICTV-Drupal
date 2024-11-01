@@ -23,7 +23,7 @@ CREATE PROCEDURE `createTaxonHistogram`(
 BEGIN
 
 	DECLARE firstCharacter VARCHAR(1);
-	DECLARE nameLength INT;
+	DECLARE textLength INT;
 	
 	DECLARE aCount INT;
 	DECLARE bCount INT; 
@@ -67,50 +67,50 @@ BEGIN
    SET firstCharacter = LEFT(taxonName, 1);
    
 	-- Get the length of the taxon name parameter.
-	SET nameLength = LENGTH(taxonName);
+	SET textLength = LENGTH(taxonName);
 	
    -- Convert taxon name to lowercase.
 	SET taxonName = LOWER(taxonName);
 	
 	
 	-- Calculate a count for every symbol.
-	SET aCount = nameLength - LENGTH(REPLACE(taxonName, 'a', ''));
-	SET bCount = nameLength - LENGTH(REPLACE(taxonName, 'b', ''));
-	SET cCount = nameLength - LENGTH(REPLACE(taxonName, 'c', ''));
-	SET dCount = nameLength - LENGTH(REPLACE(taxonName, 'd', ''));
-	SET eCount = nameLength - LENGTH(REPLACE(taxonName, 'e', ''));
-	SET fCount = nameLength - LENGTH(REPLACE(taxonName, 'f', ''));
-	SET gCount = nameLength - LENGTH(REPLACE(taxonName, 'g', ''));
-	SET hCount = nameLength - LENGTH(REPLACE(taxonName, 'h', ''));
-	SET iCount = nameLength - LENGTH(REPLACE(taxonName, 'i', ''));
-	SET jCount = nameLength - LENGTH(REPLACE(taxonName, 'j', ''));
-	SET kCount = nameLength - LENGTH(REPLACE(taxonName, 'k', ''));
-	SET lCount = nameLength - LENGTH(REPLACE(taxonName, 'l', ''));
-	SET mCount = nameLength - LENGTH(REPLACE(taxonName, 'm', ''));
-	SET nCount = nameLength - LENGTH(REPLACE(taxonName, 'n', ''));
-	SET oCount = nameLength - LENGTH(REPLACE(taxonName, 'o', ''));
-	SET pCount = nameLength - LENGTH(REPLACE(taxonName, 'p', ''));
-	SET qCount = nameLength - LENGTH(REPLACE(taxonName, 'q', ''));
-	SET rCount = nameLength - LENGTH(REPLACE(taxonName, 'r', ''));
-	SET sCount = nameLength - LENGTH(REPLACE(taxonName, 's', ''));
-	SET tCount = nameLength - LENGTH(REPLACE(taxonName, 't', ''));
-	SET uCount = nameLength - LENGTH(REPLACE(taxonName, 'u', ''));
-	SET vCount = nameLength - LENGTH(REPLACE(taxonName, 'v', ''));
-	SET wCount = nameLength - LENGTH(REPLACE(taxonName, 'w', ''));
-	SET xCount = nameLength - LENGTH(REPLACE(taxonName, 'x', ''));
-	SET yCount = nameLength - LENGTH(REPLACE(taxonName, 'y', ''));
-	SET zCount = nameLength - LENGTH(REPLACE(taxonName, 'z', ''));
-	SET 1Count = nameLength - LENGTH(REPLACE(taxonName, '1', ''));
-	SET 2Count = nameLength - LENGTH(REPLACE(taxonName, '2', ''));
-	SET 3Count = nameLength - LENGTH(REPLACE(taxonName, '3', ''));
-	SET 4Count = nameLength - LENGTH(REPLACE(taxonName, '4', ''));
-	SET 5Count = nameLength - LENGTH(REPLACE(taxonName, '5', ''));
-	SET 6Count = nameLength - LENGTH(REPLACE(taxonName, '6', ''));
-	SET 7Count = nameLength - LENGTH(REPLACE(taxonName, '7', ''));
-	SET 8Count = nameLength - LENGTH(REPLACE(taxonName, '8', ''));
-	SET 9Count = nameLength - LENGTH(REPLACE(taxonName, '9', ''));
-	SET 0Count = nameLength - LENGTH(REPLACE(taxonName, '0', ''));
-	SET spaceCount = nameLength - LENGTH(REPLACE(taxonName, ' ', ''));
+	SET aCount = textLength - LENGTH(REPLACE(taxonName, 'a', ''));
+	SET bCount = textLength - LENGTH(REPLACE(taxonName, 'b', ''));
+	SET cCount = textLength - LENGTH(REPLACE(taxonName, 'c', ''));
+	SET dCount = textLength - LENGTH(REPLACE(taxonName, 'd', ''));
+	SET eCount = textLength - LENGTH(REPLACE(taxonName, 'e', ''));
+	SET fCount = textLength - LENGTH(REPLACE(taxonName, 'f', ''));
+	SET gCount = textLength - LENGTH(REPLACE(taxonName, 'g', ''));
+	SET hCount = textLength - LENGTH(REPLACE(taxonName, 'h', ''));
+	SET iCount = textLength - LENGTH(REPLACE(taxonName, 'i', ''));
+	SET jCount = textLength - LENGTH(REPLACE(taxonName, 'j', ''));
+	SET kCount = textLength - LENGTH(REPLACE(taxonName, 'k', ''));
+	SET lCount = textLength - LENGTH(REPLACE(taxonName, 'l', ''));
+	SET mCount = textLength - LENGTH(REPLACE(taxonName, 'm', ''));
+	SET nCount = textLength - LENGTH(REPLACE(taxonName, 'n', ''));
+	SET oCount = textLength - LENGTH(REPLACE(taxonName, 'o', ''));
+	SET pCount = textLength - LENGTH(REPLACE(taxonName, 'p', ''));
+	SET qCount = textLength - LENGTH(REPLACE(taxonName, 'q', ''));
+	SET rCount = textLength - LENGTH(REPLACE(taxonName, 'r', ''));
+	SET sCount = textLength - LENGTH(REPLACE(taxonName, 's', ''));
+	SET tCount = textLength - LENGTH(REPLACE(taxonName, 't', ''));
+	SET uCount = textLength - LENGTH(REPLACE(taxonName, 'u', ''));
+	SET vCount = textLength - LENGTH(REPLACE(taxonName, 'v', ''));
+	SET wCount = textLength - LENGTH(REPLACE(taxonName, 'w', ''));
+	SET xCount = textLength - LENGTH(REPLACE(taxonName, 'x', ''));
+	SET yCount = textLength - LENGTH(REPLACE(taxonName, 'y', ''));
+	SET zCount = textLength - LENGTH(REPLACE(taxonName, 'z', ''));
+	SET 1Count = textLength - LENGTH(REPLACE(taxonName, '1', ''));
+	SET 2Count = textLength - LENGTH(REPLACE(taxonName, '2', ''));
+	SET 3Count = textLength - LENGTH(REPLACE(taxonName, '3', ''));
+	SET 4Count = textLength - LENGTH(REPLACE(taxonName, '4', ''));
+	SET 5Count = textLength - LENGTH(REPLACE(taxonName, '5', ''));
+	SET 6Count = textLength - LENGTH(REPLACE(taxonName, '6', ''));
+	SET 7Count = textLength - LENGTH(REPLACE(taxonName, '7', ''));
+	SET 8Count = textLength - LENGTH(REPLACE(taxonName, '8', ''));
+	SET 9Count = textLength - LENGTH(REPLACE(taxonName, '9', ''));
+	SET 0Count = textLength - LENGTH(REPLACE(taxonName, '0', ''));
+	SET spaceCount = textLength - LENGTH(REPLACE(taxonName, ' ', ''));
 	
    
    INSERT INTO `taxon_histogram` (
@@ -152,7 +152,7 @@ BEGIN
 		_0, 
 		_,
 		`first_character`,
-		`length`,
+		`text_length`,
 		taxon_name_id
 	) VALUES (
 		aCount, 
@@ -193,12 +193,13 @@ BEGIN
 		0Count, 
 		spaceCount,
 		firstCharacter,
-		nameLength,
+		textLength,
 		taxonNameID 
 	); 
 	
 END//
 DELIMITER ;
+
 
 -- Dumping structure for function virus_name_lookup.getFilteredName
 DELIMITER //
@@ -491,8 +492,10 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE `searchTaxonHistogram`(
 	IN `countThreshold` INT,
+	IN `lengthThreshold` INT,
 	IN `maxCountDiffs` INT,
 	IN `maxLengthDiff` INT,
+	IN `maxResultCount` INT,
 	IN `searchText` NVARCHAR(500)
 )
 BEGIN
@@ -541,6 +544,10 @@ BEGIN
 	
 	-- Trim whitespace from both ends of the search text and convert to lowercase.
 	SET searchText = LOWER(TRIM(searchText));
+	
+	IF searchText IS NULL OR LENGTH(searchText) < 1 THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid search text parameter (empty)';
+   END IF;
 	
 	-- Get the first character of the search text.
 	SET firstCharacter = LEFT(searchText, 1);
@@ -595,7 +602,10 @@ BEGIN
 			(aDiff + bDiff + cDiff + dDiff + eDiff + fDiff + gDiff + hDiff + iDiff + jDiff + 
 			kDiff + lDiff + mDiff + nDiff + oDiff + pDiff + qDiff + rDiff + sDiff + tDiff + 
 			uDiff + vDiff + wDiff + xDiff + yDiff + zDiff + 1Diff + 2Diff + 3Diff + 4Diff + 
-			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS totalCountDiff 
+			5Diff + 6Diff + 7Diff + 8Diff + 9Diff + 0Diff + spaceDiff) AS totalCountDiff,
+			CASE
+				WHEN length_diff >= searchLength - lengthThreshold AND length_diff <= searchLength + lengthThreshold THEN 1 ELSE 0
+			END AS length_within_range
 		FROM (
 			
 			SELECT
@@ -610,7 +620,7 @@ BEGIN
 				
 				-- The difference in length between the search text and test record.
 				ABS(searchLength - text_length) AS length_diff,
-				
+
 				/* 
 				For every character:
 				- The number of occurrences in the test record.
@@ -696,18 +706,14 @@ BEGIN
 			(_9 >= 9Count - countThreshold AND _9 <= 9Count + countThreshold) AND 
 			(_0 >= 0Count - countThreshold AND _0 <= 0Count + countThreshold) AND 
 			(_ >= spaceCount - countThreshold AND _ <= spaceCount + countThreshold)
+			
 		) results1
 	) results2
 	JOIN taxon_name tn ON tn.id = taxon_name_id
 	WHERE totalCountDiff <= maxCountDiffs
 	
-	ORDER BY first_character_match DESC, totalCountDiff ASC, length_diff ASC;
+	ORDER BY tn.version_id DESC, first_character_match DESC, totalCountDiff ASC, length_within_range DESC, length_diff ASC
+	LIMIT maxResultCount;
 	
 END//
 DELIMITER ;
-
-/*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
