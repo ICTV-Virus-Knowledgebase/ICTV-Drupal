@@ -1,9 +1,13 @@
+
+DROP PROCEDURE IF EXISTS `ImportSearchableTaxon`;
+
 DELIMITER //
 
--- dmd 10/29/24: This line prevented the script from running on test.ictv.global.
--- DROP PROCEDURE IF EXISTS `importSearchableTaxon`;
-
-CREATE PROCEDURE `importSearchableTaxon`(
+-- This is used to import data from ICTV taxonomy_node, ICTV species_isolates, and the NCBI tables.
+CREATE PROCEDURE ImportSearchableTaxon(
+   IN `division` VARCHAR(20),
+   IN `ictvID` INT(11),
+   IN `ictvTaxnodeID` INT(11),
 	IN `name` VARCHAR(300),
 	IN `nameClass` VARCHAR(100),
 	IN `parentTaxonomyDB` VARCHAR(100),
@@ -17,14 +21,16 @@ CREATE PROCEDURE `importSearchableTaxon`(
 BEGIN
 
 	-- Declare variables used below.
+   DECLARE divisionTID INT;
+   DECLARE errorMessage VARCHAR(500);
 	DECLARE filteredName NVARCHAR(300);
 	DECLARE nameClassTID INT;
 	DECLARE parentTaxonomyDbTID INT;
+   DECLARE phagesDivisionTID INT;
 	DECLARE rankNameTID INT;
 	DECLARE taxonomyDbTID INT;
 	DECLARE virusDivisionTID INT;
 	
-
 	-- Validate the input variables
 	SET name = TRIM(name);
    IF name IS NULL OR LENGTH(name) < 1 THEN
@@ -53,12 +59,42 @@ BEGIN
    END IF;
 	
 	
-	-- Lookup term IDs
+	-- Lookup term IDs (TODO: validate the term IDs)
 	SET nameClassTID = (SELECT id FROM term WHERE full_key = CONCAT('name_class.', nameClass) LIMIT 1);
+   IF nameClassTID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid name class term ID';
+   END IF;
+
+   SET phagesDivisionTID = (SELECT id FROM term WHERE full_key = 'ncbi_division.phages' LIMIT 1);
+   IF phagesDivisionTID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid phages division term ID';
+   END IF;
+
 	SET rankNameTID = (SELECT id FROM term WHERE full_key = CONCAT('taxonomy_rank.', rankName) LIMIT 1);
+   IF rankNameTID IS NULL THEN
+      SET errorMessage = CONCAT('Invalid rank name term ID for ', rankName);
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = errorMessage;
+   END IF;
+
 	SET taxonomyDbTID = (SELECT id FROM term WHERE full_key = CONCAT('taxonomy_db.', taxonomyDB) LIMIT 1);
+   IF taxonomyDbTID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid taxonomy DB term ID';
+   END IF;
+
 	SET virusDivisionTID = (SELECT id FROM term WHERE full_key = 'ncbi_division.viruses' LIMIT 1);
+   IF virusDivisionTID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid virus division term ID';
+   END IF;
 	
+   -- Determine which division term ID to use.
+   IF division = "viruses" THEN
+      SET divisionTID = virusDivisionTID;
+   ELSEIF division = "phages" THEN
+      SET divisionTID = phagesDivisionTID;
+   ELSE
+      SET divisionTID = NULL;
+   END IF;
+
 	IF parentTaxonomyDB IS NOT NULL AND LENGTH(parentTaxonomyDB) > 0 THEN
 		BEGIN 
 			-- Lookup the term ID for parent taxonomy DB and validate it.
@@ -87,30 +123,30 @@ BEGIN
 	INSERT INTO searchable_taxon (
 		division_tid,
 		filtered_name,
+      ictv_id,
+      ictv_taxnode_id,
 		`name`,
 		name_class_tid,
 		parent_taxonomy_db_tid,
 		parent_taxonomy_id,
-		rank_name,
 		rank_name_tid,
 		taxonomy_db_tid,
 		taxonomy_id,
 		version_id
 	) VALUES (
-		virusDivisionTID,
+		divisionTID,
 		filteredName,
+      ictvID,
+      ictvTaxnodeID,
 		name,
 		nameClassTID,
 		parentTaxonomyDbTID,
 		parentTaxonomyID,
-		rankName,
 		rankNameTID,
 		taxonomyDbTID,
 		taxonomyID,
 		versionID
 	);
-
-	SELECT LAST_INSERT_ID();
 	
-END//
+END //
 DELIMITER ;
