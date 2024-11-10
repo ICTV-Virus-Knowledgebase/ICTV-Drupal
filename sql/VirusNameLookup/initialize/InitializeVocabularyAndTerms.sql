@@ -64,6 +64,8 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.refseq_organism', 'Refseq organism', 'refseq_organism', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.abbreviation', 'abbreviation', 'abbreviation', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_exemplar', 'isolate exemplar', 'isolate_exemplar', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.authority', 'authority', 'authority', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.type_material', 'type material', 'type_material', vocabID);
 
 
    /*
@@ -135,6 +137,7 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.parvorder', 'parvorder', 'parvorder', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.pathogroup', 'pathogroup', 'pathogroup', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.phylum', 'phylum', 'phylum', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.realm', 'realm', 'realm', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.section', 'section', 'section', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.series', 'series', 'series', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.serogroup', 'serogroup', 'serogroup', vocabID);
@@ -150,6 +153,7 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.subkingdom', 'subkingdom', 'subkingdom', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.suborder', 'suborder', 'suborder', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.subphylum', 'subphylum', 'subphylum', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.subrealm', 'subrealm', 'subrealm', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.subsection', 'subsection', 'subsection', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.subspecies', 'subspecies', 'subspecies', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.subtribe', 'subtribe', 'subtribe', vocabID);

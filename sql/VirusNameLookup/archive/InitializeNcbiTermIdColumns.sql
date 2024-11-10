@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `initializeNcbiTermIdColumns`;
+
+DELIMITER //
 
 CREATE PROCEDURE `initializeNcbiTermIdColumns`()
 BEGIN
