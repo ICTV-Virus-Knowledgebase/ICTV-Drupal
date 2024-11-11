@@ -1,10 +1,6 @@
 
 
-
 export interface ISearchResult {
-
-   // How many characters were different between the search text and match?
-   countDifferences: number;
 
    // The NCBI division (phages, viruses)
    division: string;
@@ -12,13 +8,11 @@ export interface ISearchResult {
    // Prefer virus and phage results over anything else.
    divisionScore: number;
 
-   // Were the first characters of the search text and match the same?
+   // Does the first character of the search text match the first character of the matching name?
    firstCharacterMatch: number;
 
-   // Prefer results that have an ICTV taxnode ID.
+   // Does the matching taxon have an associated ICTV result?
    hasTaxnodeID: number;
-
-   ictvTaxnodeID: number;
 
    // Is this an exact match?
    isExactMatch: number;
@@ -36,27 +30,35 @@ export interface ISearchResult {
    nameClass: string;
    nameClassScore: number;
 
-   // The number of matching ordered string pairs from the search text.
-   orderedPairCount: number;
-
-   parentTaxonomyDB: string;
-   parentTaxonomyID: number;
-
+   // The match's taxonomic rank.
    rankName: string;
 
    // Ranks found in ICTV, VMR, and NCBI Taxonomy (virus and phage divisions only).
    // Prefer lower ranks over higher ranks.
    rankScore: number;
 
+   // How recent is the ICTV result?
+   recentResultScore: number;
+
+   // ICTV results
+   resultMslRelease: number;
+   resultName: string;
+   resultRankName: string;
+   resultTaxnodeID: number;
+
    // The overall score.
    score: number;
    
+   // The match's taxonomy database
    taxonomyDB: string;
 
    // Taxonomy databases in order of preference.
    taxonomyDbScore: number;
 
+   // The match's unique identifier in its taxonomy database.
    taxonomyID: number;
+
+   // The version of the match (for ICTV this is MSL release number).
    versionID: number;
    
 }
