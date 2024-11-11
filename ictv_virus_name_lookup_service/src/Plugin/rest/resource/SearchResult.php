@@ -5,22 +5,17 @@ namespace Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource;
 
 class SearchResult {
 
-   // How many characters were different between the search text and match?
-   public float $countDifferences;
-
    // The NCBI division (phages, viruses)
    public string $division;
          
    // Prefer virus and phage results over anything else.
    public float $divisionScore;
 
-   // Were the first characters of the search text and match the same?
+   // Does the first character of the search text match the first character of the matching name?
    public int $firstCharacterMatch;
 
-   // Prefer results that have an ICTV taxnode ID.
+   // Does the matching taxon have an associated ICTV result?
    public int $hasTaxnodeID;
-
-   public ?int $ictvTaxnodeID;
 
    // Is this an exact match?
    public int $isExactMatch;
@@ -39,26 +34,37 @@ class SearchResult {
    public float $nameClassScore;
 
    // This will be calculated after the search result has been populated.
-   public int $orderedPairCount;
+   //public int $orderedPairCount;
 
-   public ?string $parentTaxonomyDB;
-   public ?int $parentTaxonomyID;
-
+   // The match's taxonomic rank.
    public string $rankName;
 
    // Ranks found in ICTV, VMR, and NCBI Taxonomy (virus and phage divisions only).
    // Prefer lower ranks over higher ranks.
    public float $rankScore;
 
+   // How recent is the ICTV result?
+   public float $recentResultScore;
+
+   // ICTV results
+   public ?int $resultMslRelease;
+   public ?string $resultName;
+   public ?string $resultRankName;
+   public ?int $resultTaxnodeID;
+
    // The overall score (calculated after the search result has been populated).
    public float $score;
 
+   // The match's taxonomy database
    public string $taxonomyDB;
 
    // Taxonomy databases in order of preference.
    public float $taxonomyDbScore;
 
+   // The match's unique identifier in its taxonomy database.
    public int $taxonomyID;
+
+   // The version of the match (for ICTV this is MSL release number).
    public int $versionID;
    
 
@@ -66,23 +72,24 @@ class SearchResult {
    public function __construct() {
 
       // Provide defaults for all member variables.
-      $this->countDifferences = 0;
       $this->division = "";
       $this->divisionScore = 0;
       $this->firstCharacterMatch = 0;
       $this->hasTaxnodeID = 0;
-      $this->ictvTaxnodeID = 0;
       $this->isExactMatch = 0;
       $this->isValid = 0;
       $this->lengthDifference = 0;
       $this->name = "";
       $this->nameClass = "";
       $this->nameClassScore = 0;
-      $this->orderedPairCount = 0;
-      $this->parentTaxonomyDB = "";
-      $this->parentTaxonomyID = 0;
+      //$this->orderedPairCount = 0;
       $this->rankName = "";
       $this->rankScore = 0;
+      $this->recentResultScore = 0;
+      $this->resultMslRelease = 0;
+      $this->resultName = "";
+      $this->resultRankName = "";
+      $this->resultTaxnodeID = 0;
       $this->score = 0;
       $this->taxonomyDB = "";
       $this->taxonomyDbScore = 0;
@@ -95,22 +102,23 @@ class SearchResult {
 
       $instance = new self();
       
-      $instance->countDifferences = $data["count_differences"];
       $instance->division = $data["division"];
       $instance->divisionScore = $data["division_score"];
       $instance->firstCharacterMatch = $data["first_character_match"];
       $instance->hasTaxnodeID = $data["has_taxnode_id"];
-      $instance->ictvTaxnodeID = $data["ictv_taxnode_id"];
       $instance->isExactMatch = $data["is_exact_match"];
       $instance->isValid = $data["is_valid"];
       $instance->lengthDifference = $data["length_difference"];
       $instance->name = $data["name"];
       $instance->nameClass = $data["name_class"];
       $instance->nameClassScore = $data["name_class_score"];
-      $instance->parentTaxonomyDB = $data["parent_taxonomy_db"];
-      $instance->parentTaxonomyID = $data["parent_taxonomy_id"];
       $instance->rankName = $data["rank_name"];
       $instance->rankScore = $data["rank_score"];
+      $instance->recentResultScore = $data["recent_result_score"];
+      $instance->resultMslRelease = $data["result_msl_release"];
+      $instance->resultName = $data["result_name"];
+      $instance->resultRankName = $data["result_rank_name"];
+      $instance->resultTaxnodeID = $data["result_taxnode_id"];
       $instance->taxonomyDB = $data["taxonomy_db"];
       $instance->taxonomyDbScore = $data["taxonomy_db_score"];
       $instance->taxonomyID = $data["taxonomy_id"];
@@ -125,23 +133,24 @@ class SearchResult {
     */
    public function normalize() {
       return [
-         "countDifferences" => $this->countDifferences,
          "division" => $this->division,
          "divisionScore" => $this->divisionScore,
          "firstCharacterMatch" => $this->firstCharacterMatch,
          "hasTaxnodeID" => $this->hasTaxnodeID,
-         "ictvTaxnodeID" => $this->ictvTaxnodeID,
          "isExactMatch" => $this->isExactMatch,
          "isValid" => $this->isValid,
          "lengthDifference" => $this->lengthDifference,
          "name" => $this->name,
          "nameClass" => $this->nameClass,
          "nameClassScore" => $this->nameClassScore,
-         "orderedPairCount" => $this->orderedPairCount,
-         "parentTaxonomyDB" => $this->parentTaxonomyDB,
-         "parentTaxonomyID" => $this->parentTaxonomyID,
+         //"orderedPairCount" => $this->orderedPairCount,
          "rankName" => $this->rankName,
          "rankScore" => $this->rankScore,
+         "recentResultScore" => $this->recentResultScore,
+         "resultMslRelease" => $this->resultMslRelease,
+         "resultName" => $this->resultName,
+         "resultRankName" => $this->resultRankName,
+         "resultTaxnodeID" => $this->resultTaxnodeID,
          "score" => $this->score,
          "taxonomyDB" => $this->taxonomyDB,
          "taxonomyDbScore" => $this->taxonomyDbScore,

@@ -82,27 +82,6 @@ class LookupService extends ResourceBase {
 
    
    /**
-    * Calculate the number of ordered pairs found in the search result's name.
-    * 
-    * @param array $pairs
-    *    An array of strings that contain 2 characters.
-    *
-    * @param SearchResult
-    *    A reference to a search result object.
-    */
-   public function calculateOrderedPairCount(array $pairs, SearchResult &$searchResult) {
-
-      $count = 0;
-
-      foreach($pairs as $pair) {
-         if (stripos($searchResult->name, $pair) !== false) { $count += 1; }
-      }
-
-      $searchResult->orderedPairCount = $count;
-   }
-
-
-   /**
     * {@inheritdoc}
     */
    public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
@@ -124,8 +103,8 @@ class LookupService extends ResourceBase {
     * Throws exception expected.
     */
    public function get(Request $request) {
+      
       $data = $this->processAction($request);
-
 
       $build = array(
          '#cache' => array(
@@ -134,7 +113,6 @@ class LookupService extends ResourceBase {
       );
        
       return (new ResourceResponse($data))->addCacheableDependency($build);
-      //return new ResourceResponse($data);
    }
 
    
@@ -146,8 +124,7 @@ class LookupService extends ResourceBase {
    public function getCacheMaxAge() {
       return 2;
 
-      // NOTE: this is what ChatGPT suggested:
-      // Disable caching by setting the max-age to permanent (no expiration).
+      // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
       // return Cache::PERMANENT;
    }
 
@@ -155,11 +132,8 @@ class LookupService extends ResourceBase {
    /**
     * Search the database to find taxon name matches.
     * 
-    * @param int maxCountDiff
-    *    The maximum number of total symbol count differences.
-    *
-    * @param int maxLengthDiff
-    *    The maximum difference between the search text and test text.
+    * @param int currentMslRelease
+    *    The current MSL release number.
     *
     * @param int maxResultCount
     *    The maximum number of results to return.
@@ -167,22 +141,13 @@ class LookupService extends ResourceBase {
     * @param string searchText
     *    Search for this text.  
     */
-   public function lookupName(int $maxCountDiff, int $maxLengthDiff, int $maxResultCount, string $searchText) {
-
-      // Create an array of ordered symbol pairs from the search text.
-      $pairs = [];
-
-      $symbols = " ".trim($searchText)." ";
-
-      for ($s = 0; $s < strlen($symbols); $s++) {
-         array_push($pairs, substr($symbols, $s, 2));
-      }
+   public function lookupName(int $currentMslRelease, int $maxResultCount, string $searchText) {
 
       // Populate the stored procedure's parameters.
-      $parameters = [":maxCountDiff" => $maxCountDiff, ":maxLengthDiff" => $maxLengthDiff, ":maxResultCount" => $maxResultCount, ":searchText" => $searchText];
+      $parameters = [":currentMslRelease" => $currentMslRelease, ":maxResultCount" => $maxResultCount, ":searchText" => $searchText];
 
-      // Generate SQL to search taxon names for the search text.
-      $sql = "CALL searchTaxonHistogram(:maxCountDiff, :maxLengthDiff, :maxResultCount, :searchText);";
+      // Generate SQL to call the "QuerySearchableTaxon" stored procedure to search for the virus name.
+      $sql = "CALL QuerySearchableTaxon(:currentMslRelease, :maxResultCount, :searchText);";
 
       // Execute the query and process the results.
       $result = $this->connection->query($sql, $parameters);
@@ -195,26 +160,19 @@ class LookupService extends ResourceBase {
          // Create a search result instance from the row of data.
          $searchResult = SearchResult::fromArray((array) $row);
 
-         // Calculate the number of ordered pairs found in the search result's name.
-         $this->calculateOrderedPairCount($pairs, $searchResult);
+         // TODO: this is where we can calculate a custom score for the search result.
 
-         // TODO: calculate the score based on ordered pair count and length diff?
-
-         // NOTE: 
-         // https://www.php.net/manual/en/function.similar-text.php
-         // https://www.php.net/manual/en/function.levenshtein.php
-
-         // Only add the search result if has at least one ordered pair match.
-         if ($searchResult->orderedPairCount > 0) { array_push($searchResults, $searchResult); }
+         // Add the search result object to the array of results.
+         array_push($searchResults, $searchResult);
       }
 
-      // Sort the search results by descending ordered pair count.
-      usort($searchResults, function(SearchResult $a, SearchResult $b) {
+      // TODO: this is where the search results can be sorted by the custom score.
+      /*usort($searchResults, function(SearchResult $a, SearchResult $b) {
          if ($a->orderedPairCount == $b->orderedPairCount) {
             return 0;
          }
          return ($a->orderedPairCount < $b->orderedPairCount) ? 1 : -1;
-      });
+      });*/
 
       // Create an array of normalized search results.
       $normalizedResults = [];
@@ -242,8 +200,16 @@ class LookupService extends ResourceBase {
     * Throws exception expected.
     */
    public function post(Request $request) {
+
       $data = $this->processAction($request);
-      return new ResourceResponse($data);
+
+      $build = array(
+         '#cache' => array(
+            'max-age' => 0,
+         ),
+      );
+       
+      return (new ResourceResponse($data))->addCacheableDependency($build);
    }
 
    public function processAction(Request $request) {
@@ -258,17 +224,15 @@ class LookupService extends ResourceBase {
 
          case "lookup_name":
 
-            $maxCountDiff = $request->get("maxCountDiff");
-            $maxLengthDiff = $request->get("maxLengthDiff");
+            $currentMslRelease = $request->get("currentMslRelease");
             $maxResultCount = $request->get("maxResultCount");
             $searchText = $request->get("searchText");
             if (Utils::isEmptyElseTrim($searchText)) { throw new BadRequestHttpException("Invalid search text (empty)"); }
-            // if (Utils::isNullOrEmpty($searchText)) 
 
             // TODO: validate parameters and provide defaults where appropriate
 
             // Look for the search text as a taxon name.
-            $data = $this->lookupName($maxCountDiff, $maxLengthDiff, $maxResultCount, $searchText);
+            $data = $this->lookupName($currentMslRelease, $maxResultCount, $searchText);
             break;
 
          default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");

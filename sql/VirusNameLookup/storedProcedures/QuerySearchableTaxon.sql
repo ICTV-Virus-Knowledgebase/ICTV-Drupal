@@ -6,6 +6,9 @@ DELIMITER //
 
 CREATE PROCEDURE QuerySearchableTaxon(
 	
+   -- The current MSL release number.
+   IN `currentMslRelease` INT,
+
 	-- The maximum number of results to return.
 	IN `maxResultCount` INT,
 	
@@ -36,6 +39,7 @@ BEGIN
 
 
 	WITH searchResults AS (
+
       SELECT
 
          -- Match columns
@@ -52,6 +56,11 @@ BEGIN
          CASE
             WHEN LEFT(st.filtered_name, 1) = firstCharacter THEN 1 ELSE 0
          END AS first_character_match,
+
+         -- Does the matching taxon have an associated ICTV result?
+         CASE 
+            WHEN result_tn.taxnode_id IS NOT NULL AND result_tn.taxnode_id > 0 THEN 1 ELSE 0
+         END AS has_taxnode_id,
 
          -- ICTV ID
          st.ictv_id AS ictv_id,
@@ -121,6 +130,9 @@ BEGIN
             ELSE 0
          END AS rank_score,
 
+         -- How recent is the ICTV result?
+         ABS(currentMslRelease - result_tn.msl_release_num) AS recent_result_score,
+
          -- Result columns
          result_tn.msl_release_num AS result_msl_release,
          result_tn.name AS result_name,
@@ -143,17 +155,17 @@ BEGIN
          st.version_id AS version_id
          
       FROM v_searchable_taxon st
-      JOIN v_taxonomy_node_merge_split ms ON ms.prev_ictv_id = st.ictv_id
-      JOIN latest_release_of_ictv_id lr_match ON (
+      LEFT JOIN v_taxonomy_node_merge_split ms ON ms.prev_ictv_id = st.ictv_id
+      LEFT JOIN latest_release_of_ictv_id lr_match ON (
          lr_match.ictv_id = ms.prev_ictv_id 
          AND lr_match.latest_msl_release = st.version_id
       )
-      JOIN latest_release_of_ictv_id lr_result ON lr_result.ictv_id = ms.next_ictv_id 
-      JOIN v_taxonomy_node result_tn ON (
+      LEFT JOIN latest_release_of_ictv_id lr_result ON lr_result.ictv_id = ms.next_ictv_id 
+      LEFT JOIN v_taxonomy_node result_tn ON (
          result_tn.ictv_id = ms.next_ictv_id 
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
-      JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id 
+      LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id 
       WHERE st.name LIKE CONCAT('%', searchText, '%')
    )
 
@@ -171,7 +183,7 @@ BEGIN
       first_character_match DESC,
       length_difference ASC,
       taxonomy_db_score DESC,
-      version_id DESC
+      recent_result_score ASC
 	
 	LIMIT maxResultCount; 
 	

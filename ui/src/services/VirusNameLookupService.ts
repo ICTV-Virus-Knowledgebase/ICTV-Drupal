@@ -6,12 +6,11 @@ import { WebServiceKey } from "../global/Types";
 export class _VirusNameLookupService {
 
 
-   async lookupName(maxCountDiff_: number, maxLengthDiff_: number, maxResultCount_: number, searchText_: string): Promise<ISearchResult[]> {
+   async lookupName(currentMslRelease_: number, maxResultCount_: number, searchText_: string): Promise<ISearchResult[]> {
 
       const data = {
          actionCode: "lookup_name",
-         maxCountDiff: maxCountDiff_,
-         maxLengthDiff: maxLengthDiff_,
+         currentMslRelease: currentMslRelease_,
          maxResultCount: maxResultCount_,
          searchText: searchText_
       }

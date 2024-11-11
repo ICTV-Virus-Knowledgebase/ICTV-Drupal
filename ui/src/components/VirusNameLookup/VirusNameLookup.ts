@@ -10,15 +10,12 @@ export class VirusNameLookup {
    dataTable;
 
    defaults = {
-      maxCountDiff: 5,
-      maxLengthDiff: 5,
+      currentMslRelease: 5,
       maxResultCount: 100
    }
 
    elements: {
       container: HTMLDivElement,
-      maxCountDiff: HTMLInputElement,
-      maxLengthDiff: HTMLInputElement,
       maxResultCount: HTMLInputElement,
       resultsPanel: HTMLDivElement,
       searchButton: HTMLButtonElement,
@@ -53,8 +50,6 @@ export class VirusNameLookup {
 
       this.elements = {
          container: null,
-         maxCountDiff: null,
-         maxLengthDiff: null,
          maxResultCount: null,
          resultsPanel: null,
          searchButton: null,
@@ -79,20 +74,21 @@ export class VirusNameLookup {
          `<table class="results-table">
             <thead>
                <tr class="header-row">
-                  <th>Name</th>
+                  <th colspan="8">Match</th>
+                  <th colspan="3">ICTV result</th>
+               </tr>
+               <tr class="header-row">
                   <th>Rank</th>
+                  <th>Name</th>
                   <th>Tax DB/ID</th>
-                  <th>Count diff</th>
-                  <th>Division</th>
-                  <th>Exact match</th>
-                  <th>Is valid</th>
-                  <th>Length diff</th>
                   <th>Name class</th>
-                  <th>Name class score</th>
-                  <th>Pair count</th>
-                  <th>Rank score</th>
-                  <th>Score</th>
+                  <th>Division</th>
+                  <th>Exact match?</th>
+                  <th>Length diff</th>
                   <th>Version</th>
+                  <th>Rank</th>
+                  <th>Name</th>
+                  <th>MSL</th>
                </tr>
             </thead>
             <tbody>`;
@@ -118,22 +114,19 @@ export class VirusNameLookup {
          }
 
          const nameClass = result_.nameClass.replace("_", " ");
-
+         
          let row = `<tr class="${rowClass}">
-            <td>${result_.name}</td>
             <td>${result_.rankName}</td>
+            <td>${result_.name}</td>
             <td>${taxDbID} ${result_.taxonomyID}</td>
-            <td>${result_.countDifferences}</td>
+            <td>${nameClass}</td>
             <td>${result_.division}</td>
             <td>${result_.isExactMatch}</td>
-            <td>${result_.isValid}</td>
             <td>${result_.lengthDifference}</td>
-            <td>${nameClass}</td>
-            <td>${result_.nameClassScore}</td>
-            <td>${result_.orderedPairCount}</td>
-            <td>${result_.rankScore}</td>
-            <td>${result_.score}</td>
             <td>${result_.versionID}</td>
+            <td>${result_.resultRankName}</td>
+            <td>${result_.resultName}</td>
+            <td>${result_.resultMslRelease}</td>
          </tr>`;
 
          html += row;
@@ -149,11 +142,6 @@ export class VirusNameLookup {
 
       // Create a DataTable instance using the table Element.
       this.dataTable = new DataTables(`${this.selectors.container} table.results-table`, {
-         /*columnDefs: [
-               { targets: [0,1], orderable: false },
-               { target: 2, orderable: true, type: "date" },
-               { targets: [3,4,5,6], orderable: true }
-         ],*/
          dom: "ltip",
          order: [], // Important: If this isn't an empty array it will move the child rows to the end!
          pageLength: this.settings.defaultRowsPerPage,
@@ -179,14 +167,6 @@ export class VirusNameLookup {
             <div class="settings-panel">
                <div class="settings-title">Settings (for testing)</div>
                <div class="settings-row">
-                  <label>Max character diff</label>
-                  <input class="max-count-diff" type="number" min="0" value="${this.defaults.maxCountDiff}" />
-               </div>
-               <div class="settings-row">
-                  <label>Max length diff</label>
-                  <input class="max-length-diff" type="number" min="0" value="${this.defaults.maxLengthDiff}" />
-               </div>
-               <div class="settings-row">
                   <label>Max results</label>
                   <input class="max-results" type="number" min="0" value="${this.defaults.maxResultCount}" />
                </div>
@@ -199,12 +179,6 @@ export class VirusNameLookup {
       // Get references to all elements.
       const settingsPanelEl = this.elements.container.querySelector(".settings-panel");
       if (!settingsPanelEl) { return await AlertBuilder.displayError("Invalid settings panel Element"); }
-
-      this.elements.maxCountDiff = settingsPanelEl.querySelector(".max-count-diff");
-      if (!this.elements.maxCountDiff) { return await AlertBuilder.displayError("Invalid max count diff Element"); }
-
-      this.elements.maxLengthDiff = settingsPanelEl.querySelector(".max-length-diff");
-      if (!this.elements.maxLengthDiff) { return await AlertBuilder.displayError("Invalid max length diff Element"); }
 
       this.elements.maxResultCount = settingsPanelEl.querySelector(".max-results");
       if (!this.elements.maxResultCount ) { return await AlertBuilder.displayError("Invalid max results Element"); }
@@ -228,11 +202,8 @@ export class VirusNameLookup {
    // Lookup the virus name using the web service.
    async search() {
 
-      let maxCountDiff = parseInt(this.elements.maxCountDiff.value);
-      if (isNaN(maxCountDiff)) { maxCountDiff = this.defaults.maxCountDiff; }
-
-      let maxLengthDiff = parseInt(this.elements.maxLengthDiff.value);
-      if (isNaN(maxLengthDiff)) { maxLengthDiff = this.defaults.maxLengthDiff; }
+      // TODO: get this from the Drupal page!
+      let currentMslRelease = 39; 
 
       let maxResultCount = parseInt(this.elements.maxResultCount.value)
       if (isNaN(maxResultCount)) { maxResultCount = this.defaults.maxResultCount; }
@@ -245,7 +216,7 @@ export class VirusNameLookup {
          let searchText = this.elements.searchText.value;
          if (!searchText) { throw new Error("Please enter valid search text"); }
 
-         this.results = await VirusNameLookupService.lookupName(maxCountDiff, maxLengthDiff, maxResultCount, searchText);
+         this.results = await VirusNameLookupService.lookupName(currentMslRelease, maxResultCount, searchText);
       }
       catch (error_) {
          this.elements.searchButton.disabled = false;
