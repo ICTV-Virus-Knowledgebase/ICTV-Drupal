@@ -1,6 +1,6 @@
 
 -- Delete any existing records from the table.
--- DELETE FROM latest_release_of_ictv_id;
+DELETE FROM latest_release_of_ictv_id;
 
 
 -- Add an ICTV ID and its latest MSL release.

@@ -113,7 +113,8 @@ BEGIN
       END IF;
 
       -- Add the name
-      CALL importSearchableTaxon(division, ictvID, taxnodeID, name, 'scientific_name', ictvTaxonomyDB, parentID, rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
+      CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, name, 'scientific_name', ictvTaxonomyDB, parentID, 
+         rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
 
       -- Are there any abbreviations?
       SET abbreviations = TRIM(REPLACE(abbreviations, ',', ';'));
@@ -132,7 +133,8 @@ BEGIN
 
             SET delimitedName = TRIM(delimitedName);
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'abbreviation', ictvTaxonomyDB, parentID, rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'abbreviation', ictvTaxonomyDB, parentID, 
+                  rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
             END IF;
             
          END WHILE;
@@ -141,7 +143,8 @@ BEGIN
       -- Is there an exemplar name to add?
       SET exemplarName = TRIM(exemplarName);
       IF exemplarName IS NOT NULL AND LENGTH(exemplarName) > 0 THEN 
-         CALL importSearchableTaxon(division, ictvID, taxnodeID, exemplarName, 'isolate_exemplar', ictvTaxonomyDB, parentID, rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, exemplarName, 'isolate_exemplar', ictvTaxonomyDB, parentID, 
+            "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
       END IF;
 
       -- Should we add any GenBank accessions?
@@ -161,7 +164,8 @@ BEGIN
 
             SET delimitedName = TRIM(delimitedName);
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'genbank_accession', ictvTaxonomyDB, parentID, rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'genbank_accession', ictvTaxonomyDB, parentID, 
+                  "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
             END IF;
 
          END WHILE;
@@ -184,7 +188,8 @@ BEGIN
 
             SET delimitedName = TRIM(delimitedName);
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'isolate_name', ictvTaxonomyDB, parentID, rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'isolate_name', ictvTaxonomyDB, parentID, 
+                  "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
             END IF;
 
          END WHILE;
@@ -207,7 +212,8 @@ BEGIN
 
             SET delimitedName = TRIM(delimitedName);
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'refseq_accession', ictvTaxonomyDB, parentID, rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'refseq_accession', ictvTaxonomyDB, parentID, 
+                  "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
             END IF;
 
          END WHILE;

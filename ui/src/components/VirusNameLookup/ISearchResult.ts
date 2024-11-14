@@ -14,6 +14,10 @@ export interface ISearchResult {
    // Does the matching taxon have an associated ICTV result?
    hasTaxnodeID: number;
 
+   // A scientific name corresponding to an NCBI taxon name with a different name class. The scientific name is what matches an ICTV taxon.
+   intermediateName: string;
+   intermediateRank: string;
+   
    // Is this an exact match?
    isExactMatch: number;
 

@@ -23,6 +23,7 @@ BEGIN
    DECLARE rankName VARCHAR(20);
    DECLARE refseqAccessions LONGTEXT;
    DECLARE refseqOrganism LONGTEXT;
+   DECLARE speciesName VARCHAR(300);
    DECLARE taxnodeID INT(11);
 
    -- NOTE: Make sure the views v_species_isolates, v_taxonomy_level, and v_taxonomy_node have been 
@@ -47,6 +48,7 @@ BEGIN
          tn.msl_release_num,
          si.refseq_accessions,
          si.refseq_organism,
+         si.species_name,
          si.taxnode_id
 
       FROM v_species_isolates si
@@ -69,7 +71,7 @@ BEGIN
    read_loop: LOOP
 
       FETCH cur INTO division, genbankAccessions, ictvID, isolateAbbrevs, isolateDesignation, isolateID, 
-         isolateNames, mslRelease, refseqAccessions, refseqOrganism, taxnodeID;
+         isolateNames, mslRelease, refseqAccessions, refseqOrganism, speciesName, taxnodeID;
 
       IF done THEN
          LEAVE read_loop;
@@ -120,7 +122,8 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'genbank_accession', ictvTaxonomyDB, taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'genbank_accession', ictvTaxonomyDB, 
+                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 
          END WHILE;
@@ -145,7 +148,8 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'isolate_abbreviation', ictvTaxonomyDB, taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'isolate_abbreviation', ictvTaxonomyDB, 
+                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 
          END WHILE;
@@ -170,7 +174,8 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'isolate_designation', ictvTaxonomyDB, taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'isolate_designation', ictvTaxonomyDB, 
+                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 
          END WHILE;
@@ -195,7 +200,8 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'isolate_name', ictvTaxonomyDB, taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'isolate_name', ictvTaxonomyDB, 
+                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 
          END WHILE;
@@ -220,7 +226,8 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, delimitedName, 'refseq_accession', ictvTaxonomyDB, taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'refseq_accession', ictvTaxonomyDB, 
+                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 
          END WHILE;
@@ -231,7 +238,8 @@ BEGIN
       IF refseqOrganism IS NOT NULL AND LENGTH(refseqOrganism) > 0 THEN
 
          -- Create a searchable_taxon record.
-         CALL importSearchableTaxon(division, ictvID, taxnodeID, refseqOrganism, 'refseq_organism', ictvTaxonomyDB, taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", refseqOrganism, 'refseq_organism', ictvTaxonomyDB, 
+            taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
    END LOOP;
