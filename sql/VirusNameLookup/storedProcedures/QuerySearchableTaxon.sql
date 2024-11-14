@@ -65,6 +65,10 @@ BEGIN
          -- ICTV ID
          st.ictv_id AS ictv_id,
 
+         -- An intermediate scientific name (for NCBI Taxonomy only).
+         st.intermediate_name,
+         st.intermediate_rank,
+         
          -- Is this an exact match?
          CASE 
             WHEN st.filtered_name = searchText THEN 1 ELSE 0
@@ -145,7 +149,7 @@ BEGIN
          -- Taxonomy databases in order of preference.
          CASE
             WHEN st.taxonomy_db = 'ictv_taxonomy' THEN 4
-            WHEN st.taxonomy_db = 'ictv_species_lookup' THEN 3
+            WHEN st.taxonomy_db = 'ictv_epithets' THEN 3
             WHEN st.taxonomy_db = 'ictv_vmr' THEN 2
             WHEN st.taxonomy_db = 'ncbi_taxonomy' THEN 1
             ELSE 0
@@ -180,9 +184,9 @@ BEGIN
    )
    ORDER BY 
       is_exact_match DESC, 
-      first_character_match DESC,
       length_difference ASC,
       taxonomy_db_score DESC,
+      first_character_match DESC,
       recent_result_score ASC
 	
 	LIMIT maxResultCount; 

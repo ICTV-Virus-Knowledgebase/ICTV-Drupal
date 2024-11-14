@@ -8,6 +8,7 @@ use Drupal\Core\Config;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource\IctvResult;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
@@ -152,7 +153,12 @@ class LookupService extends ResourceBase {
       // Execute the query and process the results.
       $result = $this->connection->query($sql, $parameters);
 
-      $searchResults = [];
+      $ictvResults = [];
+
+      $ictvResultKeys = [];
+
+      // The number of non-viral results.
+      $nonViralResults = 0;
 
       // Iterate over the result rows and add each row to the search results.
       foreach($result as $row) {
@@ -162,8 +168,30 @@ class LookupService extends ResourceBase {
 
          // TODO: this is where we can calculate a custom score for the search result.
 
-         // Add the search result object to the array of results.
-         array_push($searchResults, $searchResult);
+         // Is this a non-viral result?
+         if ($searchResult->division != "viruses" && $searchResult->division != "phages") {
+            $nonViralResults += 1;
+         }
+         
+         // Create or update result metadata that represents the first occurrence of a result name in the search results.
+         $ictvResult;
+         $resultKey = $searchResult->resultName;
+
+         // Should we retrieve an existing ICTV result or create a new instance?
+         if (array_key_exists($resultKey, $ictvResults)) {
+            $ictvResult = $ictvResults[$resultKey];
+         } else {
+            $ictvResult = new IctvResult($searchResult->resultMslRelease, $searchResult->resultName, 
+               $searchResult->resultRankName, $searchResult->resultTaxnodeID);
+
+            // Add the key to the ordered list of keys.
+            array_push($ictvResultKeys, $resultKey);
+         }
+
+         array_push($ictvResult->matches, $searchResult->normalize());
+
+         // Replace the metadata in the collection.
+         $ictvResults[$resultKey] = $ictvResult;
       }
 
       // TODO: this is where the search results can be sorted by the custom score.
@@ -177,8 +205,9 @@ class LookupService extends ResourceBase {
       // Create an array of normalized search results.
       $normalizedResults = [];
 
-      foreach($searchResults as $searchResult) {
-         array_push($normalizedResults, $searchResult->normalize());
+      foreach ($ictvResultKeys as $orderedKey) {
+         $result = $ictvResults[$orderedKey];
+         array_push($normalizedResults, $result->normalize());
       }
 
       return $normalizedResults;
