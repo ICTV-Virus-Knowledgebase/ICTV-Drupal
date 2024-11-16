@@ -19,6 +19,9 @@
             // Initialize the ICTV_VirusNameLookup AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
+            // The current MSL release number.
+            window.ICTV_VirusNameLookup.AppSettings.currentMslRelease = settings_.currentMslRelease;
+
             // The Drupal web service base URL.
             window.ICTV_VirusNameLookup.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
 

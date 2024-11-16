@@ -19,6 +19,7 @@ class SearchResult {
 
    // A scientific name corresponding to an NCBI taxon name with a different name class. The scientific name is what matches an ICTV taxon.
    public ?string $intermediateName;
+   public ?string $intermediateRank;
 
    // Is this an exact match?
    public int $isExactMatch;
@@ -47,7 +48,7 @@ class SearchResult {
    public float $rankScore;
 
    // How recent is the ICTV result?
-   public float $recentResultScore;
+   public ?float $recentResultScore;
 
    // ICTV results
    public ?int $resultMslRelease;
@@ -80,6 +81,7 @@ class SearchResult {
       $this->firstCharacterMatch = 0;
       $this->hasTaxnodeID = 0;
       $this->intermediateName = "";
+      $this->intermediateRank = "";
       $this->isExactMatch = 0;
       $this->isValid = 0;
       $this->lengthDifference = 0;
@@ -110,6 +112,7 @@ class SearchResult {
       $instance->firstCharacterMatch = $data["first_character_match"];
       $instance->hasTaxnodeID = $data["has_taxnode_id"];
       $instance->intermediateName = $data["intermediate_name"];
+      $instance->intermediateRank = $data["intermediate_rank"];
       $instance->isExactMatch = $data["is_exact_match"];
       $instance->isValid = $data["is_valid"];
       $instance->lengthDifference = $data["length_difference"];
@@ -142,6 +145,7 @@ class SearchResult {
          "firstCharacterMatch" => $this->firstCharacterMatch,
          "hasTaxnodeID" => $this->hasTaxnodeID,
          "intermediateName" => $this->intermediateName,
+         "intermediateRank" => $this->intermediateRank,
          "isExactMatch" => $this->isExactMatch,
          "isValid" => $this->isValid,
          "lengthDifference" => $this->lengthDifference,

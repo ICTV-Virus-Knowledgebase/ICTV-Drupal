@@ -181,7 +181,7 @@ BEGIN
       WHERE sr_inner.ictv_id = sr_outer.ictv_id
       ORDER BY sr_inner.result_msl_release DESC 
       LIMIT 1
-   )
+   ) OR sr_outer.result_msl_release IS NULL
    ORDER BY 
       is_exact_match DESC, 
       length_difference ASC,

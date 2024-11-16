@@ -1,19 +1,13 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import DataTables from "datatables.net-dt";
+import { AppSettings } from "../../global/AppSettings";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
+import { TaxonomyDB } from "../../global/Types";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
 
 export class VirusNameLookup {
-
-   dataTable;
-
-   defaults = {
-      currentMslRelease: 5,
-      maxResultCount: 100
-   }
 
    elements: {
       clearButton: HTMLButtonElement,
@@ -40,15 +34,19 @@ export class VirusNameLookup {
    }
 
    settings = {
-      defaultRowsPerPage: 50
+      currentMslRelease: NaN,
+      defaultRowsPerPage: 100,
+      maxResultCount: 100
    }
 
    // C-tor
    constructor(containerSelector_: string) {
 
-      if (!containerSelector_) { throw new Error("Invalid container selector"); }
-
+      if (!containerSelector_) { throw new Error("Invalid container selector in VirusNameLookup"); }
       this.selectors.container = containerSelector_;
+
+      // Use the current MSL release from the AppSettings.
+      this.settings.currentMslRelease = AppSettings.currentMslRelease;
 
       this.elements = {
          clearButton: null,
@@ -74,35 +72,105 @@ export class VirusNameLookup {
    }
 
 
+   createInvalidResultTable(matches_: ISearchResult[]) {
+
+      if (!Array.isArray(matches_)) { return ""; }
+
+      let html = "";
+         
+      let matchCount = 0;
+
+      matches_.forEach((match_: ISearchResult, index_: number) => {
+
+         // Alternate the CSS class every row.
+         let rowClass = index_ % 2 === 0 ? "odd-bg" : "even-bg";
+
+         matchCount += 1;
+
+         let matchURL = null;
+         let source = "";
+
+         // Format the source and determine the URL of a linked match name.
+         switch (match_.taxonomyDB) {
+            case TaxonomyDB.ncbi_taxonomy:
+               matchURL = `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=${match_.taxonomyID}`;
+               source = "NCBI";
+               break;
+            default:
+               source = "Unknown";
+               break;
+         }
+         
+         let matchName = `<i>${match_.name}</i>`;
+
+         // Format the match rank
+         let matchRank = match_.rankName.replace("_", " ");
+
+         let displayedRank = match_.nameClass == "scientific_name" ? `${matchRank}: ` : "";
+
+         // Format name class
+         const nameClass = match_.nameClass.replace("_", " ");
+
+         // Should we hyperlink the match name?
+         let linkedMatchName = !matchURL ? matchName : `<a href="${matchURL}" target="_blank">${matchName}</a>`;
+
+         html += 
+            `<tr class="${rowClass}">
+               <td class="match-number">${matchCount}</td>
+               <td class="match-name">${displayedRank}${linkedMatchName}</td>
+               <td class="match-name">${match_.division}</td>
+               <td class="name-class">${nameClass}</td>
+               <td class="source">${source}</td>
+            </tr>`;
+      })
+
+      const es = matchCount === 1 ? "" : "es";
+
+      html = 
+         `<div class="results-count">${matchCount} match${es}</div>
+            <table class="invalid-results-table">
+               <thead>
+                  <tr class="header-row">
+                     <th class="match-th">#</th>
+                     <th class="match-th">Matching name</th>
+                     <th class="match-th">Organism type</th>
+                     <th class="match-th">Name type</th>
+                     <th class="match-th">Source</th>
+                  </tr>
+               </thead>
+               <tbody>${html}</tbody>
+            </table>`;
+
+      return html;
+   }
+
    createMatchColumns(result_: ISearchResult): string {
 
-      let matchVersion = "";
-      let taxonomyDB = "";
+      let source = "";
 
       // Format the match version and taxonomy database/ID.
       switch (result_.taxonomyDB) {
-         case "ictv_epithets":
-         case "ictv_taxonomy":
-            matchVersion = `MSL ${result_.versionID}`;
-            taxonomyDB = "ICTV";
+         case TaxonomyDB.ictv_epithets:
+         case TaxonomyDB.ictv_taxonomy:
+            source = `ICTV (MSL ${result_.versionID})`;
             break;
-         case "ictv_vmr":
-            taxonomyDB = "VMR";
+         case TaxonomyDB.ictv_vmr:
+            source = "VMR";
             break;
-         case "ncbi_taxonomy":
-            taxonomyDB = "NCBI";
+         case TaxonomyDB.ncbi_taxonomy:
+            source = "NCBI";
             break;
       }
 
       // Determine the URL of a linked match name.
       let matchURL = null;
       switch (result_.taxonomyDB) {
-         case "ictv_taxonomy":
-         case "ictv_epithets":
+         case TaxonomyDB.ictv_taxonomy:
+         case TaxonomyDB.ictv_epithets:
             matchURL = `https://ictv.global/taxonomy/taxondetails?taxnode_id=${result_.taxonomyID}&taxon_name=${result_.name}`;
             break;
 
-         case "ncbi_taxonomy":
+         case TaxonomyDB.ncbi_taxonomy:
             matchURL = `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=${result_.taxonomyID}`;
             break;
       }
@@ -124,13 +192,16 @@ export class VirusNameLookup {
 
          linkedMatchName = matchName;
 
+         let intermediateRank = !result_.intermediateRank ? "" : `${result_.intermediateRank}: `
+
          // Hyperlink the intermediate name.
          let intermediateName = `<i>${result_.intermediateName}</i>`;
-         linkedIntermediateName = !matchURL ? intermediateName : `<a href="${matchURL}" target="_blank">${intermediateName}</a>`;
+         linkedIntermediateName = !matchURL ? intermediateName : `${intermediateRank}<a href="${matchURL}" target="_blank">${intermediateName}</a>`;
       }
 
       // Format the match rank
-      const matchRank = result_.rankName.replace("_", " ");
+      let matchRank = result_.rankName.replace("_", " ");
+      if (result_.taxonomyDB === TaxonomyDB.ictv_epithets) { matchRank += " epithet"; }
 
       let displayedRank = result_.nameClass == "scientific_name" ? `${matchRank}: ` : "";
 
@@ -140,10 +211,8 @@ export class VirusNameLookup {
       // Create the table columns.
       return `<td class="match-name">${displayedRank}${linkedMatchName}</td>
          <td class="match-name">${linkedIntermediateName}</td>
-         <td>${taxonomyDB}</td>
          <td class="name-class">${nameClass}</td>
-         <td>${result_.division}</td>
-         <td>${matchVersion}</td>`;
+         <td class="source">${source}</td>`;
    }
 
    async displayResults() {
@@ -153,18 +222,23 @@ export class VirusNameLookup {
          return;
       }
 
+      // Matches without an ICTV result.
+      let invalidMatches = [];
+
+      // The number of valid ICTV results.
+      let ictvResultCount = 0;
+
       let html = 
-         `<table class="results-table">
+         `<div class="results-count"></div>
+         <table class="results-table">
             <thead>
                <tr class="header-row">
                   <th class="result-th">#</th>
                   <th class="result-th">ICTV results</th>
                   <th class="match-th">Matching name</th>
-                  <th class="match-th">Intermediate</th>
-                  <th class="match-th">Database</th>
-                  <th class="match-th">Name class</th>
-                  <th class="match-th">Division</th>
-                  <th class="match-th">Version</th>
+                  <th class="match-th">Associated name</th>
+                  <th class="match-th">Name type</th>
+                  <th class="match-th">Source</th>
                </tr>
             </thead>
             <tbody>`;
@@ -176,6 +250,15 @@ export class VirusNameLookup {
 
          // If the result is not a phage or virus, use error colors.
          //if (result_.division !== "phages" && result_.division !== "viruses") { rowClass = "error-bg"; }
+
+         if (!ictvResult_.mslRelease) {
+
+            // No ICTV match was found for this result's matches.
+            invalidMatches = ictvResult_.matches;
+            return;
+         }
+
+         ictvResultCount += 1;
 
          //--------------------------------------------------------------------------------------------------------------------------------
          // Get the result values from the current search result.
@@ -193,8 +276,10 @@ export class VirusNameLookup {
          const resultRank = !ictvResult_.rankName ? "" : ictvResult_.rankName.replace("_", " ");
 
          // Format a non-empty result version.
-         let resultVersion = !ictvResult_.mslRelease ? "" : `MSL ${ictvResult_.mslRelease}`;
-
+         let resultVersion = "";
+         if (ictvResult_.mslRelease) {
+            resultVersion = ictvResult_.mslRelease == this.settings.currentMslRelease ? "current" : "abolished";
+         }
 
          html += 
             `<tr class="${rowClass}">
@@ -204,7 +289,7 @@ export class VirusNameLookup {
          let isFirst = true;
 
          // Iterate over all of this ICTV result's matches.
-         ictvResult_.matches.forEach((match_: ISearchResult, matchIndex_: number) => {
+         ictvResult_.matches.forEach((match_: ISearchResult) => {
 
             if (!isFirst) { html += `<tr class="${rowClass}">`; }
 
@@ -216,9 +301,32 @@ export class VirusNameLookup {
          })
       });
 
-      html += "</tbody></table>";
+      html += `</tbody>
+         </table>
+         <div class="invalid-matches"></div>`;
 
       this.elements.resultsPanel.innerHTML = html;
+
+      // Populate the result count.
+      const resultsCountEl = this.elements.resultsPanel.querySelector(".results-count");
+      if (!resultsCountEl) { throw new Error("Invalid results count Element"); }
+
+      const s = ictvResultCount === 1 ? "" : "s";
+
+      resultsCountEl.innerHTML = `${ictvResultCount} result${s}`;
+
+      if (Array.isArray(invalidMatches) && invalidMatches.length > 0) {
+
+         // Display a table of invalid matches.
+         console.log(invalidMatches);
+
+         let invalidHTML = this.createInvalidResultTable(invalidMatches);
+
+         const invalidEl = this.elements.resultsPanel.querySelector(".invalid-matches");
+         if (!invalidEl) { throw new Error("Invalid invalid matches Element"); }
+
+         invalidEl.innerHTML = invalidHTML;
+      }
 
       return;
    }
@@ -236,25 +344,21 @@ export class VirusNameLookup {
                <button class="search-button ictv-btn">${this.icons.search} Search</button>
                <button class="clear-button ictv-btn">Clear</button>
             </div>
-            <div class="settings-panel">
-               <div class="settings-title">Settings (for testing)</div>
-               <div class="settings-row">
-                  <label>Max results</label>
-                  <input class="max-results" type="number" min="0" value="${this.defaults.maxResultCount}" />
-               </div>
-            </div>
          </div>
          <div class="results-panel"></div>`;
 
+      /*
+      <div class="settings-panel">
+         <div class="settings-title">Settings (for testing)</div>
+         <div class="settings-row">
+            <label>Max results</label>
+            <input class="max-results" type="number" min="0" value="${this.defaults.maxResultCount}" />
+         </div>
+      </div>
+      */
       this.elements.container.innerHTML = html;
 
       // Get references to all elements.
-      const settingsPanelEl = this.elements.container.querySelector(".settings-panel");
-      if (!settingsPanelEl) { return await AlertBuilder.displayError("Invalid settings panel Element"); }
-
-      this.elements.maxResultCount = settingsPanelEl.querySelector(".max-results");
-      if (!this.elements.maxResultCount ) { return await AlertBuilder.displayError("Invalid max results Element"); }
-
       this.elements.clearButton = this.elements.container.querySelector(".clear-button");
       if (!this.elements.clearButton) { return await AlertBuilder.displayError("Invalid clear button Element"); }
 
@@ -289,12 +393,6 @@ export class VirusNameLookup {
    // Lookup the virus name using the web service.
    async search() {
 
-      // TODO: get this from the Drupal page!
-      let currentMslRelease = 39; 
-
-      let maxResultCount = parseInt(this.elements.maxResultCount.value)
-      if (isNaN(maxResultCount)) { maxResultCount = this.defaults.maxResultCount; }
-
       this.elements.searchButton.disabled = true;
 
       // Display the spinner and "Searching...".
@@ -304,9 +402,7 @@ export class VirusNameLookup {
          let searchText = this.elements.searchText.value;
          if (!searchText) { throw new Error("Please enter valid search text"); }
 
-         this.results = await VirusNameLookupService.lookupName(currentMslRelease, maxResultCount, searchText);
-
-         console.log("in search this.results = ", this.results)
+         this.results = await VirusNameLookupService.lookupName(this.settings.currentMslRelease, this.settings.maxResultCount, searchText);
       }
       catch (error_) {
          this.elements.searchButton.disabled = false;

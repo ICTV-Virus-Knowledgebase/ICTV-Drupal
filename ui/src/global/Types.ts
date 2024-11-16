@@ -69,6 +69,14 @@ export enum TaxaLevelLabel {
    species = "Species"
 }
 
+// The taxonomy databases
+export enum TaxonomyDB {
+   ictv_epithets = "ictv_epithets",
+   ictv_taxonomy = "ictv_taxonomy",
+   ictv_vmr = "ictv_vmr",
+   ncbi_taxonomy = "ncbi_taxonomy"
+}
+
 // The display type determines how the control is initially populated.
 export enum TaxonomyDisplayType {
    default_to_page = "default_to_page",
