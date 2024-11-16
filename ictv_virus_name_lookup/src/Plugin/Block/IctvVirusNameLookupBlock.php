@@ -16,8 +16,8 @@ use Drupal\Core\Block\BlockBase;
  */
 class IctvVirusNameLookupBlock extends BlockBase {
 
-   // The JWT auth token for the Drupal web service.
-   public $authToken;
+   // The current MSL release.
+   public $currentMslRelease;
 
    // The URL of the Drupal web service.
    public $drupalWebServiceURL;
@@ -27,7 +27,7 @@ class IctvVirusNameLookupBlock extends BlockBase {
     */
    public function build() {
 
-      // Load the authToken and drupalWebServiceURL from the database.
+      // Load ICTV settings from the database.
       $this->loadData();
 
       $build = [
@@ -42,7 +42,8 @@ class IctvVirusNameLookupBlock extends BlockBase {
          ],
       ];
 
-      // Populate drupalSettings with variables needed by the ProposalSubmission object.
+      // Populate drupalSettings with variables needed by the VirusNameLookup object.
+      $build['#attached']['drupalSettings']['currentMslRelease'] = $this->currentMslRelease;
       $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
       
       return $build;
@@ -59,6 +60,7 @@ class IctvVirusNameLookupBlock extends BlockBase {
    }
 
 
+   /*
    public function loadData() {
 
       // Use the default database instance.
@@ -84,6 +86,37 @@ class IctvVirusNameLookupBlock extends BlockBase {
       foreach ($result as $setting) {
          $this->drupalWebServiceURL = $setting->drupalWebServiceURL;
       }
-    }
+    }*/
+
+    /**
+    * Load the ICTV settings from the database.
+    */
+   public function loadData() {
+
+      // Use the default database instance.
+      $database = \Drupal::database();
+
+      // Initialize the member variables.
+      $this->currentMslRelease = 0;
+      $this->drupalWebServiceURL = "";
+
+      // Get ICTV settings
+      $sql = 
+         "SELECT ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
+         ) AS currentMslRelease,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'drupalWebServiceURL' LIMIT 1
+         ) AS drupalWebServiceURL;";
+
+      $query = $database->query($sql);
+      if (!$query) { \Drupal::logger('ictv_virus_name_lookup')->error("Invalid query object"); }
+
+      $settings = $query->fetchAssoc();
+      if (!$settings) { \Drupal::logger('ictv_virus_name_lookup')->error("Invalid settings object"); }
+
+      $this->currentMslRelease = $settings["currentMslRelease"];
+      $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
+   }
 
 }
