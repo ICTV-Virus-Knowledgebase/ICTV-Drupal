@@ -108,14 +108,8 @@ BEGIN
    -- Exclude subspecies ranks
    WHERE nnode.rank_name_tid NOT IN (genotypeTID, isolateTID, noRankTID, serogroupTID, serotypeTID, subspeciesTID)
 
-   -- Limit the NCBI divisions to include.
-   AND division.full_key IN (
-      'ncbi_division.bacteria', 
-      'ncbi_division.phages', 
-      'ncbi_division.synthetic_and_chimeric', 
-      'ncbi_division.viruses', 
-      'ncbi_division.environmental_samples'
-   );
+   -- Only include phages and viruses.
+   AND division.full_key IN ('ncbi_division.phages', 'ncbi_division.viruses');
 
 END //
 

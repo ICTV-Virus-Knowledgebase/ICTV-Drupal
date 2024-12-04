@@ -66,6 +66,7 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_exemplar', 'isolate exemplar', 'isolate_exemplar', vocabID);
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.authority', 'authority', 'authority', vocabID);
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.type_material', 'type material', 'type_material', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.taxon_name', 'taxon name', 'taxon_name', vocabID);
 
 
    /*

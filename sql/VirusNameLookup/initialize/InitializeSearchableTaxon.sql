@@ -13,9 +13,9 @@ CALL ImportIctvSpeciesEpithets();
 
 CALL ImportNcbiScientificNames();
 
-CALL UpdateNcbiNonScientificNames();
-
 CALL ImportNcbiSubspeciesNodes();
+
+CALL UpdateNcbiNonScientificNames();
 
 */
 
