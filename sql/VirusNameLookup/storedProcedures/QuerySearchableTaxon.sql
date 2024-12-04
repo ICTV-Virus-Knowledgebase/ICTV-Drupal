@@ -23,6 +23,29 @@ BEGIN
 	-- The length of the search text.
    DECLARE searchTextLength INT;
 	
+   -- dmd test
+   DECLARE abbreviationTID INT;
+   DECLARE acronymTID INT;
+   DECLARE blastNameTID INT;
+   DECLARE commonNameTID INT;
+   DECLARE epithetsTaxDbTID INT;
+   DECLARE equivalentNameTID INT;
+   DECLARE genbankAccessionTID INT;
+   DECLARE genbankAcronymTID INT;
+   DECLARE genbankCommonNameTID INT;
+   DECLARE ictvTaxDbTID INT;
+   DECLARE isolateAbbreviationTID INT;
+   DECLARE isolateDesignationTID INT;
+   DECLARE isolateExemplarTID INT;
+   DECLARE isolateNameTID INT;
+   DECLARE ncbiTaxDbTID INT;
+   DECLARE phageDivTID INT;
+   DECLARE refseqAccessionTID INT;        
+   DECLARE scientificNameTID INT;
+   DECLARE synonymTID INT;
+   DECLARE virusDivTID INT;
+   DECLARE vmrTaxDbTID INT;
+
 	-- Trim whitespace from both ends of the search text and convert to lowercase.
 	SET searchText = LOWER(TRIM(searchText));
 
@@ -36,7 +59,6 @@ BEGIN
 	-- Get the length of the search text.
 	SET searchTextLength = LENGTH(searchText);
 	
-
 
 	WITH searchResults AS (
 
@@ -92,7 +114,7 @@ BEGIN
             WHEN st.name_class IN ('isolate_name', 'isolate_exemplar') THEN 9
             WHEN st.name_class IN ('isolate_abbreviation', 'genbank_acronym') THEN 8
             WHEN st.name_class = 'scientific_name' THEN 7
-            WHEN st.name_class IN ('synonym, equivalent_name') THEN 6
+            WHEN st.name_class IN ('synonym', 'equivalent_name') THEN 6
             WHEN st.name_class = 'genbank_common_name' THEN 5
             WHEN st.name_class = 'common_name' THEN 4
             WHEN st.name_class = 'blast_name' THEN 3
@@ -143,6 +165,37 @@ BEGIN
          tl_result.name AS result_rank_name,
          result_tn.taxnode_id AS result_taxnode_id,
 
+         -- A score for the result rank for use in sorting the results.
+         CASE
+            WHEN tl_result.name IS NULL THEN 25
+            WHEN tl_result.name IN ('no rank','tree') THEN 0
+            WHEN tl_result.name = 'realm' THEN 1
+            WHEN tl_result.name = 'subrealm' THEN 2
+            WHEN tl_result.name = 'superkingdom' THEN 3
+            WHEN tl_result.name = 'kingdom' THEN 4
+            WHEN tl_result.name = 'subkingdom' THEN 5
+            WHEN tl_result.name = 'phylum' THEN 6
+            WHEN tl_result.name = 'subphylum' THEN 7
+            WHEN tl_result.name = 'class' THEN 8
+            WHEN tl_result.name = 'subclass' THEN 9
+            WHEN tl_result.name = 'order' THEN 10
+            WHEN tl_result.name = 'suborder' THEN 11
+            WHEN tl_result.name = 'family' THEN 12
+            WHEN tl_result.name = 'subfamily' THEN 13
+            WHEN tl_result.name = 'genus' THEN 14
+            WHEN tl_result.name = 'subgenus' THEN 15
+            WHEN tl_result.name = 'species' THEN 16
+            WHEN tl_result.name = 'species group' THEN 17
+            WHEN tl_result.name = 'species subgroup' THEN 18
+            WHEN tl_result.name = 'subspecies' THEN 19
+            WHEN tl_result.name = 'serogroup' THEN 20
+            WHEN tl_result.name = 'serotype' THEN 21
+            WHEN tl_result.name = 'genotype' THEN 22
+            WHEN tl_result.name = 'strain' THEN 23
+            WHEN tl_result.name = 'isolate' THEN 24
+            ELSE 25
+         END AS result_rank_score,
+
          -- The match's taxonomy database
          st.taxonomy_db AS taxonomy_db,
 
@@ -157,7 +210,8 @@ BEGIN
 
          st.taxonomy_id AS taxonomy_id,
          st.version_id AS version_id
-         
+
+
       FROM v_searchable_taxon st
       LEFT JOIN v_taxonomy_node_merge_split ms ON ms.prev_ictv_id = st.ictv_id
       LEFT JOIN latest_release_of_ictv_id lr_match ON (
@@ -170,7 +224,7 @@ BEGIN
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
       LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id 
-      WHERE st.name LIKE CONCAT('%', searchText, '%')
+      WHERE MATCH(st.filtered_name) AGAINST(CONCAT('*', searchText, '*') IN BOOLEAN MODE)
    )
 
    SELECT *
@@ -183,13 +237,13 @@ BEGIN
       LIMIT 1
    ) OR sr_outer.result_msl_release IS NULL
    ORDER BY 
-      is_exact_match DESC, 
-      length_difference ASC,
+      is_exact_match DESC,
+      result_rank_score ASC,
+      result_name ASC,
       taxonomy_db_score DESC,
-      first_character_match DESC,
-      recent_result_score ASC
-	
-	LIMIT maxResultCount; 
+      name ASC;
+      
+	-- LIMIT maxResultCount; 
 	
 END//
 DELIMITER ;

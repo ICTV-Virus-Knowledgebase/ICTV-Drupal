@@ -12,7 +12,7 @@ export class VirusNameLookup {
    elements: {
       clearButton: HTMLButtonElement,
       container: HTMLDivElement,
-      maxResultCount: HTMLInputElement,
+      maxResults: HTMLSelectElement,
       resultsPanel: HTMLDivElement,
       searchButton: HTMLButtonElement,
       searchText: HTMLInputElement
@@ -51,7 +51,7 @@ export class VirusNameLookup {
       this.elements = {
          clearButton: null,
          container: null,
-         maxResultCount: null,
+         maxResults: null,
          resultsPanel: null,
          searchButton: null,
          searchText: null
@@ -92,12 +92,21 @@ export class VirusNameLookup {
 
          // Format the source and determine the URL of a linked match name.
          switch (match_.taxonomyDB) {
+            case TaxonomyDB.ictv_taxonomy:
+            case TaxonomyDB.ictv_epithets:
+               matchURL = `https://ictv.global/taxonomy/taxondetails?taxnode_id=${match_.taxonomyID}&taxon_name=${match_.name}`;
+               source = "ICTV";
+               break;
+
             case TaxonomyDB.ncbi_taxonomy:
                matchURL = `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=${match_.taxonomyID}`;
                source = "NCBI";
                break;
             default:
                source = "Unknown";
+
+               console.log("unknown match = ", match_)
+
                break;
          }
          
@@ -106,7 +115,7 @@ export class VirusNameLookup {
          // Format the match rank
          let matchRank = match_.rankName.replace("_", " ");
 
-         let displayedRank = match_.nameClass == "scientific_name" ? `${matchRank}: ` : "";
+         let displayedRank = match_.nameClass == "scientific_name" || match_.nameClass == "taxon_name" ? `${matchRank}: ` : "";
 
          // Format name class
          const nameClass = match_.nameClass.replace("_", " ");
@@ -127,7 +136,7 @@ export class VirusNameLookup {
       const es = matchCount === 1 ? "" : "es";
 
       html = 
-         `<div class="results-count">${matchCount} match${es}</div>
+         `<div class="results-count">${matchCount} match${es} without an ICTV result</div>
             <table class="invalid-results-table">
                <thead>
                   <tr class="header-row">
@@ -203,7 +212,7 @@ export class VirusNameLookup {
       let matchRank = result_.rankName.replace("_", " ");
       if (result_.taxonomyDB === TaxonomyDB.ictv_epithets) { matchRank += " epithet"; }
 
-      let displayedRank = result_.nameClass == "scientific_name" ? `${matchRank}: ` : "";
+      let displayedRank = result_.nameClass == "scientific_name" || result_.nameClass == "taxon_name" ? `${matchRank}: ` : "";
 
       // Format name class
       const nameClass = result_.nameClass.replace("_", " ");
@@ -228,13 +237,16 @@ export class VirusNameLookup {
       // The number of valid ICTV results.
       let ictvResultCount = 0;
 
+      // The number of matches associated with the valid ICTV results.
+      let matchCount = 0;
+
       let html = 
          `<div class="results-count"></div>
          <table class="results-table">
             <thead>
                <tr class="header-row">
                   <th class="result-th">#</th>
-                  <th class="result-th">ICTV results</th>
+                  <th class="result-th">Current ICTV Taxonomy</th>
                   <th class="match-th">Matching name</th>
                   <th class="match-th">Associated name</th>
                   <th class="match-th">Name type</th>
@@ -245,12 +257,6 @@ export class VirusNameLookup {
 
       this.results.forEach((ictvResult_: IIctvResult, index_: number) => {
 
-         // Alternate the CSS class every row.
-         let rowClass = index_ % 2 === 0 ? "odd-bg" : "even-bg";
-
-         // If the result is not a phage or virus, use error colors.
-         //if (result_.division !== "phages" && result_.division !== "viruses") { rowClass = "error-bg"; }
-
          if (!ictvResult_.mslRelease) {
 
             // No ICTV match was found for this result's matches.
@@ -258,7 +264,11 @@ export class VirusNameLookup {
             return;
          }
 
+         // Alternate the CSS class every row.
+         let rowClass = index_ % 2 === 0 ? "odd-bg" : "even-bg";
+
          ictvResultCount += 1;
+         matchCount += ictvResult_.matches.length;
 
          //--------------------------------------------------------------------------------------------------------------------------------
          // Get the result values from the current search result.
@@ -275,16 +285,14 @@ export class VirusNameLookup {
          // Format the result rank
          const resultRank = !ictvResult_.rankName ? "" : ictvResult_.rankName.replace("_", " ");
 
-         // Format a non-empty result version.
+         // Flag abolished ICTV results.
          let resultVersion = "";
-         if (ictvResult_.mslRelease) {
-            resultVersion = ictvResult_.mslRelease == this.settings.currentMslRelease ? "current" : "abolished";
-         }
+         if (!!ictvResult_.mslRelease && ictvResult_.mslRelease < this.settings.currentMslRelease) { resultVersion = " (abolished)";}
 
          html += 
             `<tr class="${rowClass}">
-               <td class="result-td" rowspan="${ictvResult_.matches.length}">${index_ + 1}</td>
-               <td class="result-td" rowspan="${ictvResult_.matches.length}">${resultRank}: <i>${linkedResultName}</i> (${resultVersion})</td>`;
+               <td class="result-td" rowspan="${ictvResult_.matches.length}">${ictvResultCount}</td>
+               <td class="result-td" rowspan="${ictvResult_.matches.length}">${resultRank}: <i>${linkedResultName}</i>${resultVersion}</td>`;
 
          let isFirst = true;
 
@@ -312,14 +320,14 @@ export class VirusNameLookup {
       if (!resultsCountEl) { throw new Error("Invalid results count Element"); }
 
       const s = ictvResultCount === 1 ? "" : "s";
+      resultsCountEl.innerHTML = `${ictvResultCount} ICTV result${s}`;
 
-      resultsCountEl.innerHTML = `${ictvResultCount} result${s}`;
+      const es = matchCount === 1 ? "" : "es";
+      resultsCountEl.innerHTML += ` (${matchCount} match${es})`;
 
       if (Array.isArray(invalidMatches) && invalidMatches.length > 0) {
 
          // Display a table of invalid matches.
-         console.log(invalidMatches);
-
          let invalidHTML = this.createInvalidResultTable(invalidMatches);
 
          const invalidEl = this.elements.resultsPanel.querySelector(".invalid-matches");
@@ -343,24 +351,26 @@ export class VirusNameLookup {
                <input class="search-text" type="text" placeholder="Enter a virus name" spellcheck="false" />
                <button class="search-button ictv-btn">${this.icons.search} Search</button>
                <button class="clear-button ictv-btn">Clear</button>
+
+               <label class="max-results-label">Max results</label>
+               <select class="max-results">
+                  <option value="50">50</option>
+                  <option value="100" selected>100</option>
+                  <option value="500">500</option>
+                  <option value="1000">1000</option>
+               </select>
             </div>
          </div>
          <div class="results-panel"></div>`;
 
-      /*
-      <div class="settings-panel">
-         <div class="settings-title">Settings (for testing)</div>
-         <div class="settings-row">
-            <label>Max results</label>
-            <input class="max-results" type="number" min="0" value="${this.defaults.maxResultCount}" />
-         </div>
-      </div>
-      */
       this.elements.container.innerHTML = html;
 
       // Get references to all elements.
       this.elements.clearButton = this.elements.container.querySelector(".clear-button");
       if (!this.elements.clearButton) { return await AlertBuilder.displayError("Invalid clear button Element"); }
+
+      this.elements.maxResults = this.elements.container.querySelector(".max-results");
+      if (!this.elements.maxResults) { return await AlertBuilder.displayError("Invalid max results Element"); }
 
       this.elements.resultsPanel = this.elements.container.querySelector(".results-panel");
       if (!this.elements.resultsPanel) { return await AlertBuilder.displayError("Invalid results panel Element"); }
@@ -395,6 +405,8 @@ export class VirusNameLookup {
 
       this.elements.searchButton.disabled = true;
 
+      const maxResults = parseInt(this.elements.maxResults.value);
+
       // Display the spinner and "Searching...".
       this.elements.resultsPanel.innerHTML = `${this.icons.spinner} <span class="spinner-message">Searching...</span>`;
 
@@ -402,7 +414,7 @@ export class VirusNameLookup {
          let searchText = this.elements.searchText.value;
          if (!searchText) { throw new Error("Please enter valid search text"); }
 
-         this.results = await VirusNameLookupService.lookupName(this.settings.currentMslRelease, this.settings.maxResultCount, searchText);
+         this.results = await VirusNameLookupService.lookupName(this.settings.currentMslRelease, maxResults, searchText);
       }
       catch (error_) {
          this.elements.searchButton.disabled = false;

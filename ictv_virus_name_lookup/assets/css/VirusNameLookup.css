@@ -25,15 +25,14 @@
 
 /* The search controls */
 #ictv_virus_name_lookup_container .search-controls {
-   align-content: flex-start;
+   align-items: center;
    border-collapse: separate;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
    line-height: 1.5;
    margin: 0;
-   max-width: 600px;
-   width: 50%;
+   max-width: 1000px;
 }
 #ictv_virus_name_lookup_container .search-controls .search-text {
    background-color: #fff;
@@ -69,32 +68,20 @@
    color: #fff;
    cursor: pointer;
 }
-
-/* The settings panel */
-#ictv_virus_name_lookup_container .settings-panel {
-   width: 50%;
-}
-#ictv_virus_name_lookup_container .settings-panel .settings-title {
+#ictv_virus_name_lookup_container .search-controls .max-results-label {
    font-size: 1.0rem;
-   margin-bottom: 0.5rem;
+   margin-left: 60px;
+   margin-right: 0.5rem;
 }
-#ictv_virus_name_lookup_container .settings-panel .settings-row {
-   align-items: center;
-   display: flex;
-   flex-flow: row;
-   justify-content: flex-start;
-   margin-bottom: 0.25rem;
-}
-#ictv_virus_name_lookup_container .settings-panel .settings-row label {
-   text-align: right;
-   width: 160px;
-}
-#ictv_virus_name_lookup_container .settings-panel .settings-row input {
-   text-align: right;
-   width: 3.5rem;
+#ictv_virus_name_lookup_container .search-controls .max-results {
+   font-size: 0.9rem;
+   width: 120px;
 }
 
 /* The results and invalid-results tables */
+#ictv_virus_name_lookup_container .results-table {
+   margin-bottom: 2.0rem;
+}
 #ictv_virus_name_lookup_container .results-table th,
 #ictv_virus_name_lookup_container .invalid-results-table th {
    font-size: 1.0rem !important;

@@ -158,7 +158,7 @@ class LookupService extends ResourceBase {
       $ictvResultKeys = [];
 
       // The number of non-viral results.
-      $nonViralResults = 0;
+      $invalidMatches = 0;
 
       // Iterate over the result rows and add each row to the search results.
       foreach($result as $row) {
@@ -168,14 +168,11 @@ class LookupService extends ResourceBase {
 
          // TODO: this is where we can calculate a custom score for the search result.
 
-         // Is this a non-viral result?
-         if ($searchResult->division != "viruses" && $searchResult->division != "phages") {
-            $nonViralResults += 1;
-         }
+         if (!$searchResult->resultMslRelease) { $invalidMatches += 1; }
          
          // Create or update result metadata that represents the first occurrence of a result name in the search results.
          $ictvResult;
-         $resultKey = $searchResult->resultName;
+         $resultKey = $searchResult->resultName || "invalid";
 
          // Should we retrieve an existing ICTV result or create a new instance?
          if (array_key_exists($resultKey, $ictvResults)) {
@@ -270,3 +267,4 @@ class LookupService extends ResourceBase {
       return $data;
    }
 }
+

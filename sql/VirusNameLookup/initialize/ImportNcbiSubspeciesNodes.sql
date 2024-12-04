@@ -11,13 +11,11 @@ BEGIN
    DECLARE isolateTID INT;
    DECLARE ncbiTaxDbTID INT;
    DECLARE noRankTID INT;
-   DECLARE phagesDivisionTID INT;
    DECLARE sciNameClassTID INT;
    DECLARE serogroupTID INT;
    DECLARE serotypeTID INT;
    DECLARE subspeciesTID INT;
    DECLARE superkingdomTID INT;
-   DECLARE virusesDivisionTID INT;
 
 
    -- Lookup the term ID for the "scientific name" name class.
@@ -30,17 +28,6 @@ BEGIN
    SET ncbiTaxDbTID = (SELECT id FROM term WHERE full_key = 'taxonomy_db.ncbi_taxonomy' LIMIT 1);
    IF ncbiTaxDbTID IS NULL THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for taxonomy_db.ncbi_taxonomy';
-   END IF;
-
-   -- Lookup term IDs for NCBI divisions.
-   SET phagesDivisionTID = (SELECT id FROM term WHERE full_key = 'ncbi_division.phages' LIMIT 1);
-   IF phagesDivisionTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid vocabulary ID for ncbi_division.phages';
-   END IF;
-
-   SET virusesDivisionTID = (SELECT id FROM term WHERE full_key = 'ncbi_division.viruses' LIMIT 1);
-   IF virusesDivisionTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid vocabulary ID for ncbi_division.viruses';
    END IF;
 
    -- Lookup term IDs for subspecies rank names.
@@ -101,11 +88,7 @@ BEGIN
 
    -- Return subspecies NCBI taxa along with a possible match in ICTV taxonomy.
    SELECT
-      CASE
-         WHEN subspeciesNode.division_id = 3 THEN phagesDivisionTID
-         WHEN subspeciesNode.division_id = 9 THEN virusesDivisionTID
-         ELSE NULL
-      END AS division_tid,
+      div.tid AS division_tid,
       getFilteredName(subspeciesName.name_txt) AS filtered_name,
       latestTN.ictv_id,
       latestTN.latestTaxnodeID AS ictv_taxnode_id,
@@ -124,6 +107,7 @@ BEGIN
    JOIN ncbi_name subspeciesName ON subspeciesName.tax_id = subspeciesNode.tax_id
    JOIN ncbi_node parentNode ON parentNode.tax_id = subspeciesNode.subspecies_parent_tax_id
    JOIN ncbi_name parentName ON parentName.tax_id = parentNode.tax_id
+   JOIN ncbi_division div ON div.id = subspeciesNode.division_id
    LEFT JOIN (
       SELECT 
          DISTINCT tn.name,
@@ -150,7 +134,7 @@ BEGIN
    AND parentName.name_class_tid = sciNameClassTID
 
    -- Only include phages and viruses.
-   AND subspeciesNode.division_id IN (3, 9)
+   AND subspeciesNode.division_id IN (phagesDivisionID, virusesDivisionID)
    
    -- Exclude results immediately below superkingdom.
    AND parentNode.rank_name_tid <> superkingdomTID;

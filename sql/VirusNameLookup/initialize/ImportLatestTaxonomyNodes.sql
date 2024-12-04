@@ -7,23 +7,18 @@ DELIMITER //
 CREATE PROCEDURE ImportLatestTaxonomyNodes()
 BEGIN
 
-   DECLARE abbreviations LONGTEXT;
    DECLARE delimitedName VARCHAR(300);
    DECLARE division VARCHAR(20);
    DECLARE done INT DEFAULT FALSE;
    DECLARE errorMessage VARCHAR(200);
-   DECLARE exemplarName LONGTEXT;
-   DECLARE genbankAccessions LONGTEXT;
    DECLARE ictvID INT(11);
    DECLARE ictvTaxonomyDB VARCHAR(20);
-   DECLARE isolateNames LONGTEXT;
    DECLARE mslRelease INT(11);
    DECLARE name VARCHAR(300);
    DECLARE name_end INT;
    DECLARE name_pos INT DEFAULT 1;
    DECLARE parentID INT(11);
    DECLARE rankName VARCHAR(20);
-   DECLARE refseqAccessions LONGTEXT;
    DECLARE taxnodeID INT(11); 
 
    -- NOTE: Make sure the views v_species_isolates, v_taxonomy_level, and v_taxonomy_node have been 
@@ -33,19 +28,14 @@ BEGIN
    DECLARE cur CURSOR FOR 
    
       SELECT
-         tn.abbrev_csv,
          CASE 
             WHEN tn.host_source LIKE '%bacteria%' OR tn.host_source LIKE '%archaea%' THEN 'phages' ELSE 'viruses'
          END AS division,
-         tn.exemplar_name,
-         tn.genbank_accession_csv,
          tn.ictv_id,
-         tn.isolate_csv,
          tn.msl_release_num,
          tn.name,
          tn.parent_id,
          tl.name AS rank_name,
-         tn.refseq_accession_csv,
          tn.taxnode_id 
       FROM (
          SELECT 
@@ -76,8 +66,7 @@ BEGIN
 
    read_loop: LOOP
 
-      FETCH cur INTO abbreviations, division, exemplarName, genbankAccessions, ictvID, isolateNames, 
-         mslRelease, name, parentID, rankName, refseqAccessions, taxnodeID;
+      FETCH cur INTO division, ictvID, mslRelease, name, parentID, rankName, taxnodeID;
 
       IF done THEN
          LEAVE read_loop;
@@ -113,111 +102,8 @@ BEGIN
       END IF;
 
       -- Add the name
-      CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, name, 'scientific_name', ictvTaxonomyDB, parentID, 
+      CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, name, 'taxon_name', ictvTaxonomyDB, parentID, 
          rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
-
-      -- Are there any abbreviations?
-      SET abbreviations = TRIM(REPLACE(abbreviations, ',', ';'));
-      IF abbreviations IS NOT NULL AND LENGTH(abbreviations) > 0 THEN
-      
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', abbreviations, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(abbreviations, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(abbreviations, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'abbreviation', ictvTaxonomyDB, parentID, 
-                  rankName, ictvTaxonomyDB, taxnodeID, mslRelease);
-            END IF;
-            
-         END WHILE;
-      END IF;
-
-      -- Is there an exemplar name to add?
-      SET exemplarName = TRIM(exemplarName);
-      IF exemplarName IS NOT NULL AND LENGTH(exemplarName) > 0 THEN 
-         CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, exemplarName, 'isolate_exemplar', ictvTaxonomyDB, parentID, 
-            "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
-      END IF;
-
-      -- Should we add any GenBank accessions?
-      SET genbankAccessions = TRIM(REPLACE(genbankAccessions, ',', ';'));
-      IF genbankAccessions IS NOT NULL AND LENGTH(genbankAccessions) > 0 THEN
-      
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', genbankAccessions, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(genbankAccessions, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(genbankAccessions, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'genbank_accession', ictvTaxonomyDB, parentID, 
-                  "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
-            END IF;
-
-         END WHILE;
-      END IF;
-      
-      -- Should we add isolate names?
-      SET isolateNames = TRIM(REPLACE(isolateNames, ',', ';'));
-      IF isolateNames IS NOT NULL AND LENGTH(isolateNames) > 0 THEN
-      
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', isolateNames, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(isolateNames, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(isolateNames, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'isolate_name', ictvTaxonomyDB, parentID, 
-                  "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
-            END IF;
-
-         END WHILE;
-      END IF;
-      
-      -- Should we add RefSeq accessions?
-      SET refseqAccessions = REPLACE(refseqAccessions, ',', ';');
-      IF refseqAccessions IS NOT NULL AND LENGTH(refseqAccessions) > 0 THEN
-      
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', refseqAccessions, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(refseqAccessions, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(refseqAccessions, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, name, rankName, delimitedName, 'refseq_accession', ictvTaxonomyDB, parentID, 
-                  "isolate", ictvTaxonomyDB, taxnodeID, mslRelease);
-            END IF;
-
-         END WHILE;
-      END IF;
 
    END LOOP;
 
