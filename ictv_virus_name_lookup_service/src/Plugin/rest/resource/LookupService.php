@@ -142,16 +142,16 @@ class LookupService extends ResourceBase {
     * @param string searchText
     *    Search for this text.  
     */
-   public function lookupName(int $currentMslRelease, int $maxResultCount, string $searchText) {
+   public function lookupName(int $currentMslRelease, string $searchModifier, string $searchText) {
 
       // Populate the stored procedure's parameters.
-      $parameters = [":currentMslRelease" => $currentMslRelease, ":maxResultCount" => $maxResultCount, ":searchText" => $searchText];
+      $parameters = [":currentMslRelease" => $currentMslRelease, ":searchModifier" => $searchModifier, ":searchText" => $searchText];
 
       // Generate SQL to call the "QuerySearchableTaxon" stored procedure to search for the virus name.
-      $sql = "CALL QuerySearchableTaxon(:currentMslRelease, :maxResultCount, :searchText);";
+      $sql = "CALL QuerySearchableTaxon(:currentMslRelease, :searchModifier, :searchText);";
 
       // Execute the query and process the results.
-      $result = $this->connection->query($sql, $parameters);
+      $results = $this->connection->query($sql, $parameters);
 
       $ictvResults = [];
 
@@ -161,23 +161,34 @@ class LookupService extends ResourceBase {
       $invalidMatches = 0;
 
       // Iterate over the result rows and add each row to the search results.
-      foreach($result as $row) {
+      foreach($results as $row) {
          
+         $ictvResult = null;
+         $resultKey = null;
+
          // Create a search result instance from the row of data.
          $searchResult = SearchResult::fromArray((array) $row);
 
-         // TODO: this is where we can calculate a custom score for the search result.
+         // TODO: This is where we could calculate a custom score for the search result.
 
-         if (!$searchResult->resultMslRelease) { $invalidMatches += 1; }
-         
-         // Create or update result metadata that represents the first occurrence of a result name in the search results.
-         $ictvResult;
-         $resultKey = $searchResult->resultName || "invalid";
+         // Use the ICTV search result's name as a key or default to "invalid".
+         if (Utils::isNullOrEmpty($searchResult->resultName)) {
+            $resultKey = "invalid";
+            $invalidMatches += 1;
+         } else {
+            $resultKey = $searchResult->resultName;
+         }
 
+         // Create or update result metadata that represents the first occurrence of an ICTV result name in the search results.
          // Should we retrieve an existing ICTV result or create a new instance?
          if (array_key_exists($resultKey, $ictvResults)) {
+
+            // Use an existing ICTV result.
             $ictvResult = $ictvResults[$resultKey];
+
          } else {
+
+            // Create a new ICTV result instance.
             $ictvResult = new IctvResult($searchResult->resultMslRelease, $searchResult->resultName, 
                $searchResult->resultRankName, $searchResult->resultTaxnodeID);
 
@@ -185,6 +196,7 @@ class LookupService extends ResourceBase {
             array_push($ictvResultKeys, $resultKey);
          }
 
+         // Normalize the search result object and add it to the ICTV result's matches.
          array_push($ictvResult->matches, $searchResult->normalize());
 
          // Replace the metadata in the collection.
@@ -202,9 +214,14 @@ class LookupService extends ResourceBase {
       // Create an array of normalized search results.
       $normalizedResults = [];
 
+      // Iterate over ordered ICTV result keys to populate an array of normalized results.
       foreach ($ictvResultKeys as $orderedKey) {
          $result = $ictvResults[$orderedKey];
          array_push($normalizedResults, $result->normalize());
+
+         // TEST 120924
+         $testText = print_r($result, true);
+         \Drupal::logger('ictv_virus_name_lookup_service')->info($testText);
       }
 
       return $normalizedResults;
@@ -251,14 +268,20 @@ class LookupService extends ResourceBase {
          case "lookup_name":
 
             $currentMslRelease = $request->get("currentMslRelease");
-            $maxResultCount = $request->get("maxResultCount");
+            // TODO: validate this!
+
+            $searchModifier = $request->get("searchModifier");
+            if ($searchModifier == NULL) {
+               $searchModifier = "starts_with";
+            } else if ($searchModifier != "starts_with" && $searchModifier != "contains") { 
+               throw new BadRequestHttpException("Unrecognized search modifier {$searchModifier}"); 
+            }
+            
             $searchText = $request->get("searchText");
             if (Utils::isEmptyElseTrim($searchText)) { throw new BadRequestHttpException("Invalid search text (empty)"); }
 
-            // TODO: validate parameters and provide defaults where appropriate
-
             // Look for the search text as a taxon name.
-            $data = $this->lookupName($currentMslRelease, $maxResultCount, $searchText);
+            $data = $this->lookupName($currentMslRelease, $searchModifier, $searchText);
             break;
 
          default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");

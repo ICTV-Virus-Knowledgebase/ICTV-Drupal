@@ -31,6 +31,11 @@ export enum OrderedTaxaLevel {
    species = 15
 }
 
+export enum SearchModifier {
+   contains = "contains",
+   starts_with = "starts_with"
+}
+
 export enum TaxaLevel {
    tree = "tree",
    realm = "realm",
@@ -86,6 +91,56 @@ export enum TaxonomyDisplayType {
    user_entered = "user_entered"
 }
 
+// Taxonomy ranks found in ICTV and NCBI Taxonomies.
+export enum TaxonomyRank {
+   biotype = "Biotype",
+   clade = "Clade",
+   class = "Class",
+   cohort = "Cohort",
+   family = "Family",
+   forma = "Forma",
+   forma_specialis = "Forma Specialis",
+   genotype = "Genotype",
+   genus = "Genus",
+   infraclass = "Infraclass",
+   infraorder = "Infraorder",
+   isolate = "Isolate",
+   kingdom = "Kingdom",
+   morph = "Morph",
+   no_rank = "No rank",
+   order = "Order",
+   parvorder = "Parvorder",
+   pathogroup = "Pathogroup",
+   phylum = "Phylum",
+   realm = "Realm",
+   section = "Section",
+   series = "Series",
+   serogroup = "Serogroup",
+   serotype = "Serotype",
+   species = "Species",
+   species_group = "Species group",
+   species_subgroup = "Species subgroup",
+   strain = "Strain",
+   subclass = "Subclass",
+   subcohort = "Subcohort",
+   subfamily = "Subfamily",
+   subgenus = "Subgenus",
+   subkingdom = "Subkingdom",
+   suborder = "Suborder",
+   subphylum = "Subphylum",
+   subrealm = "Subrealm",
+   subsection = "Subsection",
+   subspecies = "Subspecies",
+   subtribe = "Subtribe",
+   superclass = "Superclass",
+   superfamily = "Superfamily",
+   superkingdom = "Superkingdom",
+   superorder = "Superorder",
+   superphylum = "Superphylum",
+   tribe = "Tribe",
+   varietas = "Varietas"
+}
+
 // All taxa that can be displayed in the "top-level rank" control (for now we're only excluding "tree").
 export enum TopLevelRank {
    realm = "realm",
@@ -114,4 +169,14 @@ export enum WebServiceKey {
    taxonomyHistory = "taxonomyHistory",
    virusIsolate = "virusIsolate",
    virusNameLookup = "virusNameLookup"
+}
+
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// Functions that use enums
+//-----------------------------------------------------------------------------------------------------------------------------
+
+// Return the value of the taxonomy rank enum.
+export function LookupTaxonomyRank(rank_: string) {
+   return TaxonomyRank[rank_ as TaxonomyRank];
 }

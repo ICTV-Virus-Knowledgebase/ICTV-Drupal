@@ -9,9 +9,9 @@ CREATE PROCEDURE QuerySearchableTaxon(
    -- The current MSL release number.
    IN `currentMslRelease` INT,
 
-	-- The maximum number of results to return.
-	IN `maxResultCount` INT,
-	
+   -- If search modifier = "starts_with", use MATCH AGAINST in the WHERE clause. If search modifier = "contains", use LIKE.
+   IN `searchModifier` VARCHAR(20),
+
 	-- Search for this text.
 	IN `searchText` NVARCHAR(500)
 )
@@ -23,36 +23,18 @@ BEGIN
 	-- The length of the search text.
    DECLARE searchTextLength INT;
 	
-   -- dmd test
-   DECLARE abbreviationTID INT;
-   DECLARE acronymTID INT;
-   DECLARE blastNameTID INT;
-   DECLARE commonNameTID INT;
-   DECLARE epithetsTaxDbTID INT;
-   DECLARE equivalentNameTID INT;
-   DECLARE genbankAccessionTID INT;
-   DECLARE genbankAcronymTID INT;
-   DECLARE genbankCommonNameTID INT;
-   DECLARE ictvTaxDbTID INT;
-   DECLARE isolateAbbreviationTID INT;
-   DECLARE isolateDesignationTID INT;
-   DECLARE isolateExemplarTID INT;
-   DECLARE isolateNameTID INT;
-   DECLARE ncbiTaxDbTID INT;
-   DECLARE phageDivTID INT;
-   DECLARE refseqAccessionTID INT;        
-   DECLARE scientificNameTID INT;
-   DECLARE synonymTID INT;
-   DECLARE virusDivTID INT;
-   DECLARE vmrTaxDbTID INT;
 
-	-- Trim whitespace from both ends of the search text and convert to lowercase.
-	SET searchText = LOWER(TRIM(searchText));
+	-- Filter the search text, trim whitespace from both ends of the search text, and convert to lowercase.
+	SET searchText = LOWER(TRIM(getFilteredName(searchText)));
 
 	IF searchText IS NULL OR LENGTH(searchText) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid search text parameter (empty)';
    END IF;
 	
+   IF searchModifier IS NULL THEN
+      SET searchModifier = "starts_with";
+   END IF;
+
    -- Get the first character of the search text.
 	SET firstCharacter = LEFT(searchText, 1);
 	
@@ -109,7 +91,7 @@ BEGIN
          st.name_class,
 
          -- Name classes ordered from most specific to least specific.
-         CASE
+         /*CASE
             WHEN st.name_class IN ('genbank_accession', 'refseq_accession') THEN 10
             WHEN st.name_class IN ('isolate_name', 'isolate_exemplar') THEN 9
             WHEN st.name_class IN ('isolate_abbreviation', 'genbank_acronym') THEN 8
@@ -121,43 +103,17 @@ BEGIN
             WHEN st.name_class IN ('abbreviation', 'acronym') THEN 2
             WHEN st.name_class = 'isolate_designation' THEN 1
             ELSE 0
-         END AS name_class_score,
+         END AS name_class_score,*/
 
          st.rank_name AS rank_name,
 
-         -- Ranks found in ICTV, VMR, and NCBI Taxonomy (virus and phage divisions only).
-         -- Prefer lower ranks over higher ranks.
-         CASE
-            WHEN st.rank_name IN ('no rank','tree') THEN 0
-            WHEN st.rank_name = 'realm' THEN 1
-            WHEN st.rank_name = 'subrealm' THEN 2
-            WHEN st.rank_name = 'superkingdom' THEN 3
-            WHEN st.rank_name = 'kingdom' THEN 4
-            WHEN st.rank_name = 'subkingdom' THEN 5
-            WHEN st.rank_name = 'phylum' THEN 6
-            WHEN st.rank_name = 'subphylum' THEN 7
-            WHEN st.rank_name = 'class' THEN 8
-            WHEN st.rank_name = 'subclass' THEN 9
-            WHEN st.rank_name = 'order' THEN 10
-            WHEN st.rank_name = 'suborder' THEN 11
-            WHEN st.rank_name = 'family' THEN 12
-            WHEN st.rank_name = 'subfamily' THEN 13
-            WHEN st.rank_name = 'genus' THEN 14
-            WHEN st.rank_name = 'subgenus' THEN 15
-            WHEN st.rank_name = 'species' THEN 16
-            WHEN st.rank_name = 'species group' THEN 17
-            WHEN st.rank_name = 'species subgroup' THEN 18
-            WHEN st.rank_name = 'subspecies' THEN 19
-            WHEN st.rank_name = 'serogroup' THEN 20
-            WHEN st.rank_name = 'serotype' THEN 21
-            WHEN st.rank_name = 'genotype' THEN 22
-            WHEN st.rank_name = 'strain' THEN 23
-            WHEN st.rank_name = 'isolate' THEN 24
-            ELSE 0
-         END AS rank_score,
-
          -- How recent is the ICTV result?
          ABS(currentMslRelease - result_tn.msl_release_num) AS recent_result_score,
+
+         CASE 
+            WHEN searchModifier = "starts_with" THEN MATCH(st.filtered_name) AGAINST(CONCAT(searchText, '*') IN BOOLEAN MODE)
+            ELSE 1
+         END AS relevance_score,
 
          -- Result columns
          result_tn.msl_release_num AS result_msl_release,
@@ -211,7 +167,6 @@ BEGIN
          st.taxonomy_id AS taxonomy_id,
          st.version_id AS version_id
 
-
       FROM v_searchable_taxon st
       LEFT JOIN v_taxonomy_node_merge_split ms ON ms.prev_ictv_id = st.ictv_id
       LEFT JOIN latest_release_of_ictv_id lr_match ON (
@@ -224,7 +179,8 @@ BEGIN
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
       LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id 
-      WHERE MATCH(st.filtered_name) AGAINST(CONCAT('*', searchText, '*') IN BOOLEAN MODE)
+      WHERE (searchModifier = "starts_with" AND MATCH(st.filtered_name) AGAINST(CONCAT(searchText,'*') IN BOOLEAN MODE))
+      OR (searchModifier = "contains" AND st.filtered_name LIKE CONCAT('%', searchText, '%'))
    )
 
    SELECT *
@@ -237,13 +193,12 @@ BEGIN
       LIMIT 1
    ) OR sr_outer.result_msl_release IS NULL
    ORDER BY 
-      is_exact_match DESC,
+      -- relevance_score DESC,
       result_rank_score ASC,
       result_name ASC,
       taxonomy_db_score DESC,
       name ASC;
       
-	-- LIMIT maxResultCount; 
 	
 END//
 DELIMITER ;
