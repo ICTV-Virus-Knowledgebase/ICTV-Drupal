@@ -35,7 +35,7 @@ class SearchResult {
 
    // The name class/type, inspired by NCBI name class.
    public string $nameClass;
-   public float $nameClassScore;
+   //public float $nameClassScore;
 
    // This will be calculated after the search result has been populated.
    //public int $orderedPairCount;
@@ -43,12 +43,11 @@ class SearchResult {
    // The match's taxonomic rank.
    public string $rankName;
 
-   // Ranks found in ICTV, VMR, and NCBI Taxonomy (virus and phage divisions only).
-   // Prefer lower ranks over higher ranks.
-   public float $rankScore;
-
    // How recent is the ICTV result?
    public ?float $recentResultScore;
+
+   // How relevant is this search result?
+   public ?float $relevanceScore;
 
    // ICTV results
    public ?int $resultMslRelease;
@@ -87,10 +86,10 @@ class SearchResult {
       $this->lengthDifference = 0;
       $this->name = "";
       $this->nameClass = "";
-      $this->nameClassScore = 0;
+      //$this->nameClassScore = 0;
       $this->rankName = "";
-      $this->rankScore = 0;
       $this->recentResultScore = 0;
+      $this->relevanceScore = 0;
       $this->resultMslRelease = 0;
       $this->resultName = "";
       $this->resultRankName = "";
@@ -118,10 +117,10 @@ class SearchResult {
       $instance->lengthDifference = $data["length_difference"];
       $instance->name = $data["name"];
       $instance->nameClass = $data["name_class"];
-      $instance->nameClassScore = $data["name_class_score"];
+      //$instance->nameClassScore = $data["name_class_score"];
       $instance->rankName = $data["rank_name"];
-      $instance->rankScore = $data["rank_score"];
       $instance->recentResultScore = $data["recent_result_score"];
+      $instance->relevanceScore = $data["relevance_score"];
       $instance->resultMslRelease = $data["result_msl_release"];
       $instance->resultName = $data["result_name"];
       $instance->resultRankName = $data["result_rank_name"];
@@ -151,10 +150,10 @@ class SearchResult {
          "lengthDifference" => $this->lengthDifference,
          "name" => $this->name,
          "nameClass" => $this->nameClass,
-         "nameClassScore" => $this->nameClassScore,
+         //"nameClassScore" => $this->nameClassScore,
          "rankName" => $this->rankName,
-         "rankScore" => $this->rankScore,
          "recentResultScore" => $this->recentResultScore,
+         "relevanceScore" => $this->relevanceScore,
          "resultMslRelease" => $this->resultMslRelease,
          "resultName" => $this->resultName,
          "resultRankName" => $this->resultRankName,

@@ -3,7 +3,7 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
-import { TaxonomyDB } from "../../global/Types";
+import { LookupTaxonomyRank, SearchModifier, TaxonomyDB } from "../../global/Types";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
 
@@ -12,9 +12,9 @@ export class VirusNameLookup {
    elements: {
       clearButton: HTMLButtonElement,
       container: HTMLDivElement,
-      maxResults: HTMLSelectElement,
       resultsPanel: HTMLDivElement,
       searchButton: HTMLButtonElement,
+      searchModifier: HTMLSelectElement,
       searchText: HTMLInputElement
    }
 
@@ -30,8 +30,11 @@ export class VirusNameLookup {
       container: null,
       resultsPanel: null,
       searchButton: null,
+      searchModifier: null,
       searchText: null
    }
+
+   searchText: string;
 
    settings = {
       currentMslRelease: NaN,
@@ -51,9 +54,9 @@ export class VirusNameLookup {
       this.elements = {
          clearButton: null,
          container: null,
-         maxResults: null,
          resultsPanel: null,
          searchButton: null,
+         searchModifier: null,
          searchText: null
       }
 
@@ -68,6 +71,7 @@ export class VirusNameLookup {
    async clearSearch() {
       this.elements.searchText.value = "";
       this.elements.resultsPanel.innerHTML = "";
+      this.searchText = "";
       return;
    }
 
@@ -110,12 +114,15 @@ export class VirusNameLookup {
                break;
          }
          
-         let matchName = `<i>${match_.name}</i>`;
+         const regex = new RegExp(this.searchText, "gi");
+         let matchName = match_.name.replace(regex, `<span class="highlighted-text">${this.searchText}</span>`);
+         //`<i>${match_.name}</i>`;
 
          // Format the match rank
-         let matchRank = match_.rankName.replace("_", " ");
+         let matchRank = !match_.rankName || match_.rankName === "no_rank" ? "" : LookupTaxonomyRank(match_.rankName);
 
-         let displayedRank = match_.nameClass == "scientific_name" || match_.nameClass == "taxon_name" ? `${matchRank}: ` : "";
+         let displayedRank = match_.nameClass == "scientific_name" || match_.nameClass == "taxon_name" ? matchRank : "";
+         if (displayedRank.length > 0) { displayedRank += ": "; }
 
          // Format name class
          const nameClass = match_.nameClass.replace("_", " ");
@@ -136,7 +143,7 @@ export class VirusNameLookup {
       const es = matchCount === 1 ? "" : "es";
 
       html = 
-         `<div class="results-count">${matchCount} match${es} without an ICTV result</div>
+         `<div class="results-count" id="invalid-matches-section">${matchCount} match${es} without an ICTV result</div>
             <table class="invalid-results-table">
                <thead>
                   <tr class="header-row">
@@ -184,7 +191,31 @@ export class VirusNameLookup {
             break;
       }
 
-      let matchName = `<i>${result_.name}</i>`;
+      
+      /* 
+      let matchName = null; */
+      const regex = new RegExp(this.searchText, "i");
+      const resultName = result_.name.trim();
+/*
+      let startIndex = resultName.search(regex);
+      let endIndex = startIndex + this.searchText.length;
+      if (startIndex > -1) {
+
+         let formattedSearchText = resultName.substring(startIndex, this.searchText.length);
+
+         if (startIndex === 0) {
+            matchName = `<span class="highlighted-text">${formattedSearchText}</span>${resultName.substring(endIndex)}`;
+         } else {
+            matchName = `${resultName.slice(0, startIndex)}<span class="highlighted-text">${formattedSearchText}</span>${resultName.substring(endIndex)}`;
+         }
+         
+         console.log(`result_.name = ${resultName}, start index = ${startIndex}, end index = ${endIndex}, formattedSearchText = ${formattedSearchText}, char at start = ${resultName.charAt(startIndex)}`)
+      
+      } else {
+         matchName = resultName;
+      } */
+      
+      let matchName = resultName.replace(regex, `<span class="highlighted-text">${this.searchText}</span>`);
 
       // Depending on the match data, we might hyperlink the match name and the intermediate name.
       let linkedIntermediateName = null;
@@ -201,7 +232,7 @@ export class VirusNameLookup {
 
          linkedMatchName = matchName;
 
-         let intermediateRank = !result_.intermediateRank ? "" : `${result_.intermediateRank}: `
+         let intermediateRank = !result_.intermediateRank || result_.intermediateRank === "no_rank" ? "" : `${LookupTaxonomyRank(result_.intermediateRank)}: `
 
          // Hyperlink the intermediate name.
          let intermediateName = `<i>${result_.intermediateName}</i>`;
@@ -209,10 +240,11 @@ export class VirusNameLookup {
       }
 
       // Format the match rank
-      let matchRank = result_.rankName.replace("_", " ");
+      let matchRank = !result_.rankName || result_.rankName === "no_rank" ? "" : LookupTaxonomyRank(result_.rankName);
       if (result_.taxonomyDB === TaxonomyDB.ictv_epithets) { matchRank += " epithet"; }
+      if (matchRank.length > 0) { matchRank += ": "; }
 
-      let displayedRank = result_.nameClass == "scientific_name" || result_.nameClass == "taxon_name" ? `${matchRank}: ` : "";
+      let displayedRank = result_.nameClass == "scientific_name" || result_.nameClass == "taxon_name" ? matchRank : "";
 
       // Format name class
       const nameClass = result_.nameClass.replace("_", " ");
@@ -283,7 +315,7 @@ export class VirusNameLookup {
          }
 
          // Format the result rank
-         const resultRank = !ictvResult_.rankName ? "" : ictvResult_.rankName.replace("_", " ");
+         const resultRank = !ictvResult_.rankName || ictvResult_.rankName === "no_rank" ? "" : LookupTaxonomyRank(ictvResult_.rankName);
 
          // Flag abolished ICTV results.
          let resultVersion = "";
@@ -315,15 +347,7 @@ export class VirusNameLookup {
 
       this.elements.resultsPanel.innerHTML = html;
 
-      // Populate the result count.
-      const resultsCountEl = this.elements.resultsPanel.querySelector(".results-count");
-      if (!resultsCountEl) { throw new Error("Invalid results count Element"); }
-
-      const s = ictvResultCount === 1 ? "" : "s";
-      resultsCountEl.innerHTML = `${ictvResultCount} ICTV result${s}`;
-
-      const es = matchCount === 1 ? "" : "es";
-      resultsCountEl.innerHTML += ` (${matchCount} match${es})`;
+      let invalidCountHTML = "";
 
       if (Array.isArray(invalidMatches) && invalidMatches.length > 0) {
 
@@ -334,7 +358,20 @@ export class VirusNameLookup {
          if (!invalidEl) { throw new Error("Invalid invalid matches Element"); }
 
          invalidEl.innerHTML = invalidHTML;
+
+         const invalidES = invalidMatches.length === 1 ? "" : "es";
+         invalidCountHTML = `, <a href="#invalid-matches-section">${invalidMatches.length} invalid match${invalidES}</a>`;
       }
+
+      // Populate the result count.
+      const resultsCountEl = this.elements.resultsPanel.querySelector(".results-count");
+      if (!resultsCountEl) { throw new Error("Invalid results count Element"); }
+
+      const hitS = ictvResultCount === 1 ? "" : "s";
+      resultsCountEl.innerHTML = `${ictvResultCount} hit${hitS} to ICTV taxa`;
+
+      const nameS = matchCount === 1 ? "" : "s";
+      resultsCountEl.innerHTML += ` (${matchCount} matching name${nameS}${invalidCountHTML})`;
 
       return;
    }
@@ -348,17 +385,13 @@ export class VirusNameLookup {
       const html = 
          `<div class="lookup-container">
             <div class="search-controls">
-               <input class="search-text" type="text" placeholder="Enter a virus name" spellcheck="false" />
+               <select class="search-modifier">
+                  <option value="${SearchModifier.starts_with}" selected>Starts with</option>
+                  <option value="${SearchModifier.contains}">Contains</option>
+               </select>
+               <input class="search-text" type="text" placeholder="Enter all or part of a name" spellcheck="false" />
                <button class="search-button ictv-btn">${this.icons.search} Search</button>
                <button class="clear-button ictv-btn">Clear</button>
-
-               <label class="max-results-label">Max results</label>
-               <select class="max-results">
-                  <option value="50">50</option>
-                  <option value="100" selected>100</option>
-                  <option value="500">500</option>
-                  <option value="1000">1000</option>
-               </select>
             </div>
          </div>
          <div class="results-panel"></div>`;
@@ -369,14 +402,14 @@ export class VirusNameLookup {
       this.elements.clearButton = this.elements.container.querySelector(".clear-button");
       if (!this.elements.clearButton) { return await AlertBuilder.displayError("Invalid clear button Element"); }
 
-      this.elements.maxResults = this.elements.container.querySelector(".max-results");
-      if (!this.elements.maxResults) { return await AlertBuilder.displayError("Invalid max results Element"); }
-
       this.elements.resultsPanel = this.elements.container.querySelector(".results-panel");
       if (!this.elements.resultsPanel) { return await AlertBuilder.displayError("Invalid results panel Element"); }
 
       this.elements.searchButton = this.elements.container.querySelector(".search-button");
       if (!this.elements.searchButton) { return await AlertBuilder.displayError("Invalid search button Element"); }
+
+      this.elements.searchModifier = this.elements.container.querySelector(".search-modifier");
+      if (!this.elements.searchModifier) { return await AlertBuilder.displayError("Invalid search modifier Element"); }
 
       this.elements.searchText = this.elements.container.querySelector(".search-text");
       if (!this.elements.searchText) { return await AlertBuilder.displayError("Invalid search text Element"); }
@@ -403,18 +436,22 @@ export class VirusNameLookup {
    // Lookup the virus name using the web service.
    async search() {
 
+      this.searchText = this.elements.searchText.value;
+      if (!this.searchText) { 
+         return await AlertBuilder.displayError("Please enter valid search text"); 
+      } else if (this.searchText.length < 3) {
+         return await AlertBuilder.displayError("Please enter at least 3 characters");
+      }
+
       this.elements.searchButton.disabled = true;
 
-      const maxResults = parseInt(this.elements.maxResults.value);
+      const searchModifier = this.elements.searchModifier.value as SearchModifier;
 
       // Display the spinner and "Searching...".
       this.elements.resultsPanel.innerHTML = `${this.icons.spinner} <span class="spinner-message">Searching...</span>`;
 
       try {
-         let searchText = this.elements.searchText.value;
-         if (!searchText) { throw new Error("Please enter valid search text"); }
-
-         this.results = await VirusNameLookupService.lookupName(this.settings.currentMslRelease, maxResults, searchText);
+         this.results = await VirusNameLookupService.lookupName(this.settings.currentMslRelease, searchModifier, this.searchText);
       }
       catch (error_) {
          this.elements.searchButton.disabled = false;
