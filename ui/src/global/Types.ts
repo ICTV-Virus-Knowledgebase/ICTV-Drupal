@@ -32,8 +32,10 @@ export enum OrderedTaxaLevel {
 }
 
 export enum SearchModifier {
+   all_words = "all_words",
+   any_words = "any_words",
    contains = "contains",
-   starts_with = "starts_with"
+   exact_match = "exact_match"
 }
 
 export enum TaxaLevel {
