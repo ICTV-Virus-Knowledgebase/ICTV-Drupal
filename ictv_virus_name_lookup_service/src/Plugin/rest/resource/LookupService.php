@@ -98,6 +98,24 @@ class LookupService extends ResourceBase {
 
 
    /**
+    * Removes non-alphanumeric characters (except for space) and returns a lower-case 
+    * version of the text.
+    */
+   public function filterText(string $text) {
+
+      $remove = array("`", "\"", "''", "!", "?");
+      $replaceWithComma = array("(", ")", ";", ":", ",,");
+      $replaceWithSpace = array("-", "_", "  ", "/", "\\");
+
+      $result = str_replace($remove, "", $text);
+      $result = str_replace($replaceWithComma, ",", $result);
+      $result = str_replace($replaceWithSpace, " ", $result);
+      
+      return strtolower($result);
+   }
+
+
+   /**
     * Responds to GET request.
     * Passes the HTTP Request to the lookupName method and returns the result.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
@@ -144,11 +162,45 @@ class LookupService extends ResourceBase {
     */
    public function lookupName(int $currentMslRelease, string $searchModifier, string $searchText) {
 
+      // Filter the search text, removing several non-alphanumeric characters.
+      $searchText = $this->filterText($searchText);
+
+      // Use the search modifier to determine how to modify the search text.
+      switch ($searchModifier) {
+
+         case "all_words":
+            $modifiedText = "";
+            $tokens = explode(" ", $searchText);
+            foreach ($tokens as $token) {
+               if ($token == null || strlen($token) < 1) { continue; }
+               $modifiedText = $modifiedText."+".$token." ";
+            }
+
+            // Remove the trailing space.
+            $modifiedText = substr($modifiedText, 0, strlen($modifiedText) - 1);
+            break;
+
+         case "any_words":
+            $modifiedText = $searchText;
+            break;
+
+         case "contains": 
+            $modifiedText = "%".$searchText."%";
+            break;
+
+         case "exact_match":
+            $modifiedText = "\"".$searchText."\"";
+            break;
+
+         default:
+            $modifiedText = $searchText;
+      }
+
       // Populate the stored procedure's parameters.
-      $parameters = [":currentMslRelease" => $currentMslRelease, ":searchModifier" => $searchModifier, ":searchText" => $searchText];
+      $parameters = [":currentMslRelease" => $currentMslRelease, ":modifiedText" => $modifiedText, ":searchModifier" => $searchModifier, ":searchText" => $searchText];
 
       // Generate SQL to call the "QuerySearchableTaxon" stored procedure to search for the virus name.
-      $sql = "CALL QuerySearchableTaxon(:currentMslRelease, :searchModifier, :searchText);";
+      $sql = "CALL QuerySearchableTaxon(:currentMslRelease, :modifiedText, :searchModifier, :searchText);";
 
       // Execute the query and process the results.
       $results = $this->connection->query($sql, $parameters);
@@ -218,10 +270,6 @@ class LookupService extends ResourceBase {
       foreach ($ictvResultKeys as $orderedKey) {
          $result = $ictvResults[$orderedKey];
          array_push($normalizedResults, $result->normalize());
-
-         // TEST 120924
-         $testText = print_r($result, true);
-         \Drupal::logger('ictv_virus_name_lookup_service')->info($testText);
       }
 
       return $normalizedResults;
@@ -272,8 +320,12 @@ class LookupService extends ResourceBase {
 
             $searchModifier = $request->get("searchModifier");
             if ($searchModifier == NULL) {
-               $searchModifier = "starts_with";
-            } else if ($searchModifier != "starts_with" && $searchModifier != "contains") { 
+               $searchModifier = "exact_match";
+
+            } else if ($searchModifier != "all_words" && 
+                       $searchModifier != "any_words" && 
+                       $searchModifier != "contains" && 
+                       $searchModifier != "exact_match") { 
                throw new BadRequestHttpException("Unrecognized search modifier {$searchModifier}"); 
             }
             

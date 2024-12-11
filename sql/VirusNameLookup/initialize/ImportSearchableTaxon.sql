@@ -10,7 +10,7 @@ CREATE PROCEDURE ImportSearchableTaxon(
    IN `ictvTaxnodeID` INT(11),
    IN `intermediateName` VARCHAR(300),
    IN `intermediateRank` VARCHAR(50),
-	IN `name` VARCHAR(300),
+	IN `name` VARCHAR(800),
 	IN `nameClass` VARCHAR(100),
 	IN `parentTaxonomyDB` VARCHAR(100),
 	IN `parentTaxonomyID` INT,

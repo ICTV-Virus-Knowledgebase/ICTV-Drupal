@@ -23,6 +23,13 @@ export class VirusNameLookup {
       spinner: string
    }
 
+   placeholderText = {
+      [SearchModifier.all_words]: "Enter one or more required words",
+      [SearchModifier.any_words]: "Enter one or more optional words",
+      [SearchModifier.contains]: "Enter a word or part of a word",
+      [SearchModifier.exact_match]: "Enter words that must appear together"
+   }
+   
    results: IIctvResult[];
 
    // DOM selectors
@@ -134,7 +141,6 @@ export class VirusNameLookup {
             `<tr class="${rowClass}">
                <td class="match-number">${matchCount}</td>
                <td class="match-name">${displayedRank}${linkedMatchName}</td>
-               <td class="match-name">${match_.division}</td>
                <td class="name-class">${nameClass}</td>
                <td class="source">${source}</td>
             </tr>`;
@@ -149,7 +155,6 @@ export class VirusNameLookup {
                   <tr class="header-row">
                      <th class="match-th">#</th>
                      <th class="match-th">Matching name</th>
-                     <th class="match-th">Organism type</th>
                      <th class="match-th">Name type</th>
                      <th class="match-th">Source</th>
                   </tr>
@@ -251,9 +256,9 @@ export class VirusNameLookup {
 
       // Create the table columns.
       return `<td class="match-name">${displayedRank}${linkedMatchName}</td>
-         <td class="match-name">${linkedIntermediateName}</td>
          <td class="name-class">${nameClass}</td>
-         <td class="source">${source}</td>`;
+         <td class="source">${source}</td>
+         <td class="match-name">${linkedIntermediateName}</td>`;
    }
 
    async displayResults() {
@@ -280,9 +285,9 @@ export class VirusNameLookup {
                   <th class="result-th">#</th>
                   <th class="result-th">Current ICTV Taxonomy</th>
                   <th class="match-th">Matching name</th>
-                  <th class="match-th">Associated name</th>
                   <th class="match-th">Name type</th>
                   <th class="match-th">Source</th>
+                  <th class="match-th">Associated name</th>
                </tr>
             </thead>
             <tbody>`;
@@ -386,10 +391,12 @@ export class VirusNameLookup {
          `<div class="lookup-container">
             <div class="search-controls">
                <select class="search-modifier">
-                  <option value="${SearchModifier.starts_with}" selected>Starts with</option>
+                  <option value="${SearchModifier.exact_match}" selected>Exact match</option>
+                  <option value="${SearchModifier.all_words}">All words</option>
+                  <option value="${SearchModifier.any_words}">Any words</option>
                   <option value="${SearchModifier.contains}">Contains</option>
                </select>
-               <input class="search-text" type="text" placeholder="Enter all or part of a name" spellcheck="false" />
+               <input class="search-text" type="text" placeholder="${this.placeholderText[SearchModifier.exact_match]}" spellcheck="false" />
                <button class="search-button ictv-btn">${this.icons.search} Search</button>
                <button class="clear-button ictv-btn">Clear</button>
             </div>
@@ -427,6 +434,38 @@ export class VirusNameLookup {
 
             await this.search();
          }
+         return true;
+      })
+
+      // The selected search modifier determines the search text placeholder.
+      this.elements.searchModifier.addEventListener("change", async (event_) => {
+
+         let placeholder = this.placeholderText[this.elements.searchModifier.value as SearchModifier];
+
+         /*
+         switch (this.elements.searchModifier.value) {
+            case SearchModifier.all_words:
+               placeholder = "Enter one or more required words";
+               break;
+
+            case SearchModifier.any_words:
+               placeholder = "Enter one or more optional words";
+               break;
+
+            case SearchModifier.contains:
+               placeholder = "Enter a word or part of a word";
+               break;
+
+            case SearchModifier.exact_match:
+               placeholder = "Enter words that must appear together";
+               break;
+
+            default: 
+               placeholder = "Enter one or more words";
+               break;
+         }*/
+
+         this.elements.searchText.setAttribute("placeholder", placeholder);
          return true;
       })
 

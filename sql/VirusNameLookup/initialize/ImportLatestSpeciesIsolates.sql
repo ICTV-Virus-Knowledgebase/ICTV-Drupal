@@ -14,9 +14,9 @@ BEGIN
    DECLARE ictvTaxonomyDB VARCHAR(20);
    DECLARE ictvVmrDB VARCHAR(20);
    DECLARE isolateAbbrevs LONGTEXT;
-   DECLARE isolateDesignation LONGTEXT;
+   DECLARE isolateDesignation VARCHAR(800); -- LONGTEXT;
    DECLARE isolateID INT(11);
-   DECLARE isolateNames LONGTEXT;
+   DECLARE isolateNames VARCHAR(800); -- LONGTEXT;
    DECLARE mslRelease INT(11);
    DECLARE name_end INT;
    DECLARE name_pos INT DEFAULT 1;
@@ -129,32 +129,33 @@ BEGIN
          END WHILE;
       END IF;
 
-      -- Should we add any isolate abbreviations?
-      SET isolateAbbrevs = TRIM(REPLACE(isolateAbbrevs, ',', ';'));
-      IF isolateAbbrevs IS NOT NULL AND LENGTH(isolateAbbrevs) > 0 THEN
+      -- Should we add isolates names (and possibly isolate designations)?
+      SET isolateNames = TRIM(isolateNames);
+      IF isolateNames IS NOT NULL THEN
 
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', isolateAbbrevs, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(isolateAbbrevs, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(isolateAbbrevs, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
+         SET isolateDesignation = TRIM(isolateDesignation);
+         IF isolateDesignation IS NOT NULL AND LENGTH(isolateDesignation) > 0 THEN
+            SET isolateNames = CONCAT(isolateNames, ' (', isolateDesignation, ')');
+         END IF;
 
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
+         -- dmd 12/10/24 Just in case...
+         SET isolateNames = SUBSTRING(isolateNames, 1, 800);
 
-               -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'isolate_abbreviation', ictvTaxonomyDB, 
-                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
-            END IF;
-
-         END WHILE;
+         -- Create a searchable_taxon record.
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", isolateNames, 'isolate_name', ictvTaxonomyDB, 
+            taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
+      -- Should we add any isolate abbreviations?
+      SET isolateAbbrevs = TRIM(isolateAbbrevs);
+      IF isolateAbbrevs IS NOT NULL AND LENGTH(isolateAbbrevs) > 0 THEN
+
+         -- Create a searchable_taxon record.
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", isolateAbbrevs, 'isolate_abbreviation', ictvTaxonomyDB, 
+            taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
+      END IF;
+
+      /*
       -- Should we add any isolate designations?
       SET isolateDesignation = TRIM(REPLACE(isolateDesignation, ',', ';'));
       IF isolateDesignation IS NOT NULL AND LENGTH(isolateDesignation) > 0 THEN
@@ -206,7 +207,7 @@ BEGIN
 
          END WHILE;
       END IF;
-
+      */
       -- Should we add RefSeq accessions?
       SET refseqAccessions = REPLACE(refseqAccessions, ',', ';');
       IF refseqAccessions IS NOT NULL AND LENGTH(refseqAccessions) > 0 THEN
@@ -233,6 +234,7 @@ BEGIN
          END WHILE;
       END IF;
 
+      /* dmd 12/05/24 There aren't currently any refseq organisms in VMR.
       -- Was a RefSeq organism provided?
       SET refseqOrganism = TRIM(refseqOrganism);
       IF refseqOrganism IS NOT NULL AND LENGTH(refseqOrganism) > 0 THEN
@@ -241,6 +243,7 @@ BEGIN
          CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", refseqOrganism, 'refseq_organism', ictvTaxonomyDB, 
             taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
+      */
 
    END LOOP;
 

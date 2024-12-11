@@ -9,6 +9,9 @@ CREATE PROCEDURE QuerySearchableTaxon(
    -- The current MSL release number.
    IN `currentMslRelease` INT,
 
+   -- A version of the search text that might've been modified (based on the search modifier).
+   IN `modifiedText` NVARCHAR(500),
+
    -- If search modifier = "starts_with", use MATCH AGAINST in the WHERE clause. If search modifier = "contains", use LIKE.
    IN `searchModifier` VARCHAR(20),
 
@@ -23,16 +26,20 @@ BEGIN
 	-- The length of the search text.
    DECLARE searchTextLength INT;
 	
+   -- Validate the modified text.
+   IF modifiedText IS NULL OR LENGTH(modifiedText) < 1 THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid modified text parameter (empty)';
+   END IF;
 
-	-- Filter the search text, trim whitespace from both ends of the search text, and convert to lowercase.
-	SET searchText = LOWER(TRIM(getFilteredName(searchText)));
+	-- Trim whitespace from both ends of the search text and convert to lowercase.
+	SET searchText = TRIM(LOWER(searchText));
 
 	IF searchText IS NULL OR LENGTH(searchText) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid search text parameter (empty)';
    END IF;
 	
    IF searchModifier IS NULL THEN
-      SET searchModifier = "starts_with";
+      SET searchModifier = "any_words";
    END IF;
 
    -- Get the first character of the search text.
@@ -111,7 +118,7 @@ BEGIN
          ABS(currentMslRelease - result_tn.msl_release_num) AS recent_result_score,
 
          CASE 
-            WHEN searchModifier = "starts_with" THEN MATCH(st.filtered_name) AGAINST(CONCAT(searchText, '*') IN BOOLEAN MODE)
+            WHEN searchModifier IN ("all_words", "any_words", "exact_match") THEN MATCH(st.filtered_name) AGAINST(modifiedText IN BOOLEAN MODE)
             ELSE 1
          END AS relevance_score,
 
@@ -178,9 +185,9 @@ BEGIN
          result_tn.ictv_id = ms.next_ictv_id 
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
-      LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id 
-      WHERE (searchModifier = "starts_with" AND MATCH(st.filtered_name) AGAINST(CONCAT(searchText,'*') IN BOOLEAN MODE))
-      OR (searchModifier = "contains" AND st.filtered_name LIKE CONCAT('%', searchText, '%'))
+      LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id
+      WHERE (searchModifier IN ("all_words", "any_words", "exact_match") AND MATCH(st.filtered_name) AGAINST(modifiedText IN BOOLEAN MODE))
+      OR (searchModifier = "contains" AND st.filtered_name LIKE modifiedText)
    )
 
    SELECT *
