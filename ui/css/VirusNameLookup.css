@@ -35,6 +35,7 @@
    max-width: 1000px;
 }
 #ictv_virus_name_lookup_container .search-controls .search-modifier {
+   appearance: listbox !important;
    background-color: #fff;
    background-image: none;
    border: 1px solid #ccc;
@@ -44,15 +45,18 @@
    font-size: 14px;
    line-height: 1.3;
    margin: 0;
-   padding: 7.7px 12px;
+   padding: 7.0px 12px;
    vertical-align: middle;
    width: 120px;
+   -webkit-appearance: listbox !important;
 }
 #ictv_virus_name_lookup_container .search-controls .search-text {
    background-color: #fff;
    background-image: none;
-   border: 1px solid #ccc;
+   border-color: #ccc #ccc #ccc transparent;
    border-radius: 0 0 0 0;
+   border-style: solid;
+   border-width: 1px 1px 1px 0;
    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
    color: #555;
    font-size: 14px;
@@ -121,17 +125,12 @@
    background-color: #fff;
 }
 
-/* dmd 12/05/24
-#ictv_virus_name_lookup_container .results-table .result-td,
-#ictv_virus_name_lookup_container .results-table .match-name,
-#ictv_virus_name_lookup_container .results-table .name-class,
-#ictv_virus_name_lookup_container .invalid-results-table .result-td,
-#ictv_virus_name_lookup_container .invalid-results-table .match-name,
-#ictv_virus_name_lookup_container .invalid-results-table .name-class {
-   text-transform: capitalize;
-}*/
+#ictv_virus_name_lookup_container .results-table .result-lineage {
+   color: #777;
+}
+
 #ictv_virus_name_lookup_container .results-table .source {
-   min-width: 160px;
+   min-width: 260px;
 }
 #ictv_virus_name_lookup_container .invalid-results-table .match-number {
    width: 80px;
@@ -140,6 +139,48 @@
 #ictv_virus_name_lookup_container .invalid-results-table td {
    font-size: 1.0rem !important;
    vertical-align: top !important;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Tooltips
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_virus_name_lookup_container .has-tooltip {
+   border-bottom: 1px dotted black;
+   cursor: pointer;
+   display: inline-block;
+   position: relative;
+ }
+ 
+#ictv_virus_name_lookup_container .has-tooltip .tooltip {
+   background-color: #555;
+   border-radius: 6px;
+   color: #fff;
+   left: 125%;
+   opacity: 0;
+   padding: 5px;
+   position: absolute;
+   text-align: center;
+   top: -5px;
+   visibility: hidden;
+   width: 200px;
+   z-index: 1000;
+}
+
+#ictv_virus_name_lookup_container .has-tooltip .tooltip::after {
+   border-color: transparent #555 transparent transparent;
+   border-style: solid;
+   border-width: 5px;
+   content: "";
+   margin-top: -5px;
+   position: absolute;
+   right: 100%;
+   top: 50%;
+}
+ 
+#ictv_virus_name_lookup_container .has-tooltip:hover .tooltip {
+   opacity: 1;
+   visibility: visible;
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------

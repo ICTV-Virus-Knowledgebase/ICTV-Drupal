@@ -131,7 +131,12 @@ class LookupService extends ResourceBase {
          ),
       );
        
-      return (new ResourceResponse($data))->addCacheableDependency($build);
+      // dmd testing 12/13/24
+      $response = new ResourceResponse($data);
+      $response->addCacheableDependency($build);
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+      return $response;
+      // return (new ResourceResponse($data))->addCacheableDependency($build);
    }
 
    
@@ -163,7 +168,7 @@ class LookupService extends ResourceBase {
    public function lookupName(int $currentMslRelease, string $searchModifier, string $searchText) {
 
       // Filter the search text, removing several non-alphanumeric characters.
-      $searchText = $this->filterText($searchText);
+      //$searchText = $this->filterText($searchText);
 
       // Use the search modifier to determine how to modify the search text.
       switch ($searchModifier) {
@@ -202,8 +207,16 @@ class LookupService extends ResourceBase {
       // Generate SQL to call the "QuerySearchableTaxon" stored procedure to search for the virus name.
       $sql = "CALL QuerySearchableTaxon(:currentMslRelease, :modifiedText, :searchModifier, :searchText);";
 
-      // Execute the query and process the results.
-      $results = $this->connection->query($sql, $parameters);
+      try {
+         // Run the query
+         $results = $this->connection->query($sql, $parameters);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_virus_name_lookup_service')->error($e);
+         return null;
+      }
+
+      // Process the results of the query.
 
       $ictvResults = [];
 
@@ -242,7 +255,8 @@ class LookupService extends ResourceBase {
 
             // Create a new ICTV result instance.
             $ictvResult = new IctvResult($searchResult->resultMslRelease, $searchResult->resultName, 
-               $searchResult->resultRankName, $searchResult->resultTaxnodeID);
+               $searchResult->resultRankName, $searchResult->resultTaxnodeID,
+               $searchResult->family, $searchResult->subfamily, $searchResult->genus, $searchResult->subgenus);
 
             // Add the key to the ordered list of keys.
             array_push($ictvResultKeys, $resultKey);
@@ -300,7 +314,12 @@ class LookupService extends ResourceBase {
          ),
       );
        
-      return (new ResourceResponse($data))->addCacheableDependency($build);
+      // dmd testing 12/13/24
+      $response = new ResourceResponse($data);
+      $response->addCacheableDependency($build);
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+      return $response;
+      // return (new ResourceResponse($data))->addCacheableDependency($build);
    }
 
    public function processAction(Request $request) {

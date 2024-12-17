@@ -4,4 +4,4 @@
 CREATE OR REPLACE VIEW `v_taxonomy_level` AS 
 
 SELECT *
-FROM ICTVonline39.taxonomy_level
+FROM ICTVonline39.taxonomy_level;

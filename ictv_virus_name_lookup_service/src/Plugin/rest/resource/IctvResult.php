@@ -16,13 +16,27 @@ class IctvResult {
 
    public ?int $taxnodeID;
 
+
+   public ?string $family;
+   public ?string $subfamily;
+   public ?string $genus;
+   public ?string $subgenus;
+
+
    // C-tor
-   public function __construct(?int $mslRelease_, ?string $name_, ?string $rankName_, ?int $taxnodeID_) {
+   public function __construct(?int $mslRelease_, ?string $name_, ?string $rankName_, ?int $taxnodeID_,
+      ?string $family_, ?string $subfamily_, ?string $genus_, ?string $subgenus_) {
+
       $this->mslRelease = $mslRelease_;
       $this->name = $name_;
       $this->rankName = $rankName_;
       $this->taxnodeID = $taxnodeID_;
       $this->matches = [];
+
+      $this->family = $family_;
+      $this->subfamily = $subfamily_;
+      $this->genus = $genus_;
+      $this->subgenus = $subgenus_;
    }
 
 
@@ -35,7 +49,12 @@ class IctvResult {
          "name" => $this->name,
          "rankName" => $this->rankName,
          "taxnodeID" => $this->taxnodeID,
-         "matches" => $this->matches
+         "matches" => $this->matches,
+
+         "family" => $this->family,
+         "subfamily" => $this->subfamily,
+         "genus" => $this->genus,
+         "subgenus" => $this->subgenus
       ];
    }
 }
