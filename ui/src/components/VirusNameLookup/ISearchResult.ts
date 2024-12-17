@@ -65,4 +65,9 @@ export interface ISearchResult {
    // The version of the match (for ICTV this is MSL release number).
    versionID: number;
    
+
+   family: string;
+   subfamily: string;
+   genus: string;
+   subgenus: string;
 }

@@ -69,6 +69,14 @@ class SearchResult {
 
    // The version of the match (for ICTV this is MSL release number).
    public int $versionID;
+
+
+   // TEST 121224
+   public string $family;
+   public string $subfamily;
+   public string $genus;
+   public string $subgenus;
+   
    
 
    // C-tor
@@ -99,6 +107,11 @@ class SearchResult {
       $this->taxonomyDbScore = 0;
       $this->taxonomyID = 0;
       $this->versionID = -1;
+
+      $this->family = "";
+      $this->subfamily = "";
+      $this->genus = "";
+      $this->subgenus = "";
    }
 
    // Method to populate the object from an associative array
@@ -130,6 +143,11 @@ class SearchResult {
       $instance->taxonomyID = $data["taxonomy_id"];
       $instance->versionID = $data["version_id"];
       
+      $instance->family = $data["family"];
+      $instance->subfamily = $data["subfamily"];
+      $instance->genus = $data["genus"];
+      $instance->subgenus = $data["subgenus"];
+
       return $instance;
    }
 
@@ -162,7 +180,12 @@ class SearchResult {
          "taxonomyDB" => $this->taxonomyDB,
          "taxonomyDbScore" => $this->taxonomyDbScore,
          "taxonomyID" => $this->taxonomyID,
-         "versionID" => $this->versionID
+         "versionID" => $this->versionID,
+
+         "family" => $this->family,
+         "subfamily" => $this->subfamily,
+         "genus" => $this->genus,
+         "subgenus" => $this->subgenus
       ];
    }
 

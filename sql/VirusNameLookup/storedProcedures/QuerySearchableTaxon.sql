@@ -32,7 +32,7 @@ BEGIN
    END IF;
 
 	-- Trim whitespace from both ends of the search text and convert to lowercase.
-	SET searchText = TRIM(LOWER(searchText));
+	SET searchText = TRIM(searchText);
 
 	IF searchText IS NULL OR LENGTH(searchText) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid search text parameter (empty)';
@@ -63,9 +63,33 @@ BEGIN
             WHEN st.division IN ('viruses', 'phages') THEN 1 ELSE 0
          END AS division_score,
 
+         -- The family of the ICTV result.
+         CASE 
+            WHEN result_tn.family_id IS NOT NULL THEN CONCAT(family.name, ':', CAST(result_tn.family_id AS VARCHAR(12)))
+            ELSE ''
+         END as family,
+
+         -- The subfamily of the ICTV result.
+         CASE 
+            WHEN result_tn.subfamily_id IS NOT NULL THEN CONCAT(subfamily.name, ':', CAST(result_tn.subfamily_id AS VARCHAR(12)))
+            ELSE ''
+         END AS subfamily,
+
+         -- The genus of the ICTV result.
+         CASE 
+            WHEN result_tn.genus_id IS NOT NULL THEN CONCAT(genus.name, ':', CAST(result_tn.genus_id AS VARCHAR(12)))
+            ELSE ''
+         END AS genus,
+
+         -- The subgenus of the ICTV result.
+         CASE 
+            WHEN result_tn.subgenus_id IS NOT NULL THEN CONCAT(subgenus.name, ':', CAST(result_tn.subgenus_id AS VARCHAR(12)))
+            ELSE ''
+         END AS subgenus,
+
          -- Does the first character of the search text match the first character of the taxon name?
          CASE
-            WHEN LEFT(st.filtered_name, 1) = firstCharacter THEN 1 ELSE 0
+            WHEN LEFT(st.name, 1) = firstCharacter THEN 1 ELSE 0
          END AS first_character_match,
 
          -- Does the matching taxon have an associated ICTV result?
@@ -82,14 +106,14 @@ BEGIN
          
          -- Is this an exact match?
          CASE 
-            WHEN st.filtered_name = searchText THEN 1 ELSE 0
+            WHEN st.name = searchText THEN 1 ELSE 0
          END AS is_exact_match,
 
          -- Is this a valid taxon (not obsolete)?
          st.is_valid,
 
          -- How much did the search text's length differ from the match's length?
-         ABS(searchTextLength - LENGTH(st.filtered_name)) AS length_difference,
+         ABS(searchTextLength - LENGTH(st.name)) AS length_difference,
 
          -- Matching name
          st.name,
@@ -118,7 +142,7 @@ BEGIN
          ABS(currentMslRelease - result_tn.msl_release_num) AS recent_result_score,
 
          CASE 
-            WHEN searchModifier IN ("all_words", "any_words", "exact_match") THEN MATCH(st.filtered_name) AGAINST(modifiedText IN BOOLEAN MODE)
+            WHEN searchModifier IN ("all_words", "any_words", "exact_match") THEN MATCH(st.name) AGAINST(modifiedText IN BOOLEAN MODE)
             ELSE 1
          END AS relevance_score,
 
@@ -175,10 +199,9 @@ BEGIN
          st.version_id AS version_id
 
       FROM v_searchable_taxon st
-      LEFT JOIN v_taxonomy_node_merge_split ms ON ms.prev_ictv_id = st.ictv_id
-      LEFT JOIN latest_release_of_ictv_id lr_match ON (
-         lr_match.ictv_id = ms.prev_ictv_id 
-         AND lr_match.latest_msl_release = st.version_id
+      LEFT JOIN v_taxonomy_node_merge_split ms ON (
+         ms.prev_ictv_id = st.ictv_id 
+         AND ms.rev_count = 0
       )
       LEFT JOIN latest_release_of_ictv_id lr_result ON lr_result.ictv_id = ms.next_ictv_id 
       LEFT JOIN v_taxonomy_node result_tn ON (
@@ -186,8 +209,15 @@ BEGIN
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
       LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id
-      WHERE (searchModifier IN ("all_words", "any_words", "exact_match") AND MATCH(st.filtered_name) AGAINST(modifiedText IN BOOLEAN MODE))
-      OR (searchModifier = "contains" AND st.filtered_name LIKE modifiedText)
+
+      LEFT JOIN v_taxonomy_node family on family.taxnode_id = result_tn.family_id 
+      LEFT JOIN v_taxonomy_node subfamily on subfamily.taxnode_id = result_tn.subfamily_id 
+      LEFT JOIN v_taxonomy_node genus on genus.taxnode_id = result_tn.genus_id 
+      LEFT JOIN v_taxonomy_node subgenus on subgenus.taxnode_id = result_tn.subgenus_id 
+
+      WHERE (searchModifier IN ("all_words", "any_words", "exact_match") AND MATCH(st.name) AGAINST(modifiedText IN BOOLEAN MODE))
+      OR (searchModifier = "contains" AND st.name LIKE modifiedText)
+      LIMIT 10000
    )
 
    SELECT *
@@ -200,10 +230,11 @@ BEGIN
       LIMIT 1
    ) OR sr_outer.result_msl_release IS NULL
    ORDER BY 
-      -- relevance_score DESC,
       result_rank_score ASC,
+      result_msl_release DESC,
       result_name ASC,
       taxonomy_db_score DESC,
+      version_id DESC,
       name ASC;
       
 	

@@ -12,6 +12,30 @@ export enum JobStatus {
    valid = "valid"
 }
 
+export enum NameClass {
+   abbreviation = "abbreviation",
+   acronym = "acronym",
+   authority = "authority",
+   blast_name = "blast_name",
+   common_name = "common_name",
+   equivalent_name = "equivalent_name",
+   genbank_accession = "genbank_accession",
+   genbank_acronym = "genbank_acronym",
+   genbank_common_name = "genbank_common_name",
+   includes = "includes",
+   in_part = "in_part",
+   isolate_abbreviation = "isolate_abbreviation",
+   isolate_designation = "isolate_designation",
+   isolate_exemplar = "isolate_exemplar",
+   isolate_name = "isolate_name",
+   refseq_accession = "refseq_accession",
+   refseq_organism = "refseq_organism",
+   scientific_name = "scientific_name",
+   synonym = "synonym",
+   taxon_name = "taxon_name",
+   type_material = "type_material"
+}
+
 export enum OrderedTaxaLevel {
    tree = 0,
    realm = 1,
@@ -178,6 +202,78 @@ export enum WebServiceKey {
 // Functions that use enums
 //-----------------------------------------------------------------------------------------------------------------------------
 
+export function LookupNameClassDefinition(nameClass_: NameClass) {
+
+   // https://www.ncbi.nlm.nih.gov/books/NBK53758/ and ChatGPT prompts "Please list all name classes available in NCBI Taxonomy 
+   // and provide a definition for each one." and "Please provide similar definitions for the following name types: isolate abbreviation, 
+   // isolate designation, isolate exemplar, isolate name, RefSeq accession, and RefSeq organism."
+   
+   switch (nameClass_) { 
+
+      case NameClass.abbreviation:
+         return "An abbreviation associated with the taxon";
+
+      case NameClass.acronym:
+         return "An acronym associated with the taxon";
+
+      case NameClass.authority:
+         return "The name of the scientist(s) who originally described the taxon and the year it was published";
+
+      case NameClass.blast_name:
+         return "A simplified name used by BLAST (Basic Local Alignment Search Tool) for grouping organisms into broad categories";
+
+      case NameClass.common_name:
+         return "An informal name in common usage"; //General common or vernacular names for the taxon
+
+      case NameClass.equivalent_name:
+         return "A name that is considered equivalent to the scientific name but is not commonly used";
+
+      case NameClass.genbank_accession:
+         return "A unique alphanumeric identifier assigned to a specific sequence record in the GenBank database";
+
+      case NameClass.genbank_acronym:
+         return "An acronym used in GenBank records";
+
+      case NameClass.genbank_common_name:
+         return "The common name associated with the taxon used specifically in GenBank records";
+
+      case NameClass.includes:
+         return "A name that encompasses subgroups or other taxa included within the current taxon"; // An informal name that is a subset of a name
+
+      case NameClass.in_part:
+         return "A name that is only partially synonymous with the taxon"; // Names that are only partially synonymous with the taxon, A formal name that is a subset of a name
+
+      case NameClass.isolate_abbreviation:
+         return "A shortened or abbreviated form of a specific isolate's name";
+
+      case NameClass.isolate_designation:
+         return "A specific identifier or label given to a particular isolate, often used to differentiate among multiple isolates of the same species";
+
+      case NameClass.isolate_exemplar:
+         return "A representative isolate chosen as the best example or reference for a specific group, strain, or species";
+
+      case NameClass.isolate_name:
+         return "The full or descriptive name assigned to an isolate, often reflecting its source, collection location, or other unique characteristics";
+      
+      case NameClass.refseq_accession:
+         return "A unique alphanumeric identifier assigned to a specific sequence record in the NCBI RefSeq (Reference Sequence) database";
+
+      case NameClass.refseq_organism:
+         return "The organism name associated with a specific RefSeq entry. It refers to the taxonomic identity of the organism for which a curated reference sequence is provided in the RefSeq database";
+      
+         case NameClass.scientific_name:
+         return "The primary, official scientific name of the taxon";
+
+      case NameClass.synonym:
+         return "Alternative scientific names that have been historically used for the taxon but are not the currently accepted name";
+
+      case NameClass.taxon_name:
+         return "A taxonomic name";
+
+      case NameClass.type_material:
+         return "A name related to the type specimen or type material upon which the taxon's description is based";
+   }
+}
 // Return the value of the taxonomy rank enum.
 export function LookupTaxonomyRank(rank_: string) {
    return TaxonomyRank[rank_ as TaxonomyRank];

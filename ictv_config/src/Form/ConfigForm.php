@@ -15,6 +15,7 @@ class ConfigForm extends FormBase {
    private $CONTROL_AUTH_TOKEN = "authToken";
    private $CONTROL_BASE_WEB_SERVICE_URL = "baseWebServiceURL";
    private $CONTROL_CURRENT_MSL_RELEASE = "currentMslRelease";
+   private $CONTROL_CURRENT_VMR = "currentVMR";
    private $CONTROL_DRUPAL_WEB_SERVICE_URL = "drupalWebServiceURL";
    private $CONTROL_RELEASE_PROPOSALS_URL = "releaseProposalsURL";
    private $CONTROL_TAXON_HISTORY_PAGE = "taxonHistoryPage";
@@ -24,6 +25,7 @@ class ConfigForm extends FormBase {
    public $authToken;
    public $baseWebServiceURL;
    public $currentMslRelease;
+   public $currentVMR;
    public $drupalWebServiceURL;
    public $releaseProposalsURL;
    public $taxonHistoryPage;
@@ -101,6 +103,15 @@ class ConfigForm extends FormBase {
          '#default_value' => $this->currentMslRelease
       );
 
+      // The current VMR.
+      $form[$this->CONTROL_CURRENT_VMR] = array(
+         '#type' => 'textfield',
+         '#step' => '1',
+         '#title' => t('Current VMR'),
+         '#required' => FALSE,
+         '#default_value' => $this->currentVMR
+      );
+
       // The URL for Drupal web services (the app server).
       $form[$this->CONTROL_DRUPAL_WEB_SERVICE_URL] = array(
          '#type' => 'url',
@@ -157,6 +168,9 @@ class ConfigForm extends FormBase {
             SELECT VALUE FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
          ) AS currentMslRelease,
          ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentVMR' LIMIT 1
+         ) AS currentVMR,
+         ( 
             SELECT VALUE FROM ictv_settings WHERE NAME = 'drupalWebServiceURL' LIMIT 1
          ) AS drupalWebServiceURL,
          ( 
@@ -172,6 +186,7 @@ class ConfigForm extends FormBase {
       $this->authToken = $settings["authToken"];
       $this->baseWebServiceURL = $settings["baseWebServiceURL"];
       $this->currentMslRelease = $settings["currentMslRelease"];
+      $this->currentVMR = $settings["currentVMR"];
       $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
       $this->releaseProposalsURL = $settings["releaseProposalsURL"];
       $this->taxonHistoryPage = $settings["taxonHistoryPage"];
@@ -245,6 +260,12 @@ class ConfigForm extends FormBase {
          $form_state->setErrorByName($this->CONTROL_CURRENT_MSL_RELEASE, $this->t('Unable to save current MSL release.'));
       }
    
+      // Get the current VMR and save it.
+      $value = $form_state->getValue($this->CONTROL_CURRENT_VMR);
+      if (!$this->saveValue($this->CONTROL_CURRENT_VMR, $value)) {
+         $form_state->setErrorByName($this->CONTROL_CURRENT_VMR, $this->t('Unable to save current VMR.'));
+      }
+
       // Get the current Drupal web service URL and save it.
       $value = $form_state->getValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL);
       if (!$this->saveValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $value)) {
@@ -309,6 +330,16 @@ class ConfigForm extends FormBase {
       } else {
          // Replace the value with the trimmed version.
          $form_state->setValue($this->CONTROL_CURRENT_MSL_RELEASE, $value);
+      }
+
+      // The current VMR
+      $value = $form_state->getValue($this->CONTROL_CURRENT_VMR);
+      $value = trim($value); 
+      if (is_null($value) || strlen($value) < 1) {
+         $form_state->setErrorByName($this->CONTROL_CURRENT_VMR, $this->t('Please enter a valid current VMR.'));
+      } else {
+         // Replace the value with the trimmed version.
+         $form_state->setValue($this->CONTROL_CURRENT_VMR, $value);
       }
 
       // The Drupal web service URL

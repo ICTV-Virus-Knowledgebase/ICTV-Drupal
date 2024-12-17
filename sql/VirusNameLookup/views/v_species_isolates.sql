@@ -4,4 +4,4 @@
 CREATE OR REPLACE VIEW `v_species_isolates` AS 
 
 SELECT *
-FROM ICTVonline39.species_isolates
+FROM ICTVonline39.species_isolates;

@@ -29,9 +29,6 @@ BEGIN
    -- NOTE: Make sure the views v_species_isolates, v_taxonomy_level, and v_taxonomy_node have been 
    -- updated with the name of the current ICTVonline* database!
 
-   -- For convenience, here's the signature of the stored procedure that imports searchable_taxon records:
-   -- importSearchableTaxon(ICTV taxnode ID, name, nameClass, parentTaxonomyDB, parentTaxonomyID, rankName, taxonomyDB, taxonomyID, versionID)
-
    -- A cursor to fetch species isolate data.
    DECLARE cur CURSOR FOR 
    
@@ -138,7 +135,7 @@ BEGIN
             SET isolateNames = CONCAT(isolateNames, ' (', isolateDesignation, ')');
          END IF;
 
-         -- dmd 12/10/24 Just in case...
+         -- Just in case, limit the text to 800 characters.
          SET isolateNames = SUBSTRING(isolateNames, 1, 800);
 
          -- Create a searchable_taxon record.
@@ -155,59 +152,6 @@ BEGIN
             taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
-      /*
-      -- Should we add any isolate designations?
-      SET isolateDesignation = TRIM(REPLACE(isolateDesignation, ',', ';'));
-      IF isolateDesignation IS NOT NULL AND LENGTH(isolateDesignation) > 0 THEN
-      
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', isolateDesignation, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(isolateDesignation, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(isolateDesignation, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-
-               -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'isolate_designation', ictvTaxonomyDB, 
-                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
-            END IF;
-
-         END WHILE;
-      END IF;
-      
-      -- Should we add isolate names?
-      SET isolateNames = TRIM(REPLACE(isolateNames, ',', ';'));
-      IF isolateNames IS NOT NULL AND LENGTH(isolateNames) > 0 THEN
-      
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', isolateNames, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(isolateNames, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(isolateNames, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-
-               -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'isolate_name', ictvTaxonomyDB, 
-                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
-            END IF;
-
-         END WHILE;
-      END IF;
-      */
       -- Should we add RefSeq accessions?
       SET refseqAccessions = REPLACE(refseqAccessions, ',', ';');
       IF refseqAccessions IS NOT NULL AND LENGTH(refseqAccessions) > 0 THEN

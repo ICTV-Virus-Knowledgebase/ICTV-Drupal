@@ -3,11 +3,13 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
-import { LookupTaxonomyRank, SearchModifier, TaxonomyDB } from "../../global/Types";
+import { LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
 
 export class VirusNameLookup {
+
+   currentVMR: string = AppSettings.currentVMR;
 
    elements: {
       clearButton: HTMLButtonElement,
@@ -19,6 +21,7 @@ export class VirusNameLookup {
    }
 
    icons: {
+      info: string,
       search: string,
       spinner: string
    }
@@ -27,7 +30,7 @@ export class VirusNameLookup {
       [SearchModifier.all_words]: "Enter one or more required words",
       [SearchModifier.any_words]: "Enter one or more optional words",
       [SearchModifier.contains]: "Enter a word or part of a word",
-      [SearchModifier.exact_match]: "Enter words that must appear together"
+      [SearchModifier.exact_match]: "Enter words for a match in the same order"
    }
    
    results: IIctvResult[];
@@ -68,6 +71,7 @@ export class VirusNameLookup {
       }
 
       this.icons = {
+         info: `<i class="fa-solid fa-circle-info"></i>`,
          search: `<i class="fa-solid fa-magnifying-glass"></i>`,
          spinner: `<i class="fa fa-spinner fa-spin spinner-icon"></i>`
       }
@@ -78,6 +82,7 @@ export class VirusNameLookup {
    async clearSearch() {
       this.elements.searchText.value = "";
       this.elements.resultsPanel.innerHTML = "";
+      this.elements.searchModifier.value = SearchModifier.exact_match;
       this.searchText = "";
       return;
    }
@@ -104,7 +109,7 @@ export class VirusNameLookup {
          // Format the source and determine the URL of a linked match name.
          switch (match_.taxonomyDB) {
             case TaxonomyDB.ictv_taxonomy:
-            case TaxonomyDB.ictv_epithets:
+            //case TaxonomyDB.ictv_epithets:
                matchURL = `https://ictv.global/taxonomy/taxondetails?taxnode_id=${match_.taxonomyID}&taxon_name=${match_.name}`;
                source = "ICTV";
                break;
@@ -121,9 +126,8 @@ export class VirusNameLookup {
                break;
          }
          
-         const regex = new RegExp(this.searchText, "gi");
-         let matchName = match_.name.replace(regex, `<span class="highlighted-text">${this.searchText}</span>`);
-         //`<i>${match_.name}</i>`;
+         // Highlight the search text in the match name.
+         let matchName = this.highlightText(match_.name.trim());
 
          // Format the match rank
          let matchRank = !match_.rankName || match_.rankName === "no_rank" ? "" : LookupTaxonomyRank(match_.rankName);
@@ -146,10 +150,10 @@ export class VirusNameLookup {
             </tr>`;
       })
 
-      const es = matchCount === 1 ? "" : "es";
+      const s = matchCount === 1 ? "" : "s";
 
       html = 
-         `<div class="results-count" id="invalid-matches-section">${matchCount} match${es} without an ICTV result</div>
+         `<div class="results-count" id="invalid-matches-section">${matchCount} name${s} without a valid taxon match</div>
             <table class="invalid-results-table">
                <thead>
                   <tr class="header-row">
@@ -171,12 +175,12 @@ export class VirusNameLookup {
 
       // Format the match version and taxonomy database/ID.
       switch (result_.taxonomyDB) {
-         case TaxonomyDB.ictv_epithets:
+         //case TaxonomyDB.ictv_epithets:
          case TaxonomyDB.ictv_taxonomy:
-            source = `ICTV (MSL ${result_.versionID})`;
+            source = `ICTV: MSL ${result_.versionID}`;
             break;
          case TaxonomyDB.ictv_vmr:
-            source = "VMR";
+            source = `VMR ${this.currentVMR}`;
             break;
          case TaxonomyDB.ncbi_taxonomy:
             source = "NCBI";
@@ -187,7 +191,7 @@ export class VirusNameLookup {
       let matchURL = null;
       switch (result_.taxonomyDB) {
          case TaxonomyDB.ictv_taxonomy:
-         case TaxonomyDB.ictv_epithets:
+         //case TaxonomyDB.ictv_epithets:
             matchURL = `https://ictv.global/taxonomy/taxondetails?taxnode_id=${result_.taxonomyID}&taxon_name=${result_.name}`;
             break;
 
@@ -196,31 +200,8 @@ export class VirusNameLookup {
             break;
       }
 
-      
-      /* 
-      let matchName = null; */
-      const regex = new RegExp(this.searchText, "i");
-      const resultName = result_.name.trim();
-/*
-      let startIndex = resultName.search(regex);
-      let endIndex = startIndex + this.searchText.length;
-      if (startIndex > -1) {
-
-         let formattedSearchText = resultName.substring(startIndex, this.searchText.length);
-
-         if (startIndex === 0) {
-            matchName = `<span class="highlighted-text">${formattedSearchText}</span>${resultName.substring(endIndex)}`;
-         } else {
-            matchName = `${resultName.slice(0, startIndex)}<span class="highlighted-text">${formattedSearchText}</span>${resultName.substring(endIndex)}`;
-         }
-         
-         console.log(`result_.name = ${resultName}, start index = ${startIndex}, end index = ${endIndex}, formattedSearchText = ${formattedSearchText}, char at start = ${resultName.charAt(startIndex)}`)
-      
-      } else {
-         matchName = resultName;
-      } */
-      
-      let matchName = resultName.replace(regex, `<span class="highlighted-text">${this.searchText}</span>`);
+      // Highlight the search text in the result name.
+      let matchName = this.highlightText(result_.name.trim());
 
       // Depending on the match data, we might hyperlink the match name and the intermediate name.
       let linkedIntermediateName = null;
@@ -246,18 +227,20 @@ export class VirusNameLookup {
 
       // Format the match rank
       let matchRank = !result_.rankName || result_.rankName === "no_rank" ? "" : LookupTaxonomyRank(result_.rankName);
-      if (result_.taxonomyDB === TaxonomyDB.ictv_epithets) { matchRank += " epithet"; }
+      //if (result_.taxonomyDB === TaxonomyDB.ictv_epithets) { matchRank += " epithet"; }
       if (matchRank.length > 0) { matchRank += ": "; }
 
       let displayedRank = result_.nameClass == "scientific_name" || result_.nameClass == "taxon_name" ? matchRank : "";
 
-      // Format name class
+      // Format the name class
       const nameClass = result_.nameClass.replace("_", " ");
+
+      // Lookup a tooltip for the name class.
+      const nameClassTip = LookupNameClassDefinition(result_.nameClass as NameClass);
 
       // Create the table columns.
       return `<td class="match-name">${displayedRank}${linkedMatchName}</td>
-         <td class="name-class">${nameClass}</td>
-         <td class="source">${source}</td>
+         <td class="source">${source} (<span class="has-tooltip">${nameClass} <span class="tooltip">${nameClassTip}</span></span>)</td>
          <td class="match-name">${linkedIntermediateName}</td>`;
    }
 
@@ -277,17 +260,18 @@ export class VirusNameLookup {
       // The number of matches associated with the valid ICTV results.
       let matchCount = 0;
 
+      let currentReleaseText = !AppSettings.currentMslRelease ? "" : ` (MSL ${AppSettings.currentMslRelease})`;
+
       let html = 
          `<div class="results-count"></div>
          <table class="results-table">
             <thead>
                <tr class="header-row">
                   <th class="result-th">#</th>
-                  <th class="result-th">Current ICTV Taxonomy</th>
+                  <th class="result-th">Current ICTV Taxonomy${currentReleaseText}</th>
                   <th class="match-th">Matching name</th>
-                  <th class="match-th">Name type</th>
                   <th class="match-th">Source</th>
-                  <th class="match-th">Associated name</th>
+                  <th class="match-th">Intermediate name</th>
                </tr>
             </thead>
             <tbody>`;
@@ -320,16 +304,19 @@ export class VirusNameLookup {
          }
 
          // Format the result rank
-         const resultRank = !ictvResult_.rankName || ictvResult_.rankName === "no_rank" ? "" : LookupTaxonomyRank(ictvResult_.rankName);
+         const resultRank = !ictvResult_.rankName || ictvResult_.rankName === "no_rank" ? "" : `<b>${LookupTaxonomyRank(ictvResult_.rankName)}</b>`;
 
          // Flag abolished ICTV results.
          let resultVersion = "";
          if (!!ictvResult_.mslRelease && ictvResult_.mslRelease < this.settings.currentMslRelease) { resultVersion = " (abolished)";}
 
+         // Format the ICTV result's lineage.
+         const lineage = this.formatLineage(ictvResult_);
+
          html += 
             `<tr class="${rowClass}">
                <td class="result-td" rowspan="${ictvResult_.matches.length}">${ictvResultCount}</td>
-               <td class="result-td" rowspan="${ictvResult_.matches.length}">${resultRank}: <i>${linkedResultName}</i>${resultVersion}</td>`;
+               <td class="result-td" rowspan="${ictvResult_.matches.length}">${lineage}${resultRank}: <i>${linkedResultName}</i>${resultVersion}</td>`;
 
          let isFirst = true;
 
@@ -364,8 +351,8 @@ export class VirusNameLookup {
 
          invalidEl.innerHTML = invalidHTML;
 
-         const invalidES = invalidMatches.length === 1 ? "" : "es";
-         invalidCountHTML = `, <a href="#invalid-matches-section">${invalidMatches.length} invalid match${invalidES}</a>`;
+         const invalidS = invalidMatches.length === 1 ? "" : "s";
+         invalidCountHTML = `, <a href="#invalid-matches-section">${invalidMatches.length} name${invalidS} without a valid taxon match</a>`;
       }
 
       // Populate the result count.
@@ -379,6 +366,64 @@ export class VirusNameLookup {
       resultsCountEl.innerHTML += ` (${matchCount} matching name${nameS}${invalidCountHTML})`;
 
       return;
+   }
+
+   // TODO: take into account the rank of the result!
+   formatLineage(ictvResult_: IIctvResult) {
+
+      let colonIndex = -1;
+      let html = "";
+      
+      if (!!ictvResult_.family && ictvResult_.rankName != "family") {
+         colonIndex = ictvResult_.family.indexOf(":");
+         html += `<div class="result-lineage">Family: <i>${ictvResult_.family.slice(0, colonIndex)}</i></div>`;
+      }
+      if (!!ictvResult_.subfamily && ictvResult_.rankName != "subfamily") {
+         colonIndex = ictvResult_.subfamily.indexOf(":");
+         html += `<div class="result-lineage">Subfamily: <i>${ictvResult_.subfamily.slice(0, colonIndex)}</i></div>`;
+      }
+      if (!!ictvResult_.genus && ictvResult_.rankName != "genus") {
+         colonIndex = ictvResult_.genus.indexOf(":");
+         html += `<div class="result-lineage">Genus: <i>${ictvResult_.genus.slice(0, colonIndex)}</i></div>`;
+      }
+      if (!!ictvResult_.subgenus && ictvResult_.rankName != "subgenus") {
+         colonIndex = ictvResult_.subgenus.indexOf(":");
+         html += `<div class="result-lineage">Subgenus: <i>${ictvResult_.subgenus.slice(0, colonIndex)}</i></div>`;
+      }
+
+      return html;
+   }
+
+   highlightText(name_: string): string {
+
+      if (!name_ || name_.length < 1) { return ""; }
+
+      const searchModifier = this.elements.searchModifier.value as SearchModifier;
+      if (!searchModifier) { throw new Error("Invalid search modifier (empty)"); }
+
+      let highlightedText = name_;
+
+      if (searchModifier == SearchModifier.contains || searchModifier == SearchModifier.exact_match) {
+         const regex = new RegExp(this.searchText, "i");
+         let startIndex = name_.search(regex);
+         if (startIndex > -1) {
+            let replacement = highlightedText.slice(startIndex, startIndex + this.searchText.length);
+            highlightedText = highlightedText.replace(regex, `<span class="highlighted-text">${replacement}</span>`);
+         }
+
+      } else {
+         const searchTokens = this.searchText.split(" ");
+         searchTokens.forEach((token_: string) => {
+            const regex = new RegExp(`(${token_})+`, "i");
+            let startIndex = highlightedText.search(regex);
+            if (startIndex > -1) {
+               let replacement = highlightedText.slice(startIndex, startIndex + token_.length);
+               highlightedText = highlightedText.replace(regex, `<span class="highlighted-text">${replacement}</span>`);
+            }
+         })
+      }
+      
+      return highlightedText;
    }
 
    async initialize() {
@@ -440,30 +485,8 @@ export class VirusNameLookup {
       // The selected search modifier determines the search text placeholder.
       this.elements.searchModifier.addEventListener("change", async (event_) => {
 
+         // Lookup the placeholder text for the current search modifier.
          let placeholder = this.placeholderText[this.elements.searchModifier.value as SearchModifier];
-
-         /*
-         switch (this.elements.searchModifier.value) {
-            case SearchModifier.all_words:
-               placeholder = "Enter one or more required words";
-               break;
-
-            case SearchModifier.any_words:
-               placeholder = "Enter one or more optional words";
-               break;
-
-            case SearchModifier.contains:
-               placeholder = "Enter a word or part of a word";
-               break;
-
-            case SearchModifier.exact_match:
-               placeholder = "Enter words that must appear together";
-               break;
-
-            default: 
-               placeholder = "Enter one or more words";
-               break;
-         }*/
 
          this.elements.searchText.setAttribute("placeholder", placeholder);
          return true;
@@ -477,9 +500,9 @@ export class VirusNameLookup {
 
       this.searchText = this.elements.searchText.value;
       if (!this.searchText) { 
-         return await AlertBuilder.displayError("Please enter valid search text"); 
+         return await AlertBuilder.displayInfo("Please enter valid search text"); 
       } else if (this.searchText.length < 3) {
-         return await AlertBuilder.displayError("Please enter at least 3 characters");
+         return await AlertBuilder.displayInfo("Please enter at least 3 characters");
       }
 
       this.elements.searchButton.disabled = true;
