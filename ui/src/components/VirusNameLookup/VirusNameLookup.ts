@@ -1,6 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
+import DataTables from "datatables.net-dt";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
 import { LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
@@ -22,6 +23,7 @@ export class VirusNameLookup {
 
    icons: {
       info: string,
+      lineageDelimiter: string,
       search: string,
       spinner: string
    }
@@ -72,6 +74,7 @@ export class VirusNameLookup {
 
       this.icons = {
          info: `<i class="fa-solid fa-circle-info"></i>`,
+         lineageDelimiter: `<i class="fa-solid fa-chevron-right"></i>`,
          search: `<i class="fa-solid fa-magnifying-glass"></i>`,
          spinner: `<i class="fa fa-spinner fa-spin spinner-icon"></i>`
       }
@@ -153,22 +156,105 @@ export class VirusNameLookup {
       const s = matchCount === 1 ? "" : "s";
 
       html = 
-         `<div class="results-count" id="invalid-matches-section">${matchCount} name${s} without a valid taxon match</div>
-            <table class="invalid-results-table">
-               <thead>
-                  <tr class="header-row">
-                     <th class="match-th">#</th>
-                     <th class="match-th">Matching name</th>
-                     <th class="match-th">Name type</th>
-                     <th class="match-th">Source</th>
-                  </tr>
-               </thead>
-               <tbody>${html}</tbody>
-            </table>`;
+         `<table class="invalid-results-table">
+            <thead>
+               <tr class="header-row">
+                  <th class="match-th">#</th>
+                  <th class="match-th">Matching name</th>
+                  <th class="match-th">Name type</th>
+                  <th class="match-th">Source</th>
+               </tr>
+            </thead>
+            <tbody>${html}</tbody>
+         </table>`;
 
       return html;
    }
 
+
+   createResultMatchRows(matches_: ISearchResult[]): string {
+
+      let html = "";
+
+      
+      matches_.forEach((result_: ISearchResult) => {
+
+         let source = "";
+
+         // Format the match version and taxonomy database/ID.
+         switch (result_.taxonomyDB) {
+            case TaxonomyDB.ictv_taxonomy:
+               source = `ICTV: MSL ${result_.versionID}`;
+               break;
+            case TaxonomyDB.ictv_vmr:
+               source = `VMR ${this.currentVMR}`;
+               break;
+            case TaxonomyDB.ncbi_taxonomy:
+               source = "NCBI";
+               break;
+         }
+
+         // Determine the URL of a linked match name.
+         let matchURL = null;
+         switch (result_.taxonomyDB) {
+            case TaxonomyDB.ictv_taxonomy:
+               matchURL = `https://ictv.global/taxonomy/taxondetails?taxnode_id=${result_.taxonomyID}&taxon_name=${result_.name}`;
+               break;
+
+            case TaxonomyDB.ncbi_taxonomy:
+               matchURL = `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=${result_.taxonomyID}`;
+               break;
+         }
+
+         // Highlight the search text in the result name.
+         let matchName = this.highlightText(result_.name.trim());
+
+         // Depending on the match data, we might hyperlink the match name and the intermediate name.
+         let linkedIntermediateName = null;
+         let linkedMatchName = null;
+
+         if (!result_.intermediateName) {
+
+            // Should we hyperlink the match name?
+            linkedMatchName = !matchURL ? matchName : `<a href="${matchURL}" target="_blank">${matchName}</a>`;
+
+            linkedIntermediateName = "";
+
+         } else {
+
+            linkedMatchName = matchName;
+
+            let intermediateRank = !result_.intermediateRank || result_.intermediateRank === "no_rank" ? "" : `${LookupTaxonomyRank(result_.intermediateRank)}: `
+
+            // Hyperlink the intermediate name.
+            let intermediateName = `<i>${result_.intermediateName}</i>`;
+            linkedIntermediateName = !matchURL ? intermediateName : `${intermediateRank}<a href="${matchURL}" target="_blank">${intermediateName}</a>`;
+         }
+
+         // Format the match rank
+         let matchRank = !result_.rankName || result_.rankName === "no_rank" ? "" : LookupTaxonomyRank(result_.rankName);
+         if (matchRank.length > 0) { matchRank += ": "; }
+
+         let displayedRank = result_.nameClass == "scientific_name" || result_.nameClass == "taxon_name" ? matchRank : "";
+
+         // Format the name class
+         const nameClass = result_.nameClass.replace("_", " ");
+
+         // Lookup a tooltip for the name class.
+         const nameClassTip = LookupNameClassDefinition(result_.nameClass as NameClass);
+
+         // Add the table row to the HTML.
+         html += `<tr>
+            <td class="match-name">${displayedRank}${linkedMatchName}</td>
+            <td class="source">${source} (<span class="has-tooltip">${nameClass} <span class="tooltip">${nameClassTip}</span></span>)</td>
+            <td class="match-name">${linkedIntermediateName}</td>
+         </tr>`;
+      })
+
+      return html;
+   }
+
+   /*
    createMatchColumns(result_: ISearchResult): string {
 
       let source = "";
@@ -242,14 +328,215 @@ export class VirusNameLookup {
       return `<td class="match-name">${displayedRank}${linkedMatchName}</td>
          <td class="source">${source} (<span class="has-tooltip">${nameClass} <span class="tooltip">${nameClassTip}</span></span>)</td>
          <td class="match-name">${linkedIntermediateName}</td>`;
+   }*/
+
+   
+   createResultItem(ictvResult_: IIctvResult, index_: number, itemID_: string, parentID_: string): string {
+
+      // https://getbootstrap.com/docs/5.3/components/accordion/
+
+      // Format the ICTV result's lineage.
+      const lineage = this.formatLineage(ictvResult_);
+
+      // Hyperlink the result name.
+      const url = `https://ictv.global/taxonomy/taxondetails?taxnode_id=${ictvResult_.taxnodeID}&taxon_name=${ictvResult_.name}`;
+
+      let linkedResultName = `<a href="${url}" target="_blank">${ictvResult_.name}</a>`;
+      
+      // Format the result rank
+      const resultRank = !ictvResult_.rankName || ictvResult_.rankName === "no_rank" ? "" : `<b>${LookupTaxonomyRank(ictvResult_.rankName)}</b>`;
+
+      const matchesTitle = ictvResult_.matches.length === 1 ? "Database match (1)" : `Database matches (${ictvResult_.matches.length})`;
+
+      // Create rows for the match table.
+      const matchRows = this.createResultMatchRows(ictvResult_.matches);
+
+      let html = 
+         `<div class="accordion-item">
+            <h2 class="accordion-header">
+               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${itemID_}" aria-expanded="false" aria-controls="${itemID_}">
+                  <div class="result-container">
+                     <div class="result-index">#${index_}</div>
+                     <div class="lineage-and-result">
+                        <div class="lineage">${lineage}</div>
+                        <div class="result">${resultRank}: <i>${linkedResultName}</i></div>
+                     </div>
+                  </div>
+               </button>
+            </h2>
+            <div id="${itemID_}" class="accordion-collapse collapse" data-bs-parent="#${parentID_}">
+               <div class="accordion-body">
+                  <div class="matches-title">${matchesTitle}</div>
+                  <table class="${itemID_}_table result-matches">
+                     <thead>
+                        <th class="name">Matching name</th>
+                        <th class="source">Source (name type)</th>
+                        <th class="intermediate">Intermediate taxon</th>
+                     </thead>
+                     <tbody>${matchRows}</tbody>
+                  </table>
+               </div>
+            </div>
+         </div>`;
+
+      return html;
    }
 
+
+   // https://getbootstrap.com/docs/5.3/components/accordion/
    async displayResults() {
 
       if (!Array.isArray(this.results) || this.results.length < 1) {
          this.elements.resultsPanel.innerHTML = "No results";
          return;
       }
+
+      // The number of abolished ICTV results.
+      let abolishedCount = 0;
+
+      // HTML for the abolished ICTV results.
+      let abolishedHTML = ``;
+
+      const abolishedResultsID = "abolished_ictv_results";
+
+      // The number of valid ICTV results.
+      let currentCount = 0;
+
+      // HTML for the current ICTV results.
+      let currentHTML = ``;
+
+      const currentResultsID = "current_ictv_results";
+
+      // HTML for the invalid matches.
+      let invalidHTML = "";
+
+      // Matches without an ICTV result.
+      let invalidMatches = [];
+
+      // A collection of item IDs (which correspond to an ICTV result).
+      let itemIDs = [];
+
+      let currentReleaseText = !AppSettings.currentMslRelease ? "" : ` (MSL ${AppSettings.currentMslRelease})`;
+
+
+      // Iterate over the ICTV results.
+      this.results.forEach((ictvResult_: IIctvResult, index_: number) => {
+
+         if (!ictvResult_.mslRelease) {
+
+            // No ICTV match was found for this result's matches.
+            invalidMatches = ictvResult_.matches;
+            return;
+         }
+
+         // Create an ID for the result's "accordion item".
+         let itemID = `${ictvResult_.rankName.toLowerCase()}_${ictvResult_.name.toLowerCase().replace(/[^A-Za-z0-9]/g, "_")}`;
+         itemIDs.push(itemID);
+
+         console.log(`ictvResult_.mslRelease = ${ictvResult_.mslRelease} and AppSettings.currentMslRelease = ${AppSettings.currentMslRelease}`)
+
+         if (ictvResult_.mslRelease == AppSettings.currentMslRelease) {
+
+            console.log("current")
+
+            // Increment the number of current results.
+            currentCount += 1;
+            currentHTML += this.createResultItem(ictvResult_, currentCount, itemID, currentResultsID);
+
+         } else {
+
+            console.log("abolished")
+
+            // Increment the number of abolished results.
+            abolishedCount += 1;
+            abolishedHTML += this.createResultItem(ictvResult_, abolishedCount, itemID, abolishedResultsID);
+         }
+
+      })
+
+      // Create the invalid matches table.
+      invalidHTML = this.createInvalidResultTable(invalidMatches);
+
+      let countsHTML = "";
+      let html = "";
+
+      // Are there any current ICTV results?
+      if (currentCount > 0) {
+
+         countsHTML += `Hits to ICTV taxa: ${currentCount}`;
+
+         html += `<div class="results-count">Hits to current ICTV taxa${currentReleaseText}: ${currentCount}</div>`;
+
+         // TODO: Add a "header row" above the accordion.
+         html += `<div class="accordion accordion-flush" id="${currentResultsID}">${currentHTML}</div>`;
+      }
+
+      // Are there any abolished ICTV results?
+      if (abolishedCount > 0) {
+
+         if (currentCount > 0) { countsHTML += ", "; }
+
+         const abolishedLinkID = "abolished-section";
+
+         countsHTML += `<a href="#${abolishedLinkID}">Hits to abolished ICTV taxa: ${abolishedCount}</a>`;
+
+         html += `<div class="results-count" id="${abolishedLinkID}">Hits to abolished ICTV taxa: ${abolishedCount}</div>`;
+
+         // TODO: Add a "header row" above the accordion.
+         html += `<div class="accordion accordion-flush" id="${abolishedResultsID}">${abolishedHTML}</div>`;
+      }
+
+      // Are there any matches without ICTV results?
+      if (invalidMatches.length > 0) {
+
+         if (currentCount > 0 || abolishedCount > 0) { countsHTML += ", "; }
+
+         const invalidLinkID = "invalid-matches-section";
+
+         const invalidS = invalidMatches.length === 1 ? "" : "s";
+
+         const invalidMessage = `Name${invalidS} without a valid taxon match: ${invalidMatches.length}`;
+
+         countsHTML += `<a href="#${invalidLinkID}">${invalidMessage}</a>`;
+
+         html += `<div class="results-count" id="${invalidLinkID}">${invalidMessage}</div>`;
+         html += invalidHTML;
+      }
+
+      this.elements.resultsPanel.innerHTML = html;
+
+      
+      if (itemIDs.length < 1) { return; }
+
+      // Create a DataTable instance for every item ID.
+      // NOTE: If possible, create DataTable instances as-needed (when expanding an accordion) rather than creating all instances now.
+      itemIDs.forEach((itemID_: string) => {
+
+         // Create a DataTable instance using the table Element.
+         const dataTable = new DataTables(`${this.selectors.container} table.${itemID_}_table`, {
+            /*columnDefs: [
+               { targets: [0,1], orderable: false },
+               { target: 2, orderable: true, type: "date" },
+               { targets: [3,4,5,6], orderable: true }
+            ],*/
+            dom: "ltip",
+            order: [], // Important: If this isn't an empty array it will move the child rows to the end!
+            searching: false,
+            stripeClasses: []
+         });
+      })
+   }
+
+   /*
+   async displayResults() {
+
+      if (!Array.isArray(this.results) || this.results.length < 1) {
+         this.elements.resultsPanel.innerHTML = "No results";
+         return;
+      }
+
+      // Abolished ICTV results.
+      let abolishedResults = [];
 
       // Matches without an ICTV result.
       let invalidMatches = [];
@@ -366,7 +653,7 @@ export class VirusNameLookup {
       resultsCountEl.innerHTML += ` (${matchCount} matching name${nameS}${invalidCountHTML})`;
 
       return;
-   }
+   }*/
 
    // TODO: take into account the rank of the result!
    formatLineage(ictvResult_: IIctvResult) {
@@ -376,19 +663,22 @@ export class VirusNameLookup {
       
       if (!!ictvResult_.family && ictvResult_.rankName != "family") {
          colonIndex = ictvResult_.family.indexOf(":");
-         html += `<div class="result-lineage">Family: <i>${ictvResult_.family.slice(0, colonIndex)}</i></div>`;
+         html += `<span class="result-lineage">Family: <i>${ictvResult_.family.slice(0, colonIndex)}</i></span>`;
       }
       if (!!ictvResult_.subfamily && ictvResult_.rankName != "subfamily") {
          colonIndex = ictvResult_.subfamily.indexOf(":");
-         html += `<div class="result-lineage">Subfamily: <i>${ictvResult_.subfamily.slice(0, colonIndex)}</i></div>`;
+         if (html.length > 0) { html += this.icons.lineageDelimiter; }
+         html += `<span class="result-lineage">Subfamily: <i>${ictvResult_.subfamily.slice(0, colonIndex)}</i></span>`;
       }
       if (!!ictvResult_.genus && ictvResult_.rankName != "genus") {
          colonIndex = ictvResult_.genus.indexOf(":");
-         html += `<div class="result-lineage">Genus: <i>${ictvResult_.genus.slice(0, colonIndex)}</i></div>`;
+         if (html.length > 0) { html += this.icons.lineageDelimiter; }
+         html += `<span class="result-lineage">Genus: <i>${ictvResult_.genus.slice(0, colonIndex)}</i></span>`;
       }
       if (!!ictvResult_.subgenus && ictvResult_.rankName != "subgenus") {
          colonIndex = ictvResult_.subgenus.indexOf(":");
-         html += `<div class="result-lineage">Subgenus: <i>${ictvResult_.subgenus.slice(0, colonIndex)}</i></div>`;
+         if (html.length > 0) { html += this.icons.lineageDelimiter; }
+         html += `<span class="result-lineage">Subgenus: <i>${ictvResult_.subgenus.slice(0, colonIndex)}</i></span>`;
       }
 
       return html;
