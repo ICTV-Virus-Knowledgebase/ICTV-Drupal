@@ -141,6 +141,53 @@
    vertical-align: top !important;
 }
 
+/* The results count over individual sections */
+#ictv_virus_name_lookup_container .results-count {
+   margin-top: 2.0rem;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   New result container
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_virus_name_lookup_container .result-container {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   width: 100%;
+}
+
+#ictv_virus_name_lookup_container .result-container .result-index {
+   font-size: 0.9rem; 
+   margin-right: 1.0rem;
+}
+#ictv_virus_name_lookup_container .result-container .lineage-and-result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+}
+#ictv_virus_name_lookup_container .result-container .lineage-and-result .lineage {
+   color: #777;
+   font-size: 0.9rem;
+   font-weight: 400;
+   margin-bottom: 0.5rem;
+}
+#ictv_virus_name_lookup_container .result-container .lineage-and-result .lineage i.fa-chevron-right {
+   font-size: 0.7rem;
+    color: #999;
+    margin: 0 0.25rem;
+}
+/*#ictv_virus_name_lookup_container .result-container .lineage-and-result .result {
+
+}*/
+
+#ictv_virus_name_lookup_container .result-container table.result-matches.dataTable {
+   min-width: 800px;
+   width: 100%;
+}
+
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Tooltips
@@ -175,7 +222,7 @@
    margin-top: -5px;
    position: absolute;
    right: 100%;
-   top: 50%;
+   top: 10%;
 }
  
 #ictv_virus_name_lookup_container .has-tooltip:hover .tooltip {
@@ -188,11 +235,11 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* The "Show ___ entries" row above the table */
-.dt-container .dt-length {
+#ictv_virus_name_lookup_container .dt-container .dt-length {
    margin-bottom: 1.0rem;
 }
 
-.dt-container .dt-length label {
+#ictv_virus_name_lookup_container .dt-container .dt-length label {
    align-items: center;
    font-weight: normal;
    display: flex !important;
@@ -200,7 +247,7 @@
    justify-content: flex-start;
 }
 
-.dt-container .dt-length select.dt-input {
+#ictv_virus_name_lookup_container .dt-container .dt-length select.dt-input {
    background-color: transparent;
    border: 1px solid #aaa;
    border-radius: 3px;
@@ -213,12 +260,12 @@
 }
 
 /* Table TH and TD */
-table.dataTable.compact thead th,
-table.dataTable.compact thead td {
+#ictv_virus_name_lookup_container table.dataTable.compact thead th,
+#ictv_virus_name_lookup_container table.dataTable.compact thead td {
    padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
 }
 
 /* dmd 102323 */
-table.dataTable.compact thead th {
+#ictv_virus_name_lookup_container table.dataTable.compact thead th {
    text-align: left !important;
 }
