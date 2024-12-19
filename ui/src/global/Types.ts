@@ -204,29 +204,25 @@ export enum WebServiceKey {
 
 export function LookupNameClassDefinition(nameClass_: NameClass) {
 
-   // https://www.ncbi.nlm.nih.gov/books/NBK53758/ and ChatGPT prompts "Please list all name classes available in NCBI Taxonomy 
-   // and provide a definition for each one." and "Please provide similar definitions for the following name types: isolate abbreviation, 
-   // isolate designation, isolate exemplar, isolate name, RefSeq accession, and RefSeq organism."
-   
    switch (nameClass_) { 
 
       case NameClass.abbreviation:
-         return "An abbreviation associated with the taxon";
+         return "An abbreviation associated with the virus";
 
       case NameClass.acronym:
-         return "An acronym associated with the taxon";
+         return "An acronym associated with the virus";
 
       case NameClass.authority:
-         return "The name of the scientist(s) who originally described the taxon and the year it was published";
+         return "The name of the scientist(s) who originally described the virus and the year it was published";
 
       case NameClass.blast_name:
          return "A simplified name used by BLAST (Basic Local Alignment Search Tool) for grouping organisms into broad categories";
 
       case NameClass.common_name:
-         return "An informal name in common usage"; //General common or vernacular names for the taxon
+         return "An informal name in common usage";
 
       case NameClass.equivalent_name:
-         return "A name that is considered equivalent to the scientific name but is not commonly used";
+         return "A name that is considered equivalent to the scientific name but may not be currently used";
 
       case NameClass.genbank_accession:
          return "A unique alphanumeric identifier assigned to a specific sequence record in the GenBank database";
@@ -235,13 +231,13 @@ export function LookupNameClassDefinition(nameClass_: NameClass) {
          return "An acronym used in GenBank records";
 
       case NameClass.genbank_common_name:
-         return "The common name associated with the taxon used specifically in GenBank records";
+         return "The common name associated with the virus used specifically in GenBank records";
 
       case NameClass.includes:
-         return "A name that encompasses subgroups or other taxa included within the current taxon"; // An informal name that is a subset of a name
+         return "A name that encompasses subgroups or other taxa included within the current taxon";
 
       case NameClass.in_part:
-         return "A name that is only partially synonymous with the taxon"; // Names that are only partially synonymous with the taxon, A formal name that is a subset of a name
+         return "A name that is only partially synonymous with the virus";
 
       case NameClass.isolate_abbreviation:
          return "A shortened or abbreviated form of a specific isolate's name";
@@ -261,14 +257,14 @@ export function LookupNameClassDefinition(nameClass_: NameClass) {
       case NameClass.refseq_organism:
          return "The organism name associated with a specific RefSeq entry. It refers to the taxonomic identity of the organism for which a curated reference sequence is provided in the RefSeq database";
       
-         case NameClass.scientific_name:
-         return "The primary, official scientific name of the taxon";
+      case NameClass.scientific_name:
+         return "Name derived from NCBI lineage";
 
       case NameClass.synonym:
-         return "Alternative scientific names that have been historically used for the taxon but are not the currently accepted name";
+         return "Alternative scientific names that have been historically used for a virus or taxon but are not the currently accepted name";
 
       case NameClass.taxon_name:
-         return "A taxonomic name";
+         return "A formal taxonomic name";
 
       case NameClass.type_material:
          return "A name related to the type specimen or type material upon which the taxon's description is based";

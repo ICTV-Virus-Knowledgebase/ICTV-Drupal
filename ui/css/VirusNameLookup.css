@@ -23,7 +23,9 @@
    -ms-user-select: none;
 }
 
-/* The search controls */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The search controls
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_virus_name_lookup_container .search-controls {
    align-items: center;
    border-collapse: separate;
@@ -89,65 +91,50 @@
 }
 
 #ictv_virus_name_lookup_container .highlighted-text {
-   background-color: #fad968; /* #ffc90e; */
+   background-color: #fad968;
 }
 
-/* The results and invalid-results tables */
-#ictv_virus_name_lookup_container .results-table {
-   margin-bottom: 2.0rem;
-}
-#ictv_virus_name_lookup_container .results-table th,
-#ictv_virus_name_lookup_container .invalid-results-table th {
-   font-size: 1.0rem !important;
-}
-#ictv_virus_name_lookup_container .results-table .match-th,
-#ictv_virus_name_lookup_container .invalid-results-table .match-th {
-   background-color: #757575 !important;
-   color: #fff !important;
-}
-#ictv_virus_name_lookup_container .results-table .result-th {
-   background-color: #0062cc;
-   border-color: #005cbf;
-   color: #fff;
-}
-
-/* Row colors */
-#ictv_virus_name_lookup_container .results-table .error-bg {
-   background-color: #d03248;
-   color: #fff;
-}
-#ictv_virus_name_lookup_container .results-table .even-bg,
-#ictv_virus_name_lookup_container .invalid-results-table .even-bg {
-   background-color: #eee;
-}
-#ictv_virus_name_lookup_container .results-table .odd-bg,
-#ictv_virus_name_lookup_container .invalid-results-table .odd-bg {
-   background-color: #fff;
-}
-
-#ictv_virus_name_lookup_container .results-table .result-lineage {
-   color: #777;
-}
-
-#ictv_virus_name_lookup_container .results-table .source {
-   min-width: 260px;
-}
-#ictv_virus_name_lookup_container .invalid-results-table .match-number {
-   width: 80px;
-}
-#ictv_virus_name_lookup_container .results-table td,
-#ictv_virus_name_lookup_container .invalid-results-table td {
-   font-size: 1.0rem !important;
-   vertical-align: top !important;
-}
 
 /* The results count over individual sections */
 #ictv_virus_name_lookup_container .results-count {
+   font-size: 1.2rem;
    margin-top: 2.0rem;
 }
 
+#ictv_virus_name_lookup_container .section-count {
+   font-size: 1.2rem;
+   margin-top: 2.0rem;
+}
+
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   New result container
+   Bootstrap accordion 
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_virus_name_lookup_container .accordion-button {
+   background-color: #efefef !important;
+}
+/*#ictv_virus_name_lookup_container .accordion-button:not(.collapsed) {
+   background-color: #0062cc;
+   border-color: #005cbf;
+   color: #fff;
+}*/
+#ictv_virus_name_lookup_container .accordion-item {
+   border-color: #999;
+   border-style: solid;
+   border-right-width: 1px;
+   border-bottom-width: 1px;
+   border-left-width: 1px;
+}
+#ictv_virus_name_lookup_container .accordion-item:first-of-type {
+   border-top-width: 1px;
+}
+#ictv_virus_name_lookup_container .accordion-header {
+   margin: 0;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Result container
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_virus_name_lookup_container .result-container {
    align-items: flex-start;
@@ -168,32 +155,90 @@
    justify-content: flex-start;
 }
 #ictv_virus_name_lookup_container .result-container .lineage-and-result .lineage {
-   color: #777;
+   /*color: #777;*/
    font-size: 0.9rem;
    font-weight: 400;
    margin-bottom: 0.5rem;
 }
 #ictv_virus_name_lookup_container .result-container .lineage-and-result .lineage i.fa-chevron-right {
    font-size: 0.7rem;
-    color: #999;
-    margin: 0 0.25rem;
+   /*color: #999;*/
+   margin: 0 0.25rem;
 }
-/*#ictv_virus_name_lookup_container .result-container .lineage-and-result .result {
-
+#ictv_virus_name_lookup_container .result-container .lineage-and-result .result {
+   z-index: 1000;
+}
+/*#ictv_virus_name_lookup_container .result-container .lineage-and-result .result-link {
+   
 }*/
 
-#ictv_virus_name_lookup_container .result-container table.result-matches.dataTable {
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable {
    min-width: 800px;
+   overflow: visible;
    width: 100%;
 }
 
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable .header-row {
+   background-color: #757575 !important;
+}
+
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable th,
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable td {
+   font-size: 1.0rem !important;
+}
+
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable th {
+   background-color: #757575 !important;
+   color: #fff !important;
+   font-weight: 400 !important;
+}
+
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable .even-bg {
+   background-color: #eee;
+}
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable .odd-bg {
+   background-color: #fff;
+}
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable thead + tbody tr:first-child th, 
+#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable thead + tbody tr:first-child td {
+   padding-top: 0.75rem;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The invalid results table
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_virus_name_lookup_container table.invalid-results-table {
+   overflow: visible !important;
+}
+#ictv_virus_name_lookup_container .invalid-results-table th {
+   font-size: 1.0rem !important;
+   font-weight: 400;
+}
+#ictv_virus_name_lookup_container .invalid-results-table .match-th {
+   background-color: #757575 !important;
+   color: #fff !important;
+}
+#ictv_virus_name_lookup_container .invalid-results-table .even-bg {
+   background-color: #eee;
+}
+#ictv_virus_name_lookup_container .invalid-results-table .odd-bg {
+   background-color: #fff;
+}
+#ictv_virus_name_lookup_container .invalid-results-table .match-number {
+   width: 80px;
+}
+#ictv_virus_name_lookup_container .invalid-results-table td {
+   font-size: 1.0rem !important;
+   vertical-align: top !important;
+}
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Tooltips
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_virus_name_lookup_container .has-tooltip {
-   border-bottom: 1px dotted black;
+   border-bottom: 1px dashed black;
    cursor: pointer;
    display: inline-block;
    position: relative;
@@ -211,7 +256,6 @@
    top: -5px;
    visibility: hidden;
    width: 200px;
-   z-index: 1000;
 }
 
 #ictv_virus_name_lookup_container .has-tooltip .tooltip::after {
@@ -219,7 +263,7 @@
    border-style: solid;
    border-width: 5px;
    content: "";
-   margin-top: -5px;
+   margin-top: 5px;
    position: absolute;
    right: 100%;
    top: 10%;
@@ -228,6 +272,7 @@
 #ictv_virus_name_lookup_container .has-tooltip:hover .tooltip {
    opacity: 1;
    visibility: visible;
+   z-index: 10000;
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -259,13 +304,20 @@
    text-align: left;
 }
 
+#ictv_virus_name_lookup_container .dt-container .dt-layout-row {
+   font-size: 0.9rem;
+}
+
+#ictv_virus_name_lookup_container .dt-container .dt-paging {
+   text-align: right;
+}
+
 /* Table TH and TD */
 #ictv_virus_name_lookup_container table.dataTable.compact thead th,
 #ictv_virus_name_lookup_container table.dataTable.compact thead td {
    padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
 }
 
-/* dmd 102323 */
 #ictv_virus_name_lookup_container table.dataTable.compact thead th {
    text-align: left !important;
 }
