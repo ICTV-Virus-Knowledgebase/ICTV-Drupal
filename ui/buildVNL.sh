@@ -32,7 +32,9 @@ cp ./dist/ICTV_VirusNameLookup.js ../ictv_virus_name_lookup/assets/js/
 #------------------------------------------------------------------------------
 # Copy the virus name lookup's CSS file to the module's asset directory.
 #------------------------------------------------------------------------------
-printf "Copying VirusNameLookup.css to ictv_virus_name_lookup/assets/css\n"
+printf "Copying CSS files to ictv_virus_name_lookup/assets/css\n"
 
 cp ./css/VirusNameLookup.css ../ictv_virus_name_lookup/assets/css/
+cp ./css/dataTables.dataTables.min.css ../ictv_virus_name_lookup/assets/css/
+
 
