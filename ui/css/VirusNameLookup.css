@@ -97,27 +97,91 @@
 
 /* The results count over individual sections */
 #ictv_virus_name_lookup_container .results-count {
-   font-size: 1.2rem;
+   font-size: 1.8rem;
    margin-top: 2.0rem;
 }
 
 #ictv_virus_name_lookup_container .section-count {
-   font-size: 1.2rem;
+   font-size: 1.8rem;
    margin-top: 2.0rem;
 }
 
+#ictv_virus_name_lookup_container .results-panel {
+   display: none;
+   visibility: hidden;
+}
+#ictv_virus_name_lookup_container .results-panel.active {
+   display: block;
+   visibility: visible;
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   Bootstrap accordion 
+   Accordion 
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_virus_name_lookup_container .accordion-button {
-   background-color: #efefef !important;
+.ictv-accordion-item {
+   border-color: #999;
+   border-style: solid;
+   border-right-width: 1px;
+   border-bottom-width: 1px;
+   border-left-width: 1px;
+   border-top-width: 0;
+   width: 100%;
 }
-/*#ictv_virus_name_lookup_container .accordion-button:not(.collapsed) {
+#ictv_virus_name_lookup_container .ictv-accordion-item:first-of-type {
+   border-top-width: 1px;
+}
+.ictv-accordion-header {
+   align-items: center;
+   background-color: #e9e9e9;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   padding: 1.0rem 1.0rem 1.0rem 0;
+   transition: all 0.25s ease-out;
+   will-change: background-color color;
+}
+
+/*.ictv-accordion.active .ictv-accordion-header {
    background-color: #0062cc;
-   border-color: #005cbf;
    color: #fff;
 }*/
+.ictv-accordion-control {
+   color: #777;
+   font-weight: 400;
+   padding: 1.0rem;
+   transition: ease .3s transform;
+}
+/*.ictv-accordion-label {
+   margin-left: 1.0rem;
+}*/
+
+.ictv-accordion-body {
+   max-height: 0;
+   opacity: 0;
+   overflow: hidden;
+   transition: all 0.25s ease-out;
+   visibility: hidden;
+   will-change: max-height;
+}
+.ictv-accordion-item.active .ictv-accordion-body {
+   border-width: 1px 0 0 0;
+   border-color: #999;
+   border-style: solid;
+   max-height: 100%;
+   opacity: 1;
+   visibility: visible;
+}
+.ictv-accordion-item.active .ictv-accordion-control {
+   transform: rotate(-180deg);
+}
+
+.ictv-accordion-item .ictv-accordion-content {
+   margin: 1.0rem;
+}
+
+/*#ictv_virus_name_lookup_container .accordion-button {
+   background-color: #efefef !important;
+}
 #ictv_virus_name_lookup_container .accordion-item {
    border-color: #999;
    border-style: solid;
@@ -130,13 +194,13 @@
 }
 #ictv_virus_name_lookup_container .accordion-header {
    margin: 0;
-}
+}*/
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   Result container
+   Result info inside the accordion label.
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_virus_name_lookup_container .result-container {
+#ictv_virus_name_lookup_container .ictv-accordion-label {
    align-items: flex-start;
    display: flex;
    flex-flow: row nowrap;
@@ -144,63 +208,116 @@
    width: 100%;
 }
 
-#ictv_virus_name_lookup_container .result-container .result-index {
+#ictv_virus_name_lookup_container .ictv-accordion-label .result-index {
    font-size: 0.9rem; 
    margin-right: 1.0rem;
 }
-#ictv_virus_name_lookup_container .result-container .lineage-and-result {
+#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result {
    align-items: flex-start;
    display: flex;
    flex-flow: column nowrap;
    justify-content: flex-start;
 }
-#ictv_virus_name_lookup_container .result-container .lineage-and-result .lineage {
-   /*color: #777;*/
+#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .lineage {
    font-size: 0.9rem;
    font-weight: 400;
-   margin-bottom: 0.5rem;
+   margin-bottom: 0.25rem;
 }
-#ictv_virus_name_lookup_container .result-container .lineage-and-result .lineage i.fa-chevron-right {
+#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .lineage i.fa-chevron-right {
    font-size: 0.7rem;
-   /*color: #999;*/
    margin: 0 0.25rem;
 }
-#ictv_virus_name_lookup_container .result-container .lineage-and-result .result {
+#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .result {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
    z-index: 1000;
 }
-/*#ictv_virus_name_lookup_container .result-container .lineage-and-result .result-link {
-   
-}*/
+#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .result .result-name {
+   margin-right: 0.5rem;
+}
 
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable {
+/* The spinner panel */
+#ictv_virus_name_lookup_container .spinner-panel {
+   display: none;
+}
+#ictv_virus_name_lookup_container .spinner-panel.active {
+   display: block;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Tabs
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_virus_name_lookup_container .tab-buttons {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+}
+#ictv_virus_name_lookup_container .tab-button {
+   border-color: #ddd;
+   border-style: solid;
+   border-width: 0 0 3px 0;
+   cursor: pointer;
+   display: block;
+   padding-bottom: 0.25rem;
+   text-align: center;
+   visibility: visible;
+   width: 33.33%;
+}
+#ictv_virus_name_lookup_container .tab-button.active {
+   border-color: rgb(13, 110, 253);
+}
+#ictv_virus_name_lookup_container .tab-button.disabled {
+   color: #999;
+   /*display: none;
+   visibility: hidden;*/
+}
+#ictv_virus_name_lookup_container .tab-button.disabled.active {
+   border-color: #999;
+   /*display: none;
+   visibility: hidden;*/
+}
+
+#ictv_virus_name_lookup_container .tab-panel {
+   display: none;
+   visibility: hidden;
+}
+#ictv_virus_name_lookup_container .tab-panel.active {
+   display: block;
+   visibility: visible;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Data tables
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_virus_name_lookup_container table.results-table {
    min-width: 800px;
-   overflow: visible;
+   overflow: visible !important;
    width: 100%;
 }
-
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable .header-row {
+#ictv_virus_name_lookup_container table.results-table .header-row {
    background-color: #757575 !important;
 }
-
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable th,
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable td {
+#ictv_virus_name_lookup_container table.results-table th,
+#ictv_virus_name_lookup_container table.results-table td {
    font-size: 1.0rem !important;
 }
-
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable th {
+#ictv_virus_name_lookup_container table.results-table th {
    background-color: #757575 !important;
    color: #fff !important;
    font-weight: 400 !important;
 }
-
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable .even-bg {
+#ictv_virus_name_lookup_container table.results-table .even-bg {
    background-color: #eee;
 }
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable .odd-bg {
+#ictv_virus_name_lookup_container table.results-table .odd-bg {
    background-color: #fff;
 }
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable thead + tbody tr:first-child th, 
-#ictv_virus_name_lookup_container .accordion-body table.result-matches.dataTable thead + tbody tr:first-child td {
+#ictv_virus_name_lookup_container table.results-table thead + tbody tr:first-child th, 
+#ictv_virus_name_lookup_container table.results-table thead + tbody tr:first-child td {
    padding-top: 0.75rem;
 }
 
@@ -208,7 +325,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The invalid results table
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_virus_name_lookup_container table.invalid-results-table {
+/*#ictv_virus_name_lookup_container table.invalid-results-table {
    overflow: visible !important;
 }
 #ictv_virus_name_lookup_container .invalid-results-table th {
@@ -224,14 +341,14 @@
 }
 #ictv_virus_name_lookup_container .invalid-results-table .odd-bg {
    background-color: #fff;
-}
+}*/
 #ictv_virus_name_lookup_container .invalid-results-table .match-number {
    width: 80px;
-}
+}/*
 #ictv_virus_name_lookup_container .invalid-results-table td {
    font-size: 1.0rem !important;
    vertical-align: top !important;
-}
+}*/
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -313,11 +430,11 @@
 }
 
 /* Table TH and TD */
-#ictv_virus_name_lookup_container table.dataTable.compact thead th,
-#ictv_virus_name_lookup_container table.dataTable.compact thead td {
+#ictv_virus_name_lookup_container table.results-table.compact thead th,
+#ictv_virus_name_lookup_container table.results-table.compact thead td {
    padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
 }
 
-#ictv_virus_name_lookup_container table.dataTable.compact thead th {
+#ictv_virus_name_lookup_container table.results-table.compact thead th {
    text-align: left !important;
 }
