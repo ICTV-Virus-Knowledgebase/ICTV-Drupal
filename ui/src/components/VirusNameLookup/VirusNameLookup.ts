@@ -4,7 +4,7 @@ import { AppSettings } from "../../global/AppSettings";
 import DataTables from "datatables.net-dt";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
-import { LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
+import { LookupNameClass, LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
 enum ResultType {
@@ -129,6 +129,70 @@ export class VirusNameLookup {
    }
 
 
+   // Create a link to GenBank using one or more accessions.
+   createAccessionLink(accessions_: string) {
+
+      if (!accessions_) { return ""; }
+
+      accessions_ = accessions_.trim();
+      if (accessions_.length < 1) { return ""; }
+
+      // If commas were used as a delimiter, replace them with semicolons.
+      accessions_ = accessions_.replace(",", ";");
+
+      let accessionCount = 0;
+      let accessionList = "";
+      let linkText = "";
+
+      // Tokenize using a semicolon as the delimiter. If there aren't any semicolons, the input text will be the only token.
+      const tokens = accessions_.split(";");
+      if (Array.isArray(tokens) && tokens.length > 0) {
+
+         tokens.forEach((token_: string) => {
+
+            if (!token_) { return; }
+
+            let trimmedToken = token_.trim();
+            if (trimmedToken.length < 1) { return; }
+
+            let accession = null;
+
+            // Get the accession from the token.
+            let colonIndex = trimmedToken.indexOf(":");
+            if (colonIndex > 0) {
+               accession = trimmedToken.substring(colonIndex + 1);
+               accession = accession.trim();
+               if (accession.length < 1) { return; }
+            } else {
+               accession = trimmedToken;
+            }
+
+            if (accessionCount > 0) {
+
+               // Add a semicolon and line break before all but the first link.
+               linkText += "; ";
+
+               // Add a comma before all but the first accession number.
+               accessionList += ","
+            }
+
+            // Add the token to the link text.
+            linkText += trimmedToken;
+
+            // Add the accession number to the comma-delimited list.
+            accessionList += accession;
+
+            // Increment the accession count.
+            accessionCount += 1;
+         })
+      }
+
+      if (accessionList.length < 1 || linkText.length < 1) { return ""; }
+
+      return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${linkText}</a>`;
+   }
+
+
    createInvalidResultTable(matches_: ISearchResult[]) {
 
       if (!Array.isArray(matches_)) { return ""; }
@@ -167,14 +231,14 @@ export class VirusNameLookup {
          let matchName = this.highlightText(match_.name.trim());
 
          // Format the match rank
-         let matchRank = this.formatRank(match_.nameClass as NameClass, match_.rankName, match_.taxonomyDB as TaxonomyDB);
+         let matchRank = this.formatRank(match_.nameClass, match_.rankName, match_.taxonomyDB);
          if (matchRank.length > 0) { matchRank += ": "; }
 
          // Format name class
-         const nameClass = match_.nameClass.replace("_", " ");
+         const nameClass = LookupNameClass(match_.nameClass, match_.taxonomyDB);
 
          // Lookup a tooltip for the name class.
-         const nameClassTip = LookupNameClassDefinition(match_.nameClass as NameClass);
+         const nameClassTip = LookupNameClassDefinition(match_.nameClass, match_.taxonomyDB);
 
          // Should we hyperlink the match name?
          let linkedMatchName = !matchURL ? matchName : `<a href="${matchURL}" target="_blank">${matchName}</a>`;
@@ -203,7 +267,7 @@ export class VirusNameLookup {
    }
 
 
-   createResultMatchRows(matches_: ISearchResult[]): string {
+   createResultMatchRows(matches_: ISearchResult[], resultName_: string): string {
 
       let html = "";
 
@@ -217,10 +281,11 @@ export class VirusNameLookup {
          // Format the match version and taxonomy database/ID.
          switch (result_.taxonomyDB) {
             case TaxonomyDB.ictv_taxonomy:
+            case TaxonomyDB.ictv_epithets:
                source = `ICTV: MSL ${result_.versionID}`;
                break;
             case TaxonomyDB.ictv_vmr:
-               source = `VMR ${this.currentVMR}`;
+               source = `ICTV: VMR ${this.currentVMR}`;
                break;
             case TaxonomyDB.ncbi_taxonomy:
                source = "NCBI";
@@ -242,54 +307,34 @@ export class VirusNameLookup {
          // Highlight the search text in the result name.
          let matchName = this.highlightText(result_.name.trim());
 
+         // Italicize ICTV taxa
+         if (result_.taxonomyDB === TaxonomyDB.ictv_epithets || result_.taxonomyDB === TaxonomyDB.ictv_taxonomy) {
+            matchName = `<i>${matchName}</i>`;
+         }
+
          // Should the match name be hyperlinked?
          let linkedMatchName = !matchURL ? matchName : `<a href="${matchURL}" target="_blank">${matchName}</a>`;
 
          let intermediateText = "";
-         if (!!result_.intermediateName && result_.intermediateName.length > 0) {
 
-            let intermediateRank = this.formatRank(NameClass.scientific_name, result_.intermediateRank, result_.taxonomyDB as TaxonomyDB);
+         // Display the intermediate name if it exists and it's different from the ICTV result name.
+         if (!!result_.intermediateName && result_.intermediateName.length > 0 && result_.intermediateName.toUpperCase() !== resultName_.toUpperCase()) {
+
+            let intermediateRank = this.formatRank(NameClass.scientific_name, result_.intermediateRank, result_.taxonomyDB);
             if (intermediateRank.length > 0) { intermediateRank = `${intermediateRank}: `; }
 
             intermediateText = `${intermediateRank}<i>${result_.intermediateName}</i>`;
          }
 
-         /*
-         if (!result_.intermediateName) {
-
-            // Should we hyperlink the match name?
-            linkedMatchName = !matchURL ? matchName : `<a href="${matchURL}" target="_blank">${matchName}</a>`;
-
-            linkedIntermediateName = "";
-
-         } else {
-
-            linkedMatchName = matchName;
-
-            let intermediateRank = !result_.intermediateRank || result_.intermediateRank === "no_rank" ? "" : LookupTaxonomyRank(result_.intermediateRank);
-
-            // Qualify NCBI ranks
-            if (intermediateRank.length > 0 && result_.taxonomyDB === TaxonomyDB.ncbi_taxonomy) { intermediateRank = `NCBI ${intermediateRank}`; }
-
-            // Only display ranks for scientific names and equivalent names.
-            intermediateRank = result_.nameClass == "scientific_name" || result_.nameClass == "taxon_name" ? intermediateRank : "";
-
-            if (intermediateRank.length > 0) { intermediateRank += ": "; }
-
-            // Hyperlink the intermediate name.
-            let intermediateName = `<i>${result_.intermediateName}</i>`;
-            linkedIntermediateName = !matchURL ? intermediateName : `${intermediateRank}<a href="${matchURL}" target="_blank">${intermediateName}</a>`;
-         }*/
-
          // Format the match rank
-         let matchRank = this.formatRank(result_.nameClass as NameClass, result_.rankName, result_.taxonomyDB as TaxonomyDB);
+         let matchRank = this.formatRank(result_.nameClass, result_.rankName, result_.taxonomyDB);
          if (matchRank.length > 0) { matchRank += ": "; }
 
          // Format the name class
-         const nameClass = result_.nameClass.replace("_", " ");
+         const nameClass = LookupNameClass(result_.nameClass, result_.taxonomyDB);
 
          // Lookup a tooltip for the name class.
-         const nameClassTip = LookupNameClassDefinition(result_.nameClass as NameClass);
+         const nameClassTip = LookupNameClassDefinition(result_.nameClass, result_.taxonomyDB);
 
          // Add the table row to the HTML.
          html += `<tr class="${rowClass}">
@@ -325,14 +370,27 @@ export class VirusNameLookup {
       const matchesTitle = ictvResult_.matches.length === 1 ? "Database match: <b>1</b>" : `Database matches: <b>${ictvResult_.matches.length}</b>`;
 
       // Create rows for the match table.
-      const matchRows = this.createResultMatchRows(ictvResult_.matches);
+      const matchRows = this.createResultMatchRows(ictvResult_.matches, ictvResult_.name);
 
-      let resultNote = "";
+      // Use more convenient variable names for the exemplar and its GenBank accession.
+      let exemplar = ictvResult_.exemplar;
+      let genbankAccession = ictvResult_.genbankAccession;
 
-      // If this is an abolished taxon, note when it was abolished.
+      let abolishedNote = "";
+      let exemplarLink = "";
+
       if (ictvResult_.mslRelease < AppSettings.currentMslRelease) {
+
+         // Note when the taxon was abolished.
          const year = `${ictvResult_.taxnodeID}`.substring(0, 4);
-         resultNote = `(abolished after ${year})`;
+         abolishedNote = ` (abolished after ${year})`;
+
+      } else if (!!exemplar && exemplar.length > 0 && !!genbankAccession && genbankAccession.length > 0) { 
+         
+            const genbankLink = this.createAccessionLink(genbankAccession);
+
+            // Display the exemplar virus and its GenBank accession(s).
+            exemplarLink = `Exemplar: ${exemplar} (${genbankLink})`;
       }
 
       let html =
@@ -346,8 +404,8 @@ export class VirusNameLookup {
                   <div class="lineage-and-result">
                      <div class="lineage">${lineage}</div>
                      <div class="result">
-                        <div class="result-name">${resultRank}: <i>${linkedResultName}</i></div>
-                        <div class="result-note">${resultNote}</div>
+                        <div class="result-name">${resultRank}: <i>${linkedResultName}</i>${abolishedNote}</div>
+                        <div class="result-note">${exemplarLink}</div>
                      </div>
                   </div>
                </div>
@@ -360,7 +418,7 @@ export class VirusNameLookup {
                         <tr class="header-row">
                            <th class="name">Matching name</th>
                            <th class="source">Source (name type)</th>
-                           <th class="intermediate">Intermediate taxon</th>
+                           <th class="intermediate">Superceded taxon name</th>
                         </tr>
                      </thead>
                      <tbody>${matchRows}</tbody>
@@ -633,8 +691,8 @@ export class VirusNameLookup {
       let formattedRank = LookupTaxonomyRank(rankName_);
       if (!formattedRank) { return ""; }
 
-      // Qualify NCBI ranks
-      if (taxonomyDB_ === TaxonomyDB.ncbi_taxonomy) { formattedRank = `NCBI ${formattedRank}`; }
+      // Remove NCBI ranks (???)
+      if (taxonomyDB_ === TaxonomyDB.ncbi_taxonomy) { formattedRank = ""; }
 
       return formattedRank;
    }

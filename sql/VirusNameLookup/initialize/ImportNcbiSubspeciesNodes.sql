@@ -124,6 +124,10 @@ BEGIN
       FROM v_taxonomy_node tn
       JOIN v_taxonomy_level tl ON tl.id = tn.level_id
       WHERE tn.taxnode_id <> tn.tree_id
+
+      -- dmd 010825
+      AND tn.msl_release_num IS NOT NULL
+      
    ) latestTN ON latestTN.name = parentName.name_txt
 
    -- Only include subspecies ranks

@@ -256,7 +256,8 @@ class LookupService extends ResourceBase {
             // Create a new ICTV result instance.
             $ictvResult = new IctvResult($searchResult->resultMslRelease, $searchResult->resultName, 
                $searchResult->resultRankName, $searchResult->resultTaxnodeID,
-               $searchResult->family, $searchResult->subfamily, $searchResult->genus, $searchResult->subgenus);
+               $searchResult->family, $searchResult->subfamily, $searchResult->genus, $searchResult->subgenus,
+               $searchResult->exemplar, $searchResult->genbankAccession);
 
             // Add the key to the ordered list of keys.
             array_push($ictvResultKeys, $resultKey);
@@ -314,12 +315,10 @@ class LookupService extends ResourceBase {
          ),
       );
        
-      // dmd testing 12/13/24
       $response = new ResourceResponse($data);
       $response->addCacheableDependency($build);
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
-      // return (new ResourceResponse($data))->addCacheableDependency($build);
    }
 
    public function processAction(Request $request) {

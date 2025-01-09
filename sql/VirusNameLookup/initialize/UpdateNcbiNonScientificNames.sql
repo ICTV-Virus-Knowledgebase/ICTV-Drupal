@@ -17,6 +17,7 @@ BEGIN
 
    DECLARE cur CURSOR FOR 
 
+      -- Get NCBI taxa (scientific names only)
       SELECT st.ictv_id,
          st.ictv_taxnode_id,
          st.`name`,
@@ -68,30 +69,6 @@ BEGIN
    END LOOP;
 
    CLOSE cur;
-
-   /*
-   -- Update non-scientific names
-   UPDATE searchable_taxon otherNames
-
-   -- Join with scientific names that have the same taxonomy database and ID (tax_id).
-   JOIN searchable_taxon sciName ON (
-      sciName.taxonomy_id = otherNames.taxonomy_id
-      AND sciName.taxonomy_db_tid = otherNames.taxonomy_db_tid
-   )
-
-   SET otherNames.ictv_id = sciName.ictv_id,
-      otherNames.ictv_taxnode_id = sciName.ictv_taxnode_id,
-      otherNames.intermediate_name = sciName.name,
-      otherNames.intermediate_rank = sciName.rank_name
-
-   -- Scientific names from NCBI Taxonomy
-   WHERE sciName.taxonomy_db_tid = ncbiTaxDbTID
-   AND sciName.name_class_tid = sciNameTID
-
-   -- Non-scientific names from NCBI Taxonomy
-   AND otherNames.taxonomy_db_tid = ncbiTaxDbTID
-   AND otherNames.name_class_tid <> sciNameTID;
-   */
 
 END //
 
