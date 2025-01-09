@@ -3,6 +3,8 @@ DROP PROCEDURE IF EXISTS `ImportLatestSpeciesIsolates`;
 
 DELIMITER //
 
+-- dmd 010825: Removing intermediate names and intermediate ranks.
+
 CREATE PROCEDURE ImportLatestSpeciesIsolates()
 BEGIN
    DECLARE delimitedName VARCHAR(300);
@@ -119,7 +121,7 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'genbank_accession', ictvTaxonomyDB, 
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, delimitedName, 'genbank_accession', ictvTaxonomyDB, 
                   taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 
@@ -139,7 +141,7 @@ BEGIN
          SET isolateNames = SUBSTRING(isolateNames, 1, 800);
 
          -- Create a searchable_taxon record.
-         CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", isolateNames, 'isolate_name', ictvTaxonomyDB, 
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, isolateNames, 'isolate_name', ictvTaxonomyDB, 
             taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
@@ -148,7 +150,7 @@ BEGIN
       IF isolateAbbrevs IS NOT NULL AND LENGTH(isolateAbbrevs) > 0 THEN
 
          -- Create a searchable_taxon record.
-         CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", isolateAbbrevs, 'isolate_abbreviation', ictvTaxonomyDB, 
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, isolateAbbrevs, 'isolate_abbreviation', ictvTaxonomyDB, 
             taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
@@ -171,7 +173,7 @@ BEGIN
             IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
 
                -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, speciesName, "species", delimitedName, 'refseq_accession', ictvTaxonomyDB, 
+               CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, delimitedName, 'refseq_accession', ictvTaxonomyDB, 
                   taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
             END IF;
 

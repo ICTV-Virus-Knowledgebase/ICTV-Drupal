@@ -6,6 +6,14 @@ use Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource\SearchResult;
 
 class IctvResult {
 
+   public ?string $exemplar;
+
+   public ?string $family;
+
+   public ?string $genbankAccession;
+
+   public ?string $genus;
+
    public $matches;
 
    public ?int $mslRelease;
@@ -14,29 +22,28 @@ class IctvResult {
 
    public ?string $rankName;
 
-   public ?int $taxnodeID;
-
-
-   public ?string $family;
    public ?string $subfamily;
-   public ?string $genus;
+   
    public ?string $subgenus;
+
+   public ?int $taxnodeID;
 
 
    // C-tor
    public function __construct(?int $mslRelease_, ?string $name_, ?string $rankName_, ?int $taxnodeID_,
-      ?string $family_, ?string $subfamily_, ?string $genus_, ?string $subgenus_) {
+      ?string $family_, ?string $subfamily_, ?string $genus_, ?string $subgenus_, ?string $exemplar_, ?string $genbankAccession_) {
 
+      $this->exemplar = $exemplar_;
+      $this->family = $family_;
+      $this->genbankAccession = $genbankAccession_;
+      $this->genus = $genus_;
       $this->mslRelease = $mslRelease_;
       $this->name = $name_;
       $this->rankName = $rankName_;
+      $this->subfamily = $subfamily_;
+      $this->subgenus = $subgenus_;
       $this->taxnodeID = $taxnodeID_;
       $this->matches = [];
-
-      $this->family = $family_;
-      $this->subfamily = $subfamily_;
-      $this->genus = $genus_;
-      $this->subgenus = $subgenus_;
    }
 
 
@@ -45,16 +52,17 @@ class IctvResult {
     */
     public function normalize() {
       return [
+         "exemplar" => $this->exemplar,
+         "family" => $this->family,
+         "genbankAccession" => $this->genbankAccession,
+         "genus" => $this->genus,
          "mslRelease" => $this->mslRelease,
          "name" => $this->name,
          "rankName" => $this->rankName,
-         "taxnodeID" => $this->taxnodeID,
-         "matches" => $this->matches,
-
-         "family" => $this->family,
          "subfamily" => $this->subfamily,
-         "genus" => $this->genus,
-         "subgenus" => $this->subgenus
+         "subgenus" => $this->subgenus,
+         "taxnodeID" => $this->taxnodeID,
+         "matches" => $this->matches
       ];
    }
 }

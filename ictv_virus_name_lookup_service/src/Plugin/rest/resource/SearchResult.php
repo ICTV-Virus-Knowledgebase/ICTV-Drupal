@@ -11,8 +11,20 @@ class SearchResult {
    // Prefer virus and phage results over anything else.
    public float $divisionScore;
 
+   // The result's exemplar virus 
+   public ?string $exemplar;
+   
+   // The taxon's family name (optional).
+   public ?string $family;
+
    // Does the first character of the search text match the first character of the matching name?
    public int $firstCharacterMatch;
+
+   // The exemplar virus' GenBank accession.
+   public ?string $genbankAccession;
+
+   // The taxon's genus name (optional).
+   public ?string $genus;
 
    // Does the matching taxon have an associated ICTV result?
    public int $hasTaxnodeID;
@@ -58,6 +70,12 @@ class SearchResult {
    // The overall score (calculated after the search result has been populated).
    public float $score;
 
+   // The taxon's subfamily name (optional).
+   public ?string $subfamily;
+
+   // The taxon's subgenus name (optional).
+   public ?string $subgenus;
+
    // The match's taxonomy database
    public string $taxonomyDB;
 
@@ -71,21 +89,17 @@ class SearchResult {
    public int $versionID;
 
 
-   // TEST 121224
-   public string $family;
-   public string $subfamily;
-   public string $genus;
-   public string $subgenus;
-   
-   
-
    // C-tor
    public function __construct() {
 
       // Provide defaults for all member variables.
       $this->division = "";
       $this->divisionScore = 0;
+      $this->exemplar = "";
+      $this->family = "";
       $this->firstCharacterMatch = 0;
+      $this->genbankAccession = "";
+      $this->genus = "";
       $this->hasTaxnodeID = 0;
       $this->intermediateName = "";
       $this->intermediateRank = "";
@@ -94,7 +108,6 @@ class SearchResult {
       $this->lengthDifference = 0;
       $this->name = "";
       $this->nameClass = "";
-      //$this->nameClassScore = 0;
       $this->rankName = "";
       $this->recentResultScore = 0;
       $this->relevanceScore = 0;
@@ -103,15 +116,12 @@ class SearchResult {
       $this->resultRankName = "";
       $this->resultTaxnodeID = 0;
       $this->score = 0;
+      $this->subfamily = "";
+      $this->subgenus = "";
       $this->taxonomyDB = "";
       $this->taxonomyDbScore = 0;
       $this->taxonomyID = 0;
       $this->versionID = -1;
-
-      $this->family = "";
-      $this->subfamily = "";
-      $this->genus = "";
-      $this->subgenus = "";
    }
 
    // Method to populate the object from an associative array
@@ -121,7 +131,11 @@ class SearchResult {
       
       $instance->division = $data["division"];
       $instance->divisionScore = $data["division_score"];
+      $instance->exemplar = $data["exemplar"];
+      $instance->family = $data["family"];
       $instance->firstCharacterMatch = $data["first_character_match"];
+      $instance->genbankAccession = $data["genbank_accessions"];
+      $instance->genus = $data["genus"];
       $instance->hasTaxnodeID = $data["has_taxnode_id"];
       $instance->intermediateName = $data["intermediate_name"];
       $instance->intermediateRank = $data["intermediate_rank"];
@@ -130,7 +144,6 @@ class SearchResult {
       $instance->lengthDifference = $data["length_difference"];
       $instance->name = $data["name"];
       $instance->nameClass = $data["name_class"];
-      //$instance->nameClassScore = $data["name_class_score"];
       $instance->rankName = $data["rank_name"];
       $instance->recentResultScore = $data["recent_result_score"];
       $instance->relevanceScore = $data["relevance_score"];
@@ -138,15 +151,12 @@ class SearchResult {
       $instance->resultName = $data["result_name"];
       $instance->resultRankName = $data["result_rank_name"];
       $instance->resultTaxnodeID = $data["result_taxnode_id"];
+      $instance->subfamily = $data["subfamily"];
+      $instance->subgenus = $data["subgenus"];
       $instance->taxonomyDB = $data["taxonomy_db"];
       $instance->taxonomyDbScore = $data["taxonomy_db_score"];
       $instance->taxonomyID = $data["taxonomy_id"];
       $instance->versionID = $data["version_id"];
-      
-      $instance->family = $data["family"];
-      $instance->subfamily = $data["subfamily"];
-      $instance->genus = $data["genus"];
-      $instance->subgenus = $data["subgenus"];
 
       return $instance;
    }
@@ -159,7 +169,11 @@ class SearchResult {
       return [
          "division" => $this->division,
          "divisionScore" => $this->divisionScore,
+         "exemplar" => $this->exemplar,
+         "family" => $this->family,
          "firstCharacterMatch" => $this->firstCharacterMatch,
+         "genbankAccession" => $this->genbankAccession,
+         "genus" => $this->genus,
          "hasTaxnodeID" => $this->hasTaxnodeID,
          "intermediateName" => $this->intermediateName,
          "intermediateRank" => $this->intermediateRank,
@@ -168,7 +182,6 @@ class SearchResult {
          "lengthDifference" => $this->lengthDifference,
          "name" => $this->name,
          "nameClass" => $this->nameClass,
-         //"nameClassScore" => $this->nameClassScore,
          "rankName" => $this->rankName,
          "recentResultScore" => $this->recentResultScore,
          "relevanceScore" => $this->relevanceScore,
@@ -177,15 +190,12 @@ class SearchResult {
          "resultRankName" => $this->resultRankName,
          "resultTaxnodeID" => $this->resultTaxnodeID,
          "score" => $this->score,
+         "subfamily" => $this->subfamily,
+         "subgenus" => $this->subgenus,
          "taxonomyDB" => $this->taxonomyDB,
          "taxonomyDbScore" => $this->taxonomyDbScore,
          "taxonomyID" => $this->taxonomyID,
-         "versionID" => $this->versionID,
-
-         "family" => $this->family,
-         "subfamily" => $this->subfamily,
-         "genus" => $this->genus,
-         "subgenus" => $this->subgenus
+         "versionID" => $this->versionID
       ];
    }
 

@@ -202,72 +202,117 @@ export enum WebServiceKey {
 // Functions that use enums
 //-----------------------------------------------------------------------------------------------------------------------------
 
-export function LookupNameClassDefinition(nameClass_: NameClass) {
+export function LookupNameClass(nameClass_: NameClass, taxonomyDB_: TaxonomyDB) {
 
-   switch (nameClass_) { 
+   if (taxonomyDB_ !== TaxonomyDB.ictv_vmr) { return nameClass_.replace("_", " "); }
 
-      case NameClass.abbreviation:
-         return "An abbreviation associated with the virus";
-
-      case NameClass.acronym:
-         return "An acronym associated with the virus";
-
-      case NameClass.authority:
-         return "The name of the scientist(s) who originally described the virus and the year it was published";
-
-      case NameClass.blast_name:
-         return "A simplified name used by BLAST (Basic Local Alignment Search Tool) for grouping organisms into broad categories";
-
-      case NameClass.common_name:
-         return "An informal name in common usage";
-
-      case NameClass.equivalent_name:
-         return "A name that is considered equivalent to the scientific name but may not be currently used";
-
+   switch (nameClass_) {
       case NameClass.genbank_accession:
-         return "A unique alphanumeric identifier assigned to a specific sequence record in the GenBank database";
-
-      case NameClass.genbank_acronym:
-         return "An acronym used in GenBank records";
-
-      case NameClass.genbank_common_name:
-         return "The common name associated with the virus used specifically in GenBank records";
-
-      case NameClass.includes:
-         return "A name that encompasses subgroups or other taxa included within the current taxon";
-
-      case NameClass.in_part:
-         return "A name that is only partially synonymous with the virus";
-
+         return "virus GenBank accession";
       case NameClass.isolate_abbreviation:
-         return "A shortened or abbreviated form of a specific isolate's name";
-
+         return "virus name abbreviation";
       case NameClass.isolate_designation:
-         return "A specific identifier or label given to a particular isolate, often used to differentiate among multiple isolates of the same species";
-
-      case NameClass.isolate_exemplar:
-         return "A representative isolate chosen as the best example or reference for a specific group, strain, or species";
-
+         return "virus isolate designation"; 
       case NameClass.isolate_name:
-         return "The full or descriptive name assigned to an isolate, often reflecting its source, collection location, or other unique characteristics";
-      
+         return "virus name";
       case NameClass.refseq_accession:
-         return "A unique alphanumeric identifier assigned to a specific sequence record in the NCBI RefSeq (Reference Sequence) database";
+         return "virus RefSeq accession";
+      default: 
+         return nameClass_.replace("_", " ");
+   }
+}
 
-      case NameClass.refseq_organism:
-         return "The organism name associated with a specific RefSeq entry. It refers to the taxonomic identity of the organism for which a curated reference sequence is provided in the RefSeq database";
-      
-      case NameClass.scientific_name:
-         return "Name derived from NCBI lineage";
+export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: TaxonomyDB) {
 
-      case NameClass.synonym:
-         return "Alternative scientific names that have been historically used for a virus or taxon but are not the currently accepted name";
+   if (taxonomyDB_ === TaxonomyDB.ictv_vmr) {
 
-      case NameClass.taxon_name:
-         return "A formal taxonomic name";
+      switch (nameClass_) {
+         case NameClass.genbank_accession:
+            return "The GenBank (nucleotide) accession number(s) for the exemplar (or additional) virus isolate of the indicated species";
 
-      case NameClass.type_material:
-         return "A name related to the type specimen or type material upon which the taxon's description is based";
+         case NameClass.isolate_abbreviation:
+            return "Commonly used abbreviation(s) of the virus name(s)";
+
+         case NameClass.isolate_designation:
+            return "The designation of the virus isolate (often also referred to as variants or strains)"; 
+
+         case NameClass.isolate_name:
+            return "Commonly used virus name or names";
+
+         case NameClass.refseq_accession:
+            return "The equivalent RefSeq accession numbers for the GenBank (nucleotide) accession number(s)";
+
+         default: 
+            return nameClass_.replace("_", " ");
+      }
+
+   } else {
+
+      switch (nameClass_) { 
+
+         case NameClass.abbreviation:
+            return "An abbreviation associated with the virus";
+
+         case NameClass.acronym:
+            return "An acronym associated with the virus";
+
+         case NameClass.authority:
+            return "The name of the scientist(s) who originally described the virus and the year it was published";
+
+         case NameClass.blast_name:
+            return "A simplified name used by BLAST (Basic Local Alignment Search Tool) for grouping organisms into broad categories";
+
+         case NameClass.common_name:
+            return "An informal name in common usage";
+
+         case NameClass.equivalent_name:
+            return "A name that is considered equivalent to the scientific name but may not be currently used";
+
+         case NameClass.genbank_accession:
+            return "A unique alphanumeric identifier assigned to a specific sequence record in the GenBank database";
+
+         case NameClass.genbank_acronym:
+            return "An acronym used in GenBank records";
+
+         case NameClass.genbank_common_name:
+            return "The common name associated with the virus used specifically in GenBank records";
+
+         case NameClass.includes:
+            return "A name that encompasses subgroups or other taxa included within the current taxon";
+
+         case NameClass.in_part:
+            return "A name that is only partially synonymous with the virus";
+
+         case NameClass.isolate_abbreviation:
+            return "A shortened or abbreviated form of a specific isolate's name";
+
+         case NameClass.isolate_designation:
+            return "A specific identifier or label given to a particular isolate, often used to differentiate among multiple isolates of the same species";
+
+         case NameClass.isolate_exemplar:
+            return "A representative isolate chosen as the best example or reference for a specific group, strain, or species";
+
+         case NameClass.isolate_name:
+            return "The full or descriptive name assigned to an isolate, often reflecting its source, collection location, or other unique characteristics";
+         
+         case NameClass.refseq_accession:
+            return "A unique alphanumeric identifier assigned to a specific sequence record in the NCBI RefSeq (Reference Sequence) database";
+
+         case NameClass.refseq_organism:
+            return "The organism name associated with a specific RefSeq entry. It refers to the taxonomic identity of the organism for which a curated reference sequence is provided in the RefSeq database";
+         
+         case NameClass.scientific_name:
+            return "Name derived from NCBI lineage";
+
+         case NameClass.synonym:
+            return "Alternative scientific names that have been historically used for a virus or taxon but are not the currently accepted name";
+
+         case NameClass.taxon_name:
+            return "A formal taxonomic name";
+
+         case NameClass.type_material:
+            return "A name related to the type specimen or type material upon which the taxon's description is based";
+      }
    }
 }
 // Return the value of the taxonomy rank enum.

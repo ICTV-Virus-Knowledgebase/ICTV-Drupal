@@ -63,6 +63,10 @@ BEGIN
             WHEN st.division IN ('viruses', 'phages') THEN 1 ELSE 0
          END AS division_score,
 
+         -- The result's exemplar virus and its GenBank accession.
+         si._isolate_name AS exemplar,
+         si.genbank_accessions,
+
          -- The family of the ICTV result.
          CASE 
             WHEN result_tn.family_id IS NOT NULL THEN CONCAT(family.name, ':', CAST(result_tn.family_id AS VARCHAR(12)))
@@ -209,7 +213,10 @@ BEGIN
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
       LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id
-
+      LEFT JOIN v_species_isolates si ON (
+         si.taxnode_id = result_tn.taxnode_id
+         AND si.isolate_type = 'E'
+      )
       LEFT JOIN v_taxonomy_node family on family.taxnode_id = result_tn.family_id 
       LEFT JOIN v_taxonomy_node subfamily on subfamily.taxnode_id = result_tn.subfamily_id 
       LEFT JOIN v_taxonomy_node genus on genus.taxnode_id = result_tn.genus_id 

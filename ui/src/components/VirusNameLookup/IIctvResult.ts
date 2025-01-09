@@ -2,14 +2,15 @@
 import { ISearchResult } from "./ISearchResult"
 
 export interface IIctvResult {
+   exemplar: string;
+   family: string;
+   genbankAccession: string;
+   genus: string;
    matches: ISearchResult[];
    mslRelease: number;
    name: string;
    rankName: string;
-   taxnodeID: number;
-
-   family: string;
    subfamily: string;
-   genus: string;
    subgenus: string;
+   taxnodeID: number;
 }
