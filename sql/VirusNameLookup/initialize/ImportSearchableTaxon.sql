@@ -8,9 +8,9 @@ CREATE PROCEDURE ImportSearchableTaxon(
    IN `division` VARCHAR(20),
    IN `ictvID` INT(11),
    IN `ictvTaxnodeID` INT(11),
-   IN `intermediateName` VARCHAR(300),
+   IN `intermediateName` TEXT,
    IN `intermediateRank` VARCHAR(50),
-	IN `name` VARCHAR(800),
+	IN `_name` TEXT,
 	IN `nameClass` VARCHAR(100),
 	IN `parentTaxonomyDB` VARCHAR(100),
 	IN `parentTaxonomyID` INT,
@@ -24,8 +24,8 @@ BEGIN
 
 	-- Declare variables used below.
    DECLARE divisionTID INT;
-   DECLARE errorMessage VARCHAR(500);
-	DECLARE filteredName NVARCHAR(300);
+   DECLARE errorMessage TEXT;
+	DECLARE filteredName TEXT;
 	DECLARE nameClassTID INT;
 	DECLARE parentTaxonomyDbTID INT;
    DECLARE phagesDivisionTID INT;
@@ -34,11 +34,16 @@ BEGIN
 	DECLARE virusDivisionTID INT;
 	
 	-- Validate the input variables
-	SET name = TRIM(name);
-   IF name IS NULL OR LENGTH(name) < 1 THEN
+	SET _name = TRIM(_name);
+   IF _name IS NULL OR LENGTH(_name) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid name parameter';
    END IF;
    
+   -- Make sure the name parameter isn't longer than 1100 characters.
+   IF LENGTH(_name) > 1100 THEN
+      SET _name = SUBSTRING(_name, 0, 1100);
+   END IF;
+
    SET nameClass = TRIM(nameClass);
    IF nameClass IS NULL OR LENGTH(nameClass) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid name class parameter';
@@ -118,7 +123,7 @@ BEGIN
 	END IF;
 	
 	-- Filter the name
-	SET filteredName = getFilteredName(name);
+	SET filteredName = getFilteredName(_name);
 	
 	
 	-- Create the new searchable_taxon record.
@@ -144,7 +149,7 @@ BEGIN
       ictvTaxnodeID,
       intermediateName,
       intermediateRank,
-		name,
+		_name,
 		nameClassTID,
 		parentTaxonomyDbTID,
 		parentTaxonomyID,

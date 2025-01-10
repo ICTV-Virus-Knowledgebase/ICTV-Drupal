@@ -3,6 +3,9 @@ DROP PROCEDURE IF EXISTS `ImportNcbiScientificNames`;
 
 DELIMITER //
 
+-- Updates
+-- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
+
 CREATE PROCEDURE ImportNcbiScientificNames()
 BEGIN
 
@@ -93,16 +96,17 @@ BEGIN
          tn.ictv_id,
          (
             SELECT tnid.taxnode_id
-            FROM v_taxonomy_node tnid
+            FROM v_taxonomy_node_names tnid
             WHERE tnid.name = tn.name
+            AND tnid.tree_id <> tnid.taxnode_id
             AND tnid.msl_release_num IS NOT NULL
             ORDER BY tnid.msl_release_num DESC
             LIMIT 1
          ) AS latestTaxnodeID
-      FROM v_taxonomy_node tn
-      JOIN v_taxonomy_level tl ON tl.id = tn.level_id
+      FROM v_taxonomy_node_names tn
       WHERE tn.taxnode_id <> tn.tree_id
       AND tn.msl_release_num IS NOT NULL
+      
    ) latestTN ON latestTN.name = nname.name_txt
 
    -- Exclude subspecies ranks

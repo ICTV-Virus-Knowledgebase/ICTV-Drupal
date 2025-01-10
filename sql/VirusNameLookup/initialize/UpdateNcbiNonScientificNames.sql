@@ -17,7 +17,7 @@ BEGIN
 
    DECLARE cur CURSOR FOR 
 
-      -- Get NCBI taxa (scientific names only)
+      -- Get NCBI scientific names that have already been associated with an ICTV taxonomy_node record.
       SELECT st.ictv_id,
          st.ictv_taxnode_id,
          st.`name`,
@@ -29,7 +29,7 @@ BEGIN
       WHERE st.taxonomy_db_tid = ncbiTaxDbTID
       AND st.name_class_tid = sciNameTID
       AND st.ictv_id IS NOT NULL
-      AND st.ictv_taxnode_id IS NOT NULL
+      AND st.ictv_taxnode_id IS NOT NULL;
 
    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 

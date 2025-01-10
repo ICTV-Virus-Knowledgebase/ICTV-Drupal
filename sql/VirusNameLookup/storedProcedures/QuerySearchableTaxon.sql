@@ -4,6 +4,11 @@ DROP PROCEDURE IF EXISTS `QuerySearchableTaxon`;
 
 DELIMITER //
 
+-- Query the searchable_taxon table for the search text provided.
+
+-- Updates
+-- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
+
 CREATE PROCEDURE QuerySearchableTaxon(
 	
    -- The current MSL release number.
@@ -125,21 +130,7 @@ BEGIN
          -- Name class (inspired by NCBI name class).
          st.name_class,
 
-         -- Name classes ordered from most specific to least specific.
-         /*CASE
-            WHEN st.name_class IN ('genbank_accession', 'refseq_accession') THEN 10
-            WHEN st.name_class IN ('isolate_name', 'isolate_exemplar') THEN 9
-            WHEN st.name_class IN ('isolate_abbreviation', 'genbank_acronym') THEN 8
-            WHEN st.name_class = 'scientific_name' THEN 7
-            WHEN st.name_class IN ('synonym', 'equivalent_name') THEN 6
-            WHEN st.name_class = 'genbank_common_name' THEN 5
-            WHEN st.name_class = 'common_name' THEN 4
-            WHEN st.name_class = 'blast_name' THEN 3
-            WHEN st.name_class IN ('abbreviation', 'acronym') THEN 2
-            WHEN st.name_class = 'isolate_designation' THEN 1
-            ELSE 0
-         END AS name_class_score,*/
-
+         -- The taxonomic rank name
          st.rank_name AS rank_name,
 
          -- How recent is the ICTV result?
@@ -153,37 +144,37 @@ BEGIN
          -- Result columns
          result_tn.msl_release_num AS result_msl_release,
          result_tn.name AS result_name,
-         tl_result.name AS result_rank_name,
+         result_tn.rank_name AS result_rank_name,
          result_tn.taxnode_id AS result_taxnode_id,
 
          -- A score for the result rank for use in sorting the results.
          CASE
-            WHEN tl_result.name IS NULL THEN 25
-            WHEN tl_result.name IN ('no rank','tree') THEN 0
-            WHEN tl_result.name = 'realm' THEN 1
-            WHEN tl_result.name = 'subrealm' THEN 2
-            WHEN tl_result.name = 'superkingdom' THEN 3
-            WHEN tl_result.name = 'kingdom' THEN 4
-            WHEN tl_result.name = 'subkingdom' THEN 5
-            WHEN tl_result.name = 'phylum' THEN 6
-            WHEN tl_result.name = 'subphylum' THEN 7
-            WHEN tl_result.name = 'class' THEN 8
-            WHEN tl_result.name = 'subclass' THEN 9
-            WHEN tl_result.name = 'order' THEN 10
-            WHEN tl_result.name = 'suborder' THEN 11
-            WHEN tl_result.name = 'family' THEN 12
-            WHEN tl_result.name = 'subfamily' THEN 13
-            WHEN tl_result.name = 'genus' THEN 14
-            WHEN tl_result.name = 'subgenus' THEN 15
-            WHEN tl_result.name = 'species' THEN 16
-            WHEN tl_result.name = 'species group' THEN 17
-            WHEN tl_result.name = 'species subgroup' THEN 18
-            WHEN tl_result.name = 'subspecies' THEN 19
-            WHEN tl_result.name = 'serogroup' THEN 20
-            WHEN tl_result.name = 'serotype' THEN 21
-            WHEN tl_result.name = 'genotype' THEN 22
-            WHEN tl_result.name = 'strain' THEN 23
-            WHEN tl_result.name = 'isolate' THEN 24
+            WHEN result_tn.rank_name IS NULL THEN 25
+            WHEN result_tn.rank_name IN ('no rank','tree') THEN 0
+            WHEN result_tn.rank_name = 'realm' THEN 1
+            WHEN result_tn.rank_name = 'subrealm' THEN 2
+            WHEN result_tn.rank_name = 'superkingdom' THEN 3
+            WHEN result_tn.rank_name = 'kingdom' THEN 4
+            WHEN result_tn.rank_name = 'subkingdom' THEN 5
+            WHEN result_tn.rank_name = 'phylum' THEN 6
+            WHEN result_tn.rank_name = 'subphylum' THEN 7
+            WHEN result_tn.rank_name = 'class' THEN 8
+            WHEN result_tn.rank_name = 'subclass' THEN 9
+            WHEN result_tn.rank_name = 'order' THEN 10
+            WHEN result_tn.rank_name = 'suborder' THEN 11
+            WHEN result_tn.rank_name = 'family' THEN 12
+            WHEN result_tn.rank_name = 'subfamily' THEN 13
+            WHEN result_tn.rank_name = 'genus' THEN 14
+            WHEN result_tn.rank_name = 'subgenus' THEN 15
+            WHEN result_tn.rank_name = 'species' THEN 16
+            WHEN result_tn.rank_name = 'species group' THEN 17
+            WHEN result_tn.rank_name = 'species subgroup' THEN 18
+            WHEN result_tn.rank_name = 'subspecies' THEN 19
+            WHEN result_tn.rank_name = 'serogroup' THEN 20
+            WHEN result_tn.rank_name = 'serotype' THEN 21
+            WHEN result_tn.rank_name = 'genotype' THEN 22
+            WHEN result_tn.rank_name = 'strain' THEN 23
+            WHEN result_tn.rank_name = 'isolate' THEN 24
             ELSE 25
          END AS result_rank_score,
 
@@ -208,11 +199,10 @@ BEGIN
          AND ms.rev_count = 0
       )
       LEFT JOIN latest_release_of_ictv_id lr_result ON lr_result.ictv_id = ms.next_ictv_id 
-      LEFT JOIN v_taxonomy_node result_tn ON (
+      LEFT JOIN v_taxonomy_node_names result_tn ON (
          result_tn.ictv_id = ms.next_ictv_id 
          AND result_tn.msl_release_num = lr_result.latest_msl_release
       ) 
-      LEFT JOIN v_taxonomy_level tl_result ON tl_result.id = result_tn.level_id
       LEFT JOIN v_species_isolates si ON (
          si.taxnode_id = result_tn.taxnode_id
          AND si.isolate_type = 'E'
