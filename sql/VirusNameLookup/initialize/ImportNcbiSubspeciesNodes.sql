@@ -3,6 +3,9 @@ DROP PROCEDURE IF EXISTS `ImportNcbiSubspeciesNodes`;
 
 DELIMITER //
 
+-- Updates
+-- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
+
 CREATE PROCEDURE ImportNcbiSubspeciesNodes()
 BEGIN
 
@@ -11,12 +14,16 @@ BEGIN
    DECLARE isolateTID INT;
    DECLARE ncbiTaxDbTID INT;
    DECLARE noRankTID INT;
+   DECLARE phagesDivisionID INT;
    DECLARE sciNameClassTID INT;
    DECLARE serogroupTID INT;
    DECLARE serotypeTID INT;
    DECLARE subspeciesTID INT;
    DECLARE superkingdomTID INT;
+   DECLARE virusesDivisionID INT;
 
+   SET phagesDivisionID = 3;
+   SET virusesDivisionID = 9;
 
    -- Lookup the term ID for the "scientific name" name class.
    SET sciNameClassTID = (SELECT id FROM term WHERE full_key = 'name_class.scientific_name' LIMIT 1);
@@ -86,9 +93,9 @@ BEGIN
 		version_id
 	)
 
-   -- Return subspecies NCBI taxa along with a possible match in ICTV taxonomy.
+   -- Return the parent taxa for NCBI subspecies nodes along with a possible match in ICTV taxonomy.
    SELECT
-      div.tid AS division_tid,
+      ndiv.tid AS division_tid,
       getFilteredName(subspeciesName.name_txt) AS filtered_name,
       latestTN.ictv_id,
       latestTN.latestTaxnodeID AS ictv_taxnode_id,
@@ -107,25 +114,23 @@ BEGIN
    JOIN ncbi_name subspeciesName ON subspeciesName.tax_id = subspeciesNode.tax_id
    JOIN ncbi_node parentNode ON parentNode.tax_id = subspeciesNode.subspecies_parent_tax_id
    JOIN ncbi_name parentName ON parentName.tax_id = parentNode.tax_id
-   JOIN ncbi_division div ON div.id = subspeciesNode.division_id
+   JOIN ncbi_division ndiv ON ndiv.id = subspeciesNode.division_id
    LEFT JOIN (
       SELECT 
          DISTINCT tn.name,
          tn.ictv_id,
          (
             SELECT tnid.taxnode_id
-            FROM v_taxonomy_node tnid
+            FROM v_taxonomy_node_names tnid
             WHERE tnid.name = tn.name
+            AND tnid.tree_id <> tnid.taxnode_id
             AND tnid.msl_release_num IS NOT NULL
             ORDER BY tnid.msl_release_num DESC
             LIMIT 1
          ) AS latestTaxnodeID
 
-      FROM v_taxonomy_node tn
-      JOIN v_taxonomy_level tl ON tl.id = tn.level_id
+      FROM v_taxonomy_node_names tn
       WHERE tn.taxnode_id <> tn.tree_id
-
-      -- dmd 010825
       AND tn.msl_release_num IS NOT NULL
       
    ) latestTN ON latestTN.name = parentName.name_txt

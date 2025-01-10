@@ -377,7 +377,7 @@ export class VirusNameLookup {
       let genbankAccession = ictvResult_.genbankAccession;
 
       let abolishedNote = "";
-      let exemplarLink = "";
+      let examplarInfo = "";
 
       if (ictvResult_.mslRelease < AppSettings.currentMslRelease) {
 
@@ -390,7 +390,7 @@ export class VirusNameLookup {
             const genbankLink = this.createAccessionLink(genbankAccession);
 
             // Display the exemplar virus and its GenBank accession(s).
-            exemplarLink = `Exemplar: ${exemplar} (${genbankLink})`;
+            examplarInfo = `Exemplar virus: ${exemplar} (${genbankLink})`;
       }
 
       let html =
@@ -405,7 +405,7 @@ export class VirusNameLookup {
                      <div class="lineage">${lineage}</div>
                      <div class="result">
                         <div class="result-name">${resultRank}: <i>${linkedResultName}</i>${abolishedNote}</div>
-                        <div class="result-note">${exemplarLink}</div>
+                        <div class="result-note">${examplarInfo}</div>
                      </div>
                   </div>
                </div>

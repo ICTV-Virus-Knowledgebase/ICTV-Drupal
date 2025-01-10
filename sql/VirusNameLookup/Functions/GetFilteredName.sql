@@ -1,9 +1,12 @@
+
+DROP FUNCTION IF EXISTS `getFilteredName`
+
 DELIMITER //
-CREATE FUNCTION `getFilteredName`(`name` NVARCHAR(300)
-) RETURNS varchar(300) CHARSET utf8mb3 COLLATE utf8mb3_general_ci
+
+CREATE FUNCTION `getFilteredName`(`name` TEXT) RETURNS TEXT
 BEGIN
 
-	DECLARE filteredName NVARCHAR(300);
+	DECLARE filteredName TEXT;
 	
 	SET filteredName = 
 	REPLACE(
@@ -37,5 +40,6 @@ BEGIN
 	, '\\', ' ');
 	
 	RETURN filteredName;
+   
 END//
 DELIMITER ;

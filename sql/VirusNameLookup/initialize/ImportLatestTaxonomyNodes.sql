@@ -4,6 +4,10 @@ DROP PROCEDURE IF EXISTS `ImportLatestTaxonomyNodes`;
 DELIMITER //
 
 -- Import information from the latest taxonomy_node corresponding with distinct names in taxonomy_node. 
+
+-- Updates
+-- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
+ 
 CREATE PROCEDURE ImportLatestTaxonomyNodes()
 BEGIN
 
@@ -44,17 +48,23 @@ BEGIN
                SELECT latest_tn.taxnode_id
                FROM v_taxonomy_node latest_tn
                WHERE latest_tn.name = distinct_name
+               AND latest_tn.is_hidden = 0
+               AND latest_tn.is_deleted = 0
                ORDER BY latest_tn.msl_release_num DESC
                LIMIT 1
             ) AS taxnode_id
          FROM (
             SELECT DISTINCT distinct_tn.name AS distinct_name
             FROM v_taxonomy_node distinct_tn
+            WHERE distinct_tn.is_hidden = 0
+            AND distinct_tn.is_deleted = 0
          ) distinctNames
       ) latest
       JOIN v_taxonomy_node tn ON tn.taxnode_id = latest.taxnode_id
       JOIN v_taxonomy_level tl ON tl.id = tn.level_id
       WHERE tn.msl_release_num IS NOT NULL
+      AND tn.is_hidden = 0
+      AND tn.is_deleted = 0
       AND tn.taxnode_id <> tn.tree_id;
 
    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;

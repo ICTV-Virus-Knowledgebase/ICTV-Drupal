@@ -7,18 +7,18 @@ DELIMITER //
 
 CREATE PROCEDURE ImportLatestSpeciesIsolates()
 BEGIN
-   DECLARE delimitedName VARCHAR(300);
+   DECLARE delimitedName LONGTEXT;
    DECLARE division VARCHAR(20);
    DECLARE done INT DEFAULT FALSE;
-   DECLARE errorMessage VARCHAR(200);
+   DECLARE errorMessage VARCHAR(800);
    DECLARE genbankAccessions LONGTEXT;
    DECLARE ictvID INT(11);
    DECLARE ictvTaxonomyDB VARCHAR(20);
    DECLARE ictvVmrDB VARCHAR(20);
    DECLARE isolateAbbrevs LONGTEXT;
-   DECLARE isolateDesignation VARCHAR(800); -- LONGTEXT;
+   DECLARE isolateDesignation LONGTEXT;
    DECLARE isolateID INT(11);
-   DECLARE isolateNames VARCHAR(800); -- LONGTEXT;
+   DECLARE isolateNames LONGTEXT;
    DECLARE mslRelease INT(11);
    DECLARE name_end INT;
    DECLARE name_pos INT DEFAULT 1;
@@ -106,39 +106,26 @@ BEGIN
       SET genbankAccessions = TRIM(REPLACE(genbankAccessions, ',', ';'));
       IF genbankAccessions IS NOT NULL AND LENGTH(genbankAccessions) > 0 THEN
       
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', genbankAccessions, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(genbankAccessions, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(genbankAccessions, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-
-               -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, delimitedName, 'genbank_accession', ictvTaxonomyDB, 
-                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
-            END IF;
-
-         END WHILE;
+         -- Create a searchable_taxon record.
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, genbankAccessions, 'genbank_accession', ictvTaxonomyDB, 
+            taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
       -- Should we add isolates names (and possibly isolate designations)?
       SET isolateNames = TRIM(isolateNames);
       IF isolateNames IS NOT NULL THEN
 
-         SET isolateDesignation = TRIM(isolateDesignation);
-         IF isolateDesignation IS NOT NULL AND LENGTH(isolateDesignation) > 0 THEN
-            SET isolateNames = CONCAT(isolateNames, ' (', isolateDesignation, ')');
+         IF LENGTH(isolateNames) > 500 THEN
+            SET isolateNames = SUBSTRING(isolateNames, 0, 500);
          END IF;
 
-         -- Just in case, limit the text to 800 characters.
-         SET isolateNames = SUBSTRING(isolateNames, 1, 800);
+         SET isolateDesignation = TRIM(isolateDesignation);
+         IF isolateDesignation IS NOT NULL AND LENGTH(isolateDesignation) > 0 THEN
+            IF LENGTH(isolateDesignation) > 500 THEN
+               SET isolateDesignation = SUBSTRING(isolateDesignation, 0, 500);
+            END IF;
+            SET isolateNames = CONCAT(isolateNames, ' (', isolateDesignation, ')');
+         END IF;
 
          -- Create a searchable_taxon record.
          CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, isolateNames, 'isolate_name', ictvTaxonomyDB, 
@@ -158,26 +145,9 @@ BEGIN
       SET refseqAccessions = REPLACE(refseqAccessions, ',', ';');
       IF refseqAccessions IS NOT NULL AND LENGTH(refseqAccessions) > 0 THEN
       
-         SET name_pos = 1;
-         WHILE name_pos > 0 DO
-            SET name_end = LOCATE(';', refseqAccessions, name_pos);
-            IF name_end = 0 THEN
-               SET delimitedName = SUBSTRING(refseqAccessions, name_pos);
-               SET name_pos = 0;
-            ELSE
-               SET delimitedName = SUBSTRING(refseqAccessions, name_pos, name_end - name_pos);
-               SET name_pos = name_end + 1;
-            END IF;
-
-            SET delimitedName = TRIM(delimitedName);
-            IF delimitedName IS NOT NULL AND LENGTH(delimitedName) > 0 THEN
-
-               -- Create a searchable_taxon record.
-               CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, delimitedName, 'refseq_accession', ictvTaxonomyDB, 
-                  taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
-            END IF;
-
-         END WHILE;
+         -- Create a searchable_taxon record.
+         CALL importSearchableTaxon(division, ictvID, taxnodeID, NULL, NULL, refseqAccessions, 'refseq_accession', ictvTaxonomyDB, 
+            taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
       /* dmd 12/05/24 There aren't currently any refseq organisms in VMR.
