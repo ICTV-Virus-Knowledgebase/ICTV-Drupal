@@ -207,10 +207,10 @@ BEGIN
          si.taxnode_id = result_tn.taxnode_id
          AND si.isolate_type = 'E'
       )
-      LEFT JOIN v_taxonomy_node family on family.taxnode_id = result_tn.family_id 
-      LEFT JOIN v_taxonomy_node subfamily on subfamily.taxnode_id = result_tn.subfamily_id 
-      LEFT JOIN v_taxonomy_node genus on genus.taxnode_id = result_tn.genus_id 
-      LEFT JOIN v_taxonomy_node subgenus on subgenus.taxnode_id = result_tn.subgenus_id 
+      LEFT JOIN v_taxonomy_node_names family on family.taxnode_id = result_tn.family_id 
+      LEFT JOIN v_taxonomy_node_names subfamily on subfamily.taxnode_id = result_tn.subfamily_id 
+      LEFT JOIN v_taxonomy_node_names genus on genus.taxnode_id = result_tn.genus_id 
+      LEFT JOIN v_taxonomy_node_names subgenus on subgenus.taxnode_id = result_tn.subgenus_id 
 
       WHERE (searchModifier IN ("all_words", "any_words", "exact_match") AND MATCH(st.name) AGAINST(modifiedText IN BOOLEAN MODE))
       OR (searchModifier = "contains" AND st.name LIKE modifiedText)

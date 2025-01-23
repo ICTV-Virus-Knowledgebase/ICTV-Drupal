@@ -6,6 +6,9 @@ CREATE OR REPLACE VIEW `v_taxonomy_node_names` AS
 SELECT 
    family_id,
    genus_id,
+   host_source,
+   is_deleted,
+   is_hidden,
    level_id,
    `name`,
    ictv_id,
@@ -18,4 +21,4 @@ SELECT
    taxnode_id,
    tree_id
 
-FROM ICTVonline39.taxonomy_node_names;
+FROM ictv_taxonomy.taxonomy_node_names;

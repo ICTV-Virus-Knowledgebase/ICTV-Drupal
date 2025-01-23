@@ -28,8 +28,8 @@ BEGIN
    DECLARE speciesName VARCHAR(300);
    DECLARE taxnodeID INT(11);
 
-   -- NOTE: Make sure the views v_species_isolates, v_taxonomy_level, and v_taxonomy_node have been 
-   -- updated with the name of the current ICTVonline* database!
+   -- NOTE: Make sure the v_species_isolates and v_taxonomy_node_names views have been 
+   -- updated with the name of the correct ICTV database!
 
    -- A cursor to fetch species isolate data.
    DECLARE cur CURSOR FOR 
@@ -51,7 +51,8 @@ BEGIN
          si.taxnode_id
 
       FROM v_species_isolates si
-      JOIN v_taxonomy_node tn ON tn.taxnode_id = si.taxnode_id;
+      JOIN v_taxonomy_node_names tn ON tn.taxnode_id = si.taxnode_id
+      WHERE tn.msl_release_num IS NOT NULL;
 
    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 

@@ -25,8 +25,8 @@ BEGIN
    DECLARE rankName VARCHAR(20);
    DECLARE taxnodeID INT(11); 
 
-   -- NOTE: Make sure the views v_species_isolates, v_taxonomy_level, and v_taxonomy_node have been 
-   -- updated with the name of the current ICTVonline* database!
+   -- NOTE: Make sure the v_species_isolates and v_taxonomy_node_names views have been 
+   -- updated with the name of the correct ICTV database!
 
    -- A cursor to fetch taxonomy data for the latest version of each distinct name.
    DECLARE cur CURSOR FOR 
@@ -39,32 +39,27 @@ BEGIN
          tn.msl_release_num,
          tn.name,
          tn.parent_id,
-         tl.name AS rank_name,
+         tn.rank_name,
          tn.taxnode_id 
       FROM (
          SELECT 
             distinct_name,
             (
                SELECT latest_tn.taxnode_id
-               FROM v_taxonomy_node latest_tn
+               FROM v_taxonomy_node_names latest_tn
                WHERE latest_tn.name = distinct_name
-               AND latest_tn.is_hidden = 0
-               AND latest_tn.is_deleted = 0
+               AND latest_tn.msl_release_num IS NOT NULL
                ORDER BY latest_tn.msl_release_num DESC
                LIMIT 1
             ) AS taxnode_id
          FROM (
             SELECT DISTINCT distinct_tn.name AS distinct_name
-            FROM v_taxonomy_node distinct_tn
-            WHERE distinct_tn.is_hidden = 0
-            AND distinct_tn.is_deleted = 0
+            FROM v_taxonomy_node_names distinct_tn
+            WHERE distinct_tn.msl_release_num IS NOT NULL
          ) distinctNames
       ) latest
-      JOIN v_taxonomy_node tn ON tn.taxnode_id = latest.taxnode_id
-      JOIN v_taxonomy_level tl ON tl.id = tn.level_id
+      JOIN v_taxonomy_node_names tn ON tn.taxnode_id = latest.taxnode_id
       WHERE tn.msl_release_num IS NOT NULL
-      AND tn.is_hidden = 0
-      AND tn.is_deleted = 0
       AND tn.taxnode_id <> tn.tree_id;
 
    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;

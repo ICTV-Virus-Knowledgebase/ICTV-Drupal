@@ -1,7 +1,7 @@
 
 -- Create the NCBI Taxonomy tables
 
-CREATE TABLE `ncbi_division` (
+CREATE TABLE IF NOT EXISTS `ncbi_division` (
 	`id` TINYINT(4) NOT NULL,
 	`cde` VARCHAR(10) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`name` VARCHAR(30) NOT NULL COLLATE 'utf8mb4_general_ci',
@@ -11,7 +11,7 @@ CREATE TABLE `ncbi_division` (
 );
 
 
-CREATE TABLE `ncbi_name` (
+CREATE TABLE IF NOT EXISTS `ncbi_name` (
 	`tax_id` MEDIUMINT(9) NOT NULL,
 	`name_txt` VARCHAR(500) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`unique_name` VARCHAR(500) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
@@ -21,7 +21,7 @@ CREATE TABLE `ncbi_name` (
 );
 
 
-CREATE TABLE `ncbi_node` (
+CREATE TABLE IF NOT EXISTS `ncbi_node` (
 	`tax_id` MEDIUMINT(9) NOT NULL,
 	`parent_tax_id` MEDIUMINT(9) NOT NULL,
 	`rank_name` VARCHAR(20) NOT NULL COLLATE 'utf8mb4_general_ci',
