@@ -5,6 +5,12 @@
 // Enums
 //----------------------------------------------------------------------------------------------------------------
 
+// Testing...
+export enum CuratedTaxonType {
+   disease = "disease"
+   // ???
+}
+
 export enum JobStatus {
    crashed = "crashed",
    invalid = "invalid",

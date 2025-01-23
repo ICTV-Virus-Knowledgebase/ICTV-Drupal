@@ -1,5 +1,5 @@
 
-DROP FUNCTION IF EXISTS `getFilteredName`
+DROP FUNCTION IF EXISTS `getFilteredName`;
 
 DELIMITER //
 
@@ -41,5 +41,5 @@ BEGIN
 	
 	RETURN filteredName;
    
-END//
+END //
 DELIMITER ;

@@ -136,7 +136,6 @@ class LookupService extends ResourceBase {
       $response->addCacheableDependency($build);
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
-      // return (new ResourceResponse($data))->addCacheableDependency($build);
    }
 
    
@@ -166,9 +165,6 @@ class LookupService extends ResourceBase {
     *    Search for this text.  
     */
    public function lookupName(int $currentMslRelease, string $searchModifier, string $searchText) {
-
-      // Filter the search text, removing several non-alphanumeric characters.
-      //$searchText = $this->filterText($searchText);
 
       // Use the search modifier to determine how to modify the search text.
       switch ($searchModifier) {

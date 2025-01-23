@@ -1,14 +1,12 @@
 
+import { AlertBuilder } from "../../helpers/AlertBuilder";
 import DataTables from "datatables.net-dt";
-//import { RowChildMethods } from "datatables.net-dt";
 import { DateTime } from "luxon";
 import { decode } from "base64-arraybuffer";
 import { IFileData } from "../../models/IFileData";
 import { IJob } from "./IJob";
 import { IJobFile } from "./IJobFile";
 import { SequenceClassifierService } from "../../services/SequenceClassifierService";
-import Swal from "sweetalert2";
-import { ConcatenationScope } from "webpack";
 
 
 export class SequenceClassifier {
@@ -472,13 +470,7 @@ export class SequenceClassifier {
       }
 
       // Display a "success" dialog.
-      await Swal.fire({
-         title: title,
-         text: content,
-         icon: "success"
-      });
-
-      return;
+      return await AlertBuilder.displaySuccess(content, title);
    }
 
    async test() {
@@ -552,13 +544,7 @@ export class SequenceClassifier {
          }
          
          if (files.length < 1) { 
-            
-            // Display an error dialog.
-            return await Swal.fire({
-               title: "Error",
-               text: "Unable to upload: no valid files were found",
-               icon: "error"
-            });
+            await AlertBuilder.displayError("Unable to upload: no valid files were found");
          }
 
          await Promise.allSettled([
@@ -582,13 +568,7 @@ export class SequenceClassifier {
          await this.getJobs();
 
       } catch (error_) {
-
-         // Display an error dialog.
-         await Swal.fire({
-            title: "Error",
-            text: error_,
-            icon: "error"
-         });
+         await AlertBuilder.displayError(error_);
       }
 
       // Re-initialize the upload controls.

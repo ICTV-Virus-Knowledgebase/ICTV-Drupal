@@ -1,44 +1,18 @@
 
 DELIMITER //
 
-DROP PROCEDURE IF EXISTS `initializeVocabularyAndTerms`;
+DROP PROCEDURE IF EXISTS `InitializeVocabularyAndTerms`;
 
-CREATE PROCEDURE `initializeVocabularyAndTerms`()
+CREATE PROCEDURE `InitializeVocabularyAndTerms`()
    MODIFIES SQL DATA
 BEGIN
 
    DECLARE vocabID INT;
 
-   -- Create the vocabulary table if it doesn't already exist.
-   CREATE TABLE IF NOT EXISTS `vocabulary` (
-      `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-      `description` VARCHAR(256) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
-      `label` VARCHAR(128) NOT NULL COLLATE 'utf8mb4_general_ci',
-      `vocab_key` VARCHAR(128) NOT NULL COLLATE 'utf8mb4_general_ci',
-      PRIMARY KEY (`id`) USING BTREE,
-      UNIQUE INDEX `UK_vocab_label` (`label`) USING BTREE,
-      UNIQUE INDEX `UK_vocab_key` (`vocab_key`) USING BTREE
-   );
-
-   -- Create the term table if it doesn't already exist.
-   CREATE TABLE IF NOT EXISTS `term` (
-      `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-      `description` VARCHAR(256) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
-      `full_key` VARCHAR(256) NOT NULL COLLATE 'utf8mb4_general_ci',
-      `label` VARCHAR(128) NOT NULL COLLATE 'utf8mb4_general_ci',
-      `term_key` VARCHAR(128) NOT NULL COLLATE 'utf8mb4_general_ci',
-      `vocab_id` INT(10) UNSIGNED NOT NULL,
-      PRIMARY KEY (`id`) USING BTREE,
-      UNIQUE INDEX `UK_term_full_key` (`full_key`) USING BTREE,
-      INDEX `FK_vocabulary` (`vocab_id`) USING BTREE,
-      CONSTRAINT `FK_term_vocabulary` FOREIGN KEY (`vocab_id`) REFERENCES `vocabulary` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION
-   );
-
-
    /*
    The name_class vocabulary
    */
-   INSERT IGNORE INTO `vocabulary` SET label = 'name class', vocab_key = 'name_class';
+   INSERT INTO `vocabulary` SET label = 'name class', vocab_key = 'name_class';
    
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'name_class' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -46,33 +20,34 @@ BEGIN
    END IF;
 
    -- Insert terms for name_class.
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.abbreviation', 'abbreviation', 'abbreviation', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.acronym', 'acronym', 'acronym', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.authority', 'authority', 'authority', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.blast_name', 'BLAST name', 'blast_name', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.common_name', 'common name', 'common_name', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.equivalent_name', 'equivalent name', 'equivalent_name', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.genbank_accession', 'GenBank accession', 'genbank_accession', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.genbank_acronym', 'GenBank acronym', 'genbank_acronym', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.genbank_common_name', 'GenBank common name', 'genbank_common_name', vocabID);
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.in_part', 'in-part', 'in_part', vocabID);
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.includes', 'includes', 'includes', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_abbreviation', 'isolate abbreviation', 'isolate_abbreviation', vocabID);
+	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_designation', 'isolate designation', 'isolate_designation', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_exemplar', 'isolate exemplar', 'isolate_exemplar', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_name', 'isolate name', 'isolate_name', vocabID);
+   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.refseq_accession', 'Refseq accession', 'refseq_accession', vocabID);
+	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.refseq_organism', 'Refseq organism', 'refseq_organism', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.scientific_name', 'scientific name', 'scientific_name', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.synonym', 'synonym', 'synonym', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_name', 'isolate name', 'isolate_name', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_abbreviation', 'isolate abbreviation', 'isolate_abbreviation', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_designation', 'isolate designation', 'isolate_designation', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.genbank_accession', 'GenBank accession', 'genbank_accession', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.refseq_accession', 'Refseq accession', 'refseq_accession', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.refseq_organism', 'Refseq organism', 'refseq_organism', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.abbreviation', 'abbreviation', 'abbreviation', vocabID);
-	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.isolate_exemplar', 'isolate exemplar', 'isolate_exemplar', vocabID);
-   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.authority', 'authority', 'authority', vocabID);
+	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.taxon_name', 'taxon name', 'taxon_name', vocabID);
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.type_material', 'type material', 'type_material', vocabID);
-   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.taxon_name', 'taxon name', 'taxon_name', vocabID);
+   
 
 
    /*
    The ncbi_division vocabulary
    */
-   INSERT IGNORE INTO `vocabulary` SET label = 'NCBI Division', vocab_key = 'ncbi_division';
+   INSERT INTO `vocabulary` SET label = 'NCBI Division', vocab_key = 'ncbi_division';
 
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'ncbi_division' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -96,7 +71,7 @@ BEGIN
    /*
    The taxonomy_db vocabulary
    */
-   INSERT IGNORE INTO `vocabulary` SET label = 'taxonomy DB', vocab_key = 'taxonomy_db';
+   INSERT INTO `vocabulary` SET label = 'taxonomy DB', vocab_key = 'taxonomy_db';
 
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'taxonomy_db' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -112,7 +87,7 @@ BEGIN
    /*
    The taxonomy_rank vocabulary
    */
-   INSERT IGNORE INTO `vocabulary` SET label = 'taxonomy rank', vocab_key = 'taxonomy_rank';
+   INSERT INTO `vocabulary` SET label = 'taxonomy rank', vocab_key = 'taxonomy_rank';
 
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'taxonomy_rank' LIMIT 1);
    IF vocabID IS NULL THEN

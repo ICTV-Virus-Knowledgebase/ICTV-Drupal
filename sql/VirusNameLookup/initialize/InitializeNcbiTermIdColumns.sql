@@ -1,9 +1,9 @@
 
-DROP PROCEDURE IF EXISTS `initializeNcbiTermIdColumns`;
+DROP PROCEDURE IF EXISTS `InitializeNcbiTermIdColumns`;
 
 DELIMITER //
 
-CREATE PROCEDURE `initializeNcbiTermIdColumns`()
+CREATE PROCEDURE `InitializeNcbiTermIdColumns`()
 BEGIN
 
    DECLARE divisionVocabID INT;
@@ -50,5 +50,5 @@ BEGIN
 	SET n.rank_name_tid = t.id
 	WHERE t.vocab_id = taxonomyRankVocabID;
 
-END//
+END //
 DELIMITER ;
