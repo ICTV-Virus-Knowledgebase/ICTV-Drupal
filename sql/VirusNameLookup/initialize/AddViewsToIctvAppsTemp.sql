@@ -45,15 +45,13 @@ JOIN term taxDB ON taxDB.id = st.taxonomy_db_tid;
 -- TODO: Make sure the name of the current ICTVonline* database is correct!
 CREATE OR REPLACE VIEW `v_species_isolates` AS 
 SELECT *
-FROM ICTVonline39.species_isolates;
--- ictv_taxonomy_temp.species_isolates;
+FROM ictv_taxonomy_temp.species_isolates;
 
 
 -- TODO: Make sure the name of the current ICTVonline* database is correct!
 CREATE OR REPLACE VIEW `v_taxonomy_node_merge_split` AS 
 SELECT *
-FROM ICTVonline39.taxonomy_node_merge_split;
--- ictv_taxonomy_temp.taxonomy_node_merge_split;
+FROM ictv_taxonomy_temp.taxonomy_node_merge_split;
 
 
 -- TODO: Make sure the name of the current ICTVonline* database is correct!
@@ -74,6 +72,5 @@ SELECT
    taxnode_id,
    tree_id
 
-FROM ICTVonline39.taxonomy_node_names;
--- ictv_taxonomy_temp.taxonomy_node_names;
+FROM ictv_taxonomy_temp.taxonomy_node_names;
 
