@@ -7,12 +7,15 @@ CREATE PROCEDURE `InitializeVocabularyAndTerms`()
    MODIFIES SQL DATA
 BEGIN
 
-   DECLARE vocabID INT;
+
+   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='This procedure has been replaced by InitializeTempVocabulariesAndTerms.sql';
+
+   -- DECLARE vocabID INT;
 
    /*
    The name_class vocabulary
    */
-   INSERT INTO `vocabulary` SET label = 'name class', vocab_key = 'name_class';
+   /*INSERT INTO `vocabulary` SET label = 'name class', vocab_key = 'name_class';
    
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'name_class' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -41,13 +44,13 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.synonym', 'synonym', 'synonym', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.taxon_name', 'taxon name', 'taxon_name', vocabID);
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.type_material', 'type material', 'type_material', vocabID);
-   
+   */
 
 
    /*
    The ncbi_division vocabulary
    */
-   INSERT INTO `vocabulary` SET label = 'NCBI Division', vocab_key = 'ncbi_division';
+   /*INSERT INTO `vocabulary` SET label = 'NCBI Division', vocab_key = 'ncbi_division';
 
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'ncbi_division' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -67,11 +70,12 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('ncbi_division.unassigned', 'Unassigned', 'unassigned', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('ncbi_division.vertebrates', 'Vertebrates', 'vertebrates', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('ncbi_division.viruses', 'Viruses', 'viruses', vocabID);
+   */
 
    /*
    The taxonomy_db vocabulary
    */
-   INSERT INTO `vocabulary` SET label = 'taxonomy DB', vocab_key = 'taxonomy_db';
+   /*INSERT INTO `vocabulary` SET label = 'taxonomy DB', vocab_key = 'taxonomy_db';
 
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'taxonomy_db' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -83,11 +87,12 @@ BEGIN
    INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.ictv_taxonomy', 'ICTV Taxonomy', 'ictv_taxonomy', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.ictv_vmr', 'ICTV VMR', 'ictv_vmr', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.ncbi_taxonomy', 'NCBI Taxonomy', 'ncbi_taxonomy', vocabID);
+   */
 
    /*
    The taxonomy_rank vocabulary
    */
-   INSERT INTO `vocabulary` SET label = 'taxonomy rank', vocab_key = 'taxonomy_rank';
+   /*INSERT INTO `vocabulary` SET label = 'taxonomy rank', vocab_key = 'taxonomy_rank';
 
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'taxonomy_rank' LIMIT 1);
    IF vocabID IS NULL THEN
@@ -141,7 +146,7 @@ BEGIN
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.superphylum', 'superphylum', 'superphylum', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.tribe', 'tribe', 'tribe', vocabID);
 	INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_rank.varietas', 'varietas', 'varietas', vocabID);
-
+   */
 	
 END//
 DELIMITER ;
