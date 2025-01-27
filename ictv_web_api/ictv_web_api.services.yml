@@ -1,0 +1,6 @@
+services:
+  ictv_web_api.searchTaxonomy:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\SearchTaxonomy'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

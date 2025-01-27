@@ -1,0 +1,59 @@
+ictv_web_api.getByReleasePreExpanded:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetByReleasePreExpanded'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getChildTaxa:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetChildTaxa'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getMslRelease:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetMslRelease'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getNonSpeciesTaxa:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetNonSpeciesTaxa'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getReleaseHistory:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetReleaseHistory'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getReleaseTaxa:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetReleaseTaxa'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getTaxaByName:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTaxaByName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getTaxonDetails:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTaxonDetails'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getTreeExpandedToNode:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTreeExpandedToNode'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getUnassignedChildTaxaByName:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetUnassignedChildTaxaByName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

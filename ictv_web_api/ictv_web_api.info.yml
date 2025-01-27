@@ -1,0 +1,9 @@
+name: ICTV Web API
+type: module
+description: 'A collection of web services that support various ICTV UI modules.'
+package: ICTV
+configure: ictv_web_api.settings
+core_version_requirement: ^10
+dependencies:
+  - drupal:rest
+  - drupal:serialization
