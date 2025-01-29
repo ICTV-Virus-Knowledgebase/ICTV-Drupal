@@ -68,11 +68,3 @@ SELECT
    tree_id
 
 FROM ictv_taxonomy.taxonomy_node_names;
-
-
--- Create a view for the taxonomy_node table in the ictv_taxonomy database.
--- CREATE OR REPLACE VIEW `v_taxonomy_node` AS 
--- SELECT *
--- FROM ictv_taxonomy.taxonomy_node;
-
-
