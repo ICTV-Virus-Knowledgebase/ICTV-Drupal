@@ -72,29 +72,11 @@ BEGIN
          si._isolate_name AS exemplar,
          si.genbank_accessions,
 
-         -- The family of the ICTV result.
-         CASE 
-            WHEN result_tn.family_id IS NOT NULL THEN CONCAT(family.name, ':', CAST(result_tn.family_id AS VARCHAR(12)))
-            ELSE ''
-         END as family,
-
-         -- The subfamily of the ICTV result.
-         CASE 
-            WHEN result_tn.subfamily_id IS NOT NULL THEN CONCAT(subfamily.name, ':', CAST(result_tn.subfamily_id AS VARCHAR(12)))
-            ELSE ''
-         END AS subfamily,
-
-         -- The genus of the ICTV result.
-         CASE 
-            WHEN result_tn.genus_id IS NOT NULL THEN CONCAT(genus.name, ':', CAST(result_tn.genus_id AS VARCHAR(12)))
-            ELSE ''
-         END AS genus,
-
-         -- The subgenus of the ICTV result.
-         CASE 
-            WHEN result_tn.subgenus_id IS NOT NULL THEN CONCAT(subgenus.name, ':', CAST(result_tn.subgenus_id AS VARCHAR(12)))
-            ELSE ''
-         END AS subgenus,
+         -- The family, subfamily, genus, and subgenus of the ICTV result.
+         result_tn.family,
+         result_tn.subfamily,
+         result_tn.genus,
+         result_tn.subgenus,
 
          -- Does the first character of the search text match the first character of the taxon name?
          CASE
@@ -207,11 +189,6 @@ BEGIN
          si.taxnode_id = result_tn.taxnode_id
          AND si.isolate_type = 'E'
       )
-      LEFT JOIN v_taxonomy_node_names family on family.taxnode_id = result_tn.family_id 
-      LEFT JOIN v_taxonomy_node_names subfamily on subfamily.taxnode_id = result_tn.subfamily_id 
-      LEFT JOIN v_taxonomy_node_names genus on genus.taxnode_id = result_tn.genus_id 
-      LEFT JOIN v_taxonomy_node_names subgenus on subgenus.taxnode_id = result_tn.subgenus_id 
-
       WHERE (searchModifier IN ("all_words", "any_words", "exact_match") AND MATCH(st.name) AGAINST(modifiedText IN BOOLEAN MODE))
       OR (searchModifier = "contains" AND st.name LIKE modifiedText)
       LIMIT 10000

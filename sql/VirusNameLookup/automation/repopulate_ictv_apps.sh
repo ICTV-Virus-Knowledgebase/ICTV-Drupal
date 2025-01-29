@@ -26,13 +26,13 @@ function display_elapsed_time {
 
 # Add views to the ictv_apps database.
 echo -e "\nAdding views"
-mariadb -s -b --show-warnings < ../initialize/AddViewsToIctvApps.sql
+mariadb -D $AppsDB -s -b --show-warnings < AddViewsToIctvApps.sql
 
 # Populate the "latest release of ICTV ID" and "searchable taxon" tables in the ictv_apps database 
 # with data from the corresponding tables in the ictv_apps_temp database.
 echo -e "\nPopulating latest release and searchable taxon tables using ictv_apps_temp"
 START_TIME=$(date +%s)
-mariadb -D $AppsDB -s -b --show-warnings < ../initialize/PopulateIctvAppsFromTemp.sql
+mariadb -D $AppsDB -s -b --show-warnings < PopulateIctvAppsFromTemp.sql
 display_elapsed_time "$START_TIME"
 
 
