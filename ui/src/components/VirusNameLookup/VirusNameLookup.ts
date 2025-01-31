@@ -43,6 +43,9 @@ export class VirusNameLookup {
       tabPanels: HTMLElement
    }
 
+   // The URL of the Find the Species page (used by the minimal component).
+   findTheSpeciesURL: string;
+
    icons: {
       info: string,
       lineageDelimiter: string,
@@ -914,6 +917,9 @@ export class VirusNameLookup {
       // Initialize the accordion Elements.
       this.initializeAccordions();
       
+      // Should an initial search be performed?
+      await this.initialSearch();
+
       return;
    }
 
@@ -953,6 +959,121 @@ export class VirusNameLookup {
 
          return;
       })
+
+      return;
+   }
+
+
+   // Initialize the minimal search component.
+   async initializeMinimalComponent() {
+
+      // Set the "Find the Species" URL.
+      this.findTheSpeciesURL = `${AppSettings.applicationURL}/find_the_species`;
+      
+      // Get the container Element.
+      this.elements.container = document.querySelector(this.containerSelector);
+      if (!this.elements.container) { return await AlertBuilder.displayError("Invalid container Element"); }
+
+      const html = 
+         `<div class="lookup-container">
+            <div class="search-controls">
+               <select class="search-modifier">
+                  <option value="${SearchModifier.exact_match}" selected>Exact match</option>
+                  <option value="${SearchModifier.all_words}">All words</option>
+                  <option value="${SearchModifier.any_words}">Any words</option>
+                  <option value="${SearchModifier.contains}">Contains</option>
+               </select>
+               <input class="search-text" type="text" placeholder="${this.placeholderText[SearchModifier.exact_match]}" spellcheck="false" />
+               <button class="search-button ictv-btn">${this.icons.search} Search</button>
+            </div>
+         </div>`;
+
+      this.elements.container.innerHTML = html;
+
+      //-----------------------------------------------------------------------------------------------------------------------------
+      // Get references to DOM Elements.
+      //-----------------------------------------------------------------------------------------------------------------------------
+
+      // Search controls
+      this.elements.searchButton = this.elements.container.querySelector(".search-button");
+      if (!this.elements.searchButton) { return await AlertBuilder.displayError("Invalid search button Element"); }
+
+      this.elements.searchModifier = this.elements.container.querySelector(".search-modifier");
+      if (!this.elements.searchModifier) { return await AlertBuilder.displayError("Invalid search modifier Element"); }
+
+      this.elements.searchText = this.elements.container.querySelector(".search-text");
+      if (!this.elements.searchText) { return await AlertBuilder.displayError("Invalid search text Element"); }
+
+
+      //-----------------------------------------------------------------------------------------------------------------------------
+      // Add event handlers
+      //-----------------------------------------------------------------------------------------------------------------------------
+      this.elements.searchButton.addEventListener("click", async () => { await this.navigateToFindTheSpecies()});
+
+      // Pressing the enter key while the focus is on the search text field is the same as clicking the search button.
+      this.elements.searchText.addEventListener("keypress", async (event_) => {    
+         if (event_.key === "Enter") {
+            event_.preventDefault();
+            event_.stopPropagation();
+
+            // Navigate to the actual Find the Species page.
+            await this.navigateToFindTheSpecies();
+         }
+         return true;
+      })
+
+      // The selected search modifier determines the search text placeholder.
+      this.elements.searchModifier.addEventListener("change", async (event_) => {
+
+         // Lookup the placeholder text for the current search modifier.
+         let placeholder = this.placeholderText[this.elements.searchModifier.value as SearchModifier];
+
+         this.elements.searchText.setAttribute("placeholder", placeholder);
+         return true;
+      })
+
+      return;
+   }
+
+   // Perform a search if query string parameters have been provided.
+   async initialSearch() {
+
+      const urlParams = new URLSearchParams(window.location.search);
+      //const urlParams = (new URL(window.location)).searchParams;
+
+      let searchText = urlParams.get("search_text");
+
+      if (!!searchText && searchText.length > 0) {
+         let searchModifier = urlParams.get("search_modifier");
+         if (!searchModifier) { searchModifier = SearchModifier.exact_match; }
+
+         this.elements.searchText.value = searchText;
+         this.elements.searchModifier.value = searchModifier;
+
+         // Perform the search.
+         await this.search();
+      }
+ 
+      return;
+   }
+
+
+   // Navigate to the actual Find the Species page.
+   async navigateToFindTheSpecies() {
+
+      this.searchText = this.elements.searchText.value;
+      if (!this.searchText) { 
+         return await AlertBuilder.displayInfo("Please enter valid search text"); 
+      } else if (this.searchText.length < 3) {
+         return await AlertBuilder.displayInfo("Please enter at least 3 characters");
+      }
+
+      const searchModifier = this.elements.searchModifier.value as SearchModifier;
+
+      if (!this.findTheSpeciesURL) { return await AlertBuilder.displayError(`The "Find the Species" URL is invalid`); }
+
+      // Navigate to the Find the Species page and include query string parameters.
+      window.location.assign(`${this.findTheSpeciesURL}?search_text=${this.searchText}&search_modifier=${searchModifier}`);
 
       return;
    }

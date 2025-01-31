@@ -1,0 +1,3 @@
+appsDbName: "ictv_apps"
+drupalRoot: '/var/www/drupal/site/'
+taxonomyDbName: "ictv_taxonomy"

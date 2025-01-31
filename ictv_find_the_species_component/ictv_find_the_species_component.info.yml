@@ -1,0 +1,8 @@
+name: ICTV Find the Species component
+type: module
+description: 'A custom module that creates a "Find the Species" search component'
+package: ICTV
+configure: ictv_find_the_species_component.settings
+core_version_requirement: ^10
+dependencies:
+  - drupal:block
