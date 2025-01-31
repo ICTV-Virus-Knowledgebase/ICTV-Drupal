@@ -193,7 +193,7 @@
    display: flex;
    flex-flow: column nowrap;
    justify-content: flex-start;
-   width: 100%;
+   /*width: 100%;*/
 }
 #ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .lineage {
    font-size: 0.9rem;
@@ -205,15 +205,15 @@
    margin: 0 0.25rem;
 }
 #ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .result {
-   align-items: center;
+   align-items: flex-start;
    display: flex;
-   flex-flow: row nowrap;
-   justify-content: space-between;
-   width: 100%;
+   flex-flow: column nowrap;
+   justify-content: center;
+   /*width: 100%;*/
    z-index: 1000;
 }
-#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .result .result-name {
-   margin-right: 0.5rem;
+#ictv_virus_name_lookup_container .ictv-accordion-label .lineage-and-result .result .result-note {
+   font-size: 0.9rem;
 }
 
 /* The spinner panel */

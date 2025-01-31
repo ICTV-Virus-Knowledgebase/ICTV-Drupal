@@ -32,9 +32,26 @@ cp ./dist/ICTV_VirusNameLookup.js ../ictv_virus_name_lookup/assets/js/
 #------------------------------------------------------------------------------
 # Copy the virus name lookup's CSS file to the module's asset directory.
 #------------------------------------------------------------------------------
-printf "Copying CSS files to ictv_virus_name_lookup/assets/css\n"
+printf "Copying CSS files to ictv_virus_name_lookup/assets/css\n\n"
 
 cp ./css/VirusNameLookup.css ../ictv_virus_name_lookup/assets/css/
 cp ./css/dataTables.dataTables.min.css ../ictv_virus_name_lookup/assets/css/
+
+
+# Copy JavaScript and CSS files to the "ICTV Find the Species component" module.
+
+#------------------------------------------------------------------------------
+# Copy the generated JavaScript file to the module's asset directory.
+#------------------------------------------------------------------------------
+printf "Copying ICTV_VirusNameLookup.js to ictv_find_the_species_component/assets/js\n\n"
+
+cp ./dist/ICTV_VirusNameLookup.js ../ictv_find_the_species_component/assets/js/
+
+#------------------------------------------------------------------------------
+# Copy the virus name lookup's CSS file to the module's asset directory.
+#------------------------------------------------------------------------------
+printf "Copying CSS files to ictv_find_the_species_component/assets/css\n"
+
+cp ./css/VirusNameLookup.css ../ictv_find_the_species_component/assets/css/
 
 
