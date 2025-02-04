@@ -1,5 +1,5 @@
 
 export { AppSettings } from "../../global/AppSettings";
-export { CuratedTaxonManager } from "./CuratedTaxonManager";
+export { CuratedNameManager } from "./CuratedNameManager";
 
 export * from "../../global/Types";

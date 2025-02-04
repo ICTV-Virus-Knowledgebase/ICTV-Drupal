@@ -5,9 +5,11 @@ namespace Drupal\ictv_curated_name_service\Plugin\rest\resource;
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\Core\Config;
-use Drupal\Core\Database;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\ictv_curated_name_service\Plugin\rest\resource\models\CuratedName;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Database;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
@@ -30,12 +32,15 @@ use Drupal\ictv_common\Utils;
  */
 class GetCuratedNames extends ResourceBase {
 
+   protected $configFactory;
+
    // The connection to the ictv_apps database.
+   // TODO: Do we need a connection for each database?
    protected Connection $connection;
 
    // The names of the databases used by this web service.
-   protected string $appsDbName = "ictv_apps";
-   protected string $taxonomyDbName = "ictv_taxonomy";
+   protected string $appsDbName; // = "ictv_apps";
+   protected string $taxonomyDbName; // = "ictv_taxonomy";
 
 
    /**
@@ -65,6 +70,7 @@ class GetCuratedNames extends ResourceBase {
       array $config,
       $module_id,
       $module_definition,
+      ConfigFactoryInterface $configFactory,
       array $serializer_formats,
       LoggerInterface $logger,
       AccountProxyInterface $currentUser) {
@@ -73,8 +79,28 @@ class GetCuratedNames extends ResourceBase {
       
       $this->currentUser = $currentUser;
 
+      // Maintain the config factory in a member variable.
+      $this->configFactory = $configFactory;
+
+      // Access the module's configuration object.
+      $config = $this->configFactory->get("ictv_curated_name_service.settings");
+
+      // Get the apps database name.
+      $this->appsDbName = $config->get("appsDbName");
+      if (Utils::isNullOrEmpty($this->appsDbName)) { 
+         \Drupal::logger('ictv_curated_name_service')->error("The appsDbName setting is empty");
+         return;
+      }
+      
+      // Get the taxonomy database name.
+      $this->taxonomyDbName = $config->get("taxonomyDbName");
+      if (Utils::isNullOrEmpty($this->taxonomyDbName)) { 
+         \Drupal::logger('ictv_curated_name_service')->error("The taxonomyDbName setting is empty");
+         return;
+      }
+
       // Get a database connection.
-      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
+      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->appsDbName);
    }
 
    
@@ -86,6 +112,7 @@ class GetCuratedNames extends ResourceBase {
          $config,
          $module_id,
          $module_definition,
+         $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
          $container->get('logger.factory')->get('ictv_curated_name_service_resource'),
          $container->get("current_user")
@@ -131,22 +158,20 @@ class GetCuratedNames extends ResourceBase {
 
       $sql = 
          "SELECT
+            comments,
             created_by,
             created_on,
             division,
-            division_tid,
             ictv_id,
             ictv_taxnode_id,
             id,
             is_valid,
             name,
             name_class,
-            name_class_tid,
             rank_name,
-            rank_name_tid,
             taxonomy_db,
-            taxonomy_db_tid,
             taxonomy_id,
+            type,
             version_id 
          
          FROM v_curated_name 
@@ -193,11 +218,8 @@ class GetCuratedNames extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // TODO: get query string parameters
-      //$currentRelease = $request->get("currentRelease");
-      //if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
-
-      // TODO: do something!
+      // Get all curated names.
+      $data = $this->getCuratedNames();
 
       $build = array(
          '#cache' => array(

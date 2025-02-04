@@ -1,0 +1,12 @@
+services:
+  ictv_sequence_classifier_service.getJobs:
+    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\GetJobs'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_sequence_classifier_service.test:
+    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\Test'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

@@ -1,0 +1,8 @@
+name: ICTV Curated Name Manager
+type: module
+description: 'A custom module that provides a UI for the Curated Name Service'
+package: ICTV
+configure: ictv_curated_name_manager.settings
+core_version_requirement: ^10
+dependencies:
+  - drupal:block

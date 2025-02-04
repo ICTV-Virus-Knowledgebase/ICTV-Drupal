@@ -6,3 +6,4 @@ configure: ictv_sequence_classifier_service.settings
 core_version_requirement: ^10
 dependencies:
   - drupal:block
+  - ictv_common

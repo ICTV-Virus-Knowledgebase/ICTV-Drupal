@@ -1,10 +1,10 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { CuratedTaxonService } from "../../services/CuratedTaxonService";
-import { ICuratedTaxon } from "./ICuratedTaxon";
+import { CuratedNameService } from "../../services/CuratedNameService";
+import { ICuratedName } from "./ICuratedName";
 
 
-export class CuratedTaxonManager {
+export class CuratedNameManager {
 
    // The DOM selector of the module's container Element.
    containerSelector: string = null;
@@ -20,13 +20,13 @@ export class CuratedTaxonManager {
       spinner: string
    }
 
-   results: ICuratedTaxon[];
+   results: ICuratedName[];
 
 
    // C-tor
    constructor(containerSelector_: string) {
 
-      if (!containerSelector_) { throw new Error("Invalid container selector in VirusNameLookup"); }
+      if (!containerSelector_) { throw new Error("Invalid container selector in CuratedNameManager"); }
       this.containerSelector = containerSelector_;
 
       this.elements = {
@@ -45,25 +45,31 @@ export class CuratedTaxonManager {
 
       let rowHTML = "";
 
-      this.results.forEach((curatedTaxon_: ICuratedTaxon, index_: number) => {
+      this.results.forEach((curatedTaxon_: ICuratedName, index_: number) => {
 
 
          /*
-         ictvID: number;
-            ictvName: string;
+         comments: string;
+            createdBy: string;
+            createdOn: string;
+            division: string;
+            ictvID: number;
             ictvTaxnodeID: number;
-            isActive: boolean;
+            id: number;
+            isValid: boolean;
             name: string;
             nameClass: NameClass;
             rankName: TaxonomyRank;
-            type: CuratedTaxonType;
-            comments: string;
+            taxonomyDB: TaxonomyDB;
+            taxonomyID: number;
+            type: CuratedNameType;
+            versionID: number;
 
          */
       })
 
       let html = 
-         `<table class="curated-taxa">
+         `<table class="curated-names">
             <thead>
                <tr class="header-row"></tr>
             </thead>
@@ -97,12 +103,16 @@ export class CuratedTaxonManager {
 
       this.elements.resultsPanel = document.querySelector(`${this.containerSelector} .results-panel`);
       if (!this.elements.resultsPanel) { throw new Error("Invalid results panel Element"); }
+
+
+      // Load curated names
+      await this.loadData();
    }
 
    
    async loadData() {
 
-      this.results = await CuratedTaxonService.getCuratedTaxa();
+      this.results = await CuratedNameService.getCuratedNames();
 
       await this.displayResults();
       return;

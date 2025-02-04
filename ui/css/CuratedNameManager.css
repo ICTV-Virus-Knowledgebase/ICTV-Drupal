@@ -1,0 +1,26 @@
+
+
+/*
+#ictv_curated_name_manager_container .lookup-container {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row;
+   justify-content: space-between;
+   margin-bottom: 2.0rem;
+}*/
+
+/* Button styles */
+#ictv_curated_name_manager_container .ictv-btn {
+   border: 1px solid transparent;
+   display: inline-block;
+   font-size: 0.9rem;
+   font-weight: 400;
+   padding: .375rem .75rem;
+   text-align: center;
+   user-select: none;
+   vertical-align: middle;
+   white-space: nowrap;
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+}

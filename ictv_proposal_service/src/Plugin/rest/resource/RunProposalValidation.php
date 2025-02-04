@@ -31,8 +31,12 @@
 
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\File\FileSystemInterface;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobStatus;
+use Drupal\ictv_common\Types\JobType;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobType;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Symfony\Component\HttpFoundation\Request;

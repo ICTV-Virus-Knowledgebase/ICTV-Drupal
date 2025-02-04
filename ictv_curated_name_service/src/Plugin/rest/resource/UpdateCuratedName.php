@@ -76,7 +76,7 @@ class UpdateCuratedName extends ResourceBase {
       $this->currentUser = $currentUser;
 
       // Get a database connection.
-      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
+      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->appsDbName);
    }
 
    
@@ -107,6 +107,7 @@ class UpdateCuratedName extends ResourceBase {
       //if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
 
       // TODO: do something!
+      $data = [ "test" => "Just a test"];
 
       $build = array(
          '#cache' => array(
@@ -155,6 +156,7 @@ class UpdateCuratedName extends ResourceBase {
       //if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
 
       // TODO: do something!
+      $data = [ "test" => "Just a test"];
 
       $build = array(
          '#cache' => array(

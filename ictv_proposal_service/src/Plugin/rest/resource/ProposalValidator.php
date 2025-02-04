@@ -2,9 +2,9 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
-use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
+use Drupal\ictv_common\Utils;
 
 
 class ProposalValidator {

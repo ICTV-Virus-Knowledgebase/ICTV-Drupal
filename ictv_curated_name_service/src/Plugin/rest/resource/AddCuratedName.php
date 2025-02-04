@@ -140,7 +140,7 @@ class AddCuratedName extends ResourceBase {
       $this->currentUser = $currentUser;
 
       // Get a database connection.
-      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
+      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->appsDbName);
    }
 
    

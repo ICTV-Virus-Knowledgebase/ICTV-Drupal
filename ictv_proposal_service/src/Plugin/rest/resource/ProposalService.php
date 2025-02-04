@@ -2,24 +2,29 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
-use Drupal\Component\Serialization\Json;
-use Drupal\Core\Config;
-use Drupal\Core\Database;
-use Drupal\Core\Database\Connection;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\JobType;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
-use Drupal\rest\Plugin\ResourceBase;
-use Drupal\Core\Session\AccountProxyInterface;
-use Drupal\rest\ResourceResponse;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Request;
 
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Drupal\Core\Session\AccountProxyInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Drupal\Core\Config;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Database\Connection;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Database;
+use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobStatus;
+use Drupal\ictv_common\Types\JobType;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobType;
+use Drupal\Component\Serialization\Json;
+use Psr\Log\LoggerInterface;
+use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
+use Symfony\Component\HttpFoundation\Request;
+use Drupal\rest\Plugin\ResourceBase;
+use Drupal\rest\ResourceResponse;
+use Drupal\ictv_common\Utils;
+//use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 /**
  * A web service supporting ICTV proposal validations and quality control.
@@ -34,24 +39,26 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class ProposalService extends ResourceBase {
 
+   protected $configFactory;
+
    // The connection to the ictv_apps database.
    protected Connection $connection;
 
    // The name of the database used by this web service.
-   protected string $databaseName = "ictv_apps";
+   protected string $databaseName;
 
    // The path of the Drupal installation.
-   protected string $drupalRoot = "/var/www/dapp/web";
+   protected string $drupalRoot; // = "/var/www/dapp/web";
 
    protected JobService $jobService;
 
    // The full path of the jobs directory.
-   protected string $jobsPath = "/var/www/drupal/files/jobs";
+   protected string $jobsPath;
 
    protected string $validationSummaryPrefix = "ictv-proposal-file-results";
 
    // The name of the downloadable validation summary file.
-   protected string $summaryFilename = "QC.pretty_summary.all.xlsx";
+   protected string $summaryFilename; // = "QC.pretty_summary.all.xlsx";
 
 
    /**
@@ -74,39 +81,46 @@ class ProposalService extends ResourceBase {
       array $config,
       $module_id,
       $module_definition,
+      ConfigFactoryInterface $configFactory,
       array $serializer_formats,
       LoggerInterface $logger) {
+
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
+      // Maintain the config factory in a member variable.
+      $this->configFactory = $configFactory;
 
-      /*
-      // dmd 111623 Testing configuration settings (again) vvv
-      // Get configuration settings from the settings.yml file.
-      $configSettings = \Drupal::config("ictv_proposal_service.settings");
+      // Access the module's configuration object.
+      $config = $this->configFactory->get("ictv_proposal_service.settings");
 
-      // Validate the configuration settings.
-      if ($configSettings == null) { 
-         \Drupal::logger('ictv_proposal_service')->error("Invalid configuration settings in ProposalService");
-      } else {
-         $testDbName = $configSettings->get("databaseName");
-         \Drupal::logger('ictv_proposal_service')->info("The configuration setting for database name = ".$testDbName);
+      //---------------------------------------------------------------------------------------------------------
+      // Get data from the settings.yml file.
+      //---------------------------------------------------------------------------------------------------------
+
+      // Get the database name.
+      $this->databaseName = $config->get("databaseName");
+      if (Utils::isNullOrEmpty($this->databaseName)) { 
+         \Drupal::logger('ictv_proposal_service')->error("The databaseName setting is empty");
+         return;
       }
-      // dmd 111623 Testing configuration settings (again) ^^^
-      */
       
-      /*
-      // Get the name of the database used by this web service.
-      $this->databaseName = $configSettings->get("databaseName");
-      if ($this->databaseName === null || trim($this->databaseName) === '') { throw new Exception("Invalid database name in ProposalService"); }
-
       // Get the path of the Drupal installation.
-      $this->drupalRoot = $configSettings->get("drupalRoot");
+      $this->drupalRoot = $config->get("drupalRoot");
       if ($this->drupalRoot === null || trim($this->drupalRoot) === '') { throw new Exception("Invalid drupal root path in ProposalService"); }
 
       // Get the full path of the jobs directory.
-      $this->jobsPath = $configSettings->get("jobsPath");
-      if ($this->jobsPath === null || trim($this->jobsPath) === '') { throw new Exception("Invalid jobs path in ProposalService"); }
-      */
+      $this->jobsPath = $config->get("jobsPath");
+      if (Utils::isNullOrEmpty($this->jobsPath)) { 
+         \Drupal::logger('ictv_proposal_service')->error("The jobsPath setting is empty");
+         return;
+      }
+
+      // Get the name of the downloadable validation summary file.
+      $this->summaryFilename = $config->get("summaryFilename");
+      if (Utils::isNullOrEmpty($this->summaryFilename)) { 
+         \Drupal::logger('ictv_proposal_service')->error("The summaryFilename setting is empty");
+         return;
+      }
       
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
@@ -123,6 +137,7 @@ class ProposalService extends ResourceBase {
          $config,
          $module_id,
          $module_definition,
+         $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
          $container->get('logger.factory')->get('ictv_proposal_service_resource')
       );
@@ -140,6 +155,7 @@ class ProposalService extends ResourceBase {
       return new ResourceResponse($data);
    }
 
+
    /** 
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
@@ -149,6 +165,7 @@ class ProposalService extends ResourceBase {
       return []; 
    } 
 
+   
    /**
     * Responds to POST request.
     * Returns data corresponding to the action code provided.

@@ -14,8 +14,8 @@ export class _TaxonomyHistoryService {
 
         const data = {
             action_code: "get_taxon_history",
-            "current_release": currentMslRelease_,
-            "taxnode_id": taxNodeID_
+            current_release: currentMslRelease_,
+            taxnode_id: taxNodeID_
         };
 
         const responseData = await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
@@ -25,13 +25,14 @@ export class _TaxonomyHistoryService {
 
 
     // Get the history of the specified taxon over all releases.
-    async getByIctvID(ictvID_: string) {
+    async getByIctvID(currentMslRelease_: number, ictvID_: string) {
 
         // Validate the ICTV ID.
         if (!ictvID_) { throw new Error("Invalid ICTV ID") }
 
         const data = {
             action_code: "get_taxonomy_history",
+            current_release: currentMslRelease_,
             "ictv_id": ictvID_
         };
 
@@ -59,13 +60,14 @@ export class _TaxonomyHistoryService {
 
 
     // Get the history of the specified taxon over all releases.
-    async getByTaxNodeID(taxNodeID_: string) {
+    async getByTaxNodeID(currentMslRelease_: number, taxNodeID_: string) {
 
         // Validate and maintain the tax node ID.
         if (!taxNodeID_) { throw new Error("Invalid taxnode ID"); }
         
         const data = {
             action_code: "get_taxonomy_history",
+            current_release: currentMslRelease_,
             taxnode_id: taxNodeID_
         };
 

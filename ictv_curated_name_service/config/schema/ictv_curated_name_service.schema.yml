@@ -1,0 +1,10 @@
+ictv_curated_name_service.settings:
+  type: config_object
+  label: 'Settings for the ICTV Curated Name Service'
+  mapping:
+    appsDbName:
+      type: string
+      label: 'The name of the ICTV apps database'
+    taxonomyDbName:
+      type: string
+      label: 'The name of the ICTV taxonomy database'

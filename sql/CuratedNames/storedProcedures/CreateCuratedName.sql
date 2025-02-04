@@ -121,7 +121,7 @@ BEGIN
       ictvTaxnodeID,
       name,
       nameClassTID,
-      rankName,
+      rankNameTID,
       taxonomyDbTID,
       taxonomyID,
       versionID

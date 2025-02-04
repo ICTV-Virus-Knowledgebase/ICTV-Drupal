@@ -2,7 +2,7 @@
 
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
+use Drupal\ictv_common\Utils;
 
 
 class ProposalFileSummary {
