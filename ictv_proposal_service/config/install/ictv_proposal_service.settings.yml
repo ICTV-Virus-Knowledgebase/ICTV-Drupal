@@ -1,4 +1,4 @@
 databaseName: 'ictv_apps'
-drupalRoot: '/var/www/dapp/web'
-jobsPath: '/var/www/dapp/files/jobs'
+drupalRoot: '/var/drupal/site'
+jobsPath: '/var/drupal/files/jobs'
 summaryFilename: 'QC.pretty_summary.all.xlsx'

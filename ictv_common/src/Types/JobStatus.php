@@ -1,7 +1,6 @@
 <?php
 
-namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
-
+namespace Drupal\ictv_common\Types;
 
 enum JobStatus: string {
    case crashed = "crashed";

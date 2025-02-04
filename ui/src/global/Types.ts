@@ -6,7 +6,7 @@
 //----------------------------------------------------------------------------------------------------------------
 
 // Testing...
-export enum CuratedTaxonType {
+export enum CuratedNameType {
    disease = "disease"
    // ???
 }
@@ -194,11 +194,15 @@ export enum TopLevelRank {
 
 // Keys representing all available web services.
 export enum WebServiceKey {
+   addCuratedName = "addCuratedName",
    csrfToken = "csrfToken",
+   deleteCuratedName = "deleteCuratedName",
+   getCuratedNames = "getCuratedNames",
    proposal = "proposal",
    sequenceClassifier = "sequenceClassifier",
    taxonomy = "taxonomy",
    taxonomyHistory = "taxonomyHistory",
+   updateCuratedName = "updateCuratedName",
    virusIsolate = "virusIsolate",
    virusNameLookup = "virusNameLookup"
 }

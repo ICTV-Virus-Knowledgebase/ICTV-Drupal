@@ -968,7 +968,7 @@ export class VirusNameLookup {
    async initializeMinimalComponent() {
 
       // Set the "Find the Species" URL.
-      this.findTheSpeciesURL = `${AppSettings.applicationURL}/find_the_species`;
+      this.findTheSpeciesURL = `${AppSettings.applicationURL}/taxonomy/find_the_species`;
       
       // Get the container Element.
       this.elements.container = document.querySelector(this.containerSelector);
@@ -1039,7 +1039,6 @@ export class VirusNameLookup {
    async initialSearch() {
 
       const urlParams = new URLSearchParams(window.location.search);
-      //const urlParams = (new URL(window.location)).searchParams;
 
       let searchText = urlParams.get("search_text");
 

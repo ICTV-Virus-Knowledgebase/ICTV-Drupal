@@ -1,6 +1,24 @@
 services:
-  ictv_curated_name_service.curated_name_service:
-    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\CuratedNameService'
+  ictv_curated_name_service.add_curated_name:
+    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\AddCuratedName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_curated_name_service.delete_curated_name:
+    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\DeleteCuratedName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_curated_name_service.get_curated_names:
+    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\GetCuratedNames'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_curated_name_service.update_curated_name:
+    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\UpdateCuratedName'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }

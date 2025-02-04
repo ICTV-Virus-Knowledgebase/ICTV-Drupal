@@ -1,6 +1,7 @@
 
 CREATE TABLE `curated_name` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `comments` text DEFAULT NULL,
   `division_tid` int(10) unsigned DEFAULT NULL,
   `ictv_id` int(10) unsigned DEFAULT NULL,
   `ictv_taxnode_id` int(10) unsigned DEFAULT NULL,
@@ -10,8 +11,9 @@ CREATE TABLE `curated_name` (
   `rank_name_tid` int(10) unsigned DEFAULT NULL,
   `taxonomy_db_tid` int(10) unsigned DEFAULT NULL,
   `taxonomy_id` int(10) unsigned DEFAULT NULL,
+  `type_tid` int(10) unsigned DEFAULT NULL,
   `version_id` int(10) unsigned DEFAULT NULL,
   `created_by` varchar(100) NOT NULL,
   `created_on` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
