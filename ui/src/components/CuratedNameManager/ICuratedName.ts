@@ -16,5 +16,6 @@ export interface ICuratedName {
    taxonomyDB: TaxonomyDB;
    taxonomyID: number;
    type: CuratedNameType;
+   uid: string;
    versionID: number;
 }

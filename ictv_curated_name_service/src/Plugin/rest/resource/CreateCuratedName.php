@@ -20,16 +20,16 @@ use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service that deletes an ICTV curated name.
+ * A web service that supports creation of a new curated name record.
  * @RestResource(
- *   id = "delete_curated_name",
- *   label = @Translation("Delete an ICTV curated name"),
+ *   id = "add_curated_name",
+ *   label = @Translation("Add ICTV curated name"),
  *   uri_paths = {
- *      "canonical" = "/delete-curated-name"
+ *      "canonical" = "/add-curated-name"
  *   }
  * )
  */
-class DeleteCuratedName extends ResourceBase {
+class CreateCuratedName extends ResourceBase {
 
    // The connection to the ictv_apps database.
    protected Connection $connection;
@@ -45,6 +45,7 @@ class DeleteCuratedName extends ResourceBase {
     * @var \Drupal\Core\Session\AccountProxyInterface
     */
    protected $currentUser;
+
 
    /**
     * Constructs a Drupal\rest\Plugin\ResourceBase object.
@@ -115,11 +116,71 @@ class DeleteCuratedName extends ResourceBase {
       );
    }
 
-   public function deleteCuratedName(int $id_) {
-   
-      // TODO
 
+   // Create a new curated name using the JSON data provided.
+   public function createCuratedName($json) {
+
+      /*
+      Example JSON:
+      {
+         createdBy: "ddempsey@uab.edu",
+         division: "viruses",
+         ictvID: 1234567,
+         ictvTaxnodeID: 1234567,
+         name: "test name",
+         nameClass: "taxon_name",
+         rankName: "species",
+         taxonomyDB: "ictv_curated_names",
+         taxonomyID: 1234,
+         versionID: 0
+      }
+      */
+      
+      // Get and validate the JSON attributes.
+      $createdBy = $json["createdBy"];
+      if (Utils::isNullOrEmpty($createdBy)) { throw new BadRequestHttpException("Invalid JSON attribute 'createdBy'"); }
+
+      $division = $json["division"];
+      if (Utils::isNullOrEmpty($division)) { throw new BadRequestHttpException("Invalid JSON attribute 'division'"); }
+
+      $ictvID = $json["ictvID"];
+      $ictvTaxnodeID = $json["ictvTaxnodeID"];
+
+      $name = $json["name"];
+      if (Utils::isNullOrEmpty($name)) { throw new BadRequestHttpException("Invalid JSON attribute 'name'"); }
+
+      $nameClass = $json["nameClass"];
+      if (Utils::isNullOrEmpty($nameClass)) { throw new BadRequestHttpException("Invalid JSON attribute 'nameClass'"); }
+
+      $rankName = $json["rankName"];
+      if (Utils::isNullOrEmpty($rankName)) { throw new BadRequestHttpException("Invalid JSON attribute 'rankName'"); }
+
+      $taxonomyDB = $json["taxonomyDB"];
+      if (Utils::isNullOrEmpty($taxonomyDB)) { throw new BadRequestHttpException("Invalid JSON attribute 'taxonomyDB'"); }
+
+      $taxonomyID = $json["taxonomyID"];
+      $versionID = $json["versionID"];
+         
+      // Populate the stored procedure's parameters.
+      $parameters = [":createdBy" => $createdBy, ":division" => $division, ":ictvID" => $ictvID, ":ictvTaxnodeID" => $ictvTaxnodeID, 
+         ":name" => $name, ":nameClass" => $nameClass, ":rankName" => $rankName, ":taxonomyDB" => $taxonomyDB, ":taxonomyID" => $taxonomyID, 
+         ":versionID" => $versionID];
+
+      // Generate SQL to call the "CreateCuratedName" stored procedure.
+      $sql = "CALL CreateCuratedName(:createdBy, :division, :ictvID, :ictvTaxnodeID, :name, :nameClass, :rankName, :taxonomyDB, :taxonomyID, :versionID);";
+
+      try {
+         // Run the stored procedure.
+         $queryResults = $this->connection->query($sql, $parameters);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_curated_name_service')->error($e);
+         return null;
+      }
+
+      // TODO?
    }
+
 
    /**
     * Responds to GET request.
@@ -129,11 +190,12 @@ class DeleteCuratedName extends ResourceBase {
     */
    public function get(Request $request) {
       
-      // Get query string parameters
-      $id = $request->get("id");
-      if (Utils::isNullOrEmpty($id)) { throw new BadRequestHttpException("Invalid id parameter"); }
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      $this->deleteCuratedName($id);
+      // Create a new curated name.
+      $this->createCuratedName($json);
 
       $build = array(
          '#cache' => array(
@@ -177,11 +239,12 @@ class DeleteCuratedName extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // Get query string parameters
-      $id = $request->get("id");
-      if (Utils::isNullOrEmpty($id)) { throw new BadRequestHttpException("Invalid id parameter"); }
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      $this->deleteCuratedName($id);
+      // Create a new curated name.
+      $this->createCuratedName($json);
 
       $build = array(
          '#cache' => array(

@@ -6,19 +6,56 @@ import { WebServiceKey } from "../global/Types";
 
 export class _CuratedNameService {
 
-   async addCuratedName() {
-      return;
+
+   // Create a new curated name.
+   async createCuratedName(authToken_: string, curatedName_: ICuratedName, userEmail_: string, userUID_: number) {
+
+      const data = {
+         curatedName: curatedName_,
+         userEmail: userEmail_,
+         userUID: userUID_
+      }
+
+      return await WebService.drupalGet<ICuratedName>(WebServiceKey.createCuratedName, authToken_, data);
    }
 
-   async deleteCuratedName() {
-      return;
+   // Delete the curated name with this UID.
+   async deleteCuratedName(authToken_: string, uid_: string, userEmail_: string, userUID_: number) {
+      
+      const data = {
+         uid: uid_,
+         userEmail: userEmail_,
+         userUID: userUID_
+      }
+
+      return await WebService.drupalGet<any>(WebServiceKey.deleteCuratedName, authToken_, data);
    }
 
-   async getCuratedNames(): Promise<ICuratedName[]> {
+   // Get the curated name with this UID.
+   async getCuratedName(authToken_: string, uid_: string, userEmail_: string, userUID_: number): Promise<ICuratedName> {
 
-      return await WebService.drupalGet<ICuratedName[]>(WebServiceKey.virusNameLookup, null);
+      const data = {
+         uid: uid_,
+         userEmail: userEmail_,
+         userUID: userUID_
+      }
+
+      return await WebService.drupalGet<ICuratedName>(WebServiceKey.getCuratedName, authToken_, data);
    }
 
+   // Get all curated names.
+   async getCuratedNames(authToken_: string, userEmail_: string, userUID_: number): Promise<ICuratedName[]> {
+
+      const data = {
+         userEmail: userEmail_,
+         userUID: userUID_
+      }
+
+      return await WebService.drupalGet<ICuratedName[]>(WebServiceKey.getCuratedNames, authToken_, data);
+   }
+
+   
+   // TODO
    async updateCuratedName() {
       return;
    }

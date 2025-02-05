@@ -5,9 +5,11 @@ namespace Drupal\ictv_curated_name_service\Plugin\rest\resource;
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\Core\Config;
-use Drupal\Core\Database;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\ictv_curated_name_service\Plugin\rest\resource\models\CuratedName;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Database;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
@@ -19,23 +21,26 @@ use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service that supports creation of a new curated name record.
+ * A web service that returns all curated names from the database.
  * @RestResource(
- *   id = "add_curated_name",
- *   label = @Translation("Add ICTV curated name"),
+ *   id = "get_curated_name",
+ *   label = @Translation("Get an ICTV curated name by UID"),
  *   uri_paths = {
- *      "canonical" = "/add-curated-name"
+ *      "canonical" = "/get-curated-name"
  *   }
  * )
  */
-class AddCuratedName extends ResourceBase {
+class GetCuratedName extends ResourceBase {
+
+   protected $configFactory;
 
    // The connection to the ictv_apps database.
+   // TODO: Do we need a connection for each database?
    protected Connection $connection;
 
    // The names of the databases used by this web service.
-   protected string $appsDbName = "ictv_apps";
-   protected string $taxonomyDbName = "ictv_taxonomy";
+   protected string $appsDbName;
+   protected string $taxonomyDbName;
 
 
    /**
@@ -44,72 +49,6 @@ class AddCuratedName extends ResourceBase {
     * @var \Drupal\Core\Session\AccountProxyInterface
     */
    protected $currentUser;
-
-
-   // Add a curated name to the database using the JSON data provided.
-   public function addCuratedName($json) {
-
-      /*
-      Example JSON:
-      {
-         createdBy: "ddempsey@uab.edu",
-         division: "viruses",
-         ictvID: 1234567,
-         ictvTaxnodeID: 1234567,
-         name: "test name",
-         nameClass: "taxon_name",
-         rankName: "species",
-         taxonomyDB: "ictv_curated_names",
-         taxonomyID: 1234,
-         versionID: 0
-      }
-      */
-      
-      // Get and validate the JSON attributes.
-      $createdBy = $json["createdBy"];
-      if (Utils::isNullOrEmpty($createdBy)) { throw new BadRequestHttpException("Invalid JSON attribute 'createdBy'"); }
-
-      $division = $json["division"];
-      if (Utils::isNullOrEmpty($division)) { throw new BadRequestHttpException("Invalid JSON attribute 'division'"); }
-
-      $ictvID = $json["ictvID"];
-      $ictvTaxnodeID = $json["ictvTaxnodeID"];
-
-      $name = $json["name"];
-      if (Utils::isNullOrEmpty($name)) { throw new BadRequestHttpException("Invalid JSON attribute 'name'"); }
-
-      $nameClass = $json["nameClass"];
-      if (Utils::isNullOrEmpty($nameClass)) { throw new BadRequestHttpException("Invalid JSON attribute 'nameClass'"); }
-
-      $rankName = $json["rankName"];
-      if (Utils::isNullOrEmpty($rankName)) { throw new BadRequestHttpException("Invalid JSON attribute 'rankName'"); }
-
-      $taxonomyDB = $json["taxonomyDB"];
-      if (Utils::isNullOrEmpty($taxonomyDB)) { throw new BadRequestHttpException("Invalid JSON attribute 'taxonomyDB'"); }
-
-      $taxonomyID = $json["taxonomyID"];
-      $versionID = $json["versionID"];
-         
-      // Populate the stored procedure's parameters.
-      $parameters = [":createdBy" => $createdBy, ":division" => $division, ":ictvID" => $ictvID, ":ictvTaxnodeID" => $ictvTaxnodeID, 
-         ":name" => $name, ":nameClass" => $nameClass, ":rankName" => $rankName, ":taxonomyDB" => $taxonomyDB, ":taxonomyID" => $taxonomyID, 
-         ":versionID" => $versionID];
-
-      // Generate SQL to call the "CreateCuratedName" stored procedure.
-      $sql = "CALL CreateCuratedName(:createdBy, :division, :ictvID, :ictvTaxnodeID, :name, :nameClass, :rankName, :taxonomyDB, :taxonomyID, :versionID);";
-
-      try {
-         // Run the stored procedure.
-         $queryResults = $this->connection->query($sql, $parameters);
-      } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_curated_name_service')->error($e);
-         return null;
-      }
-
-
-   }
-
 
    /**
     * Constructs a Drupal\rest\Plugin\ResourceBase object.
@@ -131,6 +70,7 @@ class AddCuratedName extends ResourceBase {
       array $config,
       $module_id,
       $module_definition,
+      ConfigFactoryInterface $configFactory,
       array $serializer_formats,
       LoggerInterface $logger,
       AccountProxyInterface $currentUser) {
@@ -138,6 +78,26 @@ class AddCuratedName extends ResourceBase {
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
       
       $this->currentUser = $currentUser;
+
+      // Maintain the config factory in a member variable.
+      $this->configFactory = $configFactory;
+
+      // Access the module's configuration object.
+      $config = $this->configFactory->get("ictv_curated_name_service.settings");
+
+      // Get the apps database name.
+      $this->appsDbName = $config->get("appsDbName");
+      if (Utils::isNullOrEmpty($this->appsDbName)) { 
+         \Drupal::logger('ictv_curated_name_service')->error("The appsDbName setting is empty");
+         return;
+      }
+      
+      // Get the taxonomy database name.
+      $this->taxonomyDbName = $config->get("taxonomyDbName");
+      if (Utils::isNullOrEmpty($this->taxonomyDbName)) { 
+         \Drupal::logger('ictv_curated_name_service')->error("The taxonomyDbName setting is empty");
+         return;
+      }
 
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->appsDbName);
@@ -152,6 +112,7 @@ class AddCuratedName extends ResourceBase {
          $config,
          $module_id,
          $module_definition,
+         $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
          $container->get('logger.factory')->get('ictv_curated_name_service_resource'),
          $container->get("current_user")
@@ -166,11 +127,12 @@ class AddCuratedName extends ResourceBase {
     */
    public function get(Request $request) {
       
-      // Get and validate the JSON in the request body.
-      $json = Json::decode($request->getContent());
-      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+      // Get and validate the UID parameter.
+      $uid = $request->get("uid");
+      if (Utils::isNullOrEmpty($uid)) { throw new BadRequestHttpException("Invalid UID parameter"); }
 
-      $this->addCuratedName($json);
+      // Get the curated name with this UID.
+      $data = $this->getCuratedName($uid);
 
       $build = array(
          '#cache' => array(
@@ -196,7 +158,57 @@ class AddCuratedName extends ResourceBase {
       // return Cache::PERMANENT;
    }
 
-   
+   public function getCuratedName(string $uid) {
+
+      $sql = 
+         "SELECT
+            comments,
+            created_by,
+            created_on,
+            division,
+            ictv_id,
+            ictv_taxnode_id,
+            id,
+            is_valid,
+            name,
+            name_class,
+            rank_name,
+            taxonomy_db,
+            taxonomy_id,
+            type,
+            uid,
+            version_id 
+         
+         FROM v_curated_name
+         WHERE uid = '".$uid."' 
+         LIMIT 1 ";
+
+      try {
+         // Run the SQL query.
+         $queryResults = $this->connection->query($sql);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_curated_name_service')->error($e);
+         return null;
+      }
+
+      $name = null;
+
+      // TODO: there's no need to iterate over the results...just get the first (only) one.
+
+      // Iterate over the result rows and add each row to the names array.
+      foreach($queryResults as $row) {
+
+         // Create a curated name instance from the row of data.
+         $curatedName = CuratedName::fromArray((array) $row);
+
+         // Normalize the curated name object.
+         $name = $curatedName->normalize();
+      }
+
+      return $name;
+   }
+
    /** 
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
@@ -214,11 +226,12 @@ class AddCuratedName extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // Get and validate the JSON in the request body.
-      $json = Json::decode($request->getContent());
-      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+      // Get and validate the UID parameter.
+      $uid = $request->get("uid");
+      if (Utils::isNullOrEmpty($uid)) { throw new BadRequestHttpException("Invalid UID parameter"); }
 
-      $this->addCuratedName($json);
+      // Get the curated name with this UID.
+      $data = $this->getCuratedName($uid);
 
       $build = array(
          '#cache' => array(

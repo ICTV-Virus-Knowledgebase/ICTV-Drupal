@@ -7,8 +7,8 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\Core\Config;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-//use Drupal\ictv_curated_name_service\Plugin\rest\resource\IctvResult;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
@@ -16,7 +16,6 @@ use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
-//use Drupal\ictv_curated_name_service\Plugin\rest\resource\SearchResult;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
@@ -36,8 +35,8 @@ class UpdateCuratedName extends ResourceBase {
    protected Connection $connection;
 
    // The names of the databases used by this web service.
-   protected string $appsDbName = "ictv_apps";
-   protected string $taxonomyDbName = "ictv_taxonomy";
+   protected string $appsDbName; // = "ictv_apps";
+   protected string $taxonomyDbName; // = "ictv_taxonomy";
 
 
    /**
@@ -67,6 +66,7 @@ class UpdateCuratedName extends ResourceBase {
       array $config,
       $module_id,
       $module_definition,
+      ConfigFactoryInterface $configFactory,
       array $serializer_formats,
       LoggerInterface $logger,
       AccountProxyInterface $currentUser) {
@@ -74,6 +74,26 @@ class UpdateCuratedName extends ResourceBase {
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
       
       $this->currentUser = $currentUser;
+
+      // Maintain the config factory in a member variable.
+      $this->configFactory = $configFactory;
+
+      // Access the module's configuration object.
+      $config = $this->configFactory->get("ictv_curated_name_service.settings");
+
+      // Get the apps database name.
+      $this->appsDbName = $config->get("appsDbName");
+      if (Utils::isNullOrEmpty($this->appsDbName)) { 
+         \Drupal::logger('ictv_curated_name_service')->error("The appsDbName setting is empty");
+         return;
+      }
+      
+      // Get the taxonomy database name.
+      $this->taxonomyDbName = $config->get("taxonomyDbName");
+      if (Utils::isNullOrEmpty($this->taxonomyDbName)) { 
+         \Drupal::logger('ictv_curated_name_service')->error("The taxonomyDbName setting is empty");
+         return;
+      }
 
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->appsDbName);
@@ -88,6 +108,7 @@ class UpdateCuratedName extends ResourceBase {
          $config,
          $module_id,
          $module_definition,
+         $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
          $container->get('logger.factory')->get('ictv_curated_name_service_resource'),
          $container->get("current_user")

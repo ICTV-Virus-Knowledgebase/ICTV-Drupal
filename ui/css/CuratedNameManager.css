@@ -24,3 +24,110 @@
    -moz-user-select: none;
    -ms-user-select: none;
 }
+
+#ictv_curated_name_manager_container .new-name-btn {
+   background-color: #198754;
+   color: #fff;
+}
+
+/* The results count */
+#ictv_curated_name_manager_container .results-count {
+   font-size: 1.8rem;
+   margin-top: 2.0rem;
+}
+
+#ictv_curated_name_manager_container .results-panel {
+   display: none;
+   visibility: hidden;
+}
+#ictv_curated_name_manager_container .results-panel.active {
+   display: block;
+   visibility: visible;
+}
+
+/* The spinner panel */
+#ictv_curated_name_manager_container .spinner-panel {
+   display: none;
+}
+#ictv_curated_name_manager_container .spinner-panel.active {
+   display: block;
+}
+
+/* The controls panel above the data table */
+#ictv_curated_name_manager_container .controls-panel {
+   margin-bottom: 1.0rem;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Data tables
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_curated_name_manager_container table.results-table {
+   min-width: 800px;
+   overflow: visible !important;
+   width: 100%;
+}
+#ictv_curated_name_manager_container table.results-table .header-row {
+   background-color: #757575 !important;
+}
+#ictv_curated_name_manager_container table.results-table th,
+#ictv_curated_name_manager_container table.results-table td {
+   font-size: 1.0rem !important;
+}
+#ictv_curated_name_manager_container table.results-table th {
+   background-color: #757575 !important;
+   color: #fff !important;
+   font-weight: 400 !important;
+}
+#ictv_curated_name_manager_container table.results-table .even-bg {
+   background-color: #eee;
+}
+#ictv_curated_name_manager_container table.results-table .odd-bg {
+   background-color: #fff;
+}
+#ictv_curated_name_manager_container table.results-table thead + tbody tr:first-child th, 
+#ictv_curated_name_manager_container table.results-table thead + tbody tr:first-child td {
+   padding-top: 0.75rem;
+}
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The table view
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#ictv_curated_name_manager_container table.results-table {
+   table-layout: auto; /* Ensures column width adapts to content */
+}
+
+#ictv_curated_name_manager_container .edit-column {
+   white-space: nowrap; /* Prevents the content from wrapping */
+   width: 1%; /* Ensures the column shrinks to fit its content */
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The edit view
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_curated_name_manager_container .control-row {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+}
+#ictv_curated_name_manager_container .control-row label {
+   font-weight: normal;
+}
+#ictv_curated_name_manager_container .control-row select {
+   max-width: 200px;
+}
+
+#ictv_curated_name_manager_container .control-row .name-control {
+   width: 300px;
+}
+
+#ictv_curated_name_manager_container button.save-button {
+   background-color: #198754;
+   color: #fff;
+   margin-top: 2.0rem;
+}

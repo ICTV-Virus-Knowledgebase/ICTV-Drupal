@@ -25,6 +25,7 @@ BEGIN
    DECLARE phagesDivisionTID INT;
    DECLARE rankNameTID INT;
    DECLARE taxonomyDbTID INT;
+   DECLARE uid BINARY(16);
    DECLARE virusDivisionTID INT;
 
 
@@ -100,6 +101,8 @@ BEGIN
       SET divisionTID = NULL;
    END IF;
 
+   -- Generate a new UUID.
+   SET uid = UNHEX(REPLACE(UUID(), '-', ''));
 
 
    -- Insert the new curated name.
@@ -113,6 +116,7 @@ BEGIN
       rank_name_tid,
       taxonomy_db_tid,
       taxonomy_id,
+      uid,
       version_id
    ) VALUES (
       createdBy,
@@ -124,6 +128,7 @@ BEGIN
       rankNameTID,
       taxonomyDbTID,
       taxonomyID,
+      uid,
       versionID
    );
 

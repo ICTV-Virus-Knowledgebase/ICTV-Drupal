@@ -80,6 +80,21 @@ export class AlertBuilder {
       return this.displayAlert(AlertIcon.error, message, title_, onClose_);
    }
 
+   // dmd testing 020525
+   // A synchronous version of displayError().
+   static displayErrorSync(message_: string | Error, title_?: string, onClose_?: Function) {
+
+      let message = "";
+
+      if (typeof (message_) === "string") {
+         message = message_;
+      } else {
+         message = (message_ as Error).message;
+      }
+      
+      this.displayAlert(AlertIcon.error, message, title_, onClose_).then(result_ => { return result_; })
+   }
+
    // Display an info message
    static async displayInfo(message_: string | HTMLElement, title_?: string, onClose_?: Function): Promise<SweetAlertResult<any>> {
       return this.displayAlert(AlertIcon.info, message_, title_, onClose_);

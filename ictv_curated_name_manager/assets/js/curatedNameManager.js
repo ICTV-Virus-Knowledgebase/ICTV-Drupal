@@ -13,24 +13,29 @@
 
             initialized = true;
             
+            const authToken = settings_.authToken;
+            const userEmail = settings_.userEmail;
+            const userName = settings_.userName;
+            const userUID = settings_.userUID;
+
             //----------------------------------------------------------------------------------------
-            // Initialize the ICTV_VirusNameLookup AppSettings using drupalSettings
+            // Initialize the ICTV_CuratedNameManager AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
             // The current MSL release number.
-            window.ICTV_VirusNameLookup.AppSettings.currentMslRelease = settings_.currentMslRelease;
+            window.ICTV_CuratedNameManager.AppSettings.currentMslRelease = settings_.currentMslRelease;
 
             // The current VMR.
-            window.ICTV_VirusNameLookup.AppSettings.currentVMR = settings_.currentVMR;
+            window.ICTV_CuratedNameManager.AppSettings.currentVMR = settings_.currentVMR;
 
             // The Drupal web service base URL.
-            window.ICTV_VirusNameLookup.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+            window.ICTV_CuratedNameManager.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_curated_name_manager_container";
 
             // Create a new CuratedNameManager component instance.
-            const curatedNameManager = new window.ICTV_CuratedNameManager.CuratedNameManager(containerSelector);
+            const curatedNameManager = new window.ICTV_CuratedNameManager.CuratedNameManager(authToken, containerSelector, userEmail, userName, userUID);
 
             // Initialize and display the UI.
             curatedNameManager.initialize();

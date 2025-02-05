@@ -11,6 +11,12 @@ services:
     tags:
       - { name: 'rest.resource' }
 
+  ictv_curated_name_service.get_curated_name:
+    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\GetCuratedName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
   ictv_curated_name_service.get_curated_names:
     class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\GetCuratedNames'
     arguments: ['@current_user']

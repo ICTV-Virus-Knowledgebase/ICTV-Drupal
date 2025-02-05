@@ -172,6 +172,7 @@ class GetCuratedNames extends ResourceBase {
             taxonomy_db,
             taxonomy_id,
             type,
+            uid,
             version_id 
          
          FROM v_curated_name 
