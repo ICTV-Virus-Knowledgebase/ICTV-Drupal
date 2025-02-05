@@ -194,9 +194,10 @@ export enum TopLevelRank {
 
 // Keys representing all available web services.
 export enum WebServiceKey {
-   addCuratedName = "addCuratedName",
+   createCuratedName = "createCuratedName",
    csrfToken = "csrfToken",
    deleteCuratedName = "deleteCuratedName",
+   getCuratedName = "getCuratedName",
    getCuratedNames = "getCuratedNames",
    proposal = "proposal",
    sequenceClassifier = "sequenceClassifier",

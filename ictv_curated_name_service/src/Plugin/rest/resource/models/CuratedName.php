@@ -33,6 +33,8 @@ class CuratedName {
 
    public ?string $type;
 
+   public ?string $uid;
+
    public ?int $versionID;
 
    
@@ -41,7 +43,7 @@ class CuratedName {
    // C-tor
    public function __construct(string $comments = NULL, string $createdBy = NULL, string $createdOn = NULL, string $division = NULL,  
       int $ictvID = NULL, int $ictvTaxnodeID = NULL, int $id = NULL, bool $isValid = NULL, string $name = NULL, string $nameClass = NULL, 
-      string $rankName = NULL, string $taxonomyDB = NULL, int $taxonomyID = NULL, $type = NULL, int $versionID = NULL) { 
+      string $rankName = NULL, string $taxonomyDB = NULL, int $taxonomyID = NULL, $type = NULL, $uid = NULL, int $versionID = NULL) { 
 
       $this->comments = $comments;
       $this->createdBy = $createdBy;
@@ -57,6 +59,7 @@ class CuratedName {
       $this->taxonomyDB = $taxonomyDB;
       $this->taxonomyID = $taxonomyID;
       $this->type = $type;
+      $this->uid = $uid;
       $this->versionID = $versionID;
    }
 
@@ -80,6 +83,7 @@ class CuratedName {
       $instance->taxonomyDB = $data["taxonomy_db"];
       $instance->taxonomyID = $data["taxonomy_id"];
       $instance->type = $data["type"];
+      $instance->uid = $data["uid"];
       $instance->versionID = $data["version_id"];
 
       return $instance;
@@ -102,6 +106,7 @@ class CuratedName {
          "taxonomyDB" => $this->taxonomyDB,
          "taxonomyID" => $this->taxonomyID,
          "type" => $this->type,
+         "uid" => $this->uid,
          "versionID" => $this->versionID
       ];
    }

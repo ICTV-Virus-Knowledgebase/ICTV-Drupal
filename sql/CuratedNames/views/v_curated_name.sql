@@ -21,6 +21,7 @@ SELECT
    cn.taxonomy_id,
    typeTerm.term_key AS type,
    cn.type_tid,
+   HEX(cn.uid) AS uid,
    cn.version_id
    
 FROM curated_name cn
