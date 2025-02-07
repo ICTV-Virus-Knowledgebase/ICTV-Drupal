@@ -9,6 +9,9 @@ export interface IManager {
    // The container Element.
    readonly containerEl: HTMLElement;
 
+   // The DOM selector of the module's container Element.
+   readonly containerSelector: string;
+
    // User information
    readonly user: {
       email: string, 

@@ -171,6 +171,7 @@ class GetCuratedNames extends ResourceBase {
             rank_name,
             taxonomy_db,
             taxonomy_id,
+            taxon_name,
             type,
             uid,
             version_id 

@@ -14,6 +14,7 @@ CREATE PROCEDURE CreateCuratedName(
    IN `rankName` VARCHAR(100),
    IN `taxonomyDB` VARCHAR(100),
    IN `taxonomyID` INT,
+   IN `type` VARCHAR(100),
    IN `versionID` INT
 )
 BEGIN
@@ -25,6 +26,7 @@ BEGIN
    DECLARE phagesDivisionTID INT;
    DECLARE rankNameTID INT;
    DECLARE taxonomyDbTID INT;
+   DECLARE typeTID INT;
    DECLARE uid BINARY(16);
    DECLARE virusDivisionTID INT;
 
@@ -101,6 +103,16 @@ BEGIN
       SET divisionTID = NULL;
    END IF;
 
+   SET type = TRIM(type);
+   IF type IS NULL OR LENGTH(type) < 1 THEN
+      SET typeTID = NULL;
+   ELSE 
+      SET typeTID = (SELECT id FROM term WHERE full_key = CONCAT('curated_name_type.', type) LIMIT 1);
+      IF typeTID IS NULL THEN
+         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid curated name type term ID';
+      END IF;
+   END IF;
+
    -- Generate a new UUID.
    SET uid = UNHEX(REPLACE(UUID(), '-', ''));
 
@@ -116,6 +128,7 @@ BEGIN
       rank_name_tid,
       taxonomy_db_tid,
       taxonomy_id,
+      type_tid,
       uid,
       version_id
    ) VALUES (
@@ -128,6 +141,7 @@ BEGIN
       rankNameTID,
       taxonomyDbTID,
       taxonomyID,
+      typeTID,
       uid,
       versionID
    );

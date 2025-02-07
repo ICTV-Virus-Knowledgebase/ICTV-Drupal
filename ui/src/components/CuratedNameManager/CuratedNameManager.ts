@@ -74,9 +74,9 @@ export class CuratedNameManager implements IManager {
    }
 
 
+   // Handle a request to create a new curated name.
    async createName() {
-
-      console.log("In createName")
+      this.editView.initialize(null, ViewMode.create);
       return;
    }
 

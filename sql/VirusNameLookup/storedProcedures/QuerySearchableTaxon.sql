@@ -72,11 +72,30 @@ BEGIN
          si._isolate_name AS exemplar,
          si.genbank_accessions,
 
-         -- The family, subfamily, genus, and subgenus of the ICTV result.
-         result_tn.family,
-         result_tn.subfamily,
-         result_tn.genus,
-         result_tn.subgenus,
+         
+         -- The family of the ICTV result.
+         CASE 
+            WHEN result_tn.family_id IS NOT NULL THEN CONCAT(result_tn.family, ':', CAST(result_tn.family_id AS VARCHAR(12)))
+            ELSE ''
+         END as family,
+
+         -- The subfamily of the ICTV result.
+         CASE 
+            WHEN result_tn.subfamily_id IS NOT NULL THEN CONCAT(result_tn.subfamily, ':', CAST(result_tn.subfamily_id AS VARCHAR(12)))
+            ELSE ''
+         END AS subfamily,
+
+         -- The genus of the ICTV result.
+         CASE 
+            WHEN result_tn.genus_id IS NOT NULL THEN CONCAT(result_tn.genus, ':', CAST(result_tn.genus_id AS VARCHAR(12)))
+            ELSE ''
+         END AS genus,
+
+         -- The subgenus of the ICTV result.
+         CASE 
+            WHEN result_tn.subgenus_id IS NOT NULL THEN CONCAT(result_tn.subgenus, ':', CAST(result_tn.subgenus_id AS VARCHAR(12)))
+            ELSE ''
+         END AS subgenus,
 
          -- Does the first character of the search text match the first character of the taxon name?
          CASE

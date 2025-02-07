@@ -59,8 +59,6 @@ export class TableView {
          // Alternate the CSS class every row.
          let rowClass = index_ % 2 === 0 ? "odd-bg" : "even-bg";
 
-         let nameClass = LookupNameClass(curatedName_.nameClass, curatedName_.taxonomyDB);
-
          let rankName = LookupTaxonomyRank(curatedName_.rankName);
 
          let type = !curatedName_.type ? "" : curatedName_.type;
@@ -68,7 +66,7 @@ export class TableView {
          rowHTML += `<tr class="${rowClass}">
             <td class="edit-column"><button class="ictv-btn edit-button" data-uid="${curatedName_.uid}">Edit</button></td>
             <td>${curatedName_.name}</td>
-            <td>${nameClass}</td>
+            <td>${curatedName_.taxonName}</td>
             <td>${rankName}</td>
             <td>${type}</td>
          </tr>`;
@@ -80,7 +78,7 @@ export class TableView {
                <tr class="header-row">
                   <th></th>
                   <th>Name</th>
-                  <th>Name class</th>
+                  <th>ICTV name</th>
                   <th>Rank</th>
                   <th>Type</th>
                </tr>

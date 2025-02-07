@@ -19,6 +19,9 @@ class IctvCuratedNameManagerBlock extends BlockBase {
    // The JWT auth token for the Drupal web service.
    public $authToken;
 
+   // The base web service URL (Windows).
+   public $baseWebServiceURL;
+
    // The current MSL release.
    public $currentMslRelease;
 
@@ -27,6 +30,7 @@ class IctvCuratedNameManagerBlock extends BlockBase {
 
    // The URL of the Drupal web service.
    public $drupalWebServiceURL;
+
 
    /**
     * {@inheritdoc}
@@ -69,6 +73,7 @@ class IctvCuratedNameManagerBlock extends BlockBase {
 
       // Populate drupalSettings with variables needed by the VirusNameLookup object.
       $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
+      $build['#attached']['drupalSettings']['baseWebServiceURL'] = $this->baseWebServiceURL;
       $build['#attached']['drupalSettings']['currentMslRelease'] = $this->currentMslRelease;
       $build['#attached']['drupalSettings']['currentVMR'] = $this->currentVMR;
       $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
@@ -100,6 +105,7 @@ class IctvCuratedNameManagerBlock extends BlockBase {
 
       // Initialize the member variables.
       $this->authToken = "";
+      $this->baseWebServiceURL = "";
       $this->currentMslRelease = 0;
       $this->currentVMR = "";
       $this->drupalWebServiceURL = "";
@@ -110,6 +116,9 @@ class IctvCuratedNameManagerBlock extends BlockBase {
          (
             SELECT value FROM ictv_settings WHERE NAME = 'authToken' LIMIT 1
          ) AS authToken,
+         (
+            SELECT value FROM ictv_settings WHERE NAME = 'baseWebServiceURL' LIMIT 1
+         ) AS baseWebServiceURL,
          ( 
             SELECT value FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
          ) AS currentMslRelease,
@@ -127,6 +136,7 @@ class IctvCuratedNameManagerBlock extends BlockBase {
       if (!$settings) { \Drupal::logger('ictv_curated_name_manager')->error("Invalid settings object"); }
 
       $this->authToken = $settings["authToken"];
+      $this->baseWebServiceURL = $settings["baseWebServiceURL"];
       $this->currentMslRelease = $settings["currentMslRelease"];
       $this->currentVMR = $settings["currentVMR"];
       $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
