@@ -22,6 +22,9 @@
             // Initialize the ICTV_CuratedNameManager AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
+            // The base web service URL (Windows).
+            window.ICTV_CuratedNameManager.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
+
             // The current MSL release number.
             window.ICTV_CuratedNameManager.AppSettings.currentMslRelease = settings_.currentMslRelease;
 

@@ -132,6 +132,7 @@ class CreateCuratedName extends ResourceBase {
          rankName: "species",
          taxonomyDB: "ictv_curated_names",
          taxonomyID: 1234,
+         type: "disease",
          versionID: 0
       }
       */
@@ -156,15 +157,18 @@ class CreateCuratedName extends ResourceBase {
       if (Utils::isNullOrEmpty($rankName)) { throw new BadRequestHttpException("Invalid JSON attribute 'rankName'"); }
 
       $taxonomyDB = $json["taxonomyDB"];
-      if (Utils::isNullOrEmpty($taxonomyDB)) { throw new BadRequestHttpException("Invalid JSON attribute 'taxonomyDB'"); }
+      //if (Utils::isNullOrEmpty($taxonomyDB)) { throw new BadRequestHttpException("Invalid JSON attribute 'taxonomyDB'"); }
 
       $taxonomyID = $json["taxonomyID"];
+
+      $type = $json["type"];
+
       $versionID = $json["versionID"];
          
       // Populate the stored procedure's parameters.
       $parameters = [":createdBy" => $createdBy, ":division" => $division, ":ictvID" => $ictvID, ":ictvTaxnodeID" => $ictvTaxnodeID, 
          ":name" => $name, ":nameClass" => $nameClass, ":rankName" => $rankName, ":taxonomyDB" => $taxonomyDB, ":taxonomyID" => $taxonomyID, 
-         ":versionID" => $versionID];
+         ":type" => $type, ":versionID" => $versionID];
 
       // Generate SQL to call the "CreateCuratedName" stored procedure.
       $sql = "CALL CreateCuratedName(:createdBy, :division, :ictvID, :ictvTaxnodeID, :name, :nameClass, :rankName, :taxonomyDB, :taxonomyID, :versionID);";

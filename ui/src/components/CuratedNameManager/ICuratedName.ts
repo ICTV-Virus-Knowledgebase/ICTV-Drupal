@@ -15,6 +15,7 @@ export interface ICuratedName {
    rankName: TaxonomyRank;
    taxonomyDB: TaxonomyDB;
    taxonomyID: number;
+   taxonName: string;
    type: CuratedNameType;
    uid: string;
    versionID: number;

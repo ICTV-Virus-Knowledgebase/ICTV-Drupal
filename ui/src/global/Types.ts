@@ -5,10 +5,9 @@
 // Enums
 //----------------------------------------------------------------------------------------------------------------
 
-// Testing...
 export enum CuratedNameType {
-   disease = "disease"
-   // ???
+   disease = "disease",
+   other = "other"
 }
 
 export enum JobStatus {

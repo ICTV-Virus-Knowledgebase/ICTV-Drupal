@@ -6,7 +6,7 @@ import { AppSettings } from "../../global/AppSettings";
 import { IMslRelease } from "../../models/IMslRelease";
 import { ITaxon } from "../../models/ITaxon";
 import { IDisplaySettings } from "./IDisplaySettings";
-import { ISelectionHandler, SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
+import { SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
 import { OrderedTaxaLevel, TaxaLevel, TaxaLevelLabel, TaxonomyDisplayType, TopLevelRank } from "../../global/Types";
 import { TaxonomyService } from "../../services/TaxonomyService";
 import tippy, { Props, ReferenceElement } from "tippy.js";
@@ -896,7 +896,7 @@ export class TaxonomyBrowser {
     // This callback function is provided to the taxonomy search panel (child component) to handle a search result selection.
     async handleSearchResultSelection(taxNodeID_: string, lineage_: string, rank_: string, releaseNumber_: string) {
 
-        console.log(`inside handleSearchResultSelection with id ${taxNodeID_}, lineage ${lineage_}, rank ${rank_}, release ${releaseNumber_}`)
+        //console.log(`inside handleSearchResultSelection with id ${taxNodeID_}, lineage ${lineage_}, rank ${rank_}, release ${releaseNumber_}`)
 
         // Get the specified release
         await this.getRelease(releaseNumber_);

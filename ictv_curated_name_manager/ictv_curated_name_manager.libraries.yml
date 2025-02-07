@@ -21,6 +21,7 @@ curatedNameManager:
     assets/css/fonts/fa-solid-900.woff: {}
     assets/css/fonts/fa-solid-900.woff2: {}
   js:
+    assets/js/dataTables.dataTables.min.js: { preprocess: false }
     assets/js/ICTV_CuratedNameManager.js: { preprocess: false }
     assets/js/curatedNameManager.js: { preprocess: false }
   dependencies:
