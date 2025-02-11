@@ -1,4 +1,4 @@
-import { ICuratedName } from "./ICuratedName";
+import { ICuratedName } from "../../models/ICuratedName";
 
 
 export interface IManager {
@@ -20,20 +20,32 @@ export interface IManager {
    }
 
 
+   //----------------------------------------------------------------------------------------------------------------
    // Methods
-   
-   // Handle a request to create a curated name.
-   createName();
+   //----------------------------------------------------------------------------------------------------------------
+
+   // Create a new curated name.
+   createName(curatedName_: ICuratedName);
 
    // Handle a request to delete a curated name.
    deleteName(uid_: string): Promise<any>;
 
-   // Handle a request to edit a curated name.
-   editName(uid_: string);
-
+   // Format and return the taxon name and rank.
+   formatTaxonNameAndRank(name_: string, rankName_: string): string;
+   
    // Handle a request to get a curated name by UID.
    getName(uid_: string): Promise<ICuratedName>;
 
    // Handle a request to return all curated names.
    getNames(): Promise<ICuratedName[]>;
+
+   // Handle a request to create a curated name.
+   navigateToCreateView();
+
+   // Handle a request to edit a curated name.
+   navigateToEditView(uid_: string);
+
+   // Update a curated name.
+   updateName(curatedName_: ICuratedName);
+
 }

@@ -107,6 +107,7 @@ export enum TaxaLevelLabel {
 
 // The taxonomy databases
 export enum TaxonomyDB {
+   ictv_curation = "ictv_curation",
    ictv_epithets = "ictv_epithets",
    ictv_taxonomy = "ictv_taxonomy",
    ictv_vmr = "ictv_vmr",

@@ -22,10 +22,11 @@ use Drupal\ictv_common\Utils;
 /**
  * A web service that supports creation of a new curated name record.
  * @RestResource(
- *   id = "add_curated_name",
- *   label = @Translation("Add ICTV curated name"),
+ *   id = "create_curated_name",
+ *   label = @Translation("Create ICTV curated name"),
  *   uri_paths = {
- *      "canonical" = "/add-curated-name"
+ *      "canonical" = "/create-curated-name",
+ *      "create" = "/create-curated-name"
  *   }
  * )
  */
@@ -35,8 +36,8 @@ class CreateCuratedName extends ResourceBase {
    protected Connection $connection;
 
    // The names of the databases used by this web service.
-   protected string $appsDbName; // = "ictv_apps";
-   protected string $taxonomyDbName; // = "ictv_taxonomy";
+   protected string $appsDbName;
+   protected string $taxonomyDbName;
 
 
    /**
@@ -76,11 +77,8 @@ class CreateCuratedName extends ResourceBase {
       
       $this->currentUser = $currentUser;
 
-      // Maintain the config factory in a member variable.
-      $this->configFactory = $configFactory;
-
       // Access the module's configuration object.
-      $config = $this->configFactory->get("ictv_curated_name_service.settings");
+      $config = $configFactory->get("ictv_curated_name_service.settings");
 
       // Get the apps database name.
       $this->appsDbName = $config->get("appsDbName");
@@ -123,55 +121,45 @@ class CreateCuratedName extends ResourceBase {
       /*
       Example JSON:
       {
-         createdBy: "ddempsey@uab.edu",
-         division: "viruses",
-         ictvID: 1234567,
-         ictvTaxnodeID: 1234567,
-         name: "test name",
-         nameClass: "taxon_name",
-         rankName: "species",
-         taxonomyDB: "ictv_curated_names",
-         taxonomyID: 1234,
-         type: "disease",
-         versionID: 0
+         curatedName: {
+            comments: "Just a test",
+            ictvTaxnodeID: 1234567,
+            name: "test name",
+            type: "disease"
+         },
+         userEmail: "ddempsey@uab.edu",
+         userUID: 1234
       }
+      
       */
       
       // Get and validate the JSON attributes.
-      $createdBy = $json["createdBy"];
-      if (Utils::isNullOrEmpty($createdBy)) { throw new BadRequestHttpException("Invalid JSON attribute 'createdBy'"); }
+      $curatedName = $json["curatedName"];
 
-      $division = $json["division"];
-      if (Utils::isNullOrEmpty($division)) { throw new BadRequestHttpException("Invalid JSON attribute 'division'"); }
+      // TODO: Make sure $curatedName is a valid array/object!
 
-      $ictvID = $json["ictvID"];
-      $ictvTaxnodeID = $json["ictvTaxnodeID"];
+      $ictvTaxnodeID = $curatedName["ictvTaxnodeID"];
 
-      $name = $json["name"];
+      $name = $curatedName["name"];
       if (Utils::isNullOrEmpty($name)) { throw new BadRequestHttpException("Invalid JSON attribute 'name'"); }
 
-      $nameClass = $json["nameClass"];
-      if (Utils::isNullOrEmpty($nameClass)) { throw new BadRequestHttpException("Invalid JSON attribute 'nameClass'"); }
+      $type = $curatedName["type"];
+      if (Utils::isNullOrEmpty($type)) { throw new BadRequestHttpException("Invalid JSON attribute 'type'"); }
 
-      $rankName = $json["rankName"];
-      if (Utils::isNullOrEmpty($rankName)) { throw new BadRequestHttpException("Invalid JSON attribute 'rankName'"); }
+      $userEmail = $json["userEmail"];
+      if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid JSON attribute 'userEmail'"); }
 
-      $taxonomyDB = $json["taxonomyDB"];
-      //if (Utils::isNullOrEmpty($taxonomyDB)) { throw new BadRequestHttpException("Invalid JSON attribute 'taxonomyDB'"); }
+      $createdBy = $userEmail;
 
-      $taxonomyID = $json["taxonomyID"];
+      $comments = $curatedName["comments"]; // Optional
 
-      $type = $json["type"];
-
-      $versionID = $json["versionID"];
+      $versionID = 1;
          
       // Populate the stored procedure's parameters.
-      $parameters = [":createdBy" => $createdBy, ":division" => $division, ":ictvID" => $ictvID, ":ictvTaxnodeID" => $ictvTaxnodeID, 
-         ":name" => $name, ":nameClass" => $nameClass, ":rankName" => $rankName, ":taxonomyDB" => $taxonomyDB, ":taxonomyID" => $taxonomyID, 
-         ":type" => $type, ":versionID" => $versionID];
+      $parameters = [":comments" => $comments, ":createdBy" => $createdBy, ":ictvTaxnodeID" => $ictvTaxnodeID, ":name" => $name, ":type" => $type, ":versionID" => $versionID];
 
       // Generate SQL to call the "CreateCuratedName" stored procedure.
-      $sql = "CALL CreateCuratedName(:createdBy, :division, :ictvID, :ictvTaxnodeID, :name, :nameClass, :rankName, :taxonomyDB, :taxonomyID, :versionID);";
+      $sql = "CALL CreateCuratedName(:comments, :createdBy, :ictvTaxnodeID, :name, :type, :versionID);";
 
       try {
          // Run the stored procedure.
@@ -182,7 +170,7 @@ class CreateCuratedName extends ResourceBase {
          return null;
       }
 
-      // TODO?
+      return ["result" => "success"];
    }
 
 
@@ -199,7 +187,7 @@ class CreateCuratedName extends ResourceBase {
       if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
       // Create a new curated name.
-      $this->createCuratedName($json);
+      $data = $this->createCuratedName($json);
 
       $build = array(
          '#cache' => array(
@@ -248,7 +236,7 @@ class CreateCuratedName extends ResourceBase {
       if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
       // Create a new curated name.
-      $this->createCuratedName($json);
+      $data = $this->createCuratedName($json);
 
       $build = array(
          '#cache' => array(

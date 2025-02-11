@@ -51,6 +51,25 @@ BEGIN
    )
    */
 
-	
+   -- Get the "taxonomy_db" vocabulary's ID.
+	SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'taxonomy_db' LIMIT 1);
+   IF vocabID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid vocabulary ID for taxonomy_db';
+   END IF;
+
+   /*
+   INSERT INTO `term` (
+      full_key,
+      label,
+      term_key,
+      vocab_id
+   ) VALUES (
+      'taxonomy_db.ictv_curation',
+      'ictv_curation',
+      'ICTV curation',
+      vocabID
+   );
+   */
+
 END//
 DELIMITER ;

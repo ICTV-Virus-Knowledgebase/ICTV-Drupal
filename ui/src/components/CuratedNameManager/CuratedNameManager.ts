@@ -2,8 +2,9 @@
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { CuratedNameService } from "../../services/CuratedNameService";
 import { EditView } from "./EditView";
-import { ICuratedName } from "./ICuratedName";
+import { ICuratedName } from "../../models/ICuratedName";
 import { IManager } from "./IManager";
+import { LookupTaxonomyRank } from "../../global/Types";
 import { TableView } from "./TableView";
 import { ViewMode } from "./Terms";
 
@@ -74,26 +75,31 @@ export class CuratedNameManager implements IManager {
    }
 
 
-   // Handle a request to create a new curated name.
-   async createName() {
-      this.editView.initialize(null, ViewMode.create);
-      return;
+   // Create a new curated name.
+   async createName(curatedName_: ICuratedName) {
+      return await CuratedNameService.createCuratedName(this.authToken, curatedName_, this.user.email, this.user.uid);
    }
+   
 
    // Handle a request to delete a curated name.
    async deleteName(uid_: string): Promise<any> {
       return await CuratedNameService.deleteCuratedName(this.authToken, uid_, this.user.email, this.user.uid);
    }
    
-   // Handle a request to edit a curated name.
-   async editName(uid_: string) {
-      this.editView.initialize(uid_, ViewMode.edit);
-      return;
+
+   // Format and return the taxon name and rank.
+   formatTaxonNameAndRank(name_: string, rankName_: string) {
+
+      if (!name_) { return "No ICTV taxon specified"; }
+
+      return !rankName_ ? name_ : `${LookupTaxonomyRank(rankName_)}: ${name_}`;
    }
+
 
    async getName(uid_: string): Promise<ICuratedName> {
       return await CuratedNameService.getCuratedName(this.authToken, uid_, this.user.email, this.user.uid);
    }
+
 
    async getNames(): Promise<ICuratedName[]> {
       return await CuratedNameService.getCuratedNames(this.authToken, this.user.email, this.user.uid);
@@ -112,5 +118,24 @@ export class CuratedNameManager implements IManager {
       return;
    }
 
+   
+   // Handle a request to create a new curated name.
+   async navigateToCreateView() {
+      this.editView.initialize(null, ViewMode.create);
+      return;
+   }
+
+
+   // Handle a request to edit a curated name.
+   async navigateToEditView(uid_: string) {
+      this.editView.initialize(uid_, ViewMode.edit);
+      return;
+   }
+
+
+   // Update a curated name.
+   async updateName(curatedName_: ICuratedName) {
+      return await CuratedNameService.updateCuratedName(this.authToken, curatedName_, this.user.email, this.user.uid);
+   }
 
 }

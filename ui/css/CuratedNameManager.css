@@ -116,6 +116,8 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The edit view
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* A row that contains a label and control. */
 #ictv_curated_name_manager_container .control-row {
    align-items: flex-start;
    display: flex;
@@ -126,26 +128,38 @@
 #ictv_curated_name_manager_container .control-row label {
    font-weight: normal;
 }
-#ictv_curated_name_manager_container .control-row select {
-   max-width: 200px;
+
+#ictv_curated_name_manager_container .control-row .comments-control,
+#ictv_curated_name_manager_container .control-row .type-control {
+   border-radius: 2px !important;
 }
 
-#ictv_curated_name_manager_container .control-row .name-control {
-   width: 300px;
+#ictv_curated_name_manager_container .control-row .comments-control,
+#ictv_curated_name_manager_container .control-row .name-control,
+#ictv_curated_name_manager_container button.save-button,
+#ictv_curated_name_manager_container .control-row .type-control {
+   max-width: 500px;
+   width: 500px;
 }
 
+/* The ICTV name control is a little more complicated than other control rows. */
 #ictv_curated_name_manager_container .ictv-name-control {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
-   justify-content: flex-start;
+   justify-content: space-between;
+   width: 500px;
 }
 
-#ictv_curated_name_manager_container .ictv-name-control .cancel-taxonomy-button {
+#ictv_curated_name_manager_container .ictv-name-control .ictv-name {
+   margin-right: 1.0rem;
+}
+
+#ictv_curated_name_manager_container .ictv-name-control .cancel-taxon-button {
    display: none;
    visibility: hidden;
 }
-#ictv_curated_name_manager_container .ictv-name-control .cancel-taxonomy-button.active {
+#ictv_curated_name_manager_container .ictv-name-control .cancel-taxon-button.active {
    background-color: #999;
    border-radius: 0.25rem;
    color: #fff;
@@ -153,15 +167,21 @@
    display: block;
    visibility: visible;
 }
-#ictv_curated_name_manager_container .ictv-name-control .select-taxonomy-button {
+#ictv_curated_name_manager_container .ictv-name-control .select-taxon-button {
+   display: none;
+   visibility: hidden;
+}
+#ictv_curated_name_manager_container .ictv-name-control .select-taxon-button.active {
    background-color: #0062cc;
    border-color: #005cbf;
    border-radius: 0.25rem;
    color: #fff;
+   display: block;
    cursor: pointer;
-   margin-left: 1.0rem;
+   visibility: visible;
 }
 
+/* The container of the taxonomy search panel. */
 #ictv_curated_name_manager_container .ictv-taxonomy-panel {
    display: none;
    visibility: hidden;
@@ -177,7 +197,6 @@
    color: #fff;
    cursor: pointer;
    margin-top: 2.0rem;
-   width: 200px;
 }
 
 

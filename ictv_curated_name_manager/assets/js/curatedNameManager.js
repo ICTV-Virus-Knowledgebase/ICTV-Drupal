@@ -26,7 +26,8 @@
             window.ICTV_CuratedNameManager.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
 
             // The current MSL release number.
-            window.ICTV_CuratedNameManager.AppSettings.currentMslRelease = settings_.currentMslRelease;
+            // TODO: remove the hard-coded MSL release below!!!
+            window.ICTV_CuratedNameManager.AppSettings.currentMslRelease = 39; //settings_.currentMslRelease;
 
             // The current VMR.
             window.ICTV_CuratedNameManager.AppSettings.currentVMR = settings_.currentVMR;

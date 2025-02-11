@@ -1,8 +1,8 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { ICuratedName } from "./ICuratedName";
+import { ICuratedName } from "../../models/ICuratedName";
 import { IManager } from "./IManager";
-import { LookupNameClass, LookupTaxonomyRank } from "../../global/Types";
+import { LookupTaxonomyRank } from "../../global/Types";
 
 
 export class TableView {
@@ -113,7 +113,7 @@ export class TableView {
       if (!uid) { return await AlertBuilder.displayError("Invalid data-uid attribute"); }
 
       // Request to edit the curated name with this UID.
-      await this.manager.editName(uid);
+      await this.manager.navigateToEditView(uid);
       return;
    }
 
@@ -144,7 +144,7 @@ export class TableView {
       if (!this.elements.spinnerPanel) { return await AlertBuilder.displayError("Invalid spinner panel Element"); }
 
       // Add event handlers
-      this.elements.newNameButton.addEventListener("click", async () => { await this.manager.createName()});
+      this.elements.newNameButton.addEventListener("click", async () => { await this.manager.navigateToCreateView()});
 
       // Load curated names
       await this.loadData();
