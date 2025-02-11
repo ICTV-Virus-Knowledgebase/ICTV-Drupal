@@ -1,6 +1,6 @@
 services:
-  ictv_curated_name_service.add_curated_name:
-    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\AddCuratedName'
+  ictv_curated_name_service.create_curated_name:
+    class: '\Drupal\ictv_curated_name_service\Plugin\rest\resource\CreateCuratedName'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }

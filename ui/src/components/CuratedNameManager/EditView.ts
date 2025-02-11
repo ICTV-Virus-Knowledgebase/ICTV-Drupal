@@ -1,19 +1,22 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { ICuratedName } from "./ICuratedName";
+import { CuratedNameType } from "../../global/Types";
+import { ICuratedName } from "../../models/ICuratedName";
 import { IManager } from "./IManager";
 import { SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
-import { CuratedNameType } from "../../global/Types";
+import { Utils } from "../../helpers/Utils";
 import { ViewMode } from "./Terms";
 
 
 export class EditView {
 
-
+   // The current curated name object.
    curatedName: ICuratedName;
 
+   // The UID of the current curated name.
    curatedNameUID: string;
 
+   // DOM Elements
    elements: {
       bodyPanel: HTMLElement,
       container: HTMLElement,
@@ -21,12 +24,13 @@ export class EditView {
       titlePanel: HTMLElement,
 
       // Controls
-      cancelTaxonomyButton: HTMLButtonElement,
+      cancelTaxonButton: HTMLButtonElement,
+      commentsControl: HTMLTextAreaElement,
       ictvNameControl: HTMLElement,
       nameControl: HTMLInputElement,
       nameClassControl: HTMLSelectElement,
       saveButton: HTMLButtonElement,
-      selectTaxonomyButton: HTMLButtonElement,
+      selectTaxonButton: HTMLButtonElement,
       typeControl: HTMLSelectElement
    }
 
@@ -42,12 +46,16 @@ export class EditView {
       taxnodeID: number
    }
 
+   // The parent object (CuratedNameManager).
    manager: IManager;
 
+   // The taxonomy search panel that will let the user select a taxon to
+   // associate with the curated name.
    searchPanel: TaxonomySearchPanel;
 
    title: string;
 
+   // The page's view mode ("create" or "edit").
    viewMode: ViewMode;
 
 
@@ -63,8 +71,9 @@ export class EditView {
          titlePanel: null,
 
          // Controls
-         cancelTaxonomyButton: null,
-         selectTaxonomyButton: null,
+         cancelTaxonButton: null,
+         commentsControl: null,
+         selectTaxonButton: null,
          ictvNameControl: null,
          nameControl: null,
          nameClassControl: null,
@@ -89,10 +98,9 @@ export class EditView {
 
 
    async cancelTaxonomySelection() {
-      console.log("TODO: in cancelTaxonomySelection")
-
+      
       // Hide the cancel button.
-      this.elements.cancelTaxonomyButton.classList.remove("active");
+      this.elements.cancelTaxonButton.classList.remove("active");
 
       // Clear the search panel.
       this.searchPanel.clearSearch();
@@ -100,24 +108,28 @@ export class EditView {
       // Hide the ICTV taxonomy panel (the search panel).
       this.elements.ictvTaxonomyPanel.classList.remove("active");
 
-      // Re-enable the edit taxonomy button.
-      this.elements.selectTaxonomyButton.disabled = false;
+      // Display the select taxon button.
+      this.elements.selectTaxonButton.classList.add("active");
 
       return;
    }
 
 
+   // Request a curated name object from the parent object (manager).
    async getData() {
 
-      // Get the curated name with this UID.
       this.curatedName = await this.manager.getName(this.curatedNameUID);
-   
-      // Populate the controls.
-      await this.populateControls();
+
+      if (!!this.curatedName) {
+
+         // Update the ICTV taxonomy variables.
+         this.ictvTaxonomy.name = this.curatedName.taxonName;
+         this.ictvTaxonomy.rankName = this.curatedName.rankName;
+         this.ictvTaxonomy.taxnodeID = this.curatedName.ictvTaxnodeID;
+      }
 
       return;
    }
-
 
    
    // This callback function is provided to the taxonomy search panel to handle a search result selection.
@@ -125,13 +137,14 @@ export class EditView {
 
       console.log(`dataID: ${dataID_}, name: ${name_}, rank: ${rank_}, releaseNumber = ${releaseNumber_}`)
 
+      // Validate the data ID parameter and try to cast as an int.
       let taxnodeID = parseInt(dataID_);
       if (isNaN(taxnodeID)) { 
          await AlertBuilder.displayError("Selection has an invalid taxnode ID");
          taxnodeID = null; 
       }
 
-      // Populate the ICTV taxonomy data.
+      // Populate the ICTV taxonomy object.
       this.ictvTaxonomy.name = name_;
       this.ictvTaxonomy.rankName = rank_;
       this.ictvTaxonomy.taxnodeID = taxnodeID;
@@ -140,17 +153,17 @@ export class EditView {
       this.searchPanel.clearSearch();
 
       // Update the ICTV taxon name control.
-      const ictvName = !this.ictvTaxonomy.name || !this.ictvTaxonomy.rankName ? "" : `${this.ictvTaxonomy.rankName}: ${this.ictvTaxonomy.name}`;
+      const ictvName = this.manager.formatTaxonNameAndRank(this.ictvTaxonomy.name, this.ictvTaxonomy.rankName);
       this.elements.ictvNameControl.innerHTML = ictvName;
 
       // Hide the ICTV taxonomy panel (the search panel).
       this.elements.ictvTaxonomyPanel.classList.remove("active");
 
-      // Re-enable the edit taxonomy button.
-      this.elements.selectTaxonomyButton.disabled = false;
+      // Display the select taxon button.
+      this.elements.selectTaxonButton.classList.add("active");
 
       // Hide the cancel button.
-      this.elements.cancelTaxonomyButton.classList.remove("active");
+      this.elements.cancelTaxonButton.classList.remove("active");
 
       return;
    }
@@ -174,20 +187,25 @@ export class EditView {
                   <input type="text" class="name-control" />
                </div>
 
+               <div class="control-row">
+                  <label>Type</label>
+                  <select class="type-control"></select>
+               </div>
+
                <div class="control-row ictv-name-row">
                   <label>ICTV name</label>
                   <div class="ictv-name-control">
-                     <div class="ictv-name">No ICTV taxon provided</div>
-                     <button class="ictv-btn select-taxonomy-button">Select taxon</button>
-                     <button class="ictv-btn cancel-taxonomy-button">Cancel</button>
+                     <div class="ictv-name">No ICTV taxon specified</div>
+                     <button class="ictv-btn select-taxon-button active">Select taxon</button>
+                     <button class="ictv-btn cancel-taxon-button">Cancel selection</button>
                   </div>
                </div>
 
                <div class="ictv-taxonomy-panel"></div>
                
                <div class="control-row">
-                  <label>Type</label>
-                  <select class="type-control"></select>
+                  <label>Comments</label>
+                  <textarea class="comments-control" placeholder="Comments are optional"></textarea>
                </div>
 
                <button class="ictv-btn save-button">Save</button>
@@ -200,11 +218,14 @@ export class EditView {
       this.elements.bodyPanel = this.elements.container.querySelector(".body-panel");
       this.elements.titlePanel = this.elements.container.querySelector(".title-panel");
 
-      this.elements.cancelTaxonomyButton = this.elements.container.querySelector(".cancel-taxonomy-button");
-      if (!this.elements.cancelTaxonomyButton) { return await AlertBuilder.displayError("Invalid cancel taxonomy button Element"); }
+      this.elements.cancelTaxonButton = this.elements.container.querySelector(".cancel-taxon-button");
+      if (!this.elements.cancelTaxonButton) { return await AlertBuilder.displayError("Invalid cancel taxon button Element"); }
 
-      this.elements.selectTaxonomyButton = this.elements.container.querySelector(".select-taxonomy-button");
-      if (!this.elements.selectTaxonomyButton) { return await AlertBuilder.displayError("Invalid select taxonomy button Element"); }
+      this.elements.commentsControl = this.elements.container.querySelector(".comments-control");
+      if (!this.elements.commentsControl) { return await AlertBuilder.displayError("Invalid comments control Element"); }
+
+      this.elements.selectTaxonButton = this.elements.container.querySelector(".select-taxon-button");
+      if (!this.elements.selectTaxonButton) { return await AlertBuilder.displayError("Invalid select taxon button Element"); }
 
       this.elements.ictvTaxonomyPanel = this.elements.container.querySelector(".ictv-taxonomy-panel");
       if (!this.elements.ictvTaxonomyPanel) { return await AlertBuilder.displayError("Invalid ICTV taxonomy panel Element"); }
@@ -224,8 +245,8 @@ export class EditView {
 
       // Add event handlers
       this.elements.saveButton.addEventListener("click", async () => { await this.save()});
-      this.elements.selectTaxonomyButton.addEventListener("click", async () => { await this.selectTaxonomy()});
-      this.elements.cancelTaxonomyButton.addEventListener("click", async () => { await this.cancelTaxonomySelection()});
+      this.elements.selectTaxonButton.addEventListener("click", async () => { await this.selectTaxonomy()});
+      this.elements.cancelTaxonButton.addEventListener("click", async () => { await this.cancelTaxonomySelection()});
 
       // Populate the type control with options.
       Object.values(CuratedNameType).forEach((value) => {
@@ -257,21 +278,10 @@ export class EditView {
    async populateControls() {
 
       if (!!this.curatedName) {
-
-         const ictvName =  !this.curatedName.taxonName || !this.curatedName.rankName ? "" : `${this.curatedName.rankName}: ${this.curatedName.taxonName}`;
-
-         //this.elements.ictvIdControl.value = `${this.curatedName.ictvID}`;
-         //this.elements.ictvTaxonomyIdControl.value = `${this.curatedName.ictvTaxnodeID}`;
-         this.elements.ictvNameControl.innerHTML = ictvName;
+         this.elements.commentsControl.value = this.curatedName.comments;
+         this.elements.ictvNameControl.innerHTML = this.manager.formatTaxonNameAndRank(this.ictvTaxonomy.name, this.ictvTaxonomy.rankName);
          this.elements.nameControl.value = this.curatedName.name;
-         //this.elements.nameClassControl.value = this.curatedName.nameClass;
-         //this.elements.rankNameControl.value = this.curatedName.rankName;
          this.elements.typeControl.value = this.curatedName.type;
-
-         // Update the ICTV taxonomy variables.
-         this.ictvTaxonomy.name = this.curatedName.taxonName;
-         this.ictvTaxonomy.rankName = this.curatedName.rankName;
-         this.ictvTaxonomy.taxnodeID = this.curatedName.ictvTaxnodeID;
       }
 
       return;
@@ -280,7 +290,45 @@ export class EditView {
 
    async save() {
 
-      console.log("TODO: are we in edit or create mode?")
+      // Get and validate values from the controls.
+      let comments = Utils.safeTrim(this.elements.commentsControl.value);
+
+      let name = Utils.safeTrim(this.elements.nameControl.value);
+      if (name.length < 1) { return await AlertBuilder.displayError("Please enter a valid name"); }
+
+      let type = this.elements.typeControl.value as CuratedNameType;
+      if (!type) { return await AlertBuilder.displayError("Please select a type"); }
+
+      if (!this.ictvTaxonomy.name || !this.ictvTaxonomy.rankName || !this.ictvTaxonomy.taxnodeID) {
+         return await AlertBuilder.displayError("Please select an ICTV taxon");
+      }
+      
+      // Create a JSON object with the control values.
+      let curatedName: ICuratedName = {
+         comments: comments,
+         ictvTaxnodeID: this.ictvTaxonomy.taxnodeID,
+         name: name,
+         type: type,
+      }
+
+      // The view mode determines which web service to call.
+      if (this.viewMode === ViewMode.create) {
+
+         // Create a new curated name.
+         await this.manager.createName(curatedName);
+
+      } else if (this.viewMode === ViewMode.edit) {
+
+         // Include the curated name's UID attribute.
+         curatedName.uid = this.curatedName.uid;
+
+         // Update an existing curated name.
+         await this.manager.updateName(curatedName);
+
+      } else {
+         return await AlertBuilder.displayError(`Unhandled view mode ${this.viewMode}`);
+      }
+
       return;
    }
 
@@ -289,13 +337,13 @@ export class EditView {
    async selectTaxonomy() {
 
       // Display the cancel button.
-      this.elements.cancelTaxonomyButton.classList.add("active");
+      this.elements.cancelTaxonButton.classList.add("active");
 
       // Display the search panel.
       this.elements.ictvTaxonomyPanel.classList.add("active");
 
-      // Disable the edit taxonomy button.
-      this.elements.selectTaxonomyButton.disabled = true;
+      // Hide the search taxon button.
+      this.elements.selectTaxonButton.classList.remove("active");
 
       return;
    }

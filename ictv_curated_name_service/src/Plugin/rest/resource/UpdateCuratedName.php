@@ -25,7 +25,8 @@ use Drupal\ictv_common\Utils;
  *   id = "update_curated_name",
  *   label = @Translation("Update an ICTV curated name"),
  *   uri_paths = {
- *      "canonical" = "/update-curated-name"
+ *      "canonical" = "/update-curated-name",
+ *      "create" = "/update-curated-name"
  *   }
  * )
  */
@@ -35,8 +36,8 @@ class UpdateCuratedName extends ResourceBase {
    protected Connection $connection;
 
    // The names of the databases used by this web service.
-   protected string $appsDbName; // = "ictv_apps";
-   protected string $taxonomyDbName; // = "ictv_taxonomy";
+   protected string $appsDbName;
+   protected string $taxonomyDbName;
 
 
    /**
@@ -75,11 +76,8 @@ class UpdateCuratedName extends ResourceBase {
       
       $this->currentUser = $currentUser;
 
-      // Maintain the config factory in a member variable.
-      $this->configFactory = $configFactory;
-
       // Access the module's configuration object.
-      $config = $this->configFactory->get("ictv_curated_name_service.settings");
+      $config = $configFactory->get("ictv_curated_name_service.settings");
 
       // Get the apps database name.
       $this->appsDbName = $config->get("appsDbName");
@@ -123,12 +121,12 @@ class UpdateCuratedName extends ResourceBase {
     */
    public function get(Request $request) {
       
-      // TODO: get query string parameters
-      //$currentRelease = $request->get("currentRelease");
-      //if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      // TODO: do something!
-      $data = [ "test" => "Just a test"];
+      // Update the curated name.
+      $data = $this->updateCuratedName($json);
 
       $build = array(
          '#cache' => array(
@@ -172,12 +170,12 @@ class UpdateCuratedName extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // TODO: get query string parameters
-      //$currentRelease = $request->get("currentRelease");
-      //if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      // TODO: do something!
-      $data = [ "test" => "Just a test"];
+      // Update the curated name.
+      $data = $this->updateCuratedName($json);
 
       $build = array(
          '#cache' => array(
@@ -191,5 +189,62 @@ class UpdateCuratedName extends ResourceBase {
       return $response;
    }
    
+   public function updateCuratedName($json) {
+
+      /*
+      Example JSON:
+      {
+         curatedName: {
+            comments: "Just a test",
+            ictvTaxnodeID: 1234567,
+            name: "test name",
+            type: "disease",
+            uid: abc123def
+         },
+         userEmail: "ddempsey@uab.edu",
+         userUID: 1234
+      } 
+      */
+
+      // Get and validate the JSON attributes.
+      $curatedName = $json["curatedName"];
+
+      // TODO: Make sure $curatedName is a valid array/object!
+
+      $comments = $curatedName["comments"]; // Optional
+
+      $ictvTaxnodeID = $curatedName["ictvTaxnodeID"]; // Optional
+
+      $name = $curatedName["name"];
+      if (Utils::isNullOrEmpty($name)) { throw new BadRequestHttpException("Invalid JSON attribute 'name'"); }
+
+      $type = $curatedName["type"];
+      if (Utils::isNullOrEmpty($type)) { throw new BadRequestHttpException("Invalid JSON attribute 'type'"); }
+
+      $uid = $curatedName["uid"];
+      if (Utils::isNullOrEmpty($uid)) { throw new BadRequestHttpException("Invalid JSON attribute 'uid'"); }
+
+      //$userEmail = $json["userEmail"];
+      //if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid JSON attribute 'userEmail'"); }
+
+
+      // Populate the stored procedure's parameters.
+      $parameters = [":comments" => $comments, ":ictvTaxnodeID" => $ictvTaxnodeID, ":name" => $name, ":type" => $type, ":uid_" => $uid];
+
+      // Generate SQL to call the "UpdateCuratedName" stored procedure.
+      $sql = "CALL UpdateCuratedName(:comments, :ictvTaxnodeID, :name, :type, :uid_);";
+
+      try {
+         // Run the stored procedure.
+         $queryResults = $this->connection->query($sql, $parameters);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_curated_name_service')->error($e);
+         return null;
+      }
+
+      return ["result" => "success"];
+   }
+
 }
 

@@ -27,7 +27,7 @@ export class _AppSettings {
    
    // A lookup from web service keys to web service URLs (not including the full path).
    webServiceLookup: {[key_ in WebServiceKey]: string } = {
-      createCuratedName: "create-curated_name",
+      createCuratedName: "create-curated-name",
       csrfToken: "session/token",
       deleteCuratedName: "delete-curated-name",
       getCuratedName: "get-curated-name",
