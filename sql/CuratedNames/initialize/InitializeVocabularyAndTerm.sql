@@ -71,5 +71,44 @@ BEGIN
    );
    */
 
+   -- Get the "name_class" vocabulary's ID.
+	SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'name_class' LIMIT 1);
+   IF vocabID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid vocabulary ID for name_class';
+   END IF;
+
+   /*
+   Add a name class for every curated name type.
+
+   INSERT INTO `term` (
+      full_key,
+      label,
+      term_key,
+      vocab_id
+   ) VALUES (
+      'name_class.disease',
+      'disease',
+      'disease',
+      vocabID
+   );
+
+   INSERT INTO `term` (
+      full_key,
+      label,
+      term_key,
+      vocab_id
+   ) VALUES (
+      'name_class.other',
+      'other',
+      'other',
+      vocabID
+   );
+
+
+
+   */
+
+
+
 END//
 DELIMITER ;

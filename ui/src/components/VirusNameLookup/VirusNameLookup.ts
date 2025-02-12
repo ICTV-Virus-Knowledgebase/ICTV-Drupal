@@ -293,6 +293,9 @@ export class VirusNameLookup {
             case TaxonomyDB.ncbi_taxonomy:
                source = "NCBI";
                break;
+            case TaxonomyDB.ictv_curation:
+               source = "ICTV curation";
+               break;
          }
 
          // Determine the URL of a linked match name.

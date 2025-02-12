@@ -14,9 +14,6 @@ use Drupal\Core\Database;
 use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
-//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobService;
-//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobStatus;
-//use Drupal\ictv_proposal_service\Plugin\rest\resource\JobType;
 use Drupal\Component\Serialization\Json;
 use Psr\Log\LoggerInterface;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
@@ -24,7 +21,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Drupal\ictv_common\Utils;
-//use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 /**
  * A web service supporting ICTV proposal validations and quality control.
@@ -87,11 +83,8 @@ class ProposalService extends ResourceBase {
 
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
-      // Maintain the config factory in a member variable.
-      $this->configFactory = $configFactory;
-
       // Access the module's configuration object.
-      $config = $this->configFactory->get("ictv_proposal_service.settings");
+      $config = $configFactory->get("ictv_proposal_service.settings");
 
       //---------------------------------------------------------------------------------------------------------
       // Get data from the settings.yml file.

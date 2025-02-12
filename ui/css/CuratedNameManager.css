@@ -1,14 +1,5 @@
 
 
-/*
-#ictv_curated_name_manager_container .lookup-container {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: row;
-   justify-content: space-between;
-   margin-bottom: 2.0rem;
-}*/
-
 /* Button styles */
 #ictv_curated_name_manager_container .ictv-btn {
    border: 1px solid transparent;
@@ -25,8 +16,12 @@
    -moz-user-select: none;
    -ms-user-select: none;
 }
+#ictv_curated_name_manager_container .ictv-btn i {
+   font-size: 0.9rem;
+   margin-right: 0.25rem;
+}
 
-#ictv_curated_name_manager_container .new-name-btn {
+#ictv_curated_name_manager_container .new-name-button {
    background-color: #198754;
    color: #fff;
 }
@@ -86,10 +81,10 @@
 #ictv_curated_name_manager_container table.results-table .odd-bg {
    background-color: #fff;
 }
-#ictv_curated_name_manager_container table.results-table thead + tbody tr:first-child th, 
+/*#ictv_curated_name_manager_container table.results-table thead + tbody tr:first-child th, 
 #ictv_curated_name_manager_container table.results-table thead + tbody tr:first-child td {
    padding-top: 0.75rem;
-}
+}*/
 
 
 
@@ -101,21 +96,50 @@
    table-layout: auto; /* Ensures column width adapts to content */
 }
 
+#ictv_curated_name_manager_container table.results-table tr th,
+#ictv_curated_name_manager_container table.results-table tr td {
+   padding: 0.25rem;
+}
+
 #ictv_curated_name_manager_container .edit-column {
    white-space: nowrap; /* Prevents the content from wrapping */
    width: 1%; /* Ensures the column shrinks to fit its content */
 }
 #ictv_curated_name_manager_container .edit-column .edit-button {
-   background-color: #0062cc;
-   border-color: #005cbf;
+   background-color: transparent;  /* background-color: #0062cc; 
+   border-color: #005cbf;*/
    border-radius: 0.25rem;
-   color: #fff;
+   color: #555;
    cursor: pointer;
+}
+
+#ictv_curated_name_manager_container .edit-column .edit-button i {
+   pointer-events: none;
+}
+#ictv_curated_name_manager_container .edit-column .edit-button:hover i {
+   color: #0062cc; 
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The edit view
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#ictv_curated_name_manager_container .title-panel {
+   font-size: 2.0rem;
+   margin-bottom: 1.0rem;
+}
+
+#ictv_curated_name_manager_container .back-button {
+   background-color: transparent; /* #0062cc; */
+   border-color: transparent; /*  #005cbf; */
+   border-radius: 0.25rem;
+   color: #333;
+   cursor: pointer;
+   display: block;
+   margin-bottom: 0.5rem;
+   padding: 0;
+   visibility: visible;
+}
 
 /* A row that contains a label and control. */
 #ictv_curated_name_manager_container .control-row {
@@ -136,10 +160,23 @@
 
 #ictv_curated_name_manager_container .control-row .comments-control,
 #ictv_curated_name_manager_container .control-row .name-control,
-#ictv_curated_name_manager_container button.save-button,
 #ictv_curated_name_manager_container .control-row .type-control {
+   border-color: rgba(50, 50, 50, 0.2);
    max-width: 500px;
+   padding: 0.5rem;
    width: 500px;
+}
+
+#ictv_curated_name_manager_container .control-row .name-control {
+   border-color: #aaa;
+   border-style: solid;
+   border-width: 1px;
+}
+#ictv_curated_name_manager_container .control-row .comments-control:focus,
+#ictv_curated_name_manager_container .control-row .name-control:focus,
+#ictv_curated_name_manager_container .control-row .type-control:focus {
+   border-color: rgba(38, 143, 255, 0.5);
+   outline-width: 0 !important;
 }
 
 /* The ICTV name control is a little more complicated than other control rows. */
@@ -191,12 +228,40 @@
    visibility: visible;
 }
 
-#ictv_curated_name_manager_container button.save-button {
+#ictv_curated_name_manager_container .buttons-panel {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   margin-top: 2.0rem;
+   width: 500px;
+}
+#ictv_curated_name_manager_container .buttons-panel button.save-button {
    background-color: #198754;
    border-radius: 0.25rem;
    color: #fff;
    cursor: pointer;
-   margin-top: 2.0rem;
+}
+
+/* The save button will be the only button in create mode, but one of two in edit mode. */
+#ictv_curated_name_manager_container .buttons-panel button.save-button.create {
+   width: 500px;
+}
+#ictv_curated_name_manager_container .buttons-panel button.save-button.edit {
+   width: 248px;
+}
+
+/* The delete button will be hidden in create mode, but one of two in edit mode. */
+#ictv_curated_name_manager_container .buttons-panel button.delete-button.create {
+   display: none;
+   visibility: hidden;
+}
+#ictv_curated_name_manager_container .buttons-panel button.delete-button.edit {
+   background-color: #dc3545;
+   border-radius: 0.25rem;
+   color: #fff;
+   cursor: pointer;
+   width: 248px;
 }
 
 
@@ -252,6 +317,14 @@
    cursor: pointer;
 }
 
+#ictv_curated_name_manager_container .search-panel .search-controls button {
+   font-size: 0.9rem;
+}
+#ictv_curated_name_manager_container .search-panel .search-controls button i {
+   font-size: 0.9rem;
+   margin-right: 0.25rem;
+}
+
 #ictv_curated_name_manager_container .search-controls .search-status {
    height: 100%;
    vertical-align: middle;
@@ -278,9 +351,24 @@
 }
 
 
-/* Search results */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Search results
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_curated_name_manager_container .search-panel .search-results {
    margin: 15px 0 15px 0;
+}
+
+/* The DataTable select control */
+#ictv_curated_name_manager_container .search-panel .search-results .dt-input {
+   font-size: 0.75rem;
+   margin-right: 0.5rem;
+   width: 80px;
+}
+#ictv_curated_name_manager_container .search-panel .search-results .dt-length {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
 }
 
 #ictv_curated_name_manager_container .search-results-table {
@@ -321,8 +409,8 @@
    max-width: 70px;
 }
 
-#ictv_curated_name_manager_container .search-results-table .view-search-result-ctrl {
-   border: 1px solid transparent;
+#ictv_curated_name_manager_container .search-results-table .view-search-result-button {
+   border: 1px solid #aaa;
    cursor: pointer;
    display: inline-block;
    font-size: 0.75rem;
@@ -337,6 +425,9 @@
    -webkit-user-select: none;
    -moz-user-select: none;
    -ms-user-select: none;
+}
+#ictv_curated_name_manager_container .search-results-table .view-search-result-button:hover {
+   border-color: #005cbf;
 }
 
 #ictv_curated_name_manager_container .search-results-table td {
@@ -372,3 +463,8 @@
 #ictv_curated_name_manager_container div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
    background-color: #28a745 !important;
 }
+
+
+/* 
+   DataTables
+*/

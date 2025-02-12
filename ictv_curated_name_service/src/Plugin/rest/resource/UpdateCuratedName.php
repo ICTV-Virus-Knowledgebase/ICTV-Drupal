@@ -189,6 +189,7 @@ class UpdateCuratedName extends ResourceBase {
       return $response;
    }
    
+
    public function updateCuratedName($json) {
 
       /*
@@ -240,10 +241,10 @@ class UpdateCuratedName extends ResourceBase {
       } 
       catch (Exception $e) {
          \Drupal::logger('ictv_curated_name_service')->error($e);
-         return null;
+         return [ "message" => $e->getMessage(), "success" => false ];
       }
 
-      return ["result" => "success"];
+      return [ "message" => "The curated name was successfully updated", "success" => true ];
    }
 
 }

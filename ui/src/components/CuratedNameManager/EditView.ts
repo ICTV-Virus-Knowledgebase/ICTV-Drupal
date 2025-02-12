@@ -3,6 +3,7 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { CuratedNameType } from "../../global/Types";
 import { ICuratedName } from "../../models/ICuratedName";
 import { IManager } from "./IManager";
+import { IResult } from "../../models/IResult";
 import { SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
 import { Utils } from "../../helpers/Utils";
 import { ViewMode } from "./Terms";
@@ -24,8 +25,10 @@ export class EditView {
       titlePanel: HTMLElement,
 
       // Controls
+      backButton: HTMLButtonElement,
       cancelTaxonButton: HTMLButtonElement,
       commentsControl: HTMLTextAreaElement,
+      deleteButton: HTMLButtonElement,
       ictvNameControl: HTMLElement,
       nameControl: HTMLInputElement,
       nameClassControl: HTMLSelectElement,
@@ -36,6 +39,10 @@ export class EditView {
 
    icons: {
       add: string,
+      back: string,
+      cancel: string,
+      delete: string,
+      save: string,
       spinner: string
    }
 
@@ -71,13 +78,15 @@ export class EditView {
          titlePanel: null,
 
          // Controls
+         backButton: null,
          cancelTaxonButton: null,
          commentsControl: null,
-         selectTaxonButton: null,
+         deleteButton: null,
          ictvNameControl: null,
          nameControl: null,
          nameClassControl: null,
          saveButton: null,
+         selectTaxonButton: null,
          typeControl: null
       }
 
@@ -86,6 +95,10 @@ export class EditView {
 
       this.icons = {
          add: `<i class="fa-solid fa-plus add-icon"></i>`,
+         back: `<i class="fa-solid fa-chevron-left back-icon"></i>`,
+         cancel: `<i class="fas fa-times"></i>`,
+         delete: `<i class="fa-solid fa-trash"></i>`,
+         save: `<i class="fa-regular fa-floppy-disk"></i>`,
          spinner: `<i class="fa fa-spinner fa-spin spinner-icon"></i>`
       }
 
@@ -115,6 +128,37 @@ export class EditView {
    }
 
 
+   // Delete this curated name.
+   async delete() {
+
+      if (!this.curatedName.uid) { return await AlertBuilder.displayError("Unable to delete: Invalid uid"); }
+
+      let result: IResult = null;
+
+      try {
+         result = await this.manager.deleteName(this.curatedName.uid);
+         if (!result) { result = { message: "An unknown error occurred", success: false }; }
+      }
+      catch (error_) {
+         result = { message: error_, success: false };
+      }
+
+      if (result.success) {
+
+         // Display a success message and return to the table view.
+         await AlertBuilder.displaySuccess(result.message);
+         this.manager.navigateToTableView();
+
+      } else {
+
+         // Display an error message.
+         await AlertBuilder.displayError(result.message);
+      }
+
+      return;
+   }
+
+   
    // Request a curated name object from the parent object (manager).
    async getData() {
 
@@ -132,6 +176,13 @@ export class EditView {
    }
 
    
+   // Handle a request to delete this curated name.
+   async handleDeleteRequest() {
+      return await AlertBuilder.displayConfirm("This curated name will be permanently deleted. Are you sure?", "Delete curated name",
+         () => {}, () => this.delete());
+   }
+
+
    // This callback function is provided to the taxonomy search panel to handle a search result selection.
    async handleTaxonomySelection(dataID_: string, name_: string, rank_: string, releaseNumber_: number) {
 
@@ -176,10 +227,13 @@ export class EditView {
       if (!viewMode_) { viewMode_ = ViewMode.create; }
       this.viewMode = viewMode_;
 
-      const html = 
-         `<div class="title-panel"></div>
-         <div class="body-panel">
+      // Use the view mode to determine the title text.
+      let title = this.viewMode === ViewMode.create ? "Create Curated Name" : "Edit curated name";
 
+      const html = 
+         `<button class="ictv-btn back-button">${this.icons.back} Back to list</button>
+         <div class="title-panel">${title}</div>
+         <div class="body-panel">
             <div class="form-panel">
 
                <div class="control-row">
@@ -197,7 +251,7 @@ export class EditView {
                   <div class="ictv-name-control">
                      <div class="ictv-name">No ICTV taxon specified</div>
                      <button class="ictv-btn select-taxon-button active">Select taxon</button>
-                     <button class="ictv-btn cancel-taxon-button">Cancel selection</button>
+                     <button class="ictv-btn cancel-taxon-button">${this.icons.cancel} Cancel selection</button>
                   </div>
                </div>
 
@@ -208,7 +262,10 @@ export class EditView {
                   <textarea class="comments-control" placeholder="Comments are optional"></textarea>
                </div>
 
-               <button class="ictv-btn save-button">Save</button>
+               <div class="buttons-panel">
+                  <button class="ictv-btn save-button ${this.viewMode}">${this.icons.save} Save</button>
+                  <button class="ictv-btn delete-button ${this.viewMode}">${this.icons.delete} Delete</button>
+               </div>
             </div>
          </div>`;
 
@@ -218,11 +275,17 @@ export class EditView {
       this.elements.bodyPanel = this.elements.container.querySelector(".body-panel");
       this.elements.titlePanel = this.elements.container.querySelector(".title-panel");
 
+      this.elements.backButton = this.elements.container.querySelector(".back-button");
+      if (!this.elements.backButton) { return await AlertBuilder.displayError("Invalid back button Element"); }
+
       this.elements.cancelTaxonButton = this.elements.container.querySelector(".cancel-taxon-button");
       if (!this.elements.cancelTaxonButton) { return await AlertBuilder.displayError("Invalid cancel taxon button Element"); }
 
       this.elements.commentsControl = this.elements.container.querySelector(".comments-control");
       if (!this.elements.commentsControl) { return await AlertBuilder.displayError("Invalid comments control Element"); }
+
+      this.elements.deleteButton = this.elements.container.querySelector(".delete-button");
+      if (!this.elements.deleteButton) { return await AlertBuilder.displayError("Invalid delete button Element"); }
 
       this.elements.selectTaxonButton = this.elements.container.querySelector(".select-taxon-button");
       if (!this.elements.selectTaxonButton) { return await AlertBuilder.displayError("Invalid select taxon button Element"); }
@@ -244,9 +307,12 @@ export class EditView {
 
 
       // Add event handlers
+      this.elements.backButton.addEventListener("click", () => this.manager.navigateToTableView());
+      this.elements.cancelTaxonButton.addEventListener("click", async () => { await this.cancelTaxonomySelection()});
+      this.elements.deleteButton.addEventListener("click", async () => { await this.handleDeleteRequest()});
       this.elements.saveButton.addEventListener("click", async () => { await this.save()});
       this.elements.selectTaxonButton.addEventListener("click", async () => { await this.selectTaxonomy()});
-      this.elements.cancelTaxonButton.addEventListener("click", async () => { await this.cancelTaxonomySelection()});
+      
 
       // Populate the type control with options.
       Object.values(CuratedNameType).forEach((value) => {
@@ -311,22 +377,44 @@ export class EditView {
          type: type,
       }
 
-      // The view mode determines which web service to call.
-      if (this.viewMode === ViewMode.create) {
+      let result: IResult = null;
 
-         // Create a new curated name.
-         await this.manager.createName(curatedName);
+      try {
 
-      } else if (this.viewMode === ViewMode.edit) {
+         // The view mode determines which web service to call.
+         if (this.viewMode === ViewMode.create) {
 
-         // Include the curated name's UID attribute.
-         curatedName.uid = this.curatedName.uid;
+            // Create a new curated name.
+            result = await this.manager.createName(curatedName);
+            if (!result) { result = { message: "An unknown error occurred", success: false }; }
 
-         // Update an existing curated name.
-         await this.manager.updateName(curatedName);
+         } else if (this.viewMode === ViewMode.edit) {
+
+            // Include the curated name's UID attribute.
+            curatedName.uid = this.curatedName.uid;
+
+            // Update an existing curated name.
+            result = await this.manager.updateName(curatedName);
+            if (!result) { result = { message: "An unknown error occurred", success: false }; }
+
+         } else {
+            result = { message: `Unhandled view mode ${this.viewMode}`, success: false };
+         }
+      }
+      catch (error_) {
+         result = { message: error_, success: false };
+      }
+
+      if (result.success) {
+
+         // Display a success message and return to the table view.
+         await AlertBuilder.displaySuccess(result.message);
+         this.manager.navigateToTableView();
 
       } else {
-         return await AlertBuilder.displayError(`Unhandled view mode ${this.viewMode}`);
+
+         // Display an error message.
+         await AlertBuilder.displayError(result.message);
       }
 
       return;
