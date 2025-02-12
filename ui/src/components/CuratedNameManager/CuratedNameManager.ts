@@ -3,6 +3,7 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { CuratedNameService } from "../../services/CuratedNameService";
 import { EditView } from "./EditView";
 import { ICuratedName } from "../../models/ICuratedName";
+import { IResult } from "../../models/IResult";
 import { IManager } from "./IManager";
 import { LookupTaxonomyRank } from "../../global/Types";
 import { TableView } from "./TableView";
@@ -76,13 +77,13 @@ export class CuratedNameManager implements IManager {
 
 
    // Create a new curated name.
-   async createName(curatedName_: ICuratedName) {
+   async createName(curatedName_: ICuratedName): Promise<IResult> {
       return await CuratedNameService.createCuratedName(this.authToken, curatedName_, this.user.email, this.user.uid);
    }
    
 
    // Handle a request to delete a curated name.
-   async deleteName(uid_: string): Promise<any> {
+   async deleteName(uid_: string): Promise<IResult> {
       return await CuratedNameService.deleteCuratedName(this.authToken, uid_, this.user.email, this.user.uid);
    }
    
@@ -133,8 +134,15 @@ export class CuratedNameManager implements IManager {
    }
 
 
+   // Handle a request to return to the table view.
+   async navigateToTableView() {
+      this.tableView.initialize();
+      return;
+   }
+
+
    // Update a curated name.
-   async updateName(curatedName_: ICuratedName) {
+   async updateName(curatedName_: ICuratedName): Promise<IResult> {
       return await CuratedNameService.updateCuratedName(this.authToken, curatedName_, this.user.email, this.user.uid);
    }
 

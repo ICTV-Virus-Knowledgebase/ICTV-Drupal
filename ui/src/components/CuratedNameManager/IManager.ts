@@ -1,4 +1,5 @@
 import { ICuratedName } from "../../models/ICuratedName";
+import { IResult } from "../../models/IResult";
 
 
 export interface IManager {
@@ -25,10 +26,10 @@ export interface IManager {
    //----------------------------------------------------------------------------------------------------------------
 
    // Create a new curated name.
-   createName(curatedName_: ICuratedName);
+   createName(curatedName_: ICuratedName): Promise<IResult>;
 
    // Handle a request to delete a curated name.
-   deleteName(uid_: string): Promise<any>;
+   deleteName(uid_: string): Promise<IResult>;
 
    // Format and return the taxon name and rank.
    formatTaxonNameAndRank(name_: string, rankName_: string): string;
@@ -45,7 +46,10 @@ export interface IManager {
    // Handle a request to edit a curated name.
    navigateToEditView(uid_: string);
 
+   // Handle a request to return to the table view.
+   navigateToTableView();
+
    // Update a curated name.
-   updateName(curatedName_: ICuratedName);
+   updateName(curatedName_: ICuratedName): Promise<IResult>;
 
 }

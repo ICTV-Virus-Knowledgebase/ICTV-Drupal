@@ -17,6 +17,7 @@ export class TableView {
 
    icons: {
       add: string,
+      edit: string,
       spinner: string
    }
 
@@ -45,6 +46,7 @@ export class TableView {
 
       this.icons = {
          add: `<i class="fa-solid fa-plus add-icon"></i>`,
+         edit: `<i class="fa-regular fa-pen-to-square edit-icon"></i>`,
          spinner: `<i class="fa fa-spinner fa-spin spinner-icon"></i>`
       }
    }
@@ -64,7 +66,7 @@ export class TableView {
          let type = !curatedName_.type ? "" : curatedName_.type;
 
          rowHTML += `<tr class="${rowClass}">
-            <td class="edit-column"><button class="ictv-btn edit-button" data-uid="${curatedName_.uid}">Edit</button></td>
+            <td class="edit-column"><button class="ictv-btn edit-button" data-uid="${curatedName_.uid}">${this.icons.edit}</button></td>
             <td>${curatedName_.name}</td>
             <td>${curatedName_.taxonName}</td>
             <td>${rankName}</td>
@@ -122,7 +124,7 @@ export class TableView {
       
       const html = 
          `<div class="controls-panel">
-            <button class=\"btn new-name-btn\">${this.icons.add} New curated name</button>
+            <button class=\"ictv-btn new-name-button\">${this.icons.add} New curated name</button>
          </div>
          <div class="spinner-panel">${this.icons.spinner} <span class="spinner-message">Loading...</span></div>
          <div class="results-count"></div>
@@ -131,7 +133,7 @@ export class TableView {
       this.elements.container.innerHTML = html;
 
 
-      this.elements.newNameButton = this.elements.container.querySelector(".new-name-btn");
+      this.elements.newNameButton = this.elements.container.querySelector(".new-name-button");
       if (!this.elements.newNameButton) { return await AlertBuilder.displayError("Invalid new name button Element"); }
 
       this.elements.resultsCount = this.elements.container.querySelector(`.results-count`);

@@ -1,5 +1,6 @@
 
 import { ICuratedName } from "../models/ICuratedName";
+import { IResult } from "../models/IResult";
 import { WebService } from "../services/WebService";
 import { WebServiceKey } from "../global/Types";
 
@@ -8,7 +9,7 @@ export class _CuratedNameService {
 
 
    // Create a new curated name.
-   async createCuratedName(authToken_: string, curatedName_: ICuratedName, userEmail_: string, userUID_: number) {
+   async createCuratedName(authToken_: string, curatedName_: ICuratedName, userEmail_: string, userUID_: number): Promise<IResult> {
 
       const data = {
          curatedName: curatedName_,
@@ -16,12 +17,12 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalPost<ICuratedName>(WebServiceKey.createCuratedName, authToken_, data);
+      return await WebService.drupalPost<IResult>(WebServiceKey.createCuratedName, authToken_, data);
    }
 
 
    // Delete the curated name with this UID.
-   async deleteCuratedName(authToken_: string, uid_: string, userEmail_: string, userUID_: number) {
+   async deleteCuratedName(authToken_: string, uid_: string, userEmail_: string, userUID_: number): Promise<IResult> {
       
       const data = {
          uid: uid_,
@@ -29,7 +30,7 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalGet<any>(WebServiceKey.deleteCuratedName, authToken_, data);
+      return await WebService.drupalPost<IResult>(WebServiceKey.deleteCuratedName, authToken_, data);
    }
 
 
@@ -42,7 +43,7 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalGet<ICuratedName>(WebServiceKey.getCuratedName, authToken_, data);
+      return await WebService.drupalGet<ICuratedName>(WebServiceKey.getCuratedName, authToken_, data) as ICuratedName;
    }
 
 
@@ -54,12 +55,12 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalGet<ICuratedName[]>(WebServiceKey.getCuratedNames, authToken_, data);
+      return await WebService.drupalGet<ICuratedName[]>(WebServiceKey.getCuratedNames, authToken_, data) as ICuratedName[];
    }
 
    
    // Update an existing curated name.
-   async updateCuratedName(authToken_: string, curatedName_: ICuratedName, userEmail_: string, userUID_: number) {
+   async updateCuratedName(authToken_: string, curatedName_: ICuratedName, userEmail_: string, userUID_: number): Promise<IResult> {
 
       const data = {
          curatedName: curatedName_,
@@ -67,7 +68,7 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalPost(WebServiceKey.updateCuratedName, authToken_, data);
+      return await WebService.drupalPost(WebServiceKey.updateCuratedName, authToken_, data) as IResult;
    }
 
 }

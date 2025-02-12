@@ -25,7 +25,8 @@ use Drupal\ictv_common\Utils;
  *   id = "delete_curated_name",
  *   label = @Translation("Delete an ICTV curated name"),
  *   uri_paths = {
- *      "canonical" = "/delete-curated-name"
+ *      "canonical" = "/delete-curated-name",
+ *      "create" = "/delete-curated-name"
  *   }
  * )
  */
@@ -35,8 +36,8 @@ class DeleteCuratedName extends ResourceBase {
    protected Connection $connection;
 
    // The names of the databases used by this web service.
-   protected string $appsDbName; // = "ictv_apps";
-   protected string $taxonomyDbName; // = "ictv_taxonomy";
+   protected string $appsDbName;
+   protected string $taxonomyDbName;
 
 
    /**
@@ -75,11 +76,8 @@ class DeleteCuratedName extends ResourceBase {
       
       $this->currentUser = $currentUser;
 
-      // Maintain the config factory in a member variable.
-      $this->configFactory = $configFactory;
-
       // Access the module's configuration object.
-      $config = $this->configFactory->get("ictv_curated_name_service.settings");
+      $config = $configFactory->get("ictv_curated_name_service.settings");
 
       // Get the apps database name.
       $this->appsDbName = $config->get("appsDbName");
@@ -115,10 +113,36 @@ class DeleteCuratedName extends ResourceBase {
       );
    }
 
-   public function deleteCuratedName(int $id_) {
+   public function deleteCuratedName($json) {
    
-      // TODO
+      /*
+      Example JSON:
+      {
+         uid: abc123def,
+         userEmail: "ddempsey@uab.edu",
+         userUID: 1234
+      } 
+      */
 
+      $uid = $json["uid"];
+      if (Utils::isNullOrEmpty($uid)) { throw new BadRequestHttpException("Invalid JSON attribute 'uid'"); }
+
+      // Populate the stored procedure's parameters.
+      $parameters = [":uid_" => $uid];
+
+      // Generate SQL to call the "DeleteCuratedName" stored procedure.
+      $sql = "CALL DeleteCuratedName(:uid_);";
+
+      try {
+         // Run the stored procedure.
+         $queryResults = $this->connection->query($sql, $parameters);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_curated_name_service')->error($e);
+         return [ "message" => $e->getMessage(), "success" => false ];
+      }
+
+      return [ "message" => "The curated name was deleted", "success" => true ];
    }
 
    /**
@@ -129,11 +153,12 @@ class DeleteCuratedName extends ResourceBase {
     */
    public function get(Request $request) {
       
-      // Get query string parameters
-      $id = $request->get("id");
-      if (Utils::isNullOrEmpty($id)) { throw new BadRequestHttpException("Invalid id parameter"); }
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      $this->deleteCuratedName($id);
+      // Delete the specified curated name.
+      $data = $this->deleteCuratedName($json);
 
       $build = array(
          '#cache' => array(
@@ -159,7 +184,6 @@ class DeleteCuratedName extends ResourceBase {
       // return Cache::PERMANENT;
    }
 
-   
    /** 
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
@@ -177,11 +201,12 @@ class DeleteCuratedName extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // Get query string parameters
-      $id = $request->get("id");
-      if (Utils::isNullOrEmpty($id)) { throw new BadRequestHttpException("Invalid id parameter"); }
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      $this->deleteCuratedName($id);
+      // Delete the specified curated name.
+      $data = $this->deleteCuratedName($json);
 
       $build = array(
          '#cache' => array(
