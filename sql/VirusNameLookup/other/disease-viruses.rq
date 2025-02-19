@@ -1,0 +1,37 @@
+#id: DOq042
+#description: >-
+#  All diseases 'viral infectious disease' and under with the viruses they are
+#  linked to in the DO
+#input: doid-merged.owl
+#comment: Created for the International Committee on Taxonomy of Viruses (ICTV)
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX DOID: <http://purl.obolibrary.org/obo/DOID_>
+PREFIX NCBITaxon: <http://purl.obolibrary.org/obo/NCBITaxon_>
+PREFIX IAO: <http://purl.obolibrary.org/obo/IAO_>
+
+SELECT ?iri ?id ?label ?definition ?ncbitaxon_id ?ncbitaxon_label
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  ?iri a owl:Class ;
+    oboInOwl:id ?id ;
+    rdfs:label ?label ;
+    rdfs:subClassOf* DOID:934 .
+
+  OPTIONAL { ?iri IAO:0000115 ?definition }
+
+  # viruses linked to diseases via OWL logical axioms
+  OPTIONAL {
+    ?iri owl:equivalentClass|rdfs:subClassOf ?axiom .
+
+    ?axiom (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?ncbitaxon_iri .
+
+    ?ncbitaxon_iri rdfs:subClassOf* NCBITaxon:10239 ;
+      rdfs:label ?ncbitaxon_label .
+    BIND(
+      CONCAT("NCBITaxon:", STRAFTER(str(?ncbitaxon_iri), "_")) AS ?ncbitaxon_id
+    )
+  }
+}

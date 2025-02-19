@@ -23,6 +23,7 @@ export enum NameClass {
    authority = "authority",
    blast_name = "blast_name",
    common_name = "common_name",
+   disease = "disease",
    equivalent_name = "equivalent_name",
    genbank_accession = "genbank_accession",
    genbank_acronym = "genbank_acronym",
@@ -107,6 +108,7 @@ export enum TaxaLevelLabel {
 
 // The taxonomy databases
 export enum TaxonomyDB {
+   disease_ontology = "disease_ontology",
    ictv_curation = "ictv_curation",
    ictv_epithets = "ictv_epithets",
    ictv_taxonomy = "ictv_taxonomy",
@@ -276,6 +278,9 @@ export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: Ta
          case NameClass.common_name:
             return "An informal name in common usage";
 
+         case NameClass.disease:
+            return "A disease caused by a virus";
+
          case NameClass.equivalent_name:
             return "A name that is considered equivalent to the scientific name but may not be currently used";
 
@@ -326,6 +331,32 @@ export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: Ta
       }
    }
 }
+
+// dmd testing 021825
+export function LookupTaxonomyDB(taxonomyDB_: TaxonomyDB) {
+
+   switch (taxonomyDB_) {
+      
+      case TaxonomyDB.disease_ontology:
+         return "Disease Ontology";
+
+      case TaxonomyDB.ictv_curation:
+         return "ICTV Curation";
+
+      case TaxonomyDB.ictv_epithets:
+         return "ICTV Epithets";
+      
+      case TaxonomyDB.ictv_taxonomy:
+         return "ICTV Taxonomy";
+
+      case TaxonomyDB.ictv_vmr:
+         return "ICTV Virus Metadata Resource";
+
+      case TaxonomyDB.ncbi_taxonomy:
+         return "NCBI Taxonomy";
+   }
+}
+
 // Return the value of the taxonomy rank enum.
 export function LookupTaxonomyRank(rank_: string) {
    return TaxonomyRank[rank_ as TaxonomyRank];

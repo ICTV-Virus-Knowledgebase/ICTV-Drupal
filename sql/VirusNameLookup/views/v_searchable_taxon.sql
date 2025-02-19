@@ -4,6 +4,7 @@ CREATE OR REPLACE VIEW `v_searchable_taxon` AS
 SELECT 
 
 	st.id,
+   st.alternate_id,
 	divTerm.term_key AS division,
 	st.division_tid,
 	st.filtered_name,

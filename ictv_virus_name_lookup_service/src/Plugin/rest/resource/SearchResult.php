@@ -5,6 +5,9 @@ namespace Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource;
 
 class SearchResult {
 
+   // An alternate identifier
+   public string $alternateID;
+
    // The NCBI division (phages, viruses)
    public string $division;
          
@@ -93,6 +96,7 @@ class SearchResult {
    public function __construct() {
 
       // Provide defaults for all member variables.
+      $this->alternateID = "";
       $this->division = "";
       $this->divisionScore = 0;
       $this->exemplar = "";
@@ -129,6 +133,7 @@ class SearchResult {
 
       $instance = new self();
       
+      $instance->alternateID = $data["alternate_id"];
       $instance->division = $data["division"];
       $instance->divisionScore = $data["division_score"];
       $instance->exemplar = $data["exemplar"];
@@ -167,6 +172,7 @@ class SearchResult {
     */
    public function normalize() {
       return [
+         "alternateID" => $this->alternateID,
          "division" => $this->division,
          "divisionScore" => $this->divisionScore,
          "exemplar" => $this->exemplar,

@@ -58,7 +58,8 @@ BEGIN
 
       SELECT
 
-         -- Match columns
+         -- An alternate ID for the taxon.
+         st.alternate_id,
 
          -- NCBI division (phages, viruses)
          st.division,
