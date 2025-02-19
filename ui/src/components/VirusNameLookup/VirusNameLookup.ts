@@ -196,6 +196,16 @@ export class VirusNameLookup {
    }
 
 
+   // Create a link to the Disease Ontology page.
+   createDiseaseOntologyLink(doid_: string) {
+
+      if (!doid_) { return ""; }
+      doid_ = doid_.trim();
+
+      return `https://disease-ontology.org/?id=${doid_}`;
+   }
+
+
    createInvalidResultTable(matches_: ISearchResult[]) {
 
       if (!Array.isArray(matches_)) { return ""; }
@@ -283,6 +293,9 @@ export class VirusNameLookup {
 
          // Format the match version and taxonomy database/ID.
          switch (result_.taxonomyDB) {
+            case TaxonomyDB.disease_ontology:
+               source = "Disease Ontology";
+               break;
             case TaxonomyDB.ictv_taxonomy:
             case TaxonomyDB.ictv_epithets:
                source = `ICTV: MSL ${result_.versionID}`;
@@ -301,10 +314,12 @@ export class VirusNameLookup {
          // Determine the URL of a linked match name.
          let matchURL = null;
          switch (result_.taxonomyDB) {
+            case TaxonomyDB.disease_ontology:
+               matchURL = this.createDiseaseOntologyLink(result_.alternateID);
+               break;
             case TaxonomyDB.ictv_taxonomy:
                matchURL = this.createTaxonDetailsURL(result_.name, result_.taxonomyID);
                break;
-
             case TaxonomyDB.ncbi_taxonomy:
                matchURL = this.createNcbiTaxonomyURL(result_.taxonomyID);
                break;

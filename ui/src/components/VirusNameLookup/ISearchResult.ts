@@ -2,6 +2,9 @@ import { NameClass, TaxonomyDB } from "../../global/Types";
 
 export interface ISearchResult {
 
+   // An alternate identifier.
+   alternateID: string;
+
    // The NCBI division (phages, viruses)
    division: string;
          

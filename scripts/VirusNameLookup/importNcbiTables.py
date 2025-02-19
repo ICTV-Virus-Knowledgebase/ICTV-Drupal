@@ -1,6 +1,8 @@
 
+import argparse
 from dbSettings import DbSettings
 import mariadb
+from common import safeTrim
 import sys
 
 
@@ -138,4 +140,51 @@ def importNodes(dbSettings_: DbSettings, path_: str):
    finally:
       if dbConnection:
          dbConnection.close()
+
+
+if __name__ == '__main__':
+
+   parser = argparse.ArgumentParser(description="Import data from .dmp files into the NCBI database tables")
+
+   parser.add_argument("--dbName", dest="dbName", metavar='DB_NAME', nargs=1, required=True, help="The database with the NCBI tables")
+   parser.add_argument("--hostname", dest="hostname", metavar='HOSTNAME', nargs=1, required=True, help="The database hostname")
+   parser.add_argument("--password", dest="password", metavar='PASSWORD', nargs=1, required=True, help="The database password")
+   parser.add_argument("--path", dest="path", metavar='PATH', nargs=1, required=True, help="The path of the .dmp files")
+   parser.add_argument("--port", dest="port", metavar='PORT', nargs=1, required=True, help="The database port")
+   parser.add_argument("--username", dest="username", metavar='USERNAME', nargs=1, required=True, help="The database username")
+
+   args = parser.parse_args()
+
+   # Validate the command-line arguments.
+   dbName = safeTrim(args.dbName[0])
+   if dbName in (None, ""):
+      raise Exception("The dbName parameter is required")
+   
+   hostname = safeTrim(args.hostname[0])
+   if hostname in (None, ""):
+      raise Exception("The hostname parameter is required")
+   
+   password = safeTrim(args.password[0])
+   if password in (None, ""):
+      raise Exception("The password parameter is required")
+   
+   path = safeTrim(args.path[0])
+   if path in (None, ""):
+      raise Exception("The path parameter is required")
+   
+   port = safeTrim(args.port[0])
+   if port in (None, ""):
+      raise Exception("The port parameter is required")
+   
+   username = safeTrim(args.username[0])
+   if username in (None, ""):
+      raise Exception("The username parameter is required")
+
+
+   # Create a DbSettings object.
+   dbSettings = DbSettings(dbName, hostname, password, port, username)
+   
+   # TESTING!!!
+   # Import the text file "division.dmp" into the ncbi_division database table.
+   importDivision(dbSettings, path)
 

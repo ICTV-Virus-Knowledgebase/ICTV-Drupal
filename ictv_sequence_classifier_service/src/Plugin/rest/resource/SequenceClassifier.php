@@ -45,9 +45,9 @@ class SequenceClassifier {
 
    */
   
-   /*
+
    // TODO: this needs to be overhauled from its proposal service predecessor.
-   public static function runClassifier(string $proposalsPath, string $resultsPath, string $scriptName, string $workingDirectory) {
+   public static function runClassifier(string $resultsPath, string $scriptName, string $sequencesPath, string $workingDirectory) {
 
       // Declare variables used in the try/catch block.
       $result = null;
@@ -64,51 +64,49 @@ class SequenceClassifier {
       
       // Generate the command to be run.
       $command = "docker run ".
-         "-v \"{$proposalsPath}:/proposalsTest\":ro ".
-         "-v \"{$resultsPath}:/results\" ".
+         "-v \"./out:{$proposalsPath}\" ".
+         #"-v \"{$resultsPath}:/results\" ".
          $scriptName." ".
-         "/merge_proposal_zips.R -v ";
-
-         
-
+         "/classify_sequence.R -v ";
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
 
          if (is_resource($process)) {
-               // $pipes now looks like this:
-               // 0 => writeable handle connected to child stdin
-               // 1 => readable handle connected to child stdout
-               // 2 => writeable handle connected to child stderr
+            
+            // $pipes now looks like this:
+            // 0 => writeable handle connected to child stdin
+            // 1 => readable handle connected to child stdout
+            // 2 => writeable handle connected to child stderr
 
-               // Note: We're not using the stdin pipe.
+            // Note: We're not using the stdin pipe.
 
-               // Get stdout
-               $result = stream_get_contents($pipes[1]);
-               fclose($pipes[1]);
+            // Get stdout
+            $result = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
 
-               // Get stderror
-               $stdError = stream_get_contents($pipes[2]);
-               fclose($pipes[2]);
+            // Get stderror
+            $stdError = stream_get_contents($pipes[2]);
+            fclose($pipes[2]);
 
-               // It is important that you close any pipes before calling proc_close in order to avoid a deadlock.
-               proc_close($process);
+            // It is important that you close any pipes before calling proc_close in order to avoid a deadlock.
+            proc_close($process);
 
-               // In this case "pending complete validation".
-               $jobStatus = JobStatus::$pending;
+            // In this case "pending complete validation".
+            $jobStatus = JobStatus::$pending;
 
          } else {
-               $jobStatus = JobStatus::$crashed;
-               $stdError = "Process is not a resource";
+            $jobStatus = JobStatus::$crashed;
+            $stdError = "Process is not a resource";
          }
 
          if ($jobStatus != JobStatus::$crashed) {
 
-               // Parse the summary TSV file for proposal filenames and their status counts (file summaries).
-               $fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
-   
-               // If no file summaries were found, return a job status of "crashed".
-               if (!$fileSummaries || sizeof($fileSummaries) < 1) { $jobStatus = JobStatus::$crashed; }
+            // TODO: process the output of the sequence classifier.
+            //$fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
+
+            // If no file summaries were found, return a job status of "crashed".
+            if (!$fileSummaries || sizeof($fileSummaries) < 1) { $jobStatus = JobStatus::$crashed; }
          }
       } 
       catch (Exception $e) {
@@ -116,11 +114,11 @@ class SequenceClassifier {
          $jobStatus = JobStatus::$crashed;
 
          if ($e) { 
-               if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
-               $stdError = $stdError.$e->getMessage(); 
+            if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
+            $stdError = $stdError.$e->getMessage(); 
          }
 
-         \Drupal::logger('ictv_proposal_service')->error("An error occurred in ProposalValidator: ".$stdError);
+         \Drupal::logger('ictv_sequence_classifier_service')->error("An error occurred in SequenceClassifier: ".$stdError);
       }
 
       if ($jobStatus == null) { $jobStatus = JobStatus::$crashed; } 
@@ -131,7 +129,7 @@ class SequenceClassifier {
          "jobStatus" => $jobStatus,
          "stdError" => $stdError
       );
-   }*/
+   }
 
 };
 

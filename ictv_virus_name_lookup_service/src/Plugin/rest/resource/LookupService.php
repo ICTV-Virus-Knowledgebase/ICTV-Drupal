@@ -131,7 +131,6 @@ class LookupService extends ResourceBase {
          ),
       );
        
-      // dmd testing 12/13/24
       $response = new ResourceResponse($data);
       $response->addCacheableDependency($build);
       $response->headers->set('Access-Control-Allow-Origin', '*');

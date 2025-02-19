@@ -13,7 +13,7 @@ class DbSettings:
    #--------------------------------------------------------------------------------------------------------
    # C-tor
    #--------------------------------------------------------------------------------------------------------
-   def __init__(self, dbName_: str, hostname_: str, username_: str, password_: str, port_: int):
+   def __init__(self, dbName_: str, hostname_: str, password_: str, port_: int, username_: str):
       
       if dbName_ in (None, ""):
          raise Exception("Invalid database name")

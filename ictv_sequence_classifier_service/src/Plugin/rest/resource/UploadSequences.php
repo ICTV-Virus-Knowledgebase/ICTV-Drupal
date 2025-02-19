@@ -1,0 +1,364 @@
+<?php
+
+namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
+
+use Drupal\Core\Session\AccountProxyInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Drupal\Core\Config;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Database;
+use Drupal\Core\Database\Connection;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobType;
+use Drupal\Component\Serialization\Json;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Psr\Log\LoggerInterface;
+use Drupal\rest\ModifiedResourceResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Drupal\rest\Plugin\ResourceBase;
+use Drupal\rest\ResourceResponse;
+use Drupal\Serialization;
+use Drupal\ictv_common\Utils;
+
+/**
+ * A sequence classifier web service for uploading sequence files.
+ * @RestResource(
+ *   id = "sequence-classifier-upload-sequences",
+ *   label = @Translation("ICTV Sequence Classifier: Upload Sequences"),
+ *   uri_paths = {
+ *      "canonical" = "/sequence-classifier-upload-sequences",
+ *      "create" = "/sequence-classifier-upload-sequences"
+ *   }
+ * )
+ */
+class UploadSequences extends ResourceBase {
+
+   // The connection to the ictv_apps database.
+   protected Connection $connection;
+
+   // The name of the database used by this web service.
+   protected string $databaseName;
+
+   // The path of the Drupal installation.
+   protected string $drupalRoot;
+
+   protected JobService $jobService;
+
+   // The full path of the jobs directory.
+   protected string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
+
+
+   /**
+    * A current user instance which is logged in the session.
+    *
+    * @var \Drupal\Core\Session\AccountProxyInterface
+    */
+   protected $currentUser;
+
+   /**
+    * Constructs a Drupal\rest\Plugin\ResourceBase object.
+    *
+    * @param Config|ImmutableConfig $config
+    *   A configuration array which contains the information about the plugin instance.
+    * @param string $module_id
+    *   The module_id for the plugin instance.
+    * @param mixed $module_definition
+    *   The plugin implementation definition.
+    * @param array $serializer_formats
+    *   The available serialization formats.
+    * @param \Psr\Log\LoggerInterface $logger
+    *   A logger instance.
+    * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+    *   A currently logged user instance.
+    */
+   public function __construct(
+      array $config,
+      $module_id,
+      $module_definition,
+      ConfigFactoryInterface $configFactory,
+      array $serializer_formats,
+      LoggerInterface $logger,
+      AccountProxyInterface $currentUser) {
+
+      parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
+
+      $this->currentUser = $currentUser;
+
+      // Access the module's configuration object.
+      $config = $configFactory->get('ictv_sequence_classifier_service.settings');
+
+      // Get the database name.
+      $this->databaseName = $config->get("databaseName");
+      if (Utils::isNullOrEmpty($this->databaseName)) { 
+         \Drupal::logger('ictv_sequence_classifier_service')->error("The databaseName setting is empty");
+         return;
+      }
+      
+      // Get the jobs path.
+      $this->jobsPath = $config->get("jobsPath");
+      if (Utils::isNullOrEmpty($this->jobsPath)) { 
+         \Drupal::logger('ictv_sequence_classifier_service')->error("The jobsPath setting is empty");
+         return;
+      }
+      
+      // Get a database connection.
+      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
+
+      // Create a new instance of JobService.
+      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_sequence_classifier_service", "sequences", "results");
+   }
+
+
+   /**
+    * {@inheritdoc}
+    */
+   public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
+      return new static(
+         $config,
+         $module_id,
+         $module_definition,
+         $container->get('config.factory'),
+         $container->getParameter('serializer.formats'),
+         $container->get('logger.factory')->get('ictv_sequence_classifier_service_resource'),
+         $container->get("current_user")
+      );
+   }
+
+   
+   /**
+    * Responds to GET request.
+    * Passes the HTTP Request to the updateSequences method and returns the result.
+    * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+    * Throws exception expected.
+    */
+   public function get(Request $request) {
+      
+      // Upload the sequences that were sent in the request.
+      $data = $this->uploadSequences($request);
+
+      $build = array(
+         '#cache' => array(
+            'max-age' => 0,
+         ),
+      );
+       
+      $response = new ResourceResponse($data);
+      $response->addCacheableDependency($build);
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+      return $response;
+   }
+
+
+   /**
+    * {@inheritdoc}
+    * 
+    * Prevent this block from being cached.
+    */
+   public function getCacheMaxAge() {
+      return 2;
+
+      // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
+      // return Cache::PERMANENT;
+   }
+
+
+   /** 
+    * {@inheritdoc} 
+    * This function has to exist in order for the admin to assign user permissions 
+    * to the web service.
+    */ 
+   public function permissions() {
+      return []; 
+   } 
+
+
+   /**
+    * Responds to POST request.
+    * Passes the HTTP Request to the updateSequences method and returns the result.
+    * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+    * Throws exception expected.
+    */
+   public function post(Request $request) {
+
+      // Upload the sequences that were sent in the request.
+      $data = $this->uploadSequences($request);
+
+      $build = array(
+         '#cache' => array(
+            'max-age' => 0,
+         ),
+      );
+       
+      $response = new ResourceResponse($data);
+      $response->addCacheableDependency($build);
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+      return $response;
+   }
+
+
+   /**
+    * Uploads the sequences that were sent in the request.
+    */
+   public function uploadSequences(Request $request) {
+
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+
+      $jobName = $json["jobName"];
+
+      // Get and validate the user email.
+      $userEmail = $json["userEmail"];
+      if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
+
+      // Get and validate the user UID.
+      $userUID = $json["userUID"];
+      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
+      
+      // Get and validate the array of files.
+      $files = $json["files"];
+      if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
+
+
+      $command = "";
+      $commandResult = -1;
+      $jobID = 0;
+      $jobUID = "";
+      $resultCode = -1;
+      $status = null;
+
+      try {
+         //-------------------------------------------------------------------------------------------------------
+         // Create a job record and get its ID and UID.
+         //-------------------------------------------------------------------------------------------------------
+         $this->jobService->createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
+         
+         \Drupal::logger('ictv_sequence_classifier_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
+         
+         // Create the job directory and subdirectories and return the full path of the job directory.
+         $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
+
+         // Use the job path to generate the paths of the intput and output subdirectories.
+         $inputPath = $this->jobService->getInputPath($jobPath);
+         $outputPath = $this->jobService->getOutputPath($jobPath);
+
+         //-------------------------------------------------------------------------------------------------------
+         // Create job_file records and actual files for every sequence file provided.
+         //-------------------------------------------------------------------------------------------------------
+         $uploadOrder = 1;
+
+         foreach ($files as $file) {
+               
+            // TODO: validate file?
+            $filename = $file["name"];
+            if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+
+            $sequence = $file["contents"];
+            if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid sequence"); }
+
+            $fileStartIndex = stripos($sequence, ",");
+            if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in sequence file"); }
+
+            $base64Data = substr($sequence, $fileStartIndex + 1);
+            if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The sequence file is empty"); }
+
+            // Decode the file contents from base64.
+            $binaryData = base64_decode($base64Data);
+
+            // Create the sequence file in the job directory using the data provided.
+            $fileID = $this->jobService->createInputFile($binaryData, $filename, $jobPath);
+
+            // Create a job file
+            $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
+      
+            \Drupal::logger('ictv_sequence_classifier_service')->info("created job_file with UID ".$jobFileUID);
+
+            $uploadOrder = $uploadOrder + 1;
+         }
+
+         // This *should* be the Drupal root directory's path.
+         $rootPath = getcwd();
+
+         // Get the relative path of this module.
+         $moduleHandler = \Drupal::service('module_handler');
+         $modulePath = $moduleHandler->getModule('ictv_sequence_classifier_service')->getPath();
+
+         // The path within this module.
+         $localPath = "src/Plugin/rest/resource";
+
+         $fullPath = $rootPath."/".$modulePath."/".$localPath;
+      
+         //-------------------------------------------------------------------------------------------------------
+         // Create the command that will be run on the command line.
+         //-------------------------------------------------------------------------------------------------------
+         $command = "nohup php -f {$fullPath}/RunSequenceClassifier.php ".
+
+            // The name of the MySQL database (probably "ictv_apps").
+            "dbName={$this->databaseName} ".
+      
+            // The path of the Drupal installation (Ex. "/var/www/drupal/site").
+            "drupalRoot={$this->drupalRoot} ".
+            
+            // The job's unique alphanumeric identifier (UUID).
+            "jobUID={$jobUID} ".
+            
+            // The job's filesystem path.
+            "jobPath={$jobPath} ".
+      
+            // The location of the proposal file(s).
+            "inputPath=\"{$inputPath}\" ".
+            
+            // The location where result files will be created.
+            "outputPath=\"{$outputPath}\" ".
+      
+            // The user's unique numeric identifier.
+            "userUID={$userUID} ".
+            
+            // Redirect stdout and stderr to the file "output.txt".
+            "> {$outputPath}/output.txt 2>&1 ".
+
+            // Run in the background.
+            "&";
+
+         $output = null;
+         $resultCode = -1;
+
+         // Run the command on the command line.
+         $commandResult = exec($command, $output, $resultCode);
+
+      } catch (Exception $e) {
+
+         $status = JobStatus::crashed;
+
+         $errorMessage = null;
+         if ($e) { 
+               $errorMessage = $e->getMessage(); 
+         } else {
+               $errorMessage = "Unspecified error";
+         }
+         
+         // Update the log with the job UID and this error message.
+         \Drupal::logger('ictv_sequence_classifier_service')->error($userUID."_".$jobUID.": ".$errorMessage);
+
+         // Provide a default message, if necessary.
+         if ($message == NULL || len($message) < 1) { $message = "1 error"; }
+
+         //-------------------------------------------------------------------------------------------------------
+         // Update the job record in the database.
+         //-------------------------------------------------------------------------------------------------------
+         JobService::updateJob($this->connection, $errorMessage, $jobUID, $message, $status, $userUID); 
+      }
+
+      return array(
+         "command" => $command,
+         "commandResult" => $commandResult,
+         "jobName" => $jobName,
+         "jobUID" => $jobUID,
+         "resultCode" => $resultCode
+      );
+   }
+
+   
+}
+
