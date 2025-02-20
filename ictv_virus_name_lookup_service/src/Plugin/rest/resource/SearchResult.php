@@ -6,7 +6,7 @@ namespace Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource;
 class SearchResult {
 
    // An alternate identifier
-   public string $alternateID;
+   public ?string $alternateID;
 
    // The NCBI division (phages, viruses)
    public string $division;

@@ -169,6 +169,10 @@ class LookupService extends ResourceBase {
       switch ($searchModifier) {
 
          case "all_words":
+
+            // Double quote hyphenated terms so the hyphen isn't interpreted as "exclude this word".
+            $searchText = $this->quoteHyphenatedTerms($searchText);
+
             $modifiedText = "";
             $tokens = explode(" ", $searchText);
             foreach ($tokens as $token) {
@@ -181,6 +185,10 @@ class LookupService extends ResourceBase {
             break;
 
          case "any_words":
+
+            // Double quote hyphenated terms so the hyphen isn't interpreted as "exclude this word".
+            $searchText = $this->quoteHyphenatedTerms($searchText);
+
             $modifiedText = $searchText;
             break;
 
@@ -354,5 +362,15 @@ class LookupService extends ResourceBase {
 
       return $data;
    }
+
+   function quoteHyphenatedTerms($text) {
+      return preg_replace_callback(
+          '/\b\w+-\w+\b/', // Match words with a hyphen
+          function ($matches) {
+              return '"'.$matches[0].'"'; // Wrap match in double quotes
+          },
+          $text
+      );
+  }
 }
 
