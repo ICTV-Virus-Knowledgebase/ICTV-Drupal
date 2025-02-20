@@ -24,8 +24,8 @@ BEGIN
 
 
    -- Update non-scientific NCBI non-scientific names with ICTV IDs and taxnode IDs from NCBI scientific names.
-   UPDATE searchable_taxon sci 
-   JOIN searchable_taxon nonSci ON sci.taxonomy_id = nonSci.taxonomy_id
+   UPDATE searchable_taxon nonSci 
+   JOIN searchable_taxon sci ON sci.taxonomy_id = nonSci.taxonomy_id
    SET nonSci.ictv_id = sci.ictv_id,
       nonSci.ictv_taxnode_id = sci.ictv_taxnode_id
    WHERE sci.taxonomy_db_tid = ncbiTaxDbTID

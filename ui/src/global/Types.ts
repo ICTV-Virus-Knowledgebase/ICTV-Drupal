@@ -332,31 +332,6 @@ export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: Ta
    }
 }
 
-// dmd testing 021825
-export function LookupTaxonomyDB(taxonomyDB_: TaxonomyDB) {
-
-   switch (taxonomyDB_) {
-      
-      case TaxonomyDB.disease_ontology:
-         return "Disease Ontology";
-
-      case TaxonomyDB.ictv_curation:
-         return "ICTV Curation";
-
-      case TaxonomyDB.ictv_epithets:
-         return "ICTV Epithets";
-      
-      case TaxonomyDB.ictv_taxonomy:
-         return "ICTV Taxonomy";
-
-      case TaxonomyDB.ictv_vmr:
-         return "ICTV Virus Metadata Resource";
-
-      case TaxonomyDB.ncbi_taxonomy:
-         return "NCBI Taxonomy";
-   }
-}
-
 // Return the value of the taxonomy rank enum.
 export function LookupTaxonomyRank(rank_: string) {
    return TaxonomyRank[rank_ as TaxonomyRank];
