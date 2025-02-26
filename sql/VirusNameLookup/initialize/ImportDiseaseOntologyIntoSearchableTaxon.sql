@@ -54,7 +54,10 @@ BEGIN
 		getFilteredName(d.disease_name), -- filtered_name
       d.ictv_id,
       d.ictv_taxnode_id,
-      d.ncbi_name, -- intermediate_name
+      CASE 
+         WHEN d.ncbi_name IS NULL THEN d.possible_name
+         ELSE d.ncbi_name
+      END AS intermediate_name,
       TRIM(nnode.rank_name), -- intermediate_rank
 		d.disease_name, -- name
 		diseaseNameClassTID, -- name_class_tid

@@ -1,7 +1,4 @@
 
--- Updates
--- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
-
 -- Delete any existing records from the table.
 DELETE FROM latest_release_of_ictv_id;
 
