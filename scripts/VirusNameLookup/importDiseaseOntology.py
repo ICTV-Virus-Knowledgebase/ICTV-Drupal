@@ -3,6 +3,7 @@ import argparse
 from dbSettings import DbSettings
 import mariadb
 import pandas as pd
+import re
 from common import safeTrim 
 import sys
 
@@ -16,6 +17,9 @@ columns = [
    "ncbitaxon_id",
    "ncbitaxon_label"
 ]
+
+# Don't create a record for these names.
+namesToIgnore = [ "Viruses" ]
 
 
 # Import the contents of the CSV file into the database.
@@ -48,16 +52,13 @@ def importFromCSV(dbSettings_: DbSettings, filename_: str):
 
             # Note: The iri column is not used.
             
-            id = safeTrim(row.id)
-            if id in (None, ''):
-               raise Exception("ID is invalid")
+            doid = safeTrim(row.id)
+            if doid in (None, ''):
+               raise Exception("DOID (id column) is invalid")
             
-            # Remove the DOID: prefix.
-            #id = id.replace("DOID:", "")
-            
-            label = safeTrim(row.label)
-            if label in (None, ''):
-               raise Exception("Label is invalid")
+            diseaseName = safeTrim(row.label)
+            if diseaseName in (None, ''):
+               raise Exception("Disease name (label column) is invalid")
             
             definition = safeTrim(row.definition)
             if len(definition) < 1:
@@ -69,17 +70,42 @@ def importFromCSV(dbSettings_: DbSettings, filename_: str):
                strNcbiTaxonID = strNcbiTaxonID.replace("NCBITaxon:", "")
                ncbiTaxonID = int(strNcbiTaxonID)
 
-            ncbiLabel = row.ncbitaxon_label
-            if len(ncbiLabel) < 1:
-               ncbiLabel = None
+            ncbiName = row.ncbitaxon_label
+            if len(ncbiName) < 1:
+               ncbiName = None
 
-            # Define the values to insert.
-            values = [definition, id, label, ncbiLabel, ncbiTaxonID]
+            if ncbiName not in (None, "") and ncbiTaxonID is not None:
 
-            # Create the INSERT query and execute it.
-            query = "INSERT INTO disease_ontology (definition, doid, disease_name, ncbi_name, ncbi_taxid) VALUES (%s, %s, %s, %s, %s) "
-            cursor.execute(query, values)
-            
+               # Should this name be ignored?
+               if ncbiName in namesToIgnore:
+                  continue
+
+               # The values to be inserted.
+               values = [definition, doid, diseaseName, ncbiName, ncbiTaxonID]
+
+               # Create the INSERT query and execute it.
+               query = "INSERT INTO disease_ontology (definition, doid, disease_name, ncbi_name, ncbi_taxid) VALUES (%s, %s, %s, %s, %s); "
+               cursor.execute(query, values)
+
+            # If no NCBI info is available, parse the definition for possible names.
+            elif definition not in (None, ""):
+
+               matches = re.findall(r"has_material_basis_in\s+(.*?)(?=[.,\s](?:and|or)?\s|[.,])", definition)
+               for match in matches:
+                  match = match.strip()
+                  if len(match) > 0:
+
+                     # Should this name be ignored?
+                     if match in namesToIgnore:
+                        continue
+
+                     # The values to be inserted.
+                     values = [definition, doid, diseaseName, match]
+
+                     # Create the INSERT query and execute it.
+                     query = "INSERT INTO disease_ontology (definition, doid, disease_name, possible_name) VALUES (%s, %s, %s, %s); "
+                     cursor.execute(query, values)
+                     break
 
    except mariadb.Error as e:
       print(e)
