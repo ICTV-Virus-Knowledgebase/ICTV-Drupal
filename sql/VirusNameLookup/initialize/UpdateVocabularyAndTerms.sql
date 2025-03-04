@@ -1,12 +1,11 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `UpdateVocabularyAndTerms`;
+
+DELIMITER //
 
 CREATE PROCEDURE `UpdateVocabularyAndTerms`()
    MODIFIES SQL DATA
 BEGIN
-
 
    DECLARE vocabID INT;
 
@@ -18,8 +17,10 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid vocabulary ID for name_class';
    END IF;
 
-   -- Insert the name_class "disease".
-   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.disease', 'disease', 'disease', vocabID);
+   -- Insert the name_class "disease" if it doesn't already exist.
+   IF NOT EXISTS (SELECT 1 FROM term WHERE term_key = 'disease' AND vocab_id = vocabID) THEN
+      INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('name_class.disease', 'disease', 'disease', vocabID);
+   END IF;
    
 
    /*
@@ -30,9 +31,15 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid vocabulary ID for taxonomy_db';
    END IF;
 
-   -- Insert the new taxonomy DBs (Disease Ontology and ICTV Curation).
-   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.disease_ontology', 'Disease Ontology', 'disease_ontology', vocabID);
-   INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.ictv_curation', 'ICTV Curation', 'ictv_curation', vocabID);
+   -- Insert the Disease Ontology taxonomy DB if it doesn't already exist.
+   IF NOT EXISTS (SELECT 1 FROM term WHERE term_key = 'disease_ontology' AND vocab_id = vocabID) THEN
+      INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.disease_ontology', 'Disease Ontology', 'disease_ontology', vocabID);
+   END IF;
+
+   -- Insert the ICTV Curation taxonomy DB if it doesn't already exist.
+   IF NOT EXISTS (SELECT 1 FROM term WHERE term_key = 'ictv_curation' AND vocab_id = vocabID) THEN
+      INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('taxonomy_db.ictv_curation', 'ICTV Curation', 'ictv_curation', vocabID);
+   END IF;
 	
 END//
 DELIMITER ;

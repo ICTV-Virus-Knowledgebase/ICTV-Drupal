@@ -41,9 +41,10 @@ cp ../initialize/PopulateIctvAppsFromTemp.sql "./$DIRECTORY/"
 cp ../initialize/UpdateNcbiNonScientificNames.sql "./$DIRECTORY/"
 cp ../initialize/UpdateVocabularyAndTerms.sql "./$DIRECTORY/"
 
-# Copy the deployment scripts to the deployment directory.
+# Copy the automation scripts to the deployment directory.
+cp ../automation/update_ictv_apps.sh "./$DIRECTORY/"
 cp ../automation/update_ictv_apps_temp.sh "./$DIRECTORY/"
-cp ../automation/repopulate_ictv_apps.sh "./$DIRECTORY/"
+cp ../automation/update_ncbi_taxonomy.sh "./$DIRECTORY/"
 
 # Copy function(s) to the deployment directory.
 cp ../functions/GetFilteredName.sql "./$DIRECTORY/"
@@ -54,14 +55,17 @@ cp ../storedProcedures/QuerySearchableTaxon.sql "./$DIRECTORY/"
 # Copy the Python code to the deployment directory.
 cp ../../../scripts/VirusNameLookup/common.py "./$DIRECTORY/"
 cp ../../../scripts/VirusNameLookup/dbSettings.py "./$DIRECTORY/"
+cp ../../../scripts/VirusNameLookup/downloadNcbiTaxonomy.py "./$DIRECTORY/"
 cp ../../../scripts/VirusNameLookup/importDiseaseOntology.py "./$DIRECTORY/"
+cp ../../../scripts/VirusNameLookup/importNcbiTables.py "./$DIRECTORY/"
 
 # Copy the disease ontology CSV file to the deployment directory.
 cp ../../../data/diseaseOntologyData_021825.csv "./$DIRECTORY/"
 
 # Remove carriage return characters from the scripts.
+sed -i 's/\r$//' "./$DIRECTORY/update_ictv_apps.sh"
 sed -i 's/\r$//' "./$DIRECTORY/update_ictv_apps_temp.sh"
-sed -i 's/\r$//' "./$DIRECTORY/repopulate_ictv_apps.sh"
+sed -i 's/\r$//' "./$DIRECTORY/update_ncbi_taxonomy.sh"
 
 # Zip the deployment directory.
 zip -r "$ZIP_FILE" "./$DIRECTORY"

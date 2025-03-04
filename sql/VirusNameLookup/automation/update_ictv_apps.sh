@@ -32,6 +32,10 @@ function display_elapsed_time {
 # Create the disease_ontology table.
 echo -e "\nCreating disease_ontology table"
 mariadb -D $AppsDB -s -b --show-warnings < CreateDiseaseOntologyTable.sql
+if [ $? -ne 0 ]; then
+  echo "An error occurred creating the disease_ontology table"
+  exit 1
+fi
 
 # Add views that reference the ictv_taxonomy database.
 echo -e "\nAdding views that reference the ictv_taxonomy database"
@@ -45,6 +49,11 @@ START_TIME=$(date +%s)
 echo -e "\nUpdating vocabulary and term tables"
 mariadb -D $AppsDB -s -b --show-warnings < UpdateVocabularyAndTerms.sql
 echo "CALL UpdateVocabularyAndTerms();" | mariadb -D $AppsDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred updating the vocabulary and term tables"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
@@ -59,6 +68,11 @@ echo "DELETE FROM searchable_taxon;" | mariadb -D $AppsDB -s -b --show-warnings
 START_TIME=$(date +%s)
 echo -e "\nAdding a new column to the searchable_taxon table"
 echo "ALTER TABLE searchable_taxon ADD COLUMN IF NOT EXISTS alternate_id VARCHAR(100) NULL;" | mariadb -D $AppsDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred adding a new column to the searchable_taxon table"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
@@ -85,6 +99,11 @@ mariadb -D $AppsDB -s -b --show-warnings < QuerySearchableTaxon.sql
 echo -e "\nPopulating tables in the ictv_apps database with data from the ictv_apps_temp database"
 START_TIME=$(date +%s)
 mariadb -D $AppsDB -s -b --show-warnings < PopulateIctvAppsFromTemp.sql
+if [ $? -ne 0 ]; then
+  echo "An error occurred populating tables in the ictv_apps database from the ictv_apps_temp database"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
