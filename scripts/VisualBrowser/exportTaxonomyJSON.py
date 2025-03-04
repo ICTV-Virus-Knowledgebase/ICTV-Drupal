@@ -100,7 +100,7 @@ def exportTaxonomyJSON(dbServer_, ictvDB_, mslReleaseNum_):
 
 
 
-# Example usage: py exportTaxonomyJSON.py --dbServer "ICTVDEV" --ictvDB "ICTVonline39" --release 39
+# Example usage: python3 exportTaxonomyJSON.py --dbServer "ICTVDEV" --ictvDB "ICTVonline40" --release 40
 
 if __name__ == '__main__':
 

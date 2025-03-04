@@ -1,5 +1,5 @@
 
-CREATE TABLE `disease_ontology` (
+CREATE TABLE IF NOT EXISTS  `disease_ontology` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `definition` text DEFAULT NULL,
   `disease_name` varchar(300) NOT NULL,

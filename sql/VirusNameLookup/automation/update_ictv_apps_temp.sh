@@ -69,6 +69,10 @@ fi
 # Create the disease_ontology table.
 echo -e "\nCreating disease_ontology table"
 mariadb -D $AppsTempDB -s -b --show-warnings < CreateDiseaseOntologyTable.sql
+if [ $? -ne 0 ]; then
+  echo "An error occurred creating the disease_ontology table"
+  exit 1
+fi
 
 # Add views that reference the ictv_taxonomy database.
 echo -e "\nAdding temp views that reference the ictv_taxonomy database"
@@ -82,6 +86,11 @@ START_TIME=$(date +%s)
 echo -e "\nUpdating vocabulary and term tables"
 mariadb -D $AppsTempDB -s -b --show-warnings < UpdateVocabularyAndTerms.sql
 echo "CALL UpdateVocabularyAndTerms();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred updating the vocabulary and term tables"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
@@ -96,6 +105,11 @@ echo "DELETE FROM searchable_taxon;" | mariadb -D $AppsTempDB -s -b --show-warni
 START_TIME=$(date +%s)
 echo -e "\nAdding a new column to the searchable_taxon table"
 echo "ALTER TABLE searchable_taxon ADD COLUMN IF NOT EXISTS alternate_id VARCHAR(100) NULL;" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred adding a new column to the searchable_taxon table"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
@@ -131,6 +145,11 @@ echo -e "\nImporting VMR records (species_isolates)"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < ImportLatestSpeciesIsolates.sql
 echo "CALL ImportLatestSpeciesIsolates();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred importing VMR records (species_isolates)"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Import the latest taxonomy_node records corresponding with distinct names in taxonomy_node. 
@@ -138,6 +157,11 @@ echo -e "\nImporting the latest taxonomy nodes"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < ImportLatestTaxonomyNodes.sql
 echo "CALL ImportLatestTaxonomyNodes();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred importing the latest taxonomy nodes"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Import ICTV species with binomial nomenclature and remove the genus name from the species name.
@@ -145,6 +169,11 @@ echo -e "\nImporting ICTV species epithets"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < ImportIctvSpeciesEpithets.sql
 echo "CALL ImportIctvSpeciesEpithets();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred importing ICTV species epithets"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
@@ -158,6 +187,11 @@ START_TIME=$(date +%s)
 echo -e "\nInitializing NCBI term ID columns"
 mariadb -D $AppsTempDB -s -b --show-warnings < InitializeNcbiTermIdColumns.sql
 echo "CALL InitializeNcbiTermIdColumns();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred initializing NCBI term ID columns"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Import NCBI scientific names into searchable_taxon
@@ -165,6 +199,11 @@ echo -e "\nImporting NCBI scientific names"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < ImportNcbiScientificNames.sql
 echo "CALL ImportNcbiScientificNames();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred importing NCBI scientific names"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Initialize NCBI sub-species records before they are imported.
@@ -172,6 +211,11 @@ echo -e "\nInitializing NCBI sub-species"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < InitializeNcbiSubspecies.sql
 echo "CALL InitializeNcbiSubspecies();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred initializing NCBI sub-species"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Import NCBI sub-species records into searchable_taxon.
@@ -179,6 +223,11 @@ echo -e "\nImporting NCBI sub-species records"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < ImportNcbiSubspeciesNodes.sql
 echo "CALL ImportNcbiSubspeciesNodes();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred importing NCBI sub-species records"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Update NCBI Taxonomy non-scientific names that are associated with NCBI Taxonomy scientific names
@@ -187,6 +236,11 @@ echo -e "\nUpdating NCBI non-scientific names"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < UpdateNcbiNonScientificNames.sql
 echo "CALL UpdateNcbiNonScientificNames();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred updating NCBI non-scientific names"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 
@@ -206,6 +260,11 @@ echo -e "\nInitializing the disease_ontology table"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < InitializeDiseaseOntology.sql
 echo "CALL InitializeDiseaseOntology();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred initializing the disease_ontology table"
+  exit 1
+fi
+
 display_elapsed_time "$START_TIME"
 
 # Import disease_ontology records into searchable_taxon.
@@ -213,6 +272,10 @@ echo -e "\nImporting disease_ontology records into searchable_taxon"
 START_TIME=$(date +%s)
 mariadb -D $AppsTempDB -s -b --show-warnings < ImportDiseaseOntologyIntoSearchableTaxon.sql
 echo "CALL ImportDiseaseOntologyIntoSearchableTaxon();" | mariadb -D $AppsTempDB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+  echo "An error occurred importing disease_ontology records into searchable_taxon"
+  exit 1
+fi
 
 
 #------------------------------------------------------------------------------------------------------------------
