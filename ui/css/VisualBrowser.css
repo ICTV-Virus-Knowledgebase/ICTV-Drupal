@@ -1,0 +1,37 @@
+
+#d3_taxonomy_vis_container svg {
+   font: 10px sans-serif;
+   height: auto; 
+   max-width: 100%;
+   overflow: hidden;
+   width: 100%;
+}
+
+#d3_taxonomy_vis_container svg .node {
+   cursor: pointer;
+}
+
+#d3_taxonomy_vis_container svg .node-circle {
+   align-items: center;
+   display: flex;
+   fill: #fff;
+   justify-content: center;
+   stroke: #000;
+   stroke-width: 1;
+}
+
+#d3_taxonomy_vis_container svg .node-text {
+   color: #000;
+   font-weight: bold;
+   font-style: italic;
+   paint-order: stroke;
+   text-align: right;
+}
+
+#d3_taxonomy_vis_container svg .node-text-bg {
+   fill: #fff;
+   font-weight: bold;
+   stroke: #fff;
+   stroke-width: 4px;
+   text-align: right;
+}

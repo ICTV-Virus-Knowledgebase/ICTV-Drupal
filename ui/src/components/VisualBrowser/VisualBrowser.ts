@@ -1,51 +1,166 @@
 
+import { AppSettings } from "../../global/AppSettings";
 import * as d3 from 'd3';
-
+import { IRelease } from "./IRelease";
+import { IReleases } from "./IReleases";
+import { WebServiceKey } from "../../global/Types";
 
 
 export class VisualBrowser {
 
-
+   // Configuration settings
    config = {
-      marginBottom: 10,
-      marginLeft: 40,
-      marginRight: 10,
-      marginTop: 10,
-      nodeColumnWidth: 200,
-      transition: {
+      animation: {
+         delay: 1100,
          fast: 250,
          slow: 2500
       },
-      width: 928
+      node: {
+         columnWidth: NaN,
+         defaultColumnWidth: 200,
+         defaultVerticalDistance: 20,
+         verticalDistance: NaN
+      },
+      svg: {
+         margin: {
+            top: 40,
+            right: 0,
+            bottom: 40,
+            left: 40
+         },
+         width: 1000
+      },
+      url: {
+         data: null,
+         taxonDetailsPage: null,
+         taxonomy: null
+      },
+      zoom: {
+         scaleFactor: 0.19, //.17,
+         translateX: 0, //-(jQuery(window).width() * 2.5), //-3850,
+         translateY: 0 //-(jQuery(window).height() * 0.45), //-1800
+      }
    }
 
    containerSelector: string = null;
 
+   // The current (most-recent) MSL release
+   currentRelease: IRelease = null;
+
    data;
    diagonal;
+
+   elements: {
+      container: HTMLElement,
+      svg: SVGElement
+   }
+
    gLink;
    gNode;
+
+   // Metadata for the MSL Releases.
+   releases: IReleases = null;
+
    root;
+
+   // The selected MSL release
+   selectedRelease: IRelease = null;
+
+   // The SVG node
    svg;
+
+   // The SVG DOM element
+   svgEl: SVGElement = null;
+
    tree;
 
 
    // C-tor
-   constructor(containerSelector_: string) {
+   constructor(containerSelector_: string, dataURL_: string) {
 
+      if (!containerSelector_) { throw new Error("Invalid container selector parameter"); }
       this.containerSelector = containerSelector_;
 
+      //this.config.release.currentNumber = AppSettings.currentMslRelease;
+      //if (!this.config.release.currentNumber) { throw new Error("Invalid current release app settings"); }
+
+      if (!dataURL_) { throw new Error("Invalid data URL parameter"); }
+      this.config.url.data = dataURL_;
+
+      this.config.url.taxonDetailsPage = AppSettings.taxonHistoryPage;
+      if (!this.config.url.taxonDetailsPage) { throw new Error("Invalid taxon details app setting"); }
+      
+      // Populate the taxonomy web service
+      const taxonomyEndPoint = AppSettings.webServiceLookup[WebServiceKey.taxonomy];
+      this.config.url.taxonomy = `${AppSettings.baseWebServiceURL}${taxonomyEndPoint}`;
+
+      this.elements = {
+         container: null,
+         svg: null
+      }
+
+      // Initialize the "diagonal" method.
       this.diagonal = d3.linkHorizontal().x(d => d[1]).y(d => d[0]);
+
+      // Populate the current values with default values.
+      this.config.node.columnWidth = this.config.node.defaultColumnWidth;
+      this.config.node.verticalDistance = this.config.node.defaultVerticalDistance;
    }
 
 
-   async buildTree() {
+   addLegend() {
 
-      // Compute the tree height; this approach will allow the height of the
-      // SVG to scale according to the breadth (width) of the tree layout.
+      //if (!this.selectedRelease.ranks) { return ; }
+
+      const legendParent = d3.create("g")
+         .attr("class", "legend-parent")
+         .attr("fill", "none")
+         .attr("stroke", "#000")
+         .attr("stroke-opacity", 0.4)
+         .attr("stroke-width", 1.5);
+
+      this.selectedRelease.ranks.forEach((rank_: string, index_: number) => {
+
+         let x = `${this.config.node.columnWidth * index_}px`;
+
+         legendParent.append("text")
+            .attr("class", "node-text")
+            .attr("stroke-linejoin", "round")
+            .attr("text-anchor", "start")
+            .attr("x", x)
+            .text(rank_);
+      })
+
+      return legendParent;
+   }
+
+   // Display the taxonomy tree for the release selected by the user.
+   async displayTaxonomy(releaseYear_) {
+
+      if (!releaseYear_) { throw new Error("Invalid release year in displayTaxonomy"); }
+
+      // Get the release metadata for the selected year.
+      this.selectedRelease = this.getRelease(releaseYear_);
+      if (!this.selectedRelease) { throw new Error(`No data available for release year ${releaseYear_}`); }
+
+      // If there's already an SVG element in the taxonomy panel, delete it.
+      if (!!this.svgEl) { this.svgEl.remove(); }
+
+      // Determine the filename for the taxonomy JSON file.
+      const taxonomyFilename = `${this.config.url.data}/taxonomy_${releaseYear_}.json`;
+
+      this.data = await d3.json(taxonomyFilename);
+      if (!this.data) { throw new Error(`Invalid data for release year ${releaseYear_}`)}
+
+      // Construct the tree root.
       this.root = d3.hierarchy(this.data);
-      const dx = 10;
-      const dy = this.config.width / (this.root.height + 1);
+
+      // The vertical distance between sibling nodes (yes, it's very weird to call it "dx").
+      const dx = this.config.node.verticalDistance;
+
+      // Compute the tree height: This approach will allow the height of the
+      // SVG to scale according to the breadth (width) of the tree layout.
+      const dy = this.config.svg.width / (this.root.height + 1);
 
       // Create a tree layout.
       this.tree = d3.cluster().nodeSize([dx, dy]);
@@ -68,24 +183,63 @@ export class VisualBrowser {
       const height = x1 - x0 + dx * 2;
 
       this.svg = d3.create("svg")
-         .attr("width", this.config.width)
+         .attr("width", this.config.svg.width)
          .attr("height", height)
-         .attr("viewBox", [-dy / 3, x0 - dx, this.config.width, height])
-         .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+         .attr("viewBox", [-dy / 3, x0 - dx, this.config.svg.width, height]);
+
+      // Legend
+      /*const legendParent = document.createElementNS("http://www.w3.org/1999/xhtml", "g");
+      legendParent.className = "legend-parent";
+      legendParent.setAttribute("fill", "none");
+      legendParent.setAttribute("stroke", "#000");
+      legendParent.setAttribute("stroke-opacity", "0.4");
+      legendParent.setAttribute("stroke-width", "1.5");*/
+      const legendParent = this.svg.append("g")
+         .attr("class", "legend-parent")
+         .attr("fill", "none")
+         .attr("stroke", "#000")
+         .attr("stroke-opacity", 0.4)
+         .attr("stroke-width", 1.5);
+
+      this.selectedRelease.ranks.forEach((rank_: string, index_: number) => {
+
+         let x = `${this.config.node.columnWidth * index_}px`;
+
+         /*
+         const text = document.createElementNS("http://www.w3.org/1999/xhtml", "text");
+         text.className = "node-text";
+         
+         text.setAttribute("stroke-linejoin", "round");
+         text.setAttribute("text-anchor", "start");
+         text.setAttribute("x", x);
+         text.innerHTML = rank_;*/
+
+         //legendParent.append(text)
+
+         legendParent.append("text")
+            .attr("class", "node-text")
+            .attr("stroke-linejoin", "round")
+            .attr("text-anchor", "start")
+            .attr("x", x)
+            .text(rank_);
+      })
+
+      console.log("this.svg = ", this.svg)
+      this.svg.append(legendParent);
 
       this.gLink = this.svg.append("g")
+         .attr("class", "link-parent")
          .attr("fill", "none")
          .attr("stroke", "#555")
          .attr("stroke-opacity", 0.4)
          .attr("stroke-width", 1.5);
 
       this.gNode = this.svg.append("g")
+         .attr("class", "node-parent")
          .attr("cursor", "pointer")
          .attr("pointer-events", "all");
 
 
-      // Do the first update to the initial configuration of the tree — where a number of nodes
-      // are open (arbitrarily selected as the root, plus nodes with 7 letters).
       this.root.x0 = dy / 2;
       this.root.y0 = 0;
       this.root.descendants().forEach((d, i) => {
@@ -99,19 +253,65 @@ export class VisualBrowser {
       // Update the tree
       this.update(null, this.root);
 
-      return this.svg.node();
+      // Maintain the SVG element so we can easily remove it when displaying a different taxonomy release.
+      this.svgEl = this.svg.node();
+
+      // Add the SVG to the container.
+      this.elements.container.appendChild(this.svgEl);
+
+      // TODO: verify this code!!!
+      let zoom = d3.zoom()
+         // zoom constraints
+         // .05: Zoom out to 5% of the original size
+         // .5: Zoom in to .5 times the original size
+         //.scaleExtent([0.05, .5])
+         .on("zoom", event => {
+            this.elements.svg.setAttribute("transform", event.transform);
+         });
+
+      const svgSelection = d3.select<HTMLElement, unknown>(`${this.containerSelector} .taxonomy-panel svg`)
+      //svgSelection
+         //.call(zoom)
+         //.call((d) => zoom.transform(svgSelection, d3.zoomIdentity.translate(this.config.zoom.translateX, this.config.zoom.translateY).scale(this.config.zoom.scaleFactor)))
+         //.call(zoom.translateBy, this.config.zoom.translateX, this.config.zoom.translateY)
+         //.call(zoom.scaleBy, this.config.zoom.scaleFactor)
+         //.on("dblclick.zoom", null);
+
+      zoom.transform(svgSelection, d3.zoomIdentity.translate(this.config.zoom.translateX, this.config.zoom.translateY).scale(this.config.zoom.scaleFactor));
+   }
+
+
+   // Use the release year to lookup and return the corresponding release data.
+   getRelease(releaseYear): IRelease {
+
+      if (!releaseYear) { throw new Error("Invalid release year in getRelease (empty)"); }
+
+      const release: IRelease = this.releases.data[`${releaseYear}`];
+      if (!release) { throw new Error(`No release found for release year ${releaseYear}`); }
+
+      return release;
    }
 
 
    async initialize() {
 
-      let containerEl = document.querySelector(this.containerSelector);
+      this.elements.container = document.querySelector(this.containerSelector);
+      if (!this.elements.container) { throw new Error("Invalid container element"); }
 
-      this.data = await d3.json("../data/d3Cluster_mini.json");
+      // Load the releases metadata from the releases JSON file.
+      this.releases = await d3.json(`${this.config.url.data}/releases.json`)
+      if (!this.releases) { throw new Error("Invalid releases JSON"); }
 
-      const svgNode = await this.buildTree();
+      // Get the current release year.
+      const currentYear = this.releases.displayOrder[0];
+      if (!currentYear) { throw new Error("Invalid current year in releases.json"); }
 
-      containerEl.appendChild(svgNode);
+      // Get the current release.
+      this.currentRelease = this.getRelease(currentYear);
+      if (!this.currentRelease) { throw new Error('Invalid current release metadata'); }
+
+      // Create the SVG and tree.
+      await this.displayTaxonomy(currentYear);
    }
 
 
@@ -119,7 +319,7 @@ export class VisualBrowser {
    update(event, source) {
          
       // Hold the alt key to slow down the transition.
-      const duration = event?.altKey ? this.config.transition.slow : this.config.transition.fast; 
+      const duration = event?.altKey ? this.config.animation.slow : this.config.animation.fast; 
 
       const nodes = this.root.descendants().reverse();
       const links = this.root.links();
@@ -135,51 +335,52 @@ export class VisualBrowser {
          if (node.x > right.x) right = node;
       });
 
-      const height = right.x - left.x + this.config.marginTop + this.config.marginBottom;
+      const height = right.x - left.x + this.config.svg.margin.top + this.config.svg.margin.bottom;
 
       const transition = this.svg.transition()
          .duration(duration)
          .attr("height", height)
-         .attr("viewBox", [- this.config.marginLeft, left.x - this.config.marginTop, this.config.width, height])
+         .attr("viewBox", [- this.config.svg.margin.left, left.x - this.config.svg.margin.top, this.config.svg.width, height])
          .tween("resize", window.ResizeObserver ? null : () => () => this.svg.dispatch("toggle"));
 
       // Update the nodes…
       const node = this.gNode.selectAll("g")
          .data(nodes, d => d.id);
 
-
       // Enter any new nodes at the parent's previous position.
       const nodeEnter = node.enter().append("g")
          .attr("transform", `translate(${source.y0},${source.x0})`)
-         .attr("fill-opacity", 0)
-         .attr("stroke-opacity", 0)
+         .attr("class", "node")
+         .attr("taxNodeID", d => d.data.taxNodeID)
          .on("click", (event, d) => {
             d.children = d.children ? null : d._children;
             this.update(event, d);
          });
 
       nodeEnter.append("circle")
-         .attr("r", 2.5)
-         .attr("fill", "#555")
-         //.attr("fill", d => d._children ? "#555" : "#999")
-         .attr("stroke-width", 10);
+         .attr("class", "node-circle")
+         .attr("r", 5);
+         
+      nodeEnter.insert("text")
+         .attr("class", "node-text-bg")
+         .attr("dy", "0.31em")
+         .attr("text-anchor", "start")
+         .attr("x", "0.5rem")
+         .text(d => d.data.name);
 
       nodeEnter.append("text")
+         .attr("class", "node-text")
          .attr("dy", "0.31em")
-         .attr("x", -6)
-         //.attr("x", d => d._children ? -6 : 6)
-         .attr("text-anchor", "end")
-         //.attr("text-anchor", d => d._children ? "end" : "start")
-         .text(d => d.data.name)
          .attr("stroke-linejoin", "round")
-         .attr("stroke-width", 3)
-         .attr("stroke", "white")
-         .attr("paint-order", "stroke");
+         .attr("text-anchor", "start")
+         .attr("x", "0.5rem")
+         .text(d => d.data.name);
 
+      
       // Transition nodes to their new position.
       const nodeUpdate = node.merge(nodeEnter).transition(transition)
          .attr("transform", d => {
-            const dy = this.config.nodeColumnWidth * d.data.level;
+            const dy = this.config.node.columnWidth * d.data.level;
             return `translate(${dy},${d.x})`;
          })
          .attr("fill-opacity", 1)
@@ -187,7 +388,7 @@ export class VisualBrowser {
 
       // Transition exiting nodes to the parent's new position.
       const nodeExit = node.exit().transition(transition).remove()
-         .attr("transform", d => `translate(${source.y},${source.x})`)
+         .attr("transform", `translate(${source.y},${source.x})`)
          .attr("fill-opacity", 0)
          .attr("stroke-opacity", 0);
 
@@ -195,14 +396,13 @@ export class VisualBrowser {
       const link = this.gLink.selectAll("path")
          .data(links, d => d.target.id);
 
-      
       // Enter any new links at the parent's previous position.
       const linkEnter = link.enter().append("path")
          .attr("d", d => {
 
             // Use the node's level attribute to calculate the Y coordinate (which is actually the X coordinate...).
-            const sourceY = this.config.nodeColumnWidth * d.source.data.level;
-            const targetY = this.config.nodeColumnWidth * d.target.data.level;
+            const sourceY = this.config.node.columnWidth * d.source.data.level;
+            const targetY = this.config.node.columnWidth * d.target.data.level;
 
             return this.diagonal({ source: [d.source.x, sourceY], target: [d.target.x, targetY]});
          });
@@ -212,8 +412,8 @@ export class VisualBrowser {
          .attr("d", d => {
 
             // Use the node's level attribute to calculate the Y coordinate (which is actually the X coordinate...).
-            const sourceY = this.config.nodeColumnWidth * d.source.data.level;
-            const targetY = this.config.nodeColumnWidth * d.target.data.level;
+            const sourceY = this.config.node.columnWidth * d.source.data.level;
+            const targetY = this.config.node.columnWidth * d.target.data.level;
 
             return this.diagonal({ source: [d.source.x, sourceY], target: [d.target.x, targetY]});
          });
