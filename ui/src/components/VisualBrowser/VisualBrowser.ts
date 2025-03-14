@@ -47,7 +47,9 @@ export class VisualBrowser {
    // The current (most-recent) MSL release
    currentRelease: IRelease = null;
 
+   // The taxonomy data for the selected release.
    data;
+
    diagonal;
 
    elements: {
@@ -55,6 +57,7 @@ export class VisualBrowser {
       svg: SVGElement
    }
 
+   gLegend;
    gLink;
    gNode;
 
@@ -66,11 +69,8 @@ export class VisualBrowser {
    // The selected MSL release
    selectedRelease: IRelease = null;
 
-   // The SVG node
+   // The SVG node (a d3 Selection object)
    svg;
-
-   // The SVG DOM element
-   svgEl: SVGElement = null;
 
    tree;
 
@@ -108,32 +108,6 @@ export class VisualBrowser {
    }
 
 
-   addLegend() {
-
-      //if (!this.selectedRelease.ranks) { return ; }
-
-      const legendParent = d3.create("g")
-         .attr("class", "legend-parent")
-         .attr("fill", "none")
-         .attr("stroke", "#000")
-         .attr("stroke-opacity", 0.4)
-         .attr("stroke-width", 1.5);
-
-      this.selectedRelease.ranks.forEach((rank_: string, index_: number) => {
-
-         let x = `${this.config.node.columnWidth * index_}px`;
-
-         legendParent.append("text")
-            .attr("class", "node-text")
-            .attr("stroke-linejoin", "round")
-            .attr("text-anchor", "start")
-            .attr("x", x)
-            .text(rank_);
-      })
-
-      return legendParent;
-   }
-
    // Display the taxonomy tree for the release selected by the user.
    async displayTaxonomy(releaseYear_) {
 
@@ -144,7 +118,7 @@ export class VisualBrowser {
       if (!this.selectedRelease) { throw new Error(`No data available for release year ${releaseYear_}`); }
 
       // If there's already an SVG element in the taxonomy panel, delete it.
-      if (!!this.svgEl) { this.svgEl.remove(); }
+      if (!!this.svg && !!this.svg.node()) { this.svg.node().remove(); }
 
       // Determine the filename for the taxonomy JSON file.
       const taxonomyFilename = `${this.config.url.data}/taxonomy_${releaseYear_}.json`;
@@ -187,57 +161,23 @@ export class VisualBrowser {
          .attr("height", height)
          .attr("viewBox", [-dy / 3, x0 - dx, this.config.svg.width, height]);
 
-      // Legend
-      /*const legendParent = document.createElementNS("http://www.w3.org/1999/xhtml", "g");
-      legendParent.className = "legend-parent";
-      legendParent.setAttribute("fill", "none");
-      legendParent.setAttribute("stroke", "#000");
-      legendParent.setAttribute("stroke-opacity", "0.4");
-      legendParent.setAttribute("stroke-width", "1.5");*/
-      const legendParent = this.svg.append("g")
-         .attr("class", "legend-parent")
-         .attr("fill", "none")
-         .attr("stroke", "#000")
-         .attr("stroke-opacity", 0.4)
-         .attr("stroke-width", 1.5);
-
-      this.selectedRelease.ranks.forEach((rank_: string, index_: number) => {
-
-         let x = `${this.config.node.columnWidth * index_}px`;
-
-         /*
-         const text = document.createElementNS("http://www.w3.org/1999/xhtml", "text");
-         text.className = "node-text";
-         
-         text.setAttribute("stroke-linejoin", "round");
-         text.setAttribute("text-anchor", "start");
-         text.setAttribute("x", x);
-         text.innerHTML = rank_;*/
-
-         //legendParent.append(text)
-
-         legendParent.append("text")
-            .attr("class", "node-text")
-            .attr("stroke-linejoin", "round")
-            .attr("text-anchor", "start")
-            .attr("x", x)
-            .text(rank_);
-      })
-
-      console.log("this.svg = ", this.svg)
-      this.svg.append(legendParent);
-
       this.gLink = this.svg.append("g")
-         .attr("class", "link-parent")
-         .attr("fill", "none")
-         .attr("stroke", "#555")
-         .attr("stroke-opacity", 0.4)
-         .attr("stroke-width", 1.5);
+         .attr("class", "link-parent");
 
       this.gNode = this.svg.append("g")
-         .attr("class", "node-parent")
-         .attr("cursor", "pointer")
-         .attr("pointer-events", "all");
+         .attr("class", "node-parent");
+
+      // Create a group element for the legend.
+      this.gLegend = this.svg.append("g")
+         .attr("class", "legend-parent");
+
+      // Add rank names to the legend.
+      this.selectedRelease.ranks.forEach((rank_: string, index_: number) => {
+         this.gLegend.append("text")
+            .attr("class", "legend-text")
+            .attr("x", `${this.config.node.columnWidth * index_}px`)
+            .text(rank_);
+      })
 
 
       this.root.x0 = dy / 2;
@@ -253,12 +193,10 @@ export class VisualBrowser {
       // Update the tree
       this.update(null, this.root);
 
-      // Maintain the SVG element so we can easily remove it when displaying a different taxonomy release.
-      this.svgEl = this.svg.node();
-
       // Add the SVG to the container.
-      this.elements.container.appendChild(this.svgEl);
+      this.elements.container.appendChild(this.svg.node());
 
+/*
       // TODO: verify this code!!!
       let zoom = d3.zoom()
          // zoom constraints
@@ -277,11 +215,11 @@ export class VisualBrowser {
          //.call(zoom.scaleBy, this.config.zoom.scaleFactor)
          //.on("dblclick.zoom", null);
 
-      zoom.transform(svgSelection, d3.zoomIdentity.translate(this.config.zoom.translateX, this.config.zoom.translateY).scale(this.config.zoom.scaleFactor));
+      zoom.transform(svgSelection, d3.zoomIdentity.translate(this.config.zoom.translateX, this.config.zoom.translateY).scale(this.config.zoom.scaleFactor)); */
    }
 
 
-   // Use the release year to lookup and return the corresponding release data.
+   // Use the release year to lookup and return the corresponding release metadata.
    getRelease(releaseYear): IRelease {
 
       if (!releaseYear) { throw new Error("Invalid release year in getRelease (empty)"); }
@@ -293,6 +231,7 @@ export class VisualBrowser {
    }
 
 
+   // Initialize the visual browser.
    async initialize() {
 
       this.elements.container = document.querySelector(this.containerSelector);
@@ -340,10 +279,10 @@ export class VisualBrowser {
       const transition = this.svg.transition()
          .duration(duration)
          .attr("height", height)
-         .attr("viewBox", [- this.config.svg.margin.left, left.x - this.config.svg.margin.top, this.config.svg.width, height])
+         .attr("viewBox", [- this.config.svg.margin.left, left.x - this.config.svg.margin.top, this.config.svg.width, height]) // Note: viewbox is [min-x, min-y, width, height]
          .tween("resize", window.ResizeObserver ? null : () => () => this.svg.dispatch("toggle"));
 
-      // Update the nodes…
+      // Update the node IDs.
       const node = this.gNode.selectAll("g")
          .data(nodes, d => d.id);
 
@@ -388,7 +327,7 @@ export class VisualBrowser {
 
       // Transition exiting nodes to the parent's new position.
       const nodeExit = node.exit().transition(transition).remove()
-         .attr("transform", `translate(${source.y},${source.x})`)
+         .attr("transform", `translate(${source.y0},${source.x0})`)
          .attr("fill-opacity", 0)
          .attr("stroke-opacity", 0);
 
@@ -420,13 +359,42 @@ export class VisualBrowser {
 
       // Transition exiting nodes to the parent's new position.
       link.exit().transition(transition).remove()
-         .attr("d", this.diagonal({source: [source.y, source.x], target: [source.y, source.x]}));
+         .attr("d", this.diagonal({source: [source.x, source.y], target: [source.x, source.y]}));
       
       // Stash the old positions for transition.
       this.root.eachBefore(d => {
          d.x0 = d.x;
          d.y0 = d.y;
       });
+
+      this.gLegend.selectAll(".legend-text")
+         .attr("transform", (d, i) => {
+            console.log("d = ", d, ", i = ", i);
+            return `matrix(1,0,0,1, 0, 0)`;
+         });
+
+
+      /*
+      // Testing: tranform the legend to the top of the SVG.
+      const legendTextEls: NodeListOf<SVGGElement> = this.svg.node().querySelectorAll(".legend-text");
+      if (!legendTextEls) { throw new Error("Invalid legend text elements"); }
+
+      legendTextEls.forEach((el: SVGGElement, index: number) => {
+
+         //const m = el.getCTM();
+         //const ctm = el.getScreenCTM();
+         const bbox = el.getBoundingClientRect();
+
+         console.log(`Text #${index}:`)
+         //console.log(`Absolute SVG Position: (${ctm.e}, ${ctm.f})`);
+         //console.log(`Local SVG Position: (${m.e}, ${m.f})`);
+         console.log(`Screen Coordinates: (${bbox.x}, ${bbox.y})`);
+         console.log("----")
+
+         //el.setAttribute("transform-origin", `0 0`);
+         el.setAttribute("transform", `translate(0, ${-bbox.y})`);
+      })*/
+
    }
 
 
