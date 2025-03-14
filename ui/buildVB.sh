@@ -25,6 +25,7 @@ printf "\n\n"
 
 # This is temporary...
 cp ./dist/ICTV_VisualBrowser.js /c/inetpub/wwwroot/ictvTest/js/
+cp ./css/VisualBrowser.css /c/inetpub/wwwroot/ictvTest/css/
 
 #------------------------------------------------------------------------------
 # Copy the generated JavaScript file to the module's asset directory.
