@@ -11,6 +11,27 @@
    cursor: pointer;
 }
 
+#d3_taxonomy_vis_container svg .legend-parent {
+   fill: none;
+}
+
+#d3_taxonomy_vis_container svg .legend-parent .legend-text {
+   fill: #000;
+   font-weight: normal;
+}
+
+#d3_taxonomy_vis_container svg .link-parent {
+   fill: none;
+   stroke: #555;
+   stroke-opacity: 0.4;
+   stroke-width: 1.5px;
+}
+
+#d3_taxonomy_vis_container svg .node-parent {
+   cursor: pointer;
+   pointer-events: all;
+}
+
 #d3_taxonomy_vis_container svg .node-circle {
    align-items: center;
    display: flex;
@@ -25,7 +46,9 @@
    font-weight: bold;
    font-style: italic;
    paint-order: stroke;
+   stroke-linejoin: round;
    text-align: right;
+   text-anchor: start;
 }
 
 #d3_taxonomy_vis_container svg .node-text-bg {
