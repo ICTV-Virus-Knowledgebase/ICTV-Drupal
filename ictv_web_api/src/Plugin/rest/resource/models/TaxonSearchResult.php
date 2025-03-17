@@ -2,6 +2,9 @@
 
 namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
 
+// Helpers
+use Drupal\ictv_web_api\helpers\TaxonomyHelper;
+use Drupal\ictv_web_api\helpers\Common;
 
 class TaxonSearchResult {
 
@@ -9,8 +12,16 @@ class TaxonSearchResult {
 
    public ?int $ictvID;
 
+   public ?int $jsonID;
+
+   public ?string $jsonLineage;
+
    public ?string $lineage;
 
+   // Populate via process()
+   public ?string $lineageHTML;
+
+   // Populate via process()
    public ?string $name;
 
    public ?int $parentTaxnodeID;
@@ -38,7 +49,10 @@ class TaxonSearchResult {
 
       $this->displayOrder = $displayOrder;
       $this->ictvID = $ictvID;
+      $this->jsonID = $jsonID;
+      $this->jsonLineage = $jsonLineage;
       $this->lineage = $lineage;
+      $this->lineageHTML = $lineageHTML;
       $this->name = $name;
       $this->parentTaxnodeID = $parentTaxnodeID;
       $this->rankName = $rankName;
@@ -50,6 +64,26 @@ class TaxonSearchResult {
       $this->treeName = $treeName;
    }
 
+   // This is called after filling the object from DB row, 
+   // to replicate "process()" in C# that sets lineageHTML + name
+   public function process(): void {
+
+   // If lineage is not empty, call formatLineage(...) 
+   if (!empty($this->lineage)) {
+      $tempName = null; // reference param
+
+      $this->lineageHTML = Common::formatLineage(
+      $this->lineage,
+      Common::LINEAGE_RESULT_DELIMITER, // " &#8250; "
+      $this->searchText,
+      Common::LINEAGE_DB_DELIMITER,     // ">"
+      $tempName
+    );
+    
+    $this->name = $tempName;
+  }
+ }
+
 
    // Method to populate the object from an associative array
    public static function fromArray(array $data): TaxonSearchResult {
@@ -58,6 +92,8 @@ class TaxonSearchResult {
    
       $instance->displayOrder = $data["display_order"];
       $instance->ictvID = $data["ictv_id"];
+      $instance->jsonID = $data["json_id"]; 
+      $instance->jsonLineage = $data["json_lineage"]; 
       $instance->lineage = $data["lineage"];
       $instance->name = $data["name"];
       $instance->parentTaxnodeID = $data["parent_taxnode_id"];
@@ -76,7 +112,10 @@ class TaxonSearchResult {
       return [
          "displayOrder" => $this->displayOrder,
          "ictvID" => $this->ictvID,
+         "jsonID" => $this->jsonID,
+         "jsonLineage" => $this->jsonLineage,
          "lineage" => $this->lineage,
+         "lineageHTML"  => $this->lineageHTML,
          "name" => $this->name,
          "parentTaxnodeID" => $this->parentTaxnodeID,
          "rankName" => $this->rankName,

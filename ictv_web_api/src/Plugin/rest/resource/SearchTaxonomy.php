@@ -1,5 +1,11 @@
 <?php
 
+// PHP api call:
+// https://test.ictv.global/api/search-taxonomy?searchText=pox&currentRelease=39&includeAllReleases=1
+
+// C# api call:
+// https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=search_taxonomy&search_text=pox&current_release=39&include_all_releases=True
+
 namespace Drupal\ictv_web_api\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
@@ -86,15 +92,6 @@ class SearchTaxonomy extends ResourceBase {
    }
 
 
-   /**
-    * Responds to GET requests.
-    *
-    * @param \Symfony\Component\HttpFoundation\Request $request
-    *   The current request.
-    *
-    * @return \Drupal\rest\ResourceResponse
-    *   The response containing the result data.
-    */
    public function get(Request $request) {
 
       // The current MSL release
@@ -115,6 +112,7 @@ class SearchTaxonomy extends ResourceBase {
 
       // Search the taxonomy
       $data = $this->search($currentRelease, $includeAllReleases, $searchText, $selectedRelease);
+      //['message' => "currentRelease = ".$currentRelease.", includeAllReleases = ".$includeAllReleases.", searchText = ".$searchText];
 
       $build = array(
          '#cache' => array(
@@ -150,70 +148,13 @@ class SearchTaxonomy extends ResourceBase {
    } 
 
 
-   /**
-    * Responds to POST requests.
-    *
-    * @param \Symfony\Component\HttpFoundation\Request $request
-    *   The current request.
-    *
-    * @return \Drupal\rest\ResourceResponse
-    *   The response containing the result data.
-    */
-    public function post(Request $request) {
-
-      // The current MSL release
-      $currentRelease = $request->get("currentRelease");
-      if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
-
-      // Include all MSL releases?
-      $includeAllReleases = $request->get("includeAllReleases");
-      if (Utils::isNullOrEmpty($includeAllReleases)) { $includeAllReleases = 0; }
-
-      // The selected MSL release (optional)
-      $selectedRelease = $request->get("selectedRelease");
-      if (Utils::isNullOrEmpty($selectedRelease)) { $selectedRelease = $currentRelease; }
-
-      // Search text
-      $searchText = $request->get("searchText");
-      if (Utils::isNullOrEmpty($searchText)) { throw new BadRequestHttpException("Please provide non-empty search text"); }
-
-      // Search the taxonomy
-      $data = $this->search($currentRelease, $includeAllReleases, $searchText, $selectedRelease);
-
-      $build = array(
-         '#cache' => array(
-            'max-age' => 0,
-         ),
-      );
-       
-      $response = new ResourceResponse($data);
-      $response->addCacheableDependency($build);
-      $response->headers->set('Access-Control-Allow-Origin', '*');
-      return $response;
-   }
-
-   /**
-    * Searches the ICTV taxonomy.
-    *
-    * @param int $currentRelease
-    *   The current MSL release.
-    * @param bool $includeAllReleases
-    *   Whether to include all MSL releases.
-    * @param string $searchText
-    *   The search text.
-    * @param int $selectedRelease
-    *   The selected MSL release.
-    *
-    * @return array
-    *   The search results.
-    */
    public function search(int $currentRelease, bool $includeAllReleases, string $searchText, int $selectedRelease) {
 
       // Populate the stored procedure's parameters.
       $parameters = [":currentRelease" => $currentRelease, ":includeAllReleases" => $includeAllReleases, ":searchText" => $searchText, ":selectedRelease" => $selectedRelease];
 
       // Generate SQL to call the "SearchTaxonomy" stored procedure to search the ICTV taxonomy.
-      $sql = "CALL SearchTaxonomy(:currentRelease, :includeAllReleases, :searchText, :selectedRelease);";
+      $sql = "CALL searchTaxonomy(:currentRelease, :includeAllReleases, :searchText, :selectedRelease);";
 
       try {
          // Run the stored procedure.
@@ -224,6 +165,7 @@ class SearchTaxonomy extends ResourceBase {
          return null;
       }
 
+      
       $searchResults = [];
 
       // Iterate over the result rows and add each row to the search results.
@@ -231,6 +173,9 @@ class SearchTaxonomy extends ResourceBase {
 
          // Create a taxon search result instance from the row of data.
          $searchResult = TaxonSearchResult::fromArray((array) $row);
+
+         // Set lineageHTML and name.
+         $searchResult->process();
 
          // Normalize the search result object and add it to the results.
          array_push($searchResults, $searchResult->normalize());
