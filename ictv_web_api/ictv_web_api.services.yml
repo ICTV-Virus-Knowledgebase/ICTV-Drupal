@@ -4,3 +4,15 @@ services:
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }
+
+  ictv_web_api.getChildTaxa:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetChildTaxa'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getTaxaByName:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTaxaByName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
