@@ -48,6 +48,11 @@ mariadb -D $AppsDB -s -b --show-warnings < AddViewsToIctvApps.sql
 START_TIME=$(date +%s)
 echo -e "\nUpdating vocabulary and term tables"
 mariadb -D $AppsDB -s -b --show-warnings < UpdateVocabularyAndTerms.sql
+if [ $? -ne 0 ]; then
+  echo "An error occurred adding UpdateVocabularyAndTerms.sql"
+  exit 1
+fi
+
 echo "CALL UpdateVocabularyAndTerms();" | mariadb -D $AppsDB -s -b --show-warnings
 if [ $? -ne 0 ]; then
   echo "An error occurred updating the vocabulary and term tables"

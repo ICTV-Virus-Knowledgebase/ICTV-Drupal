@@ -27,6 +27,12 @@
    color: #000;
 }
 
+#ictv_sequence_classifier_container.ictv-custom .upload-panel button.classify-button {
+   background-color: #198754;
+   color: #fff;
+}
+
+
 /* User row and upload panel */
 #ictv_sequence_classifier_container.ictv-custom .user-row {
    margin-bottom: 1.0rem;
@@ -311,4 +317,54 @@
    cursor: pointer;
    font-size: 0.9rem;
    min-width: 100px;
+}
+
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Overriding DataTables CSS
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The "Show ___ entries" row above the table */
+#ictv_sequence_classifier_container .dt-container .dt-length {
+   margin-bottom: 1.0rem;
+}
+
+#ictv_sequence_classifier_container .dt-container .dt-length label {
+   align-items: center;
+   font-weight: normal;
+   display: flex !important;
+   flex-flow: row nowrap !important;
+   justify-content: flex-start;
+}
+
+#ictv_sequence_classifier_container .dt-container .dt-length select.dt-input {
+   background-color: transparent;
+   border: 1px solid #aaa;
+   border-radius: 3px;
+   font-size: 1.0rem;
+   max-width: 6rem;
+   margin: 0 0.25rem;
+   min-width: 4rem;
+   padding: 0 5px !important;
+   text-align: left;
+}
+
+#ictv_sequence_classifier_container .dt-container .dt-layout-row {
+   font-size: 0.9rem;
+}
+
+#ictv_sequence_classifier_container .dt-container .dt-paging {
+   text-align: right;
+}
+
+/* Table TH and TD */
+#ictv_sequence_classifier_container table.results-table.compact thead th,
+#ictv_sequence_classifier_container table.results-table.compact thead td {
+   padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
+}
+
+#ictv_sequence_classifier_container table.results-table.compact thead th {
+   text-align: left !important;
 }

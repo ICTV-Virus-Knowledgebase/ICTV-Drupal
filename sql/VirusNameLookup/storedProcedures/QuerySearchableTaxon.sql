@@ -4,11 +4,7 @@ DROP PROCEDURE IF EXISTS `QuerySearchableTaxon`;
 
 DELIMITER //
 
--- Query the searchable_taxon table for the search text provided.
-
--- Updates
--- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
-
+-- Query the searchable_taxon table using the search criteria provided.
 CREATE PROCEDURE QuerySearchableTaxon(
 	
    -- The current MSL release number.
@@ -185,10 +181,12 @@ BEGIN
 
          -- Taxonomy databases in order of preference.
          CASE
-            WHEN st.taxonomy_db = 'ictv_taxonomy' THEN 4
-            WHEN st.taxonomy_db = 'ictv_epithets' THEN 3
-            WHEN st.taxonomy_db = 'ictv_vmr' THEN 2
-            WHEN st.taxonomy_db = 'ncbi_taxonomy' THEN 1
+            WHEN st.taxonomy_db = 'ictv_taxonomy' THEN 6
+            WHEN st.taxonomy_db = 'ictv_epithets' THEN 5
+            WHEN st.taxonomy_db = 'ictv_vmr' THEN 4
+            WHEN st.taxonomy_db = 'curated_name' THEN 3
+            WHEN st.taxonomy_db = 'ncbi_taxonomy' THEN 2
+            WHEN st.taxonomy_db = 'disease_ontology' THEN 1
             ELSE 0
          END AS taxonomy_db_score,
 

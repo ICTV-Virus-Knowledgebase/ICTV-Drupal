@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `updateJob`;
+
+DELIMITER //
 
 CREATE PROCEDURE `updateJob`(
 	IN `currentStatus` VARCHAR(100),

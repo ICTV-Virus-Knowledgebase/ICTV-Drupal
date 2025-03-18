@@ -168,7 +168,7 @@ class JobService {
             $fileID = $this->fileSystem->saveData($data, $fileNameAndPath, FileSystemInterface::EXISTS_REPLACE);
 
             // Update the permissions
-            if (!$this->fileSystem->chmod($fileNameAndPath, 777)) {
+            if (!$this->fileSystem->chmod($fileNameAndPath, 0644)) {
                 \Drupal::logger($this->parentModule)->error("Unable to change permissions on file ".$filename);
                 return null;
             }

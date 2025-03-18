@@ -1,14 +1,48 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `exportJobsAsJSON`;
 
+DELIMITER //
+
 CREATE PROCEDURE `exportJobsAsJSON`(
+   IN `jobType` VARCHAR(60),
 	IN `userEmail` VARCHAR(200),
 	IN `userUID` INT
 )
 BEGIN
 
+   -- Declare variables used below.
+   DECLARE typeTID INT;
+
+   -- Validate the job type
+   IF jobType IS NULL OR LENGTH(jobType) < 1 THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid job type parameter';
+   END IF;
+
+   -- Validate the user email
+	IF userEmail IS NULL OR LENGTH(userEmail) < 1 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid user email parameter';
+	END IF;
+	
+	-- Validate the user UID
+	IF userUID IS NULL OR LENGTH(userUID) < 1 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid user UID parameter';
+	END IF;
+
+
+   -- Lookup the term ID for the job type.
+	SET typeTID = (
+		SELECT id 
+		FROM term 
+		WHERE full_key = CONCAT('job_type.', jobType)
+		LIMIT 1
+	);
+   
+   IF typeTID IS NULL THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for job type parameter';
+	END IF;
+
+   
+   -- Return all of the user's jobs as JSON.
 	SELECT GROUP_CONCAT(job_json SEPARATOR ',') AS json
 	FROM (
 		SELECT CONCAT( 
@@ -59,6 +93,8 @@ BEGIN
 		FROM v_job j
 		WHERE j.user_uid = userUID
 		AND j.user_email = userEmail
+      AND j.type_tid = typeTID
+      ORDER BY j.created_on DESC
 	) AS jobs;
 
 END //

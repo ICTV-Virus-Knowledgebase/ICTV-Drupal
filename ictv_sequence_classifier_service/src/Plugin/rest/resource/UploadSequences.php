@@ -24,11 +24,11 @@ use Drupal\ictv_common\Utils;
 /**
  * A sequence classifier web service for uploading sequence files.
  * @RestResource(
- *   id = "sequence-classifier-upload-sequences",
+ *   id = "upload-sequences",
  *   label = @Translation("ICTV Sequence Classifier: Upload Sequences"),
  *   uri_paths = {
- *      "canonical" = "/sequence-classifier-upload-sequences",
- *      "create" = "/sequence-classifier-upload-sequences"
+ *      "canonical" = "/upload-sequences",
+ *      "create" = "/upload-sequences"
  *   }
  * )
  */
@@ -43,10 +43,17 @@ class UploadSequences extends ResourceBase {
    // The path of the Drupal installation.
    protected string $drupalRoot;
 
-   protected JobService $jobService;
+   // The directory where input sequences are uploaded.
+   protected string $inputDirectory;
 
    // The full path of the jobs directory.
    protected string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
+
+   // The JobService object.
+   protected JobService $jobService;
+   
+   // The directory where output files are stored.
+   protected string $outputDirectory;
 
 
    /**
@@ -88,25 +95,41 @@ class UploadSequences extends ResourceBase {
       // Access the module's configuration object.
       $config = $configFactory->get('ictv_sequence_classifier_service.settings');
 
-      // Get the database name.
-      $this->databaseName = $config->get("databaseName");
-      if (Utils::isNullOrEmpty($this->databaseName)) { 
-         \Drupal::logger('ictv_sequence_classifier_service')->error("The databaseName setting is empty");
+      try {
+         // Get the database name.
+         $this->databaseName = $config->get("databaseName");
+         if (Utils::isNullOrEmpty($this->databaseName)) { 
+            throw new \Exception("The databaseName setting is empty");
+         }
+         
+         // Get the input directory.
+         $this->inputDirectory = $config->get("inputDirectory");
+         if (Utils::isNullOrEmpty($this->inputDirectory)) { 
+            throw new \Exception("The inputDirectory setting is empty");
+         }
+
+         // Get the jobs path.
+         $this->jobsPath = $config->get("jobsPath");
+         if (Utils::isNullOrEmpty($this->jobsPath)) { 
+            throw new \Exception("The jobsPath setting is empty");
+         }
+         
+         // Get the output directory.
+         $this->outputDirectory = $config->get("outputDirectory");
+         if (Utils::isNullOrEmpty($this->outputDirectory)) { 
+            throw new \Exception("The outputDirectory setting is empty");
+         }
+      }
+      catch (\Exception $e) {
+         \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
          return;
       }
-      
-      // Get the jobs path.
-      $this->jobsPath = $config->get("jobsPath");
-      if (Utils::isNullOrEmpty($this->jobsPath)) { 
-         \Drupal::logger('ictv_sequence_classifier_service')->error("The jobsPath setting is empty");
-         return;
-      }
-      
+
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
-      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_sequence_classifier_service", "sequences", "results");
+      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_sequence_classifier", $this->inputDirectory, $this->outputDirectory);
    }
 
 
@@ -218,7 +241,7 @@ class UploadSequences extends ResourceBase {
       
       // Get and validate the array of files.
       $files = $json["files"];
-      if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Invalid files"); }
+      if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
 
       $command = "";
@@ -232,8 +255,9 @@ class UploadSequences extends ResourceBase {
          //-------------------------------------------------------------------------------------------------------
          // Create a job record and get its ID and UID.
          //-------------------------------------------------------------------------------------------------------
-         $this->jobService->createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
+         $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_classification, $jobUID, $userEmail, $userUID);
          
+         // DEBUG
          \Drupal::logger('ictv_sequence_classifier_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
          
          // Create the job directory and subdirectories and return the full path of the job directory.
@@ -255,7 +279,7 @@ class UploadSequences extends ResourceBase {
             if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
             $sequence = $file["contents"];
-            if (Utils::isNullOrEmpty($proposal)) { throw new BadRequestHttpException("Invalid sequence"); }
+            if (Utils::isNullOrEmpty($sequence)) { throw new BadRequestHttpException("Invalid sequence"); }
 
             $fileStartIndex = stripos($sequence, ",");
             if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in sequence file"); }
@@ -263,6 +287,7 @@ class UploadSequences extends ResourceBase {
             $base64Data = substr($sequence, $fileStartIndex + 1);
             if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The sequence file is empty"); }
 
+            // TODO: This might not be necessary!
             // Decode the file contents from base64.
             $binaryData = base64_decode($base64Data);
 
@@ -272,6 +297,7 @@ class UploadSequences extends ResourceBase {
             // Create a job file
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
       
+            // DEBUG
             \Drupal::logger('ictv_sequence_classifier_service')->info("created job_file with UID ".$jobFileUID);
 
             $uploadOrder = $uploadOrder + 1;
@@ -289,6 +315,9 @@ class UploadSequences extends ResourceBase {
 
          $fullPath = $rootPath."/".$modulePath."/".$localPath;
       
+         \Drupal::logger('ictv_sequence_classifier_service')->info("TODO: This is where the command should be run.");
+
+         /*
          //-------------------------------------------------------------------------------------------------------
          // Create the command that will be run on the command line.
          //-------------------------------------------------------------------------------------------------------
@@ -325,7 +354,7 @@ class UploadSequences extends ResourceBase {
          $resultCode = -1;
 
          // Run the command on the command line.
-         $commandResult = exec($command, $output, $resultCode);
+         $commandResult = exec($command, $output, $resultCode); */
 
       } catch (Exception $e) {
 

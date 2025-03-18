@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP FUNCTION IF EXISTS `generateStatusMessage`;
+
+DELIMITER //
 
 CREATE FUNCTION `generateStatusMessage` (
     `errorCount` INT,

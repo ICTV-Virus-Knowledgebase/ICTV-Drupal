@@ -3,7 +3,7 @@ type: module
 description: 'A web service that tries to find the best virus name matches from user-provided text.'
 package: ICTV
 configure: ictv_virus_name_lookup_service.settings
-core_version_requirement: ^10
+core_version_requirement: ^9 || ^10 || ^11
 dependencies:
   - drupal:rest
   - drupal:serialization
