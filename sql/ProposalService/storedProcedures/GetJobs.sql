@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `getJobs`;
+
+DELIMITER //
 
 CREATE PROCEDURE `getJobs`(
    IN `jobType` VARCHAR(60),

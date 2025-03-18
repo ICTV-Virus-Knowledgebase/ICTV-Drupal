@@ -2,6 +2,6 @@ name: ICTV Configuration
 type: module
 description: 'A custom module that displays a form to manage the ICTV configuration settings'
 package: ICTV
-core_version_requirement: ^9 || ^10
+core_version_requirement: ^9 || ^10 || ^11
 dependencies:
   - drupal:block

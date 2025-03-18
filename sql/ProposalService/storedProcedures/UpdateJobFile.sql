@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `updateJobFile`;
+
+DELIMITER //
 
 CREATE PROCEDURE `updateJobFile`(
 	IN `errorCount` INT,

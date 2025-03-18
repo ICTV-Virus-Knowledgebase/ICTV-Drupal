@@ -8,6 +8,12 @@ ictv_sequence_classifier_service.settings:
     drupalRoot:
       type: string
       label: 'The Drupal website root'
+    inputDirectory:
+      type: string
+      label: 'The directory where sequence files are uploaded'
     jobsPath:
       type: string
       label: 'The directory where job files are maintained'
+    outputDirectory:
+      type: string
+      label: 'The directory where output files are stored'

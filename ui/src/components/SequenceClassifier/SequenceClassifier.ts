@@ -13,11 +13,15 @@ export class SequenceClassifier {
 
    authToken: string;
 
-   contactEmail = null; // "info@ictv.global";
+   config = {
+      acceptedFileTypes: [".fasta", ".fastq"],
+      contactEmail: null
+   }
 
    // TODO: I'm thinking about using this to flag new results the user has not yet viewed.
    currentJobUID: string;
 
+   // The DataTable instance.
    dataTable;
 
    elements: {
@@ -46,8 +50,7 @@ export class SequenceClassifier {
 
    jobs: IJob[];
 
-   // The DOM id for the modal dialog.
-   modalID = "ictv_sequence_classifier_modal";
+   
 
    // User information
    user: {
@@ -66,8 +69,6 @@ export class SequenceClassifier {
    constructor(authToken_: string, contactEmail_: string, containerSelector_: string, email_: string, 
       name_: string, userUID_: number) {
       
-      console.log("In SequenceClassifier c-tor")
-
       // Validate parameters
       if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in SequenceClassifier"); }
       if (!contactEmail_) { throw new Error("Invalid contact email"); }
@@ -76,7 +77,7 @@ export class SequenceClassifier {
       if (!name_ || name_.length < 1) { throw new Error("Invalid user name in SequenceClassifier"); }
 
       this.authToken = authToken_;
-      this.contactEmail = contactEmail_;
+      this.config.contactEmail = contactEmail_;
       this.selectors.container = containerSelector_;
 
       this.user = {
@@ -130,8 +131,8 @@ export class SequenceClassifier {
    }
 
 
-   // Display all of this user's jobs.
-   async displayJobs() {
+   // Display all of this user's classified sequences (jobs).
+   async displayClassifiedSequences() {
 
       if (!this.jobs || this.jobs.length < 1) {
          this.elements.jobs.innerHTML = "No sequences have been submitted";
@@ -241,6 +242,7 @@ export class SequenceClassifier {
          stripeClasses: []
       });
 
+      // TODO: Consider removing the jQuery dependency.
       // Handle an event that's triggered when a new child row is added to the DataTable.
       jQuery(`${this.selectors.container} table.jobs-table`).on("childRow.dt", (e_, show_: boolean, parentRow_) => {
 
@@ -288,6 +290,9 @@ export class SequenceClassifier {
 
    async downloadSummary(jobUID_: string) {
 
+      await AlertBuilder.displayInfo("TODO: not yet implemented");
+
+      /*
       // Validate the job UID.
       if (!jobUID_) { throw new Error("Unable to download summary: invalid job UID"); }
 
@@ -297,35 +302,37 @@ export class SequenceClassifier {
 
       // Download the file as a spreadsheet.
       this.decodeAndDownload(summary.file, summary.filename);
-
+      */
       return;
    }
 
 
-   // Get this user's jobs from the web service.
-   async getJobs() {
+   // Get this user's classified sequences (jobs) from the web service.
+   async getClassifiedSequences() {
 
-      this.jobs = await SequenceClassifierService.getJobs(this.authToken, this.user.email, this.user.uid);
+      // Get the user's classified sequences.
+      this.jobs = await SequenceClassifierService.getClassifiedSequences(this.authToken, this.user.email, this.user.uid);
 
-      await this.displayJobs();
-      return;
+      // Display the classified sequences.
+      return await this.displayClassifiedSequences();
    }
 
 
+   // Initialize the Sequence Classifier.
    initialize() {
-
-      console.log("In SequenceClassifier initialize")
 
       this.elements.container = <HTMLElement>document.querySelector(this.selectors.container);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
+
+      // Format the accepted file types.
+      let fileFormats = this.config.acceptedFileTypes.join(",");
 
       // Create HTML for the container Element.
       const html = 
          `<div class=\"user-row\">You are logged in as ${this.user.name} (${this.user.email})</div>
          <div class=\"upload-panel\">
-               <button class=\"btn file-control\">${this.icons.browse} Browse for files</button>
-               <input type=\"file\" id=\"file_input\" multiple
-                  accept=".xlsx,.csv,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+               <button class=\"btn file-control\">${this.icons.browse} Select file</button>
+               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
                <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
                <button class=\"btn classify-button hidden\">Validate</button>
          </div>
@@ -457,6 +464,7 @@ export class SequenceClassifier {
       let content: string;
       let title: string;
 
+      // Message content depends on the number of files.
       if (fileCount_ === 1) {
          title = "Classifying your sequence file";
          content = "Your sequence file has been uploaded and is being classified. When the process is complete, " +
@@ -473,13 +481,6 @@ export class SequenceClassifier {
       return await AlertBuilder.displaySuccess(content, title);
    }
 
-   async test() {
-
-      const result = await SequenceClassifierService.test(this.authToken, this.user.email, this.user.uid);
-
-      console.log("test result = ", result)
-      return;
-   }
 
    async updateChildRowVisibility(jobUID_: string) {
 
@@ -507,6 +508,8 @@ export class SequenceClassifier {
       return;
    }
 
+
+   // Upload the selected files to the web service for classification.
    async uploadSequences() {
 
       if (!this.elements.fileInput) { throw new Error("Invalid file control"); }
@@ -565,7 +568,7 @@ export class SequenceClassifier {
          });
          
          // Reload the jobs.
-         await this.getJobs();
+         await this.getClassifiedSequences();
 
       } catch (error_) {
          await AlertBuilder.displayError(error_);

@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `populateJobJSON`;
+
+DELIMITER //
 
 CREATE PROCEDURE `populateJobJSON`(
 	IN `jobID` INT

@@ -1,12 +1,12 @@
 services:
-  ictv_sequence_classifier_service.getJobs:
-    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\GetJobs'
+  ictv_sequence_classifier_service.GetClassifiedSequences:
+    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\GetClassifiedSequences'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }
 
-  ictv_sequence_classifier_service.test:
-    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\Test'
+  ictv_sequence_classifier_service.UploadSequences:
+    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\UploadSequences'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }

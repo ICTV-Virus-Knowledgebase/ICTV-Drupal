@@ -3,7 +3,7 @@ type: module
 description: 'A web service that supports the curated name manager UI.'
 package: ICTV
 configure: ictv_curated_name_service.settings
-core_version_requirement: ^10
+core_version_requirement: ^9 || ^10 || ^11
 dependencies:
   - drupal:rest
   - drupal:serialization

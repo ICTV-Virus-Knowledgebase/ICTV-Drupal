@@ -1,6 +1,5 @@
 
 import DataTables from "datatables.net-dt";
-import { RowChildMethods } from "datatables.net-dt";
 import { DateTime } from "luxon";
 import { decode } from "base64-arraybuffer";
 import { IFileData } from "../../models/IFileData";

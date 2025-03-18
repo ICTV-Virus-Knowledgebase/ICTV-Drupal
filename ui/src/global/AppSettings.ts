@@ -27,17 +27,33 @@ export class _AppSettings {
    
    // A lookup from web service keys to web service URLs (not including the full path).
    webServiceLookup: {[key_ in WebServiceKey]: string } = {
+
+      // Curated names
       createCuratedName: "create-curated-name",
-      csrfToken: "session/token",
       deleteCuratedName: "delete-curated-name",
       getCuratedName: "get-curated-name",
       getCuratedNames: "get-curated-names",
+      updateCuratedName: "update-curated-name",
+
+      // The Drupal CSRF token
+      csrfToken: "session/token",
+      
+      // Proposal service
       proposal: "proposal-api",
-      sequenceClassifier: "sequence-classifier-api",
+
+      // Sequence classifier
+      getClassifiedSequences: "get-classified-sequences",
+      getSequenceClassification: "get-sequence-classification",
+      uploadSequences: "upload-sequences",
+
+      // Taxonomy
       taxonomy: "taxonomy.ashx",
       taxonomyHistory: "taxonomyHistory.ashx",
-      updateCuratedName: "update-curated-name",
+      
+      // Member species table
       virusIsolate: "virusIsolate.ashx",
+
+      // Virus name lookup
       virusNameLookup: "virus-name-lookup"
    }
 }

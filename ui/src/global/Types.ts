@@ -196,17 +196,33 @@ export enum TopLevelRank {
 
 // Keys representing all available web services.
 export enum WebServiceKey {
+
+   // Curated name
    createCuratedName = "createCuratedName",
-   csrfToken = "csrfToken",
    deleteCuratedName = "deleteCuratedName",
    getCuratedName = "getCuratedName",
    getCuratedNames = "getCuratedNames",
+   updateCuratedName = "updateCuratedName",
+   
+   // The Drupal CSRF token
+   csrfToken = "csrfToken",
+   
+   // Proposal service
    proposal = "proposal",
-   sequenceClassifier = "sequenceClassifier",
+
+   // Sequence classifier
+   getClassifiedSequences = "getClassifiedSequences",
+   getSequenceClassification = "getSequenceClassification",
+   uploadSequences = "uploadSequences",
+
+   // Taxonomy
    taxonomy = "taxonomy",
    taxonomyHistory = "taxonomyHistory",
-   updateCuratedName = "updateCuratedName",
+   
+   // Member species table
    virusIsolate = "virusIsolate",
+
+   // Virus name lookup
    virusNameLookup = "virusNameLookup"
 }
 

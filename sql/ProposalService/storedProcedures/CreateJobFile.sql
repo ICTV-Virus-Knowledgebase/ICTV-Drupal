@@ -1,7 +1,7 @@
 
-DELIMITER //
-
 DROP PROCEDURE IF EXISTS `createJobFile`;
+
+DELIMITER //
 
 CREATE PROCEDURE `createJobFile`(
 	IN `filename` VARCHAR(100),

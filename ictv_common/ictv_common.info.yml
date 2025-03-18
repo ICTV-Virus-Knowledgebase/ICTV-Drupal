@@ -2,4 +2,4 @@ name: ICTV Common
 type: module
 description: 'A code library for commonly-used ICTV objects and tools.'
 package: ICTV
-core_version_requirement: ^10
+core_version_requirement: ^9 || ^10 || ^11

@@ -1,3 +1,5 @@
 databaseName: 'ictv_apps'
 drupalRoot: '/var/www/drupal/site'
+inputDirectory: 'seq_in'
 jobsPath: '/var/www/drupal/files/jobs'
+outputDirectory: 'tax_out'
