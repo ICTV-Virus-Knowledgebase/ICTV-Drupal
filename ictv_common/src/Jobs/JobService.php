@@ -10,6 +10,7 @@ use Drupal\ictv_common\Types\JobType;
 use Drupal\ictv_common\Utils;
 
 
+// A class to handle job and job_file records.
 class JobService {
 
    // The path where job directories are created.
@@ -24,7 +25,7 @@ class JobService {
 
    protected LoggerInterface $logger;
 
-   // Directory names for subdirectories of the job directory.
+   // Directory names for subdirectories of the job directory (with defaults).
    protected string $inputDirName = "input";
    protected string $outputDirName = "output";
 
@@ -118,7 +119,7 @@ class JobService {
       }
 
       // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
-      $sql = "CALL createJob({$jobName}, '{$jobType->value}', '{$userEmail}', {$userUID});";
+      $sql = "CALL createJob({$jobName}, '{$jobType->value}', '{$userEmail}', '{$userUID}');";
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();
@@ -204,7 +205,7 @@ class JobService {
    public function getJobs(Connection $connection, JobType $jobType, string $userEmail, string $userUID) {
 
       // Generate SQL to return JSON for each of the user's jobs.
-      $sql = "CALL getJobs('{$jobType->value}', '{$userEmail}', {$userUID});";
+      $sql = "CALL getJobs('{$jobType->value}', '{$userEmail}', '{$userUID}');";
 
       // Execute the query and process the results.
       $result = $connection->query($sql);
@@ -286,8 +287,21 @@ class JobService {
    }
 
 
+   // Populate job.json for the specified job, and job_file.json for all of the job's job_files.
+   public function populateJobJSON(Connection $connection, int $jobID) {
+
+      // Generate SQL
+      $sql = "CALL populateJobJSON({$jobID});";
+
+      // Execute the query and process the results.
+      $result = $connection->query($sql);
+
+      return $result;
+   }
+
+
    // Update the job record in the database.
-   public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, JobStatus $status, int $userUID) {
+   public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, JobStatus $status, string $userUID) {
 
       if (Utils::isEmptyElseTrim($errorMessage)) {
          $errorMessage = "NULL";
@@ -296,7 +310,7 @@ class JobService {
       }
 
       // Generate SQL to call the "updateJob" stored procedure.
-      $sql = "CALL updateJob('{$status->value}', {$errorMessage}, '{$jobUID}', {$userUID});";
+      $sql = "CALL updateJob('{$status->value}', {$errorMessage}, '{$jobUID}', '{$userUID}');";
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();

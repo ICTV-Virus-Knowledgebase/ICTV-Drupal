@@ -7,6 +7,8 @@ import { ISearchResult } from "./ISearchResult";
 import { LookupNameClass, LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
+
+// The possible types of an ICTV result.
 enum ResultType {
    abolished = "abolished",
    current = "current",
@@ -14,6 +16,7 @@ enum ResultType {
 }
 
 
+// A class used by the "Find the Species" page to search for taxon name matches.
 export class VirusNameLookup {
 
    // The DOM selector of the module's container Element.
@@ -46,6 +49,7 @@ export class VirusNameLookup {
    // The URL of the Find the Species page (used by the minimal component).
    findTheSpeciesURL: string;
 
+   // FontAwesome icons
    icons: {
       info: string,
       lineageDelimiter: string,
@@ -53,6 +57,7 @@ export class VirusNameLookup {
       spinner: string
    }
 
+   // Text corresponding to each search modifier. These are used by the "placeholder" attribute of the search text input Element.
    placeholderText = {
       [SearchModifier.all_words]: "Enter one or more required words",
       [SearchModifier.any_words]: "Enter one or more optional words",
@@ -62,8 +67,10 @@ export class VirusNameLookup {
    
    results: IIctvResult[];
 
+   // The search text entered by the user.
    searchText: string;
 
+   // Configuration settings
    settings = {
       currentMslRelease: NaN,
       pageSize: 10
@@ -752,6 +759,7 @@ export class VirusNameLookup {
    }
 
 
+   // Highlight the search text in a name.
    highlightText(name_: string): string {
 
       if (!name_ || name_.length < 1) { return ""; }

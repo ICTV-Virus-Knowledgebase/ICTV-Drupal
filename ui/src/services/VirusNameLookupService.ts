@@ -5,11 +5,10 @@ import { SearchModifier, WebServiceKey } from "../global/Types";
 
 export class _VirusNameLookupService {
 
-
+   // Search the database to find taxon name matches.
    async lookupName(currentMslRelease_: number, searchModifier_: SearchModifier, searchText_: string): Promise<IIctvResult[]> {
 
       const data = {
-         actionCode: "lookup_name",
          currentMslRelease: currentMslRelease_,
          searchModifier: searchModifier_,
          searchText: searchText_

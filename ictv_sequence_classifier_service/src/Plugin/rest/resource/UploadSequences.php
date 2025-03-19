@@ -72,6 +72,8 @@ class UploadSequences extends ResourceBase {
     *   The module_id for the plugin instance.
     * @param mixed $module_definition
     *   The plugin implementation definition.
+    * @param ConfigFactoryInterface $configFactory
+    *   The factory for configuration objects.
     * @param array $serializer_formats
     *   The available serialization formats.
     * @param \Psr\Log\LoggerInterface $logger
@@ -88,37 +90,32 @@ class UploadSequences extends ResourceBase {
       LoggerInterface $logger,
       AccountProxyInterface $currentUser) {
 
+      // Call the parent constructor.
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
 
+      // TODO: Should we validate the user?
       $this->currentUser = $currentUser;
 
       // Access the module's configuration object.
       $config = $configFactory->get('ictv_sequence_classifier_service.settings');
 
+      // Get configuration settings from the ictv_sequence_classifier_service.settings file.
       try {
          // Get the database name.
          $this->databaseName = $config->get("databaseName");
-         if (Utils::isNullOrEmpty($this->databaseName)) { 
-            throw new \Exception("The databaseName setting is empty");
-         }
+         if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
          
          // Get the input directory.
          $this->inputDirectory = $config->get("inputDirectory");
-         if (Utils::isNullOrEmpty($this->inputDirectory)) { 
-            throw new \Exception("The inputDirectory setting is empty");
-         }
+         if (Utils::isNullOrEmpty($this->inputDirectory)) { throw new \Exception("The inputDirectory setting is empty"); }
 
          // Get the jobs path.
          $this->jobsPath = $config->get("jobsPath");
-         if (Utils::isNullOrEmpty($this->jobsPath)) { 
-            throw new \Exception("The jobsPath setting is empty");
-         }
+         if (Utils::isNullOrEmpty($this->jobsPath)) { throw new \Exception("The jobsPath setting is empty"); }
          
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
-         if (Utils::isNullOrEmpty($this->outputDirectory)) { 
-            throw new \Exception("The outputDirectory setting is empty");
-         }
+         if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
       }
       catch (\Exception $e) {
          \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
@@ -243,9 +240,9 @@ class UploadSequences extends ResourceBase {
       $files = $json["files"];
       if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
-
-      $command = "";
-      $commandResult = -1;
+      // Declare variables used below.
+      $command = null;
+      $commandResult = null;
       $jobID = 0;
       $jobUID = "";
       $resultCode = -1;
@@ -257,7 +254,7 @@ class UploadSequences extends ResourceBase {
          //-------------------------------------------------------------------------------------------------------
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_classification, $jobUID, $userEmail, $userUID);
          
-         // DEBUG
+         // TODO: This is for debugging and can be deleted later.
          \Drupal::logger('ictv_sequence_classifier_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
          
          // Create the job directory and subdirectories and return the full path of the job directory.
@@ -274,7 +271,7 @@ class UploadSequences extends ResourceBase {
 
          foreach ($files as $file) {
                
-            // TODO: validate file?
+            // Get and validate file attributes.
             $filename = $file["name"];
             if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
@@ -287,7 +284,6 @@ class UploadSequences extends ResourceBase {
             $base64Data = substr($sequence, $fileStartIndex + 1);
             if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The sequence file is empty"); }
 
-            // TODO: This might not be necessary!
             // Decode the file contents from base64.
             $binaryData = base64_decode($base64Data);
 
@@ -297,7 +293,7 @@ class UploadSequences extends ResourceBase {
             // Create a job file
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
       
-            // DEBUG
+            // TODO: This is for debugging and can be deleted later.
             \Drupal::logger('ictv_sequence_classifier_service')->info("created job_file with UID ".$jobFileUID);
 
             $uploadOrder = $uploadOrder + 1;
@@ -313,8 +309,10 @@ class UploadSequences extends ResourceBase {
          // The path within this module.
          $localPath = "src/Plugin/rest/resource";
 
+         // Combine the paths to get the full path of the directory containing the PHP script.
          $fullPath = $rootPath."/".$modulePath."/".$localPath;
       
+         // TODO: This is for debugging and can be deleted later.
          \Drupal::logger('ictv_sequence_classifier_service')->info("TODO: This is where the command should be run.");
 
          /*
@@ -356,15 +354,19 @@ class UploadSequences extends ResourceBase {
          // Run the command on the command line.
          $commandResult = exec($command, $output, $resultCode); */
 
+
+         // Populate job.json for the specified job, and job_file.json for all of the job's job_files.
+         $this->jobService->populateJobJSON($this->connection, $jobID);
+
       } catch (Exception $e) {
 
          $status = JobStatus::crashed;
 
          $errorMessage = null;
          if ($e) { 
-               $errorMessage = $e->getMessage(); 
+            $errorMessage = $e->getMessage(); 
          } else {
-               $errorMessage = "Unspecified error";
+            $errorMessage = "Unspecified error";
          }
          
          // Update the log with the job UID and this error message.

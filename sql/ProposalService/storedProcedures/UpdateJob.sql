@@ -7,7 +7,7 @@ CREATE PROCEDURE `updateJob`(
 	IN `currentStatus` VARCHAR(100),
 	IN `errorMessage` TEXT,
 	IN `jobUID` VARCHAR(100),
-	IN `userUID` INT
+	IN `userUID` VARCHAR(100)
 )
 BEGIN
 
@@ -28,7 +28,7 @@ BEGIN
 	END IF;
 
 	-- Validate the user UID
-	IF userUID IS NULL THEN 
+	IF userUID IS NULL OR LENGTH(userUID) < 1 THEN 
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid userUID parameter';
 	END IF;
 	

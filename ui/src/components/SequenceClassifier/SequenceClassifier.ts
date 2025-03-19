@@ -7,6 +7,8 @@ import { IFileData } from "../../models/IFileData";
 import { IJob } from "./IJob";
 import { IJobFile } from "./IJobFile";
 import { SequenceClassifierService } from "../../services/SequenceClassifierService";
+import { Utils } from "../../helpers/Utils";
+import { WebStorageKey } from "../../global/Types";
 
 
 export class SequenceClassifier {
@@ -18,6 +20,10 @@ export class SequenceClassifier {
       contactEmail: null
    }
 
+   constants = {
+      NO_EMAIL: "NO_EMAIL"
+   }
+
    // TODO: I'm thinking about using this to flag new results the user has not yet viewed.
    currentJobUID: string;
 
@@ -25,15 +31,17 @@ export class SequenceClassifier {
    dataTable;
 
    elements: {
+      anonymousID: HTMLInputElement,
+      classifyButton: HTMLButtonElement,
       container: HTMLElement,
+      copyIdButton: HTMLButtonElement,
       fileControl: HTMLElement,
       fileInput: HTMLInputElement,
       fileUploadDetails: HTMLElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
       jobs: HTMLElement,
-      userInfo: HTMLElement,
-      classifyButton: HTMLButtonElement
+      userInfo: HTMLElement
    }
 
    icons: {
@@ -50,13 +58,11 @@ export class SequenceClassifier {
 
    jobs: IJob[];
 
-   
-
    // User information
    user: {
       email: string, 
       name: string,
-      uid: number
+      uid: string
    }
 
    // CSS selectors
@@ -67,14 +73,16 @@ export class SequenceClassifier {
 
    // C-tor
    constructor(authToken_: string, contactEmail_: string, containerSelector_: string, email_: string, 
-      name_: string, userUID_: number) {
+      name_: string, userUID_: string) {
       
       // Validate parameters
       if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in SequenceClassifier"); }
       if (!contactEmail_) { throw new Error("Invalid contact email"); }
       if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in SequenceClassifier"); }
-      if (!email_ || email_.length < 1) { throw new Error("Invalid user email in SequenceClassifier"); }
-      if (!name_ || name_.length < 1) { throw new Error("Invalid user name in SequenceClassifier"); }
+      if (!email_ || email_.length < 1) { email_ = this.constants.NO_EMAIL; }
+      if (!name_ || name_.length < 1) { name_ = "Anonymous user"; }
+      userUID_ = Utils.safeTrim(userUID_);
+
 
       this.authToken = authToken_;
       this.config.contactEmail = contactEmail_;
@@ -87,6 +95,9 @@ export class SequenceClassifier {
       }
 
       this.elements = {
+         anonymousID: null,
+         classifyButton: null,
+         copyIdButton: null,
          container: null,
          fileControl: null,
          fileInput: null,
@@ -94,8 +105,7 @@ export class SequenceClassifier {
          jobName: null,
          jobNameLabel: null,
          jobs: null,
-         userInfo: null,
-         classifyButton: null
+         userInfo: null
       }
 
       this.icons = {
@@ -110,6 +120,53 @@ export class SequenceClassifier {
       // Initialize the map of a job's UID to its job files formatted as HTML.
       this.jobFileLookup = new Map<string, string>;
    }
+
+   /*
+   // Copy the user's unique identifier to the clipboard.
+   async copyIdentifier() {
+         
+      if (!this.elements.anonymousID) { throw new Error("Invalid anonymous ID Element"); }
+      let uid = Utils.safeTrim(this.elements.anonymousID.value);
+      if (!uid) { throw new Error("Invalid anonymous ID"); }
+
+      // Copy the URL to the clipboard.
+      await navigator.clipboard.writeText(uid);
+
+      const message = "Your unique identifier has been copied to your clipboard. Please keep it in a safe place and " +
+         "enter it in the ID text field when you return to the page.";
+
+      // Display a success message. When it is closed, the reset password dialog will be closed.
+      return await AlertBuilder.displaySuccess(message);
+   }*/
+
+   /*
+   async createDynamicWindow() {
+
+      const newWindow = window.open("", "_blank", "width=600,height=400"); 
+      if (!newWindow) { throw new Error("Unable to open a new window"); }
+
+      newWindow.document.write(`
+         <!DOCTYPE html>
+         <html>
+            <head>
+            <title>Dynamic Content</title>
+            <style>
+               body { font-family: Arial, sans-serif; padding: 20px; }
+               h1 { color: #4CAF50; }
+            </style>
+            </head>
+            <body>
+            <h1>Hello from JavaScript!</h1>
+            <p>This content was dynamically generated.</p>
+            <div id="content"></div>
+            </body>
+         </html>
+      `);
+
+      // Ensure that the document is fully loaded.
+      newWindow.document.close(); 
+      return;
+   }*/
 
 
    // Decode the base64-encoded file and download it.
@@ -307,6 +364,23 @@ export class SequenceClassifier {
    }
 
 
+   // Generate a universally unique identifier (UUID).
+   generateUUID() {
+
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+    
+      // Set version (4) and variant bits as per RFC 4122
+      bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4 (random)
+      bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 1 (RFC-compliant)
+    
+      // Convert to hexadecimal format
+      return [...bytes].map((b, i) =>
+        ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0')
+      ).join('');
+   }
+
+
    // Get this user's classified sequences (jobs) from the web service.
    async getClassifiedSequences() {
 
@@ -321,20 +395,36 @@ export class SequenceClassifier {
    // Initialize the Sequence Classifier.
    initialize() {
 
+      // If the user UID is empty, look for one in web storage or generate a new one.
+      if (!this.user.uid) { this.setDefaultUserUID(); }
+
+      // Get a reference to the container element.
       this.elements.container = <HTMLElement>document.querySelector(this.selectors.container);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
 
       // Format the accepted file types.
       let fileFormats = this.config.acceptedFileTypes.join(",");
 
+      let greeting = "";
+
+      if (this.user.email === this.constants.NO_EMAIL) {
+
+         greeting = `You are not logged in, but as long as you view this page in the same browser, a history of your results will be maintained.`;
+         /*`Since you are not logged in, you have been assigned the unique identifier <input type="text" class="anonymous-id" value="${this.user.uid}"/>` +
+            `<button class="ictv-button copy-id-button">Copy</button>` +
+            `<br/>This identifier will allow you to retrieve your results later. Please copy it and keep it in a safe place.`;*/
+      } else {
+         greeting = `You are logged in as ${this.user.name} (${this.user.email})`;
+      }
+
       // Create HTML for the container Element.
       const html = 
-         `<div class=\"user-row\">You are logged in as ${this.user.name} (${this.user.email})</div>
+         `<div class=\"user-row\">${greeting}</div>
          <div class=\"upload-panel\">
                <button class=\"btn file-control\">${this.icons.browse} Select file</button>
                <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
                <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
-               <button class=\"btn classify-button hidden\">Validate</button>
+               <button class=\"btn classify-button hidden\">Classify</button>
          </div>
          <div class=\"jobs\"></div>`;
 
@@ -386,6 +476,25 @@ export class SequenceClassifier {
          return;
       });
 
+      /*
+      // Get and validate the "anonymous ID" text field.
+      this.elements.anonymousID = <HTMLInputElement>this.elements.container.querySelector(".anonymous-id");
+      if (!!this.elements.anonymousID) {
+         this.elements.anonymousID.addEventListener("change", (ev_) => {
+
+            let newUID = Utils.safeTrim((ev_.target as HTMLInputElement).value);
+            if (!!newUID) {
+               this.user.uid = newUID;
+            }
+         })
+      }
+
+      // Get and validate the "copy ID" button.
+      this.elements.copyIdButton = <HTMLButtonElement>this.elements.container.querySelector(".copy-id-button");
+      if (!!this.elements.copyIdButton) { 
+         this.elements.copyIdButton.addEventListener("click", () => { this.copyIdentifier(); })
+      }*/
+
       // Get and validate the classify button.
       this.elements.classifyButton = <HTMLButtonElement>this.elements.container.querySelector(".classify-button");
       if (!this.elements.classifyButton) { throw new Error("Invalid classify button Element"); }
@@ -408,7 +517,7 @@ export class SequenceClassifier {
          }
          
          // Begin populating the classify button text.
-         let buttonText = `${this.icons.classify} Validate`;
+         let buttonText = `${this.icons.classify} Classify`;
          
          if (this.elements.fileInput.files.length === 1) {
             buttonText += " file";
@@ -458,6 +567,34 @@ export class SequenceClassifier {
    }
 
 
+   // If the user UID is empty, look for one in web storage or generate a new one.
+   async setDefaultUserUID() {
+
+      // Is there already a user UID in web storage?
+      if (typeof(Storage) !== "undefined") {
+         this.user.uid = localStorage.getItem(WebStorageKey.sequenceClassifierUserUID);
+
+         console.log("userUID from web storage = ", this.user.uid)
+      }
+
+      if (!this.user.uid) { 
+
+         // Generate a new user UID.
+         this.user.uid = this.generateUUID(); 
+      
+         console.log("just generated this userUID: ", this.user.uid)
+
+         if (typeof(Storage) !== "undefined") {
+
+            // Save it in web storage
+            localStorage.setItem(WebStorageKey.sequenceClassifierUserUID, this.user.uid);
+         }
+      }
+
+      return;
+   }
+
+
    // This dialog lets the user know that their files are being classified, and what to expect.
    async showInfoDialog(fileCount_: number, filenames_: string) {
 
@@ -481,7 +618,7 @@ export class SequenceClassifier {
       return await AlertBuilder.displaySuccess(content, title);
    }
 
-
+   
    async updateChildRowVisibility(jobUID_: string) {
 
       // Get the TR DOM Element with this job UID.
