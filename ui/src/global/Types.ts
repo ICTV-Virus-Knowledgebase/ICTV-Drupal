@@ -226,6 +226,10 @@ export enum WebServiceKey {
    virusNameLookup = "virusNameLookup"
 }
 
+// Keys used to set and retrieve data in local (web) storage.
+export enum WebStorageKey {
+   sequenceClassifierUserUID = "sequence_classifier_user_uid"
+}
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // Functions that use enums

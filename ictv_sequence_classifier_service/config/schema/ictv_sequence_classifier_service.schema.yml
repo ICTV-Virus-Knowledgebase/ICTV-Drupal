@@ -17,3 +17,6 @@ ictv_sequence_classifier_service.settings:
     outputDirectory:
       type: string
       label: 'The directory where output files are stored'
+    resultsFilename:
+      type: string
+      label: 'The name of the results file'

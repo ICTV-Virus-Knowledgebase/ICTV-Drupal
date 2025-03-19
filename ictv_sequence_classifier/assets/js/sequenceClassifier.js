@@ -15,9 +15,14 @@
             
             const authToken = settings_.authToken;
             const contactEmail = "info@ictv.global";
-            const userEmail = settings_.userEmail;
-            const userName = settings_.userName;
-            const userUID = settings_.userUID;
+            let userEmail = settings_.userEmail;
+            let userName = settings_.userName;
+            let userUID = settings_.userUID;
+
+            // DMD TEST!!!
+            userEmail = null;
+            userUID = null;
+            userName = null;
 
             //----------------------------------------------------------------------------------------
             // Initialize the ICTV AppSettings using drupalSettings
@@ -28,8 +33,6 @@
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_sequence_classifier_container";
-
-            console.log("About to create a new SequenceClassifier")
 
             // Create a new SequenceClassifier instance.
             const sequenceClassifier = new window.ICTV_SequenceClassifier.SequenceClassifier(authToken, contactEmail, 

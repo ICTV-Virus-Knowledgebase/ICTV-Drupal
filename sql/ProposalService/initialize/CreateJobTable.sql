@@ -16,7 +16,7 @@ CREATE TABLE `job` (
 	`type_tid` INT(10) UNSIGNED NULL DEFAULT NULL,
 	`uid` VARCHAR(100) NOT NULL,
 	`user_email` TEXT NOT NULL,
-	`user_uid` INT(11) NULL DEFAULT NULL,
+	`user_uid` VARCHAR(100) NULL DEFAULT NULL,
 	`warning_count` INT(10) UNSIGNED NULL DEFAULT '0',
 	PRIMARY KEY (`id`) USING BTREE,
 	INDEX `FK_status_tid` (`status_tid`) USING BTREE,

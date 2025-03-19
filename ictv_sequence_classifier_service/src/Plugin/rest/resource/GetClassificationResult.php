@@ -22,17 +22,17 @@ use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service to retrieve sequence classifier jobs.
+ * A web service to retrieve the result summary created by a sequence classifier job.
  * @RestResource(
- *   id = "get-classified-sequences",
- *   label = @Translation("ICTV Sequence Classifier: Get classified sequence jobs"),
+ *   id = "get-classification-result",
+ *   label = @Translation("ICTV Sequence Classifier: Get the results of a classified sequence job"),
  *   uri_paths = {
- *      "canonical" = "/get-classified-sequences",
- *      "create" = "/get-classified-sequences"
+ *      "canonical" = "/get-classification-result",
+ *      "create" = "/get-classification-result"
  *   }
  * )
  */
-class GetClassifiedSequences extends ResourceBase {
+class GetClassificationResult extends ResourceBase {
 
    // The connection to the ictv_apps database.
    protected Connection $connection;
@@ -54,6 +54,9 @@ class GetClassifiedSequences extends ResourceBase {
    
    // The directory where output files are stored.
    protected ?string $outputDirectory;
+
+   // The name of the file containing the results of a sequence classification job.
+   protected ?string $resultsFilename;
 
 
    /**
@@ -116,6 +119,10 @@ class GetClassifiedSequences extends ResourceBase {
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
+
+         // The name of the file containing the results of a sequence classification job.
+         $this->resultsFilename = $config->get("resultsFilename");
+         if (Utils::isNullOrEmpty($this->resultsFilename)) { throw new \Exception("The resultsFilename setting is empty"); }
       }
       catch (\Exception $e) {
          \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
@@ -153,7 +160,7 @@ class GetClassifiedSequences extends ResourceBase {
     public function get(Request $request) {
       
       // Get the user's available jobs.
-      $data = $this->getJobs($request);
+      $data = $this->getResults($request);
 
       $build = array(
          '#cache' => array(
@@ -179,12 +186,16 @@ class GetClassifiedSequences extends ResourceBase {
       // return Cache::PERMANENT;
    }
 
-   // Get the user's classified sequences (jobs).
-   public function getJobs(Request $request) {
+   // Get the the results of a user's sequence classification.
+   public function getResults(Request $request) {
 
       // Get and validate the JSON in the request body.
       $json = Json::decode($request->getContent());
       if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+
+      // Get and validate the result identifier.
+      $resultIdentifier = $json["resultIdentifier"];
+      if (Utils::isNullOrEmpty($resultIdentifier)) { throw new BadRequestHttpException("Invalid result identifier"); }
 
       // Get and validate the user email.
       $userEmail = $json["userEmail"];
@@ -195,7 +206,7 @@ class GetClassifiedSequences extends ResourceBase {
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
       // Get this user's jobs.
-      $data = $this->jobService->getJobs($this->connection, JobType::sequence_classification, $userEmail, $userUID);
+      //$data = $this->jobService->getJobs($this->connection, JobType::sequence_classification, $userEmail, $userUID);
       return $data;
    }
 
@@ -217,7 +228,7 @@ class GetClassifiedSequences extends ResourceBase {
    public function post(Request $request) {
 
       // Get the user's available jobs.
-      $data = $this->getJobs($request);
+      $data = $this->getResults($request);
 
       $build = array(
          '#cache' => array(

@@ -6,7 +6,7 @@ DELIMITER //
 CREATE PROCEDURE `getJobs`(
    IN `jobType` VARCHAR(60),
 	IN `userEmail` VARCHAR(200),
-	IN `userUID` INT
+	IN `userUID` VARCHAR(100)
 )
 BEGIN
 

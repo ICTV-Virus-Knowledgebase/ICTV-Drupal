@@ -4,6 +4,12 @@ namespace Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource;
 
 use Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource\SearchResult;
 
+/**
+ * Class IctvResult
+ *
+ * A subset of data from a SearchResult that represents a single ICTV result.
+ * 
+ */
 class IctvResult {
 
    public ?string $exemplar;

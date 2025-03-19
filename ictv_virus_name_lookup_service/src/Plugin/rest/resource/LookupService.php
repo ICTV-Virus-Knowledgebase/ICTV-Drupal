@@ -33,14 +33,12 @@ use Drupal\ictv_common\Utils;
  */
 class LookupService extends ResourceBase {
 
-   // The connection to the ictv_apps database.
+   // The connection to the database.
    protected Connection $connection;
 
    // The name of the database used by this web service.
-   protected string $databaseName = "ictv_apps";
+   protected string $databaseName;
 
-   // The maximum number of records to return from the database.
-   //protected int $maxDbResultCount = 100;
 
    /**
     * A current user instance which is logged in the session.
@@ -58,6 +56,8 @@ class LookupService extends ResourceBase {
     *   The module_id for the plugin instance.
     * @param mixed $module_definition
     *   The plugin implementation definition.
+    * @param ConfigFactoryInterface $configFactory
+    *   The factory for configuration objects.
     * @param array $serializer_formats
     *   The available serialization formats.
     * @param \Psr\Log\LoggerInterface $logger
@@ -69,19 +69,35 @@ class LookupService extends ResourceBase {
       array $config,
       $module_id,
       $module_definition,
+      ConfigFactoryInterface $configFactory,
       array $serializer_formats,
       LoggerInterface $logger,
       AccountProxyInterface $currentUser) {
 
+      // Call the parent constructor.
       parent::__construct($config, $module_id, $module_definition, $serializer_formats, $logger);
       
+      // NOTE: We probably don't need the current user for this web service.
       $this->currentUser = $currentUser;
+
+      // Access the module's configuration object.
+      $config = $configFactory->get('ictv_virus_name_lookup_service.settings');
+
+      try {
+         // Get the database name.
+         $this->databaseName = $config->get("databaseName");
+         if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); } 
+      }
+      catch (\Exception $e) {
+         \Drupal::logger('ictv_virus_name_lookup_service')->error($e->getMessage());
+         return;
+      }
 
       // Get a database connection.
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
    }
 
-   
+
    /**
     * {@inheritdoc}
     */
@@ -90,8 +106,9 @@ class LookupService extends ResourceBase {
          $config,
          $module_id,
          $module_definition,
+         $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
-         $container->get('logger.factory')->get('ictv_virus_name_lookup_service_resource'),
+         $container->get('logger.factory')->get('ictv_virus_name_lookup_service'),
          $container->get("current_user")
       );
    }
@@ -123,7 +140,7 @@ class LookupService extends ResourceBase {
     */
    public function get(Request $request) {
       
-      $data = $this->processAction($request);
+      $data = $this->handleRequest($request);
 
       $build = array(
          '#cache' => array(
@@ -137,7 +154,7 @@ class LookupService extends ResourceBase {
       return $response;
    }
 
-   
+
    /**
     * {@inheritdoc}
     * 
@@ -151,16 +168,44 @@ class LookupService extends ResourceBase {
    }
 
 
+   // Handle the GET or POST request.
+   public function handleRequest(Request $request) {
+
+      // Get the current MSL release number.
+      $currentMslRelease = $request->get("currentMslRelease");
+      // TODO: validate this!
+
+      // Get the search modifier.
+      $searchModifier = $request->get("searchModifier");
+      if ($searchModifier == NULL) {
+         $searchModifier = "exact_match";
+
+      } else if ($searchModifier != "all_words" && 
+         $searchModifier != "any_words" && 
+         $searchModifier != "contains" && 
+         $searchModifier != "exact_match") { 
+         throw new BadRequestHttpException("Unrecognized search modifier {$searchModifier}"); 
+      }
+      
+      // Get the search text.
+      $searchText = $request->get("searchText");
+      if (Utils::isEmptyElseTrim($searchText)) { throw new BadRequestHttpException("Invalid search text (empty)"); }
+
+      // Look for the search text as a taxon name and return the results.
+      return $this->lookupName($currentMslRelease, $searchModifier, $searchText);
+   }
+
+
    /**
     * Search the database to find taxon name matches.
     * 
-    * @param int currentMslRelease
+    * @param int $currentMslRelease
     *    The current MSL release number.
     *
-    * @param int maxResultCount
+    * @param int $maxResultCount
     *    The maximum number of results to return.
     *
-    * @param string searchText
+    * @param string $searchText
     *    Search for this text.  
     */
    public function lookupName(int $currentMslRelease, string $searchModifier, string $searchText) {
@@ -219,8 +264,9 @@ class LookupService extends ResourceBase {
          return null;
       }
 
+      //-------------------------------------------------------------------------------------------------------
       // Process the results of the query.
-
+      //-------------------------------------------------------------------------------------------------------
       $ictvResults = [];
 
       $ictvResultKeys = [];
@@ -247,8 +293,8 @@ class LookupService extends ResourceBase {
             $resultKey = $searchResult->resultName;
          }
 
-         // Create or update result metadata that represents the first occurrence of an ICTV result name in the search results.
-         // Should we retrieve an existing ICTV result or create a new instance?
+         // Create or update result metadata that represents the first occurrence of an ICTV result 
+         // name in the search results. Should we retrieve an existing ICTV result or create a new instance?
          if (array_key_exists($resultKey, $ictvResults)) {
 
             // Use an existing ICTV result.
@@ -273,7 +319,7 @@ class LookupService extends ResourceBase {
          $ictvResults[$resultKey] = $ictvResult;
       }
 
-      // TODO: this is where the search results can be sorted by the custom score.
+      // NOTE: this is where the search results could be sorted by the custom score.
       /*usort($searchResults, function(SearchResult $a, SearchResult $b) {
          if ($a->orderedPairCount == $b->orderedPairCount) {
             return 0;
@@ -293,6 +339,7 @@ class LookupService extends ResourceBase {
       return $normalizedResults;
    }
 
+
    /** 
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
@@ -302,6 +349,7 @@ class LookupService extends ResourceBase {
       return []; 
    } 
 
+
    /**
     * Responds to POST request.
     * Passes the HTTP Request to the lookupName method and returns the result.
@@ -310,7 +358,7 @@ class LookupService extends ResourceBase {
     */
    public function post(Request $request) {
 
-      $data = $this->processAction($request);
+      $data = $this->handleRequest($request);
 
       $build = array(
          '#cache' => array(
@@ -324,53 +372,20 @@ class LookupService extends ResourceBase {
       return $response;
    }
 
-   public function processAction(Request $request) {
 
-      // Get and validate the action code.
-      $actionCode = $request->get("actionCode");
-      if (Utils::isNullOrEmpty($actionCode)) { throw new BadRequestHttpException("Invalid action code"); }
-
-      $data = null;
-
-      switch ($actionCode) {
-
-         case "lookup_name":
-
-            $currentMslRelease = $request->get("currentMslRelease");
-            // TODO: validate this!
-
-            $searchModifier = $request->get("searchModifier");
-            if ($searchModifier == NULL) {
-               $searchModifier = "exact_match";
-
-            } else if ($searchModifier != "all_words" && 
-                       $searchModifier != "any_words" && 
-                       $searchModifier != "contains" && 
-                       $searchModifier != "exact_match") { 
-               throw new BadRequestHttpException("Unrecognized search modifier {$searchModifier}"); 
-            }
-            
-            $searchText = $request->get("searchText");
-            if (Utils::isEmptyElseTrim($searchText)) { throw new BadRequestHttpException("Invalid search text (empty)"); }
-
-            // Look for the search text as a taxon name.
-            $data = $this->lookupName($currentMslRelease, $searchModifier, $searchText);
-            break;
-
-         default: throw new BadRequestHttpException("Unrecognized action code {$actionCode}");
-      }
-
-      return $data;
-   }
-
+   // If the text contains a hyphenated term, wrap it in double quotes so the hyphen isn't interpreted as "exclude this word".
    function quoteHyphenatedTerms($text) {
       return preg_replace_callback(
-          '/\b\w+-\w+\b/', // Match words with a hyphen
-          function ($matches) {
-              return '"'.$matches[0].'"'; // Wrap match in double quotes
-          },
-          $text
+
+         // Match words with a hyphen
+          '/\b\w+-\w+\b/', 
+
+         // Wrap match in double quotes
+         function ($matches) { return '"'.$matches[0].'"'; },
+          
+         // The input text
+         $text
       );
-  }
+   }
 }
 

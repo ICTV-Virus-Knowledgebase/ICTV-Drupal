@@ -12,12 +12,12 @@ export class _SequenceClassifierService {
 
 
    // Get all of this user's sequence classifications (jobs).
-   async getClassifiedSequences(authToken_: string, userEmail_: string, userUID_: number): Promise<IJob[]> {
+   async getClassifiedSequences(authToken_: string, userEmail_: string, userUID_: string): Promise<IJob[]> {
 
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
       if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
-      if (!userUID_ || isNaN(userUID_)) { throw new Error("The user UID parameter is invalid"); }
+      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
 
       const data = {
          authToken: authToken_,
@@ -39,12 +39,12 @@ export class _SequenceClassifierService {
 
 
    // Get the classification summary for a specific sequence file.
-   async getSequenceClassification(authToken_: string, jobUID_: string, userEmail_: string, userUID_: number): Promise<IValidationSummary> {
+   async getSequenceClassification(authToken_: string, jobUID_: string, userEmail_: string, userUID_: string): Promise<IValidationSummary> {
       
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
       if (!jobUID_) { throw new Error("Invalid job UID"); }
-      if (!userUID_ || isNaN(userUID_)) { throw new Error("The user UID parameter is invalid"); }
+      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
       if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
 
       const data = {
@@ -79,13 +79,13 @@ export class _SequenceClassifierService {
    
    // Upload one or more sequences for classification.
    async uploadSequences(authToken_: string, files_: IFileData[], jobName_: string, userEmail_: string, 
-      userUID_: number): Promise<IUploadResult> {
+      userUID_: string): Promise<IUploadResult> {
 
       // Validate parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
       if (!files_ || files_.length < 1) { throw new Error("There are no files to upload"); }
       if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
-      if (!userUID_ || isNaN(userUID_)) { throw new Error("The user UID parameter is invalid"); }
+      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
 
       const data = {
          authToken: authToken_,

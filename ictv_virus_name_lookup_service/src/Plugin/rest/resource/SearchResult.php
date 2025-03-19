@@ -3,6 +3,12 @@
 namespace Drupal\ictv_virus_name_lookup_service\Plugin\rest\resource;
 
 
+/**
+ * Class SearchResult
+ * 
+ * An object that stores a row returned by the QuerySearchableTaxon stored procedure.
+ * 
+ */ 
 class SearchResult {
 
    // An alternate identifier
@@ -33,6 +39,7 @@ class SearchResult {
    public int $hasTaxnodeID;
 
    // A scientific name corresponding to an NCBI taxon name with a different name class. The scientific name is what matches an ICTV taxon.
+   // NOTE: In the UI this is referred to as "Superceded taxon name".
    public ?string $intermediateName;
    public ?string $intermediateRank;
 
@@ -50,10 +57,6 @@ class SearchResult {
 
    // The name class/type, inspired by NCBI name class.
    public string $nameClass;
-   //public float $nameClassScore;
-
-   // This will be calculated after the search result has been populated.
-   //public int $orderedPairCount;
 
    // The match's taxonomic rank.
    public string $rankName;
