@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Drupal\Serialization;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\SequenceClassifier;
 use Drupal\ictv_common\Utils;
 
 /**
@@ -55,6 +56,11 @@ class UploadSequences extends ResourceBase {
    // The directory where output files are stored.
    protected string $outputDirectory;
 
+   // The name of the JSON output file.
+   protected string $outputJsonFilename;
+
+   // The name of the sequence classifier script (from within a Docker container).
+   protected string $scriptName;
 
    /**
     * A current user instance which is logged in the session.
@@ -116,6 +122,14 @@ class UploadSequences extends ResourceBase {
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
+
+         // Get the JSON output filename.
+         $this->outputJsonFilename = $config->get("outputJsonFilename");
+         if (Utils::isNullOrEmpty($this->outputJsonFilename)) { throw new \Exception("The outputJsonFilename setting is empty"); }
+
+         // The name of the sequence classifier script (from within a Docker container).
+         $this->scriptName = $config->get("scriptName");
+         if (Utils::isNullOrEmpty($this->scriptName)) { throw new \Exception("The scriptName setting is empty"); }
       }
       catch (\Exception $e) {
          \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
@@ -315,45 +329,13 @@ class UploadSequences extends ResourceBase {
          // TODO: This is for debugging and can be deleted later.
          \Drupal::logger('ictv_sequence_classifier_service')->info("TODO: This is where the command should be run.");
 
-         /*
-         //-------------------------------------------------------------------------------------------------------
-         // Create the command that will be run on the command line.
-         //-------------------------------------------------------------------------------------------------------
-         $command = "nohup php -f {$fullPath}/RunSequenceClassifier.php ".
 
-            // The name of the MySQL database (probably "ictv_apps").
-            "dbName={$this->databaseName} ".
-      
-            // The path of the Drupal installation (Ex. "/var/www/drupal/site").
-            "drupalRoot={$this->drupalRoot} ".
-            
-            // The job's unique alphanumeric identifier (UUID).
-            "jobUID={$jobUID} ".
-            
-            // The job's filesystem path.
-            "jobPath={$jobPath} ".
-      
-            // The location of the proposal file(s).
-            "inputPath=\"{$inputPath}\" ".
-            
-            // The location where result files will be created.
-            "outputPath=\"{$outputPath}\" ".
-      
-            // The user's unique numeric identifier.
-            "userUID={$userUID} ".
-            
-            // Redirect stdout and stderr to the file "output.txt".
-            "> {$outputPath}/output.txt 2>&1 ".
+         // TEST
+         $workingDirectory = ".";
 
-            // Run in the background.
-            "&";
-
-         $output = null;
-         $resultCode = -1;
-
-         // Run the command on the command line.
-         $commandResult = exec($command, $output, $resultCode); */
-
+         SequenceClassifier::runClassifier($inputPath, $this->outputJsonFilename, $outputPath, $this->scriptName, $workingDirectory);
+         
+         
 
          // Populate job.json for the specified job, and job_file.json for all of the job's job_files.
          $this->jobService->populateJobJSON($this->connection, $jobID);
