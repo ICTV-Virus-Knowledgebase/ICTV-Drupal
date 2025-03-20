@@ -4,13 +4,14 @@ namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
 
 use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\ClassificationResults;
 use Drupal\ictv_common\JobStatus;
-use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\SummaryFile;
+//use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\TaxResult;
 use Drupal\ictv_common\Utils;
 
 
 class SequenceClassifier {
 
 
+   /*
    // Load the JSON file containing the classification results.
    public static function loadJsonResults(string $filename): ClassificationResults {
 
@@ -24,37 +25,46 @@ class SequenceClassifier {
 
       // Create an instance of ClassificationResults and populate it with the JSON data.
       return ClassificationResults::fromArray($jsonData);
-   }
+   }*/
 
 
    /* Here are some details Curtis provided about the command:
 
 
+   Test code for running the container: https://github.com/ICTV-Virus-Knowledgebase/VMR_to_BlastDB/blob/cbdeb5822a0bf415f046f9de70fdb69f7acff6bb/docker_run.sh#L15
+
    sudo docker run -v ./out:/tax_out curtish/ictv_sequence_classifier:latest -h
 
-         usage: classify_sequence [-h] [-verbose] [-indir INDIR] [-outdir OUTDIR]
-                         [-json JSON]
- 
-         options:
-         -h, --help      show this help message and exit
-         -verbose        print details during run
-         -indir INDIR    directory for fasta files with NUCLEOTIDE seqeunces to
-                           classify
-         -outdir OUTDIR  output directory for tax_results.json
-         -json JSON      output json filename
+   usage: classify_sequence [-h] [-verbose] [-indir INDIR] [-outdir OUTDIR]
+                           [-json JSON]
+   
+   options:
+   -h, --help      show this help message and exit
+   -verbose        print details during run
+   -indir INDIR    directory for fasta files with NUCLEOTIDE seqeunces to
+                     classify
+   -outdir OUTDIR  output directory for tax_results.json
+   -json JSON      output json filename
+
+   IN_DIR:  seq_in
+   OUT_DIR: tax_out
+   OUT_JSON: tax_results.json
+
 
    */
   
 
    // TODO: this needs to be overhauled from its proposal service predecessor.
-   public static function runClassifier(string $resultsPath, string $scriptName, string $sequencesPath, string $workingDirectory) {
+   public static function runClassifier(string $inputPath, string $jsonFilename, string $outputPath, 
+      string $scriptName, string $workingDirectory) {
 
       // Declare variables used in the try/catch block.
-      $result = null;
-      $jobStatus = null;
-      $stdError = null;
       $fileSummaries;
-      $totals;
+      $jobStatus = null;
+      $jsonText;
+      //$result = null;
+      $stdError = null;
+      //$totals;
 
       $descriptorspec = array(
          0 => array("pipe", "r"), // Read from stdin (not used)
@@ -64,10 +74,10 @@ class SequenceClassifier {
       
       // Generate the command to be run.
       $command = "docker run ".
-         "-v \"./out:{$proposalsPath}\" ".
-         #"-v \"{$resultsPath}:/results\" ".
+         "-v \"{$inputPath}:/seq_in\":ro ".
+         "-v \"{$outputPath}:/tax_out\" ".
          $scriptName." ".
-         "/classify_sequence.R -v ";
+         "/classify_sequence -v ";
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
@@ -102,11 +112,12 @@ class SequenceClassifier {
 
          if ($jobStatus != JobStatus::$crashed) {
 
-            // TODO: process the output of the sequence classifier.
-            //$fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
+            // Get the tax_results.json file that should've been generated.
+            //$result = TaxResult::getJSON($jsonFilename, $outputPath);
 
-            // If no file summaries were found, return a job status of "crashed".
-            if (!$fileSummaries || sizeof($fileSummaries) < 1) { $jobStatus = JobStatus::$crashed; }
+            // Open and read the JSON file.
+            $jsonText = file_get_contents($outputPath."/".$this->outputJsonFilename);
+            if (!$jsonText) { throw new \Exception("Error: ".$this->outputJsonFilename." is empty"); }
          }
       } 
       catch (Exception $e) {
@@ -123,12 +134,7 @@ class SequenceClassifier {
 
       if ($jobStatus == null) { $jobStatus = JobStatus::$crashed; } 
 
-      return array(
-         "command" => $command,
-         "fileSummaries" => $fileSummaries,
-         "jobStatus" => $jobStatus,
-         "stdError" => $stdError
-      );
+      return $jsonText;
    }
 
 };

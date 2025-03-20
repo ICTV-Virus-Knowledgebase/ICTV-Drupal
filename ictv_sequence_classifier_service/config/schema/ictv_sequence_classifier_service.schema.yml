@@ -17,6 +17,12 @@ ictv_sequence_classifier_service.settings:
     outputDirectory:
       type: string
       label: 'The directory where output files are stored'
+    outputJsonFilename:
+      type: string
+      label: 'The name of the JSON output file'
     resultsFilename:
       type: string
       label: 'The name of the results file'
+    scriptName:
+      type: string
+      label: 'The name of the sequence classifier script (from within a Docker container)'
