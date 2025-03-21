@@ -29,7 +29,6 @@ export class _SequenceClassifierService {
 
       let jobsJSON = await WebService.drupalPost<string>(WebServiceKey.getClassifiedSequences, authToken_, data);
       if (!!jobsJSON) { 
-         jobsJSON.replace("\u0022", "\""); 
          jobs = JSON.parse(jobsJSON);
          if (!jobs || !Array.isArray(jobs) || jobs.length < 1) { jobs = null; }
       }

@@ -194,9 +194,43 @@ class GetClassifiedSequences extends ResourceBase {
       $userUID = $json["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
+      //------------------------------------------------------------------------------------------------------------------------
       // Get this user's jobs.
-      $data = $this->jobService->getJobs($this->connection, JobType::sequence_classification, $userEmail, $userUID);
-      return $data;
+      //------------------------------------------------------------------------------------------------------------------------
+
+      // Populate the stored procedure's parameters.
+      $parameters = [":jobType" => JobType::sequence_classification->value, ":userEmail" => $userEmail, ":userUID" => $userUID];
+
+      // Generate SQL to call the "getClassifiedSequences" stored procedure.
+      $sql = "CALL getClassifiedSequences(:jobType, :userEmail, :userUID);";
+
+      try {
+         // Run the query
+         $result = $this->connection->query($sql, $parameters);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
+         return null;
+      }
+
+      if (!$result) { return null; }
+
+      $jobs = [];
+
+      // Iterate over the result rows.
+      foreach ($result as $row) {
+
+         $json = $row->json;
+         if (Utils::isNullOrEmpty($json)) { continue; }
+         
+         \Drupal::logger('ictv_sequence_classifier_service')->info("Job JSON = ".$json);
+
+         $decodedJSON = json_decode($json, true);
+
+         array_push($jobs, $decodedJSON);
+      }
+
+      return $jobs;
    }
 
    /** 

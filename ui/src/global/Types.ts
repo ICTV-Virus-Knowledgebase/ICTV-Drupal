@@ -11,7 +11,9 @@ export enum CuratedNameType {
 }
 
 export enum JobStatus {
+   complete = "complete",
    crashed = "crashed",
+   error = "error",
    invalid = "invalid",
    pending = "pending",
    valid = "valid"
