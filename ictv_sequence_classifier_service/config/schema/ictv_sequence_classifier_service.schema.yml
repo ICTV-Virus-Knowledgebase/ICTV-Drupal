@@ -8,21 +8,21 @@ ictv_sequence_classifier_service.settings:
     drupalRoot:
       type: string
       label: 'The Drupal website root'
+    htmlResultsFilename:
+      type: string
+      label: 'The name of the HTML results file'
     inputDirectory:
       type: string
       label: 'The directory where sequence files are uploaded'
     jobsPath:
       type: string
       label: 'The directory where job files are maintained'
+    jsonResultsFilename:
+      type: string
+      label: 'The name of the JSON results file'
     outputDirectory:
       type: string
       label: 'The directory where output files are stored'
-    outputJsonFilename:
-      type: string
-      label: 'The name of the JSON output file'
-    resultsFilename:
-      type: string
-      label: 'The name of the results file'
     scriptName:
       type: string
       label: 'The name of the sequence classifier script (from within a Docker container)'

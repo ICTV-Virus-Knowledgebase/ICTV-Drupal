@@ -316,4 +316,36 @@ class JobService {
       $result = $query->fetchAll();
    }
 
+
+   // Update the job's JSON 
+   public function updateJobJSON(Connection $connection, int $jobID, ?string $json, ?string $message, JobStatus $status) {
+
+      try {
+         
+         if (!is_numeric($jobID)) { throw new \Exception("Job ID is invalid"); }
+
+         if (Utils::isEmptyElseTrim($json)) {
+            $json = "NULL";
+         } else {
+            $json = "'".$json."'";
+         }
+
+         if (Utils::isEmptyElseTrim($message)) {
+            $message = "NULL";
+         } else {
+            $message = "'".$message."'";
+         }
+
+         // Generate SQL to call the "updateJobJSON" stored procedure.
+         $sql = "CALL updateJobJSON({$jobID}, {$json}, {$message}, '{$status->value}');";
+
+         $query = $connection->query($sql);
+         $result = $query->fetchAll();
+
+      } catch (\Exception $e) {
+         \Drupal::logger($this->parentModule)->error($e->getMessage());
+         return null;
+      }
+   }
+
 }

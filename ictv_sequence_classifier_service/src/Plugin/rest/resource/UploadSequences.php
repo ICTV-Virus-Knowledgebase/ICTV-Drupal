@@ -10,6 +10,7 @@ use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -39,28 +40,28 @@ class UploadSequences extends ResourceBase {
    protected Connection $connection;
 
    // The name of the database used by this web service.
-   protected string $databaseName;
+   protected ?string $databaseName;
 
    // The path of the Drupal installation.
    protected string $drupalRoot;
 
    // The directory where input sequences are uploaded.
-   protected string $inputDirectory;
+   protected ?string $inputDirectory;
 
    // The full path of the jobs directory.
-   protected string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
+   protected ?string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
 
    // The JobService object.
    protected JobService $jobService;
    
+   // The name of the JSON result file.
+   protected ?string $jsonResultsFilename;
+
    // The directory where output files are stored.
-   protected string $outputDirectory;
+   protected ?string $outputDirectory;
 
-   // The name of the JSON output file.
-   protected string $outputJsonFilename;
-
-   // The name of the sequence classifier script (from within a Docker container).
-   protected string $scriptName;
+   // The name of the sequence classifier script (run from within a Docker container).
+   protected ?string $scriptName;
 
    /**
     * A current user instance which is logged in the session.
@@ -123,9 +124,9 @@ class UploadSequences extends ResourceBase {
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
 
-         // Get the JSON output filename.
-         $this->outputJsonFilename = $config->get("outputJsonFilename");
-         if (Utils::isNullOrEmpty($this->outputJsonFilename)) { throw new \Exception("The outputJsonFilename setting is empty"); }
+         // Get the filename of the JSON results file.
+         $this->jsonResultsFilename = $config->get("jsonResultsFilename");
+         if (Utils::isNullOrEmpty($this->jsonResultsFilename)) { throw new \Exception("The jsonResultsFilename setting is empty"); }
 
          // The name of the sequence classifier script (from within a Docker container).
          $this->scriptName = $config->get("scriptName");
@@ -154,7 +155,7 @@ class UploadSequences extends ResourceBase {
          $module_definition,
          $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
-         $container->get('logger.factory')->get('ictv_sequence_classifier_service_resource'),
+         $container->get('logger.factory')->get('ictv_sequence_classifier_service'),
          $container->get("current_user")
       );
    }
@@ -237,30 +238,29 @@ class UploadSequences extends ResourceBase {
    public function uploadSequences(Request $request) {
 
       // Get and validate the JSON in the request body.
-      $json = Json::decode($request->getContent());
-      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+      $requestJSON = Json::decode($request->getContent());
+      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
 
-      $jobName = $json["jobName"];
+      $jobName = $requestJSON["jobName"];
 
       // Get and validate the user email.
-      $userEmail = $json["userEmail"];
+      $userEmail = $requestJSON["userEmail"];
       if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
 
       // Get and validate the user UID.
-      $userUID = $json["userUID"];
+      $userUID = $requestJSON["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
       
       // Get and validate the array of files.
-      $files = $json["files"];
+      $files = $requestJSON["files"];
       if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
       // Declare variables used below.
-      $command = null;
-      $commandResult = null;
       $jobID = 0;
+      $jobStatus;
       $jobUID = "";
-      $resultCode = -1;
-      $status = null;
+      $message = null;
+      $resultsJSON = null;
 
       try {
          //-------------------------------------------------------------------------------------------------------
@@ -269,7 +269,7 @@ class UploadSequences extends ResourceBase {
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_classification, $jobUID, $userEmail, $userUID);
          
          // TODO: This is for debugging and can be deleted later.
-         \Drupal::logger('ictv_sequence_classifier_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
+         //\Drupal::logger('ictv_sequence_classifier_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
          
          // Create the job directory and subdirectories and return the full path of the job directory.
          $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
@@ -285,17 +285,19 @@ class UploadSequences extends ResourceBase {
 
          foreach ($files as $file) {
                
+            //-------------------------------------------------------------------------------------------------------
             // Get and validate file attributes.
+            //-------------------------------------------------------------------------------------------------------
             $filename = $file["name"];
             if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
-            $sequence = $file["contents"];
-            if (Utils::isNullOrEmpty($sequence)) { throw new BadRequestHttpException("Invalid sequence"); }
+            $contents = $file["contents"];
+            if (Utils::isNullOrEmpty($contents)) { throw new BadRequestHttpException("Invalid file contents"); }
 
-            $fileStartIndex = stripos($sequence, ",");
+            $fileStartIndex = stripos($contents, ",");
             if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in sequence file"); }
 
-            $base64Data = substr($sequence, $fileStartIndex + 1);
+            $base64Data = substr($contents, $fileStartIndex + 1);
             if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The sequence file is empty"); }
 
             // Decode the file contents from base64.
@@ -308,7 +310,7 @@ class UploadSequences extends ResourceBase {
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
       
             // TODO: This is for debugging and can be deleted later.
-            \Drupal::logger('ictv_sequence_classifier_service')->info("created job_file with UID ".$jobFileUID);
+            //\Drupal::logger('ictv_sequence_classifier_service')->info("created job_file with UID ".$jobFileUID);
 
             $uploadOrder = $uploadOrder + 1;
          }
@@ -326,23 +328,22 @@ class UploadSequences extends ResourceBase {
          // Combine the paths to get the full path of the directory containing the PHP script.
          $fullPath = $rootPath."/".$modulePath."/".$localPath;
       
-         // TODO: This is for debugging and can be deleted later.
-         \Drupal::logger('ictv_sequence_classifier_service')->info("TODO: This is where the command should be run.");
-
-
-         // TEST
-         $workingDirectory = ".";
-
-         SequenceClassifier::runClassifier($inputPath, $this->outputJsonFilename, $outputPath, $this->scriptName, $workingDirectory);
+         // Run the sequence classifier script. A job status should be returned.
+         $jobStatus = SequenceClassifier::runClassifier($inputPath, $this->jsonResultsFilename, $outputPath, $this->scriptName, $fullPath);
          
-         
+         if ($jobStatus == JobStatus::complete) {
 
-         // Populate job.json for the specified job, and job_file.json for all of the job's job_files.
-         $this->jobService->populateJobJSON($this->connection, $jobID);
+            // Open and read the JSON file that should've been generated.
+            $resultsJSON = TaxResult::getJSON($this->jsonResultsFilename, $outputPath);
+            if (!$resultsJSON) { $jobStatus = JobStatus::invalid; }
+         }
+
+         // Update the job record's JSON and status.
+         $this->jobService->updateJobJSON($this->connection, $jobID, $resultsJSON, $message, $jobStatus);
 
       } catch (Exception $e) {
 
-         $status = JobStatus::crashed;
+         $jobStatus = JobStatus::crashed;
 
          $errorMessage = null;
          if ($e) { 
@@ -357,18 +358,19 @@ class UploadSequences extends ResourceBase {
          // Provide a default message, if necessary.
          if ($message == NULL || len($message) < 1) { $message = "1 error"; }
 
-         //-------------------------------------------------------------------------------------------------------
-         // Update the job record in the database.
-         //-------------------------------------------------------------------------------------------------------
-         JobService::updateJob($this->connection, $errorMessage, $jobUID, $message, $status, $userUID); 
+         // Update the job record's JSON and status.
+         JobService::updateJobJSON($this->connection, $jobID, $resultsJSON, $message, $jobStatus);
       }
 
+      // Decode the JSON so it can be correctly serialized.
+      $decodedJSON = null;
+      if ($resultsJSON != null) { $decodedJSON = json_decode($resultsJSON, true); }
+      
       return array(
-         "command" => $command,
-         "commandResult" => $commandResult,
          "jobName" => $jobName,
          "jobUID" => $jobUID,
-         "resultCode" => $resultCode
+         "output" => $decodedJSON,
+         "status" => $jobStatus->value
       );
    }
 

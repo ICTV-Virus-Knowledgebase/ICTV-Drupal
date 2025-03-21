@@ -11,21 +11,24 @@ class TaxResult {
    public static function getJSON(string $jsonFilename, string $outputPath) {
 
       // The contents of the JSON file as text.
-      $text;
+      $json;
 
       try {
          // Open and read the JSON file.
-         $text = file_get_contents($outputPath."/".$jsonFilename);
-         if (!$text) { throw new \Exception("Error in TaxResult.getJSON: ".$jsonFilename." is empty"); }
+         $json = file_get_contents($outputPath."/".$jsonFilename);
 
-         // https://www.php.net/manual/en/function.json-decode.php
-         //$json = json_decode($text);
+         // Convert from US-ASCII to UTF-8
+         $jsonUTF8 = mb_convert_encoding($json, 'UTF-8', 'US-ASCII');
+
+         if (json_decode($jsonUTF8) === null && json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception("JSON data is invalid after conversion");
+         }
       }
       catch (\Exception $e) {
           throw new \Exception("Error in TaxResult.getJSON: ".$e->getMessage());
       }
 
-      return $text;
+      return $json;
    }
 
 }
