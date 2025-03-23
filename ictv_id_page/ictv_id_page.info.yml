@@ -1,0 +1,8 @@
+name: ICTV ID Page
+type: module
+description: 'A custom page that resolves identifiers such as MSL, ICTV ID, and Taxonomy node ID'
+package: ICTV
+configure: ictv_id_page.settings
+core_version_requirement: ^9 || ^10 || ^11
+dependencies:
+  - ictv_common
