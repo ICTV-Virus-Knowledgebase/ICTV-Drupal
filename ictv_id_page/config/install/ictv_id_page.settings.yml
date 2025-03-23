@@ -1,2 +1,2 @@
-databaseName: 'ictv_apps'
+databaseName: 'ictv_taxonomy'
 drupalRoot: '/var/www/drupal/site'
