@@ -1,0 +1,19 @@
+<?php
+
+
+/*
+function ictv_id_page_preprocess_page(&$variables) {
+  \Drupal::messenger()->addMessage('Module is active');
+  
+  // Get the current route
+  $route_name = \Drupal::routeMatch()->getRouteName();
+  \Drupal::messenger()->addMessage('Current route: ' . $route_name);
+  
+  // List all routes from this module
+  $routes = \Drupal::service('router.route_provider')->getAllRoutes();
+  foreach ($routes as $name => $route) {
+    if (strpos($name, 'ictv_id_page') === 0) {
+      \Drupal::messenger()->addMessage('Found route: ' . $name . ' - ' . $route->getPath());
+    }
+  }
+}*/
