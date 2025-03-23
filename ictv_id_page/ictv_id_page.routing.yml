@@ -2,7 +2,7 @@ ictv_id_page.ictv:
   path: '/id/ICTV/{ictv_id}'
   defaults:
     _controller: '\Drupal\ictv_id_page\Controller\IdPageController::displayICTV'
-    _title: 'ICTV ID Page'
+    _title: 'ICTV ID'
   requirements:
     _permission: 'access content'
     ictv_id: '.+'  # Allow any character
@@ -11,7 +11,7 @@ ictv_id_page.msl:
   path: '/id/MSL/{msl_id}'
   defaults:
     _controller: '\Drupal\ictv_id_page\Controller\IdPageController::displayMSL'
-    _title: 'ICTV MSL Page'
+    _title: 'ICTV MSL ID (Master Species List)'
   requirements:
     _permission: 'access content'
     msl_id: '.+'  # Allow any character
@@ -20,7 +20,7 @@ ictv_id_page.msl_ictv:
   path: '/id/MSL/{msl_id}/ICTV/{ictv_id}'
   defaults:
     _controller: '\Drupal\ictv_id_page\Controller\IdPageController::displayMSL_ICTV'
-    _title: 'ICTV MSL ID Page'
+    _title: 'ICTV MSL (Master Species List) and ICTV ID'
   requirements:
     _permission: 'access content'
     msl_id: '.+'  # Allow any character
@@ -30,7 +30,7 @@ ictv_id_page.tn:
   path: '/id/TN/{tn_id}'
   defaults:
     _controller: '\Drupal\ictv_id_page\Controller\IdPageController::displayTN'
-    _title: 'ICTV TN Page'
+    _title: 'ICTV Taxonomy Node ID'
   requirements:
     _permission: 'access content'
     tn_id: '.+'  # Allow any character
@@ -39,7 +39,7 @@ ictv_id_page.vmr:
   path: '/id/VMR/{vmr_id}'
   defaults:
     _controller: '\Drupal\ictv_id_page\Controller\IdPageController::displayVMR'
-    _title: 'ICTV VMR Page'
+    _title: 'ICTV VMR ID'
   requirements:
     _permission: 'access content'
     vmr_id: '.+'  # Allow any character
