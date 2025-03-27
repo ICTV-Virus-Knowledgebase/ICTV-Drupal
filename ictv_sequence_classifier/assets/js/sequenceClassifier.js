@@ -40,9 +40,6 @@
 
             // Initialize and display the UI.
             sequenceClassifier.initialize();
-
-            // Get this user's classified sequences.
-            sequenceClassifier.getClassifiedSequences();
         }
     };
     

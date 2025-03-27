@@ -13,38 +13,44 @@ use Drupal\ictv_common\Utils;
 class ClassificationJob {
 
 
-   // Add file contents to a Classification Job.
-   public static function addFile(array $classificationJob, bool $encodeBase64, string $fileKey, string $filename, string $filePath) {
+   // Open files referenced in the job results and add them to the job object (nested array).
+   public static function addResultFiles(string $filePath, array $job) {
 
-      if ($classificationJob == null) { return null; }
+      // If there are no results, return the job unmodified.
+      if ($job["data"]["results"] == null) { return $job; }
 
-      if (Utils::isNullOrEmpty($fileKey)) { 
-         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid fileKey in addFile()");
-         return $classificationJob;
+      // How many results are available?
+      $resultCount = count($job["data"]["results"]);
+
+      // Iterate over all results.
+      for ($r=0; $r<$resultCount; $r++) {
+
+         // Get the next result and validate it.
+         $result = $job["data"]["results"][$r];
+         if ($result == null) { continue; }
+
+         $csvFilename = $result["blast_csv"];
+         if (!Utils::isNullOrEmpty($csvFilename)) { 
+            
+            // Open the file and retrieve its contents.
+            $contents = Common::getFileContents(true, $csvFilename, $filePath);
+            
+            // Populate the "csv_file" attribute.
+            if (!Utils::isNullOrEmpty($contents)) { $job["data"]["results"][$r]["csv_file"] = $contents; }
+         }
+
+         $htmlFilename = $result["blast_html"];
+         if (!Utils::isNullOrEmpty($htmlFilename)) { 
+            
+            // Open the file and retrieve its contents.
+            $contents = Common::getFileContents(true, $htmlFilename, $filePath);
+            
+            // Populate the "html_file" attribute.
+            if (!Utils::isNullOrEmpty($contents)) { $job["data"]["results"][$r]["html_file"] = $contents; }
+         }
       }
 
-      if (Utils::isNullOrEmpty($filename)) { 
-         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid filename in addFile()");
-         return $classificationJob;
-      }
-
-      if (Utils::isNullOrEmpty($filePath)) { 
-         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid file path in addFile()");
-         return $classificationJob;
-      }
-
-      // Open the file and retrieve its contents.
-      $contents = getFileContents($encodeBase64, $filename, $filePath);
-      if ($contents == null) {
-         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid file contents (empty) in addFile()");
-         return $classificationJob;
-      }
-
-      if ($classificationJob["files"] == null || count($classificationJob["files"]) < 1) { $classificationJob["files"] = []; }
-
-      $classificationJob["files"][$fileKey] = $contents;
-
-      return $classificationJob;
+      return $job;
    }
 
 
@@ -104,7 +110,7 @@ class ClassificationJob {
 
 
    // Retrieve a job and return it as a Classification Job "object" (nested arrays).
-   public static function getJobAsJSON(Connection $connection, string $jobUID, string $userEmail, string $userUID) {
+   public static function getJob(Connection $connection, string $jobUID, string $userEmail, string $userUID) {
 
       // Validate input parameters
       if (Utils::isNullOrEmpty($jobUID)) { throw new \Exception("Invalid job UID in getJob()"); }

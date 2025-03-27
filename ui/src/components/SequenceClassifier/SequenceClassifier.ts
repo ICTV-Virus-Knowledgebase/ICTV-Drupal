@@ -9,6 +9,8 @@ import { IJobFile } from "./IJobFile";
 import { SequenceClassifierService } from "../../services/SequenceClassifierService";
 import { Utils } from "../../helpers/Utils";
 import { WebStorageKey } from "../../global/Types";
+import { ISearchResult } from "../VirusNameLookup/ISearchResult";
+import { ISequenceResult } from "./ISequenceResult";
 
 
 export class SequenceClassifier {
@@ -40,7 +42,9 @@ export class SequenceClassifier {
       fileUploadDetails: HTMLElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
-      jobs: HTMLElement,
+      jobPanel: HTMLElement,
+      resultsBody: HTMLElement,
+      //jobs: HTMLElement,
       userInfo: HTMLElement
    }
 
@@ -53,13 +57,15 @@ export class SequenceClassifier {
       classify: string
    }
 
+   job: IClassificationJob = null;
+
    // Map a job's UID to its job files formatted as HTML.
    jobFileLookup: Map<string, string>;
 
-   jobs: IClassificationJob[];
+   //jobs: IClassificationJob[];
 
    // dmd 032425
-   jobToken: string = null;
+   jobUID: string = null;
    
    // User information
    user: {
@@ -107,7 +113,9 @@ export class SequenceClassifier {
          fileUploadDetails: null,
          jobName: null,
          jobNameLabel: null,
-         jobs: null,
+         jobPanel: null,
+         //jobs: null,
+         resultsBody: null,
          userInfo: null
       }
 
@@ -191,6 +199,73 @@ export class SequenceClassifier {
    }
 
 
+   async displayJob() {
+
+      if (!this.job.data || !this.job.data.results) {
+         this.elements.resultsBody.innerHTML = "No results";
+         return;
+      }
+
+      // Clear any existing content in the results body.
+      this.elements.resultsBody.innerHTML = "";
+
+      this.job.data.results.forEach((result_: ISequenceResult) => {
+
+         // Create a row for a sequence that was submitted and processed.
+         const sequenceRow = document.createElement("div");
+         sequenceRow.className = "sequence-row";
+
+         if (!!result_.blast_html && !!result_.html_file) {
+
+            // Create a container for the HTML button.
+            const htmlRow = document.createElement("div");
+            htmlRow.className = "html-row";
+
+            // Create the button that will open the BLAST HTML in a new window.
+            const htmlButton = document.createElement("button");
+            htmlButton.innerHTML = `View ${result_.blast_html}`;
+            htmlButton.addEventListener("click", () => {
+
+               // Open a new tab/window and populate it with the contents of the BLAST HTML file.
+               const blastWindow = window.open("", "_blank");
+               blastWindow.document.title = result_.blast_html;
+               blastWindow.document.writeln(atob(result_.html_file));
+            })
+
+            htmlRow.appendChild(htmlButton);
+            sequenceRow.appendChild(htmlRow);
+         }
+
+         if (!!result_.blast_csv && !!result_.csv_file) {
+
+            // Create a container for the CSV link.
+            const csvRow = document.createElement("div");
+            csvRow.className = "csv-row";
+
+            const arrayBuffer: ArrayBuffer = decode(result_.csv_file);
+
+            // Create the CSV link.
+            const link = document.createElement('a');
+            link.className = "csv-link";
+            link.href = URL.createObjectURL(new Blob(
+               [ arrayBuffer ],
+               { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+            ))
+            link.innerHTML = `Download ${result_.blast_csv}`;
+            link.download = result_.blast_csv;
+
+            csvRow.appendChild(link);
+            sequenceRow.appendChild(csvRow);
+         }
+
+         this.elements.resultsBody.appendChild(sequenceRow);
+      })
+   
+      return;
+   }
+
+
+   /*
    // Display all of this user's classified sequences (jobs).
    async displayClassifiedSequences() {
 
@@ -345,109 +420,12 @@ export class SequenceClassifier {
       })
       
       return;
-   }
+   }*/
 
 
-   async downloadSummary(jobUID_: string) {
-
-      await AlertBuilder.displayInfo("TODO: not yet implemented");
+   async displayJobs() {
 
       /*
-      // Validate the job UID.
-      if (!jobUID_) { throw new Error("Unable to download summary: invalid job UID"); }
-
-      // Get the sequence classifier's summary for this job.
-      const summary = await SequenceClassifierService.getClassificationSummary(this.authToken, jobUID_, this.user.email, this.user.uid);
-      console.log("In downloadSummary, validationSummary= ", summary)
-
-      // Download the file as a spreadsheet.
-      this.decodeAndDownload(summary.file, summary.filename);
-      */
-      return;
-   }
-
-
-   // Generate a universally unique identifier (UUID).
-   generateUUID() {
-
-      const bytes = new Uint8Array(16);
-      crypto.getRandomValues(bytes);
-    
-      // Set version (4) and variant bits as per RFC 4122
-      bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4 (random)
-      bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 1 (RFC-compliant)
-    
-      // Convert to hexadecimal format
-      return [...bytes].map((b, i) =>
-        ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0')
-      ).join('');
-   }
-
-
-   async getClassificationResult(jobUID_: string) {
-
-      const job = SequenceClassifierService.getClassificationResult(this.authToken, jobUID_, this.user.email, this.user.uid);
-      console.log("job = ", job)
-      return;
-   }
-
-
-   // Get this user's classified sequences (jobs) from the web service.
-   async getClassifiedSequences() {
-
-      // Get the user's classified sequences.
-      this.jobs = await SequenceClassifierService.getClassifiedSequences(this.authToken, this.user.email, this.user.uid);
-
-      // Display the classified sequences.
-      return await this.displayClassifiedSequences();
-   }
-
-
-   // Initialize the Sequence Classifier.
-   initialize() {
-
-      // If the user UID is empty, look for one in web storage or generate a new one.
-      if (!this.user.uid) { this.setDefaultUserUID(); }
-
-      // Get a reference to the container element.
-      this.elements.container = <HTMLElement>document.querySelector(this.selectors.container);
-      if (!this.elements.container) { throw new Error("Invalid container Element"); }
-
-      // Format the accepted file types.
-      let fileFormats = this.config.acceptedFileTypes.join(",");
-
-      let greeting = "";
-
-      if (this.user.email === this.constants.NO_EMAIL) {
-
-         greeting = `You are not logged in, but as long as you view this page in the same browser, a history of your results will be maintained.`;
-         /*`Since you are not logged in, you have been assigned the unique identifier <input type="text" class="anonymous-id" value="${this.user.uid}"/>` +
-            `<button class="ictv-button copy-id-button">Copy</button>` +
-            `<br/>This identifier will allow you to retrieve your results later. Please copy it and keep it in a safe place.`;*/
-      } else {
-         greeting = `You are logged in as ${this.user.name} (${this.user.email})`;
-      }
-
-      /*
-      // Was a job token provided?
-      const urlParams = new URLSearchParams(window.location.search);
-      const jobToken = urlParams.get("job");
-      console.log("job = ", jobToken)
-      */
-
-      // Create HTML for the container Element.
-      const html = 
-         `<div class=\"user-row\">${greeting}</div>
-         <div class=\"upload-panel\">
-               <button class=\"btn file-control\">${this.icons.browse} Select file</button>
-               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
-               <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
-               <button class=\"btn classify-button hidden\">Classify</button>
-         </div>
-         <div class=\"jobs\"></div>`;
-
-      this.elements.container.innerHTML = html;
-
       // Get and validate the jobs Element.
       this.elements.jobs = <HTMLElement>this.elements.container.querySelector(".jobs");
       if (!this.elements.jobs) { throw new Error("Invalid jobs Element")}
@@ -492,7 +470,113 @@ export class SequenceClassifier {
          event_.preventDefault();
          event_.stopPropagation();
          return;
-      });
+      });*/
+
+      return;
+   }
+
+
+   async downloadSummary(jobUID_: string) {
+
+      await AlertBuilder.displayInfo("TODO: not yet implemented");
+
+      /*
+      // Validate the job UID.
+      if (!jobUID_) { throw new Error("Unable to download summary: invalid job UID"); }
+
+      // Get the sequence classifier's summary for this job.
+      const summary = await SequenceClassifierService.getClassificationSummary(this.authToken, jobUID_, this.user.email, this.user.uid);
+      console.log("In downloadSummary, validationSummary= ", summary)
+
+      // Download the file as a spreadsheet.
+      this.decodeAndDownload(summary.file, summary.filename);
+      */
+      return;
+   }
+
+
+   // Generate a universally unique identifier (UUID).
+   generateUUID() {
+
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+    
+      // Set version (4) and variant bits as per RFC 4122
+      bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4 (random)
+      bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 1 (RFC-compliant)
+    
+      // Convert to hexadecimal format
+      return [...bytes].map((b, i) =>
+        ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0')
+      ).join('');
+   }
+
+
+   // Retrieve the classification job with this UID.
+   async getJob() {
+
+      if (!this.jobUID) { return; }
+
+      this.job = await SequenceClassifierService.getClassificationResult(this.authToken, this.jobUID, this.user.email, this.user.uid);
+      console.log("job = ", this.job)
+      return;
+   }
+
+
+   /*
+   // Get this user's classified sequences (jobs) from the web service.
+   async getClassifiedSequences() {
+
+      // Get the user's classified sequences.
+      this.jobs = await SequenceClassifierService.getClassifiedSequences(this.authToken, this.user.email, this.user.uid);
+
+      // Display the classified sequences.
+      return await this.displayClassifiedSequences();
+   }*/
+
+
+   // Initialize the Sequence Classifier.
+   async initialize() {
+
+      // If the user UID is empty, look for one in web storage or generate a new one.
+      if (!this.user.uid) { this.setDefaultUserUID(); }
+
+      // Get a reference to the container element.
+      this.elements.container = <HTMLElement>document.querySelector(this.selectors.container);
+      if (!this.elements.container) { throw new Error("Invalid container Element"); }
+
+      // Format the accepted file types.
+      let fileFormats = this.config.acceptedFileTypes.join(",");
+
+      let greeting = "";
+
+      if (this.user.email === this.constants.NO_EMAIL) {
+
+         greeting = `You are not logged in, but as long as you view this page in the same browser, a history of your results will be maintained.`;
+         /*`Since you are not logged in, you have been assigned the unique identifier <input type="text" class="anonymous-id" value="${this.user.uid}"/>` +
+            `<button class="ictv-button copy-id-button">Copy</button>` +
+            `<br/>This identifier will allow you to retrieve your results later. Please copy it and keep it in a safe place.`;*/
+      } else {
+         greeting = `You are logged in as ${this.user.name} (${this.user.email})`;
+      }
+
+      // Create HTML for the container Element.
+      const html = 
+         `<div class=\"user-row\">${greeting}</div>
+         <div class=\"upload-panel\">
+               <button class=\"btn file-control\">${this.icons.browse} Select file</button>
+               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
+               <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
+               <button class=\"btn classify-button hidden\">Classify</button>
+         </div>
+         <div class=\"job-panel\">
+            <div class=\"title\">Your results</div>
+            <div class=\"body\"></div>
+         </div>`; 
+         
+         // <div class=\"jobs\"></div>
+
+      this.elements.container.innerHTML = html;
 
       /*
       // Get and validate the "anonymous ID" text field.
@@ -569,6 +653,27 @@ export class SequenceClassifier {
 
       this.elements.jobName = <HTMLInputElement>this.elements.container.querySelector(".job-name");
       if (!this.elements.jobName) { throw new Error("Invalid job name Element"); }
+
+
+      // The job panel and results body.
+      this.elements.jobPanel = <HTMLElement>this.elements.container.querySelector(".job-panel");
+      if (!this.elements.jobPanel) { throw new Error("Invalid job panel Element"); }
+
+      this.elements.resultsBody = <HTMLElement>this.elements.container.querySelector(".job-panel .body");
+      if (!this.elements.resultsBody) { throw new Error("Invalid results body Element"); }
+
+
+      // Was a job UID parameter provided?
+      const urlParams = new URLSearchParams(window.location.search);
+      this.jobUID = urlParams.get("job");
+
+      // If a job UID was provided as a query string parameter, retrieve the corresponding job and display it.
+      if (this.jobUID !== null) { 
+         await this.getJob();
+         await this.displayJob();
+      }
+
+      return;
    }
 
 
@@ -708,23 +813,16 @@ export class SequenceClassifier {
          await Promise.allSettled([
 
             // Upload the sequence file(s) to the web service for classification.
-            SequenceClassifierService.uploadSequences(this.authToken, files, jobName, this.user.email, this.user.uid), 
+            SequenceClassifierService.uploadSequences(this.authToken, files, jobName, this.user.email, this.user.uid)
+               .then(job_ => { this.job = job_; }), 
             
             // Show a modal dialog with information about the uploaded files.
             this.showInfoDialog(files.length, filenames)
          ])
          .then((results_) => {
-            if (results_[0].status === "fulfilled") {
-               this.currentJobUID = results_[0].value.uid;
-               console.log(`just set currentJobUID to ${this.currentJobUID}`)
-            } else {
-               this.currentJobUID = null;
-            }
+            if (results_[0].status === "rejected") { throw new Error(results_[0].reason); }
          });
          
-         // Reload the jobs.
-         await this.getClassifiedSequences();
-
       } catch (error_) {
          await AlertBuilder.displayError(error_);
       }
@@ -744,6 +842,9 @@ export class SequenceClassifier {
       this.elements.jobName.classList.remove("visible");
       this.elements.jobName.classList.add("hidden");
       this.elements.jobName.value = "";
+
+      // If a job was returned, display it.
+      if (this.job !== null) { await this.displayJob(); }
 
       return;
    }

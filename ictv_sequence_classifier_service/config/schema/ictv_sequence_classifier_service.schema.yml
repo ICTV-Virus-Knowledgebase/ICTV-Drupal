@@ -2,18 +2,12 @@ ictv_sequence_classifier_service.settings:
   type: config_object
   label: 'Settings for the ICTV Sequence Classifier Service'
   mapping:
-    csvResultsFilename:
-      type: string
-      label: 'The name of the CSV results file'
     databaseName:
       type: string
       label: 'The database name'
     drupalRoot:
       type: string
       label: 'The Drupal website root'
-    htmlResultsFilename:
-      type: string
-      label: 'The name of the HTML results file'
     inputDirectory:
       type: string
       label: 'The directory where sequence files are uploaded'
