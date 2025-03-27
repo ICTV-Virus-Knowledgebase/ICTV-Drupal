@@ -42,4 +42,8 @@ ictv_id_page.vmr:
     _title: 'ICTV VMR ID'
   requirements:
     _permission: 'access content'
-    vmr_id: '.+'  # Allow any character
+    vmr_id: '\d+'
+  options:
+    parameters:
+      vmr_id:
+        type: integer

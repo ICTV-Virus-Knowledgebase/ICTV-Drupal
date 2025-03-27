@@ -4,12 +4,15 @@ namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\ClassificationJob;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -118,7 +121,7 @@ class GetClassifiedSequences extends ResourceBase {
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
       }
       catch (\Exception $e) {
-         \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return;
       }
       
@@ -126,7 +129,7 @@ class GetClassifiedSequences extends ResourceBase {
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
-      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_sequence_classifier", $this->inputDirectory, $this->outputDirectory);
+      $this->jobService = new JobService($this->jobsPath, $this->logger, Common::$MODULE_NAME, $this->inputDirectory, $this->outputDirectory);
    }
 
    /**
@@ -139,7 +142,7 @@ class GetClassifiedSequences extends ResourceBase {
          $module_definition,
          $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
-         $container->get('logger.factory')->get('ictv_sequence_classifier_resource'),
+         $container->get('logger.factory')->get(Common::$MODULE_NAME),
          $container->get("current_user")
       );
    }
@@ -179,7 +182,9 @@ class GetClassifiedSequences extends ResourceBase {
       // return Cache::PERMANENT;
    }
 
+
    // Get the user's classified sequences (jobs).
+   // TODO: Consider moving this to Common or (better yet) a ClassificationJob object.
    public function getJobs(Request $request) {
 
       // Get and validate the JSON in the request body.
@@ -202,32 +207,25 @@ class GetClassifiedSequences extends ResourceBase {
       $parameters = [":jobType" => JobType::sequence_classification->value, ":userEmail" => $userEmail, ":userUID" => $userUID];
 
       // Generate SQL to call the "getClassifiedSequences" stored procedure.
-      $sql = "CALL getClassifiedSequences(:jobType, :userEmail, :userUID);";
+      $sql = "CALL getClassifiedSequences(:jobType, NULL, :userEmail, :userUID);";
 
       try {
          // Run the query
-         $result = $this->connection->query($sql, $parameters);
+         $rows = $this->connection->query($sql, $parameters)->fetchAll(\PDO::FETCH_ASSOC);
       } 
       catch (Exception $e) {
-         \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return null;
       }
-
-      if (!$result) { return null; }
 
       $jobs = [];
 
       // Iterate over the result rows.
-      foreach ($result as $row) {
+      foreach ($rows as $row) {
 
-         $json = $row->json;
-         if (Utils::isNullOrEmpty($json)) { continue; }
-         
-         \Drupal::logger('ictv_sequence_classifier_service')->info("Job JSON = ".$json);
+         $job = ClassificationJob::fromArray($row);
 
-         $decodedJSON = json_decode($json, true);
-
-         array_push($jobs, $decodedJSON);
+         if ($job != null) { array_push($jobs, $job); }
       }
 
       return $jobs;

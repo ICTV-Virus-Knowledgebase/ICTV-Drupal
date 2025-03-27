@@ -5,7 +5,7 @@ DELIMITER //
 
 CREATE PROCEDURE `updateJobJSON`(
 	IN `jobID` INT,
-   IN `json_` TEXT,
+   IN `json_` LONGTEXT,
    IN `message_` VARCHAR(1000),
    IN `status_` VARCHAR(100)
 )

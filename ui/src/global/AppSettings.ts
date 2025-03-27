@@ -42,8 +42,8 @@ export class _AppSettings {
       proposal: "proposal-api",
 
       // Sequence classifier
+      getClassificationResult: "get-classification-result",
       getClassifiedSequences: "get-classified-sequences",
-      getSequenceClassification: "get-sequence-classification",
       uploadSequences: "upload-sequences",
 
       // Taxonomy

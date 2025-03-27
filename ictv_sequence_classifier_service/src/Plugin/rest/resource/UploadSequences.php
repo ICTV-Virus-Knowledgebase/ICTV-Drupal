@@ -4,11 +4,13 @@ namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\ClassificationJob;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Database;
 use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
@@ -120,20 +122,20 @@ class UploadSequences extends ResourceBase {
          $this->jobsPath = $config->get("jobsPath");
          if (Utils::isNullOrEmpty($this->jobsPath)) { throw new \Exception("The jobsPath setting is empty"); }
          
-         // Get the output directory.
-         $this->outputDirectory = $config->get("outputDirectory");
-         if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
-
          // Get the filename of the JSON results file.
          $this->jsonResultsFilename = $config->get("jsonResultsFilename");
          if (Utils::isNullOrEmpty($this->jsonResultsFilename)) { throw new \Exception("The jsonResultsFilename setting is empty"); }
+
+         // Get the output directory.
+         $this->outputDirectory = $config->get("outputDirectory");
+         if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
 
          // The name of the sequence classifier script (from within a Docker container).
          $this->scriptName = $config->get("scriptName");
          if (Utils::isNullOrEmpty($this->scriptName)) { throw new \Exception("The scriptName setting is empty"); }
       }
       catch (\Exception $e) {
-         \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return;
       }
 
@@ -141,7 +143,7 @@ class UploadSequences extends ResourceBase {
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
-      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_sequence_classifier", $this->inputDirectory, $this->outputDirectory);
+      $this->jobService = new JobService($this->jobsPath, $this->logger, Common::$MODULE_NAME, $this->inputDirectory, $this->outputDirectory);
    }
 
 
@@ -155,7 +157,7 @@ class UploadSequences extends ResourceBase {
          $module_definition,
          $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
-         $container->get('logger.factory')->get('ictv_sequence_classifier_service'),
+         $container->get('logger.factory')->get(Common::$MODULE_NAME),
          $container->get("current_user")
       );
    }
@@ -259,8 +261,9 @@ class UploadSequences extends ResourceBase {
       $jobID = 0;
       $jobStatus;
       $jobUID = "";
+      $jsonForSQL = null;
       $message = null;
-      $resultsJSON = null;
+      $taxResultJSON = null;
 
       try {
          //-------------------------------------------------------------------------------------------------------
@@ -269,7 +272,7 @@ class UploadSequences extends ResourceBase {
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_classification, $jobUID, $userEmail, $userUID);
          
          // TODO: This is for debugging and can be deleted later.
-         //\Drupal::logger('ictv_sequence_classifier_service')->info("created job with ID ".$jobID." and UID ".$jobUID);
+         //\Drupal::logger(Common::$MODULE_NAME)->info("created job with ID ".$jobID." and UID ".$jobUID);
          
          // Create the job directory and subdirectories and return the full path of the job directory.
          $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
@@ -306,12 +309,9 @@ class UploadSequences extends ResourceBase {
             // Create the sequence file in the job directory using the data provided.
             $fileID = $this->jobService->createInputFile($binaryData, $filename, $jobPath);
 
-            // Create a job file
+            // Create a job file record.
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
       
-            // TODO: This is for debugging and can be deleted later.
-            //\Drupal::logger('ictv_sequence_classifier_service')->info("created job_file with UID ".$jobFileUID);
-
             $uploadOrder = $uploadOrder + 1;
          }
 
@@ -320,7 +320,7 @@ class UploadSequences extends ResourceBase {
 
          // Get the relative path of this module.
          $moduleHandler = \Drupal::service('module_handler');
-         $modulePath = $moduleHandler->getModule('ictv_sequence_classifier_service')->getPath();
+         $modulePath = $moduleHandler->getModule(Common::$MODULE_NAME)->getPath();
 
          // The path within this module.
          $localPath = "src/Plugin/rest/resource";
@@ -334,12 +334,20 @@ class UploadSequences extends ResourceBase {
          if ($jobStatus == JobStatus::complete) {
 
             // Open and read the JSON file that should've been generated.
-            $resultsJSON = TaxResult::getJSON($this->jsonResultsFilename, $outputPath);
-            if (!$resultsJSON) { $jobStatus = JobStatus::invalid; }
+            $taxResultJSON = TaxResult::getJSON($this->jsonResultsFilename, $outputPath);
+      
+            if (!$taxResultJSON) { 
+               $jobStatus = JobStatus::error; 
+
+            } else {
+
+               // Convert the version that will be stored in the database to hexadecimal.
+               $jsonForSQL = bin2hex($taxResultJSON);
+            }
          }
 
          // Update the job record's JSON and status.
-         $this->jobService->updateJobJSON($this->connection, $jobID, $resultsJSON, $message, $jobStatus);
+         $this->jobService->updateJobJSON($this->connection, $jobID, $jsonForSQL, $message, $jobStatus);
 
       } catch (Exception $e) {
 
@@ -353,25 +361,19 @@ class UploadSequences extends ResourceBase {
          }
          
          // Update the log with the job UID and this error message.
-         \Drupal::logger('ictv_sequence_classifier_service')->error($userUID."_".$jobUID.": ".$errorMessage);
+         \Drupal::logger(Common::$MODULE_NAME)->error($userUID."_".$jobUID.": ".$errorMessage);
 
          // Provide a default message, if necessary.
          if ($message == NULL || len($message) < 1) { $message = "1 error"; }
 
+         $jsonForSQL = null;
+
          // Update the job record's JSON and status.
-         JobService::updateJobJSON($this->connection, $jobID, $resultsJSON, $message, $jobStatus);
+         JobService::updateJobJSON($this->connection, $jobID, $jsonForSQL, $message, $jobStatus);
       }
 
-      // Decode the JSON so it can be correctly serialized.
-      $decodedJSON = null;
-      if ($resultsJSON != null) { $decodedJSON = json_decode($resultsJSON, true); }
-      
-      return array(
-         "jobName" => $jobName,
-         "jobUID" => $jobUID,
-         "output" => $decodedJSON,
-         "status" => $jobStatus->value
-      );
+      // Retrieve a job and return it as a Classification Job "object" (nested arrays).
+      return ClassificationJob::getJobAsJSON($this->connection, $jobUID, $userEmail, $userUID);
    }
 
    

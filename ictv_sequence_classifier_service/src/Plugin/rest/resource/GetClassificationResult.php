@@ -4,12 +4,15 @@ namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\ClassificationJob;
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -37,11 +40,17 @@ class GetClassificationResult extends ResourceBase {
    // The connection to the ictv_apps database.
    protected Connection $connection;
 
+   // The name of the CSV result file.
+   protected ?string $csvResultsFilename;
+
    // The name of the database used by this web service.
    protected string $databaseName;
 
    // The path of the Drupal installation.
    protected string $drupalRoot;
+
+   // The name of the HTML result file.
+   protected ?string $htmlResultsFilename;
 
    // The directory where input sequences are uploaded.
    protected ?string $inputDirectory;
@@ -52,11 +61,11 @@ class GetClassificationResult extends ResourceBase {
    // The JobService object.
    protected JobService $jobService;
    
+   // The name of the JSON result file.
+   protected ?string $jsonResultsFilename;
+
    // The directory where output files are stored.
    protected ?string $outputDirectory;
-
-   // The name of the file containing the results of a sequence classification job.
-   protected ?string $resultsFilename;
 
 
    /**
@@ -104,6 +113,10 @@ class GetClassificationResult extends ResourceBase {
 
       // Get configuration settings from the ictv_sequence_classifier_service.settings file.
       try {
+         // Get the filename of the CSV results file.
+         $this->csvResultsFilename = $config->get("csvResultsFilename");
+         if (Utils::isNullOrEmpty($this->csvResultsFilename)) { throw new \Exception("The csvResultsFilename setting is empty"); }
+
          // Get the database name.
          $this->databaseName = $config->get("databaseName");
          if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
@@ -116,16 +129,20 @@ class GetClassificationResult extends ResourceBase {
          $this->jobsPath = $config->get("jobsPath");
          if (Utils::isNullOrEmpty($this->jobsPath)) { throw new \Exception("The jobsPath setting is empty"); }
          
+         // Get the filename of the JSON results file.
+         $this->jsonResultsFilename = $config->get("jsonResultsFilename");
+         if (Utils::isNullOrEmpty($this->jsonResultsFilename)) { throw new \Exception("The jsonResultsFilename setting is empty"); }
+
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
 
-         // The name of the file containing the results of a sequence classification job.
-         $this->resultsFilename = $config->get("resultsFilename");
-         if (Utils::isNullOrEmpty($this->resultsFilename)) { throw new \Exception("The resultsFilename setting is empty"); }
+         // The name of the HTML file containing the results of a sequence classification job.
+         $this->htmlResultsFilename = $config->get("htmlResultsFilename");
+         if (Utils::isNullOrEmpty($this->htmlResultsFilename)) { throw new \Exception("The htmlResultsFilename setting is empty"); }
       }
       catch (\Exception $e) {
-         \Drupal::logger('ictv_sequence_classifier_service')->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return;
       }
       
@@ -133,7 +150,7 @@ class GetClassificationResult extends ResourceBase {
       $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
-      $this->jobService = new JobService($this->jobsPath, $this->logger, "ictv_sequence_classifier", $this->inputDirectory, $this->outputDirectory);
+      $this->jobService = new JobService($this->jobsPath, $this->logger, Common::$MODULE_NAME, $this->inputDirectory, $this->outputDirectory);
    }
 
    /**
@@ -146,7 +163,7 @@ class GetClassificationResult extends ResourceBase {
          $module_definition,
          $container->get('config.factory'),
          $container->getParameter('serializer.formats'),
-         $container->get('logger.factory')->get('ictv_sequence_classifier_resource'),
+         $container->get('logger.factory')->get(Common::$MODULE_NAME),
          $container->get("current_user")
       );
    }
@@ -159,8 +176,8 @@ class GetClassificationResult extends ResourceBase {
     */
     public function get(Request $request) {
       
-      // Get the user's available jobs.
-      $data = $this->getResults($request);
+      // Get the request classification job.
+      $data = $this->getJob($request);
 
       $build = array(
          '#cache' => array(
@@ -186,16 +203,17 @@ class GetClassificationResult extends ResourceBase {
       // return Cache::PERMANENT;
    }
 
+
    // Get the the results of a user's sequence classification.
-   public function getResults(Request $request) {
+   public function getJob(Request $request) {
 
       // Get and validate the JSON in the request body.
       $json = Json::decode($request->getContent());
       if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
 
-      // Get and validate the result identifier.
-      $resultIdentifier = $json["resultIdentifier"];
-      if (Utils::isNullOrEmpty($resultIdentifier)) { throw new BadRequestHttpException("Invalid result identifier"); }
+      // Get and validate the job UID.
+      $jobUID = $json["jobUID"];
+      if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid result identifier"); }
 
       // Get and validate the user email.
       $userEmail = $json["userEmail"];
@@ -205,9 +223,67 @@ class GetClassificationResult extends ResourceBase {
       $userUID = $json["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
-      // Get this user's jobs.
-      //$data = $this->jobService->getJobs($this->connection, JobType::sequence_classification, $userEmail, $userUID);
-      return $data;
+      $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
+      $filePath = $this->jobService->getOutputPath($jobPath);
+   
+      // Retrieve a job and return it as a Classification Job "object" (nested arrays).
+      $job = ClassificationJob::getJobAsJSON($this->connection, $jobUID, $userEmail, $userUID);
+      
+      $count = 1;
+
+      foreach ($job["data"]["results"] as $result) {
+
+         $csvFilename = $result["blast_csv"];
+         if (!Utils::isNullOrEmpty($csvFilename)) { $job = ClassificationJob::addFile($job, true, "csv_".$count, $csvFilename, $filePath); }
+
+         $htmlFilename = $result["blast_html"];
+         if (!Utils::isNullOrEmpty($htmlFilename)) { $job = ClassificationJob::addFile($job, true, "html_".$count, $htmlFilename, $filePath); }
+
+         $count = $count + 1;
+      }
+
+      /*
+
+      {
+         "program_name": "classify_sequence",
+         "version": "v0.2.cbdeb58",
+         "input_dir": "seq_in",
+         "results": [
+            {
+                  "input_file": "test12.fa",
+                  "input_seq": "test_seq_1",
+                  "status": "CLASSIFIED",
+                  "classification_rank": "species",
+                  "classification_lineage": {
+                     "realm": "HelloRealm",
+                     "family": "BigFamily",
+                     "genus": "WorldGenus",
+                     "species": "WorldGenus specius"
+                  },
+                  "blast_htmls": {
+                     "blast_results": "tax_results_1.html"
+                  }
+            },
+            {
+                  "input_file": "test12.fa",
+                  "input_seq": "test_seq_2",
+                  "status": "CLASSIFIED",
+                  "classification_rank": "genus",
+                  "classification_lineage": {
+                     "realm": "HelloRealm",
+                     "family": "BigFamily",
+                     "genus": "CountryGenus"
+                  },
+                  "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
+                  "blast_htmls": {
+                     "blast_results": "tax_results_2.html"
+                  }
+            }
+         ]
+      }
+
+      */
+      return $job;
    }
 
    /** 
@@ -227,8 +303,8 @@ class GetClassificationResult extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // Get the user's available jobs.
-      $data = $this->getResults($request);
+      // Get metadata for a specific job.
+      $data = $this->getJob($request);
 
       $build = array(
          '#cache' => array(

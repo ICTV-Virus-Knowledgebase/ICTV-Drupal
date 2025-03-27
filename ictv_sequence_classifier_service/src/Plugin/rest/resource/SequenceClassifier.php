@@ -2,6 +2,7 @@
 
 namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
 
+use Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\Common;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Utils;
 
@@ -30,12 +31,8 @@ class SequenceClassifier {
          2 => array("pipe", "w")  // Write to stderr
       );
       
-      // NOTE: This worked on the command line: sudo docker run -it -v "/var/www/drupal/files/jobs/dmd_test_032125/seq_in:/seq_in"  -v "/var/www/drupal/files/jobs/dmd_test_032125/tax_out:/tax_out"  curtish/ictv_sequence_classifier:latest $*
-
       // Generate the command to be run.
       $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -v ";  // NOTE: seq_in\" previously ended in :ro
-
-      \Drupal::logger('ictv_sequence_classifier_service')->info("About to run: ".$command);
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
@@ -79,7 +76,7 @@ class SequenceClassifier {
             $stdError = $stdError.$e->getMessage(); 
          }
 
-         \Drupal::logger('ictv_sequence_classifier_service')->error("An error occurred in SequenceClassifier: ".$stdError);
+         \Drupal::logger(Common::$MODULE_NAME)->error("An error occurred in SequenceClassifier: ".$stdError);
       }
 
       if ($jobStatus == null) { $jobStatus = JobStatus::crashed; } 
