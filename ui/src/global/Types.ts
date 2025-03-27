@@ -213,8 +213,8 @@ export enum WebServiceKey {
    proposal = "proposal",
 
    // Sequence classifier
+   getClassificationResult = "getClassificationResult",
    getClassifiedSequences = "getClassifiedSequences",
-   getSequenceClassification = "getSequenceClassification",
    uploadSequences = "uploadSequences",
 
    // Taxonomy

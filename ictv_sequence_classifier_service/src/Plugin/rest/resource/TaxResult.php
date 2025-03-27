@@ -5,7 +5,6 @@ namespace Drupal\ictv_sequence_classifier_service\Plugin\rest\resource;
 use Drupal\ictv_common\Utils;
 
 
-
 class TaxResult {
 
    public static function getJSON(string $jsonFilename, string $outputPath) {
@@ -17,10 +16,7 @@ class TaxResult {
          // Open and read the JSON file.
          $json = file_get_contents($outputPath."/".$jsonFilename);
 
-         // Convert from US-ASCII to UTF-8
-         $jsonUTF8 = mb_convert_encoding($json, 'UTF-8', 'US-ASCII');
-
-         if (json_decode($jsonUTF8) === null && json_last_error() !== JSON_ERROR_NONE) {
+         if (json_decode($json) === null && json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception("JSON data is invalid after conversion");
          }
       }

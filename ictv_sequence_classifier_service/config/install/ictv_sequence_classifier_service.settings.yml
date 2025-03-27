@@ -1,6 +1,7 @@
+csvResultsFilename: 'results.csv'
 databaseName: 'ictv_apps'
 drupalRoot: '/var/www/drupal/site'
-htmlResultsFilename: 'results.html'
+htmlResultsFilename: 'tax_results_1.html'
 inputDirectory: 'seq_in'
 jobsPath: '/var/www/drupal/files/jobs'
 jsonResultsFilename: 'tax_results.json'

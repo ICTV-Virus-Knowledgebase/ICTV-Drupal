@@ -1,9 +1,7 @@
 
 //import { AppSettings } from "../global/AppSettings";
+import { IClassificationJob } from "../components/SequenceClassifier/IClassificationJob";
 import { IFileData } from "../models/IFileData";
-import { IJob } from "../components/ProposalSubmission/IJob";
-import { IUploadResult } from "../components/ProposalSubmission/IUploadResult";
-import { IValidationSummary } from "../components/ProposalSubmission/IValidationSummary";
 import { WebService } from "./WebService";
 import { WebServiceKey } from "../global/Types";
 
@@ -12,7 +10,7 @@ export class _SequenceClassifierService {
 
 
    // Get all of this user's sequence classifications (jobs).
-   async getClassifiedSequences(authToken_: string, userEmail_: string, userUID_: string): Promise<IJob[]> {
+   async getClassifiedSequences(authToken_: string, userEmail_: string, userUID_: string): Promise<IClassificationJob[]> {
 
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -25,7 +23,7 @@ export class _SequenceClassifierService {
          userUID: userUID_
       };
 
-      let jobs: IJob[] = null;
+      let jobs: IClassificationJob[] = null;
 
       let jobsJSON = await WebService.drupalPost<string>(WebServiceKey.getClassifiedSequences, authToken_, data);
       if (!!jobsJSON) { 
@@ -37,8 +35,8 @@ export class _SequenceClassifierService {
    }
 
 
-   // Get the classification summary for a specific sequence file.
-   async getSequenceClassification(authToken_: string, jobUID_: string, userEmail_: string, userUID_: string): Promise<IValidationSummary> {
+   // Get the classification result for a specific job.
+   async getClassificationResult(authToken_: string, jobUID_: string, userEmail_: string, userUID_: string): Promise<IClassificationJob> {
       
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -53,8 +51,8 @@ export class _SequenceClassifierService {
          userUID: userUID_
       };
 
-      // Get and return the classification summary
-      return await WebService.drupalPost<IValidationSummary>(WebServiceKey.getSequenceClassification, authToken_, data);
+      // Get and return the classification result.
+      return await WebService.drupalPost<IClassificationJob>(WebServiceKey.getClassificationResult, authToken_, data);
    }
 
 
@@ -78,7 +76,7 @@ export class _SequenceClassifierService {
    
    // Upload one or more sequences for classification.
    async uploadSequences(authToken_: string, files_: IFileData[], jobName_: string, userEmail_: string, 
-      userUID_: string): Promise<IUploadResult> {
+      userUID_: string): Promise<IClassificationJob> {
 
       // Validate parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -94,7 +92,7 @@ export class _SequenceClassifierService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<IUploadResult>(WebServiceKey.uploadSequences, authToken_, data);
+      return await WebService.drupalPost<IClassificationJob>(WebServiceKey.uploadSequences, authToken_, data);
    } 
 
 }

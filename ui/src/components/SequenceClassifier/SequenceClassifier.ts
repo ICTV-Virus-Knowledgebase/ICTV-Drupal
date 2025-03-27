@@ -3,8 +3,8 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import DataTables from "datatables.net-dt";
 import { DateTime } from "luxon";
 import { decode } from "base64-arraybuffer";
+import { IClassificationJob } from "./IClassificationJob";
 import { IFileData } from "../../models/IFileData";
-import { IJob } from "./IJob";
 import { IJobFile } from "./IJobFile";
 import { SequenceClassifierService } from "../../services/SequenceClassifierService";
 import { Utils } from "../../helpers/Utils";
@@ -56,8 +56,11 @@ export class SequenceClassifier {
    // Map a job's UID to its job files formatted as HTML.
    jobFileLookup: Map<string, string>;
 
-   jobs: IJob[];
+   jobs: IClassificationJob[];
 
+   // dmd 032425
+   jobToken: string = null;
+   
    // User information
    user: {
       email: string, 
@@ -212,7 +215,7 @@ export class SequenceClassifier {
             </thead>
             <tbody>`;
 
-      this.jobs.forEach((job_: IJob, index_: number) => {
+      this.jobs.forEach((job_: IClassificationJob, index_: number) => {
 
          // Alternate the CSS class every row.
          const rowClass = index_ % 2 === 0 ? "odd-bg" : "even-bg";
@@ -381,6 +384,14 @@ export class SequenceClassifier {
    }
 
 
+   async getClassificationResult(jobUID_: string) {
+
+      const job = SequenceClassifierService.getClassificationResult(this.authToken, jobUID_, this.user.email, this.user.uid);
+      console.log("job = ", job)
+      return;
+   }
+
+
    // Get this user's classified sequences (jobs) from the web service.
    async getClassifiedSequences() {
 
@@ -416,6 +427,13 @@ export class SequenceClassifier {
       } else {
          greeting = `You are logged in as ${this.user.name} (${this.user.email})`;
       }
+
+      /*
+      // Was a job token provided?
+      const urlParams = new URLSearchParams(window.location.search);
+      const jobToken = urlParams.get("job");
+      console.log("job = ", jobToken)
+      */
 
       // Create HTML for the container Element.
       const html = 
@@ -697,7 +715,7 @@ export class SequenceClassifier {
          ])
          .then((results_) => {
             if (results_[0].status === "fulfilled") {
-               this.currentJobUID = results_[0].value.jobUID;
+               this.currentJobUID = results_[0].value.uid;
                console.log(`just set currentJobUID to ${this.currentJobUID}`)
             } else {
                this.currentJobUID = null;

@@ -1,4 +1,10 @@
 services:
+  ictv_sequence_classifier_service.GetClassificationResult:
+    class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\GetClassificationResult'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
   ictv_sequence_classifier_service.GetClassifiedSequences:
     class: '\Drupal\ictv_sequence_classifier_service\Plugin\rest\resource\GetClassifiedSequences'
     arguments: ['@current_user']
