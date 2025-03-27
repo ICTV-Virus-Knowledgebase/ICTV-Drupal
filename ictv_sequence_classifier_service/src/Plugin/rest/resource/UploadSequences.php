@@ -373,7 +373,10 @@ class UploadSequences extends ResourceBase {
       }
 
       // Retrieve a job and return it as a Classification Job "object" (nested arrays).
-      return ClassificationJob::getJobAsJSON($this->connection, $jobUID, $userEmail, $userUID);
+      $job = ClassificationJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
+
+      // Add result files to the job.
+      return ClassificationJob::addResultFiles($outputPath, $job);
    }
 
    

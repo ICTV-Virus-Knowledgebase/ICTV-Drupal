@@ -17,13 +17,18 @@ class Common {
       $handle = null;
       $fileData = null;
    
+      if (!str_ends_with($filePath, '/')) { $filePath = $filePath.'/'; }
+
+      // Concatenate the path and filename.
+      $filePathAndName = $filePath.$filename;
+
       try {
          // Get a file handle and read its contents.
-         $handle = fopen($filePath, "r");
-         $fileData = fread($handle, filesize($filePath));
+         $handle = fopen($filePathAndName, "r");
+         $fileData = fread($handle, filesize($filePathAndName));
    
       } catch (\Exception $e) {
-         \Drupal::logger($MODULE_NAME)->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return null;
    
       } finally {
@@ -31,7 +36,7 @@ class Common {
       }
    
       if ($fileData == null) {
-         \Drupal::logger($MODULE_NAME)->error("Invalid file ".$filename." in job ".$jobUID);
+         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid file ".$filename." in path ".$filePath);
          return null;
       }
    

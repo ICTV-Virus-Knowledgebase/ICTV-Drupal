@@ -40,17 +40,11 @@ class GetClassificationResult extends ResourceBase {
    // The connection to the ictv_apps database.
    protected Connection $connection;
 
-   // The name of the CSV result file.
-   protected ?string $csvResultsFilename;
-
    // The name of the database used by this web service.
    protected string $databaseName;
 
    // The path of the Drupal installation.
    protected string $drupalRoot;
-
-   // The name of the HTML result file.
-   protected ?string $htmlResultsFilename;
 
    // The directory where input sequences are uploaded.
    protected ?string $inputDirectory;
@@ -113,10 +107,6 @@ class GetClassificationResult extends ResourceBase {
 
       // Get configuration settings from the ictv_sequence_classifier_service.settings file.
       try {
-         // Get the filename of the CSV results file.
-         $this->csvResultsFilename = $config->get("csvResultsFilename");
-         if (Utils::isNullOrEmpty($this->csvResultsFilename)) { throw new \Exception("The csvResultsFilename setting is empty"); }
-
          // Get the database name.
          $this->databaseName = $config->get("databaseName");
          if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
@@ -136,10 +126,6 @@ class GetClassificationResult extends ResourceBase {
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
-
-         // The name of the HTML file containing the results of a sequence classification job.
-         $this->htmlResultsFilename = $config->get("htmlResultsFilename");
-         if (Utils::isNullOrEmpty($this->htmlResultsFilename)) { throw new \Exception("The htmlResultsFilename setting is empty"); }
       }
       catch (\Exception $e) {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
@@ -223,30 +209,71 @@ class GetClassificationResult extends ResourceBase {
       $userUID = $json["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
+      // Get the job path and output path.
       $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
       $filePath = $this->jobService->getOutputPath($jobPath);
    
       // Retrieve a job and return it as a Classification Job "object" (nested arrays).
-      $job = ClassificationJob::getJobAsJSON($this->connection, $jobUID, $userEmail, $userUID);
-      
-      $count = 1;
+      $job = ClassificationJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
+      if ($job == null) { return null; }
 
-      foreach ($job["data"]["results"] as $result) {
-
-         $csvFilename = $result["blast_csv"];
-         if (!Utils::isNullOrEmpty($csvFilename)) { $job = ClassificationJob::addFile($job, true, "csv_".$count, $csvFilename, $filePath); }
-
-         $htmlFilename = $result["blast_html"];
-         if (!Utils::isNullOrEmpty($htmlFilename)) { $job = ClassificationJob::addFile($job, true, "html_".$count, $htmlFilename, $filePath); }
-
-         $count = $count + 1;
-      }
+      // Add result files to the job.
+      $job = ClassificationJob::addResultFiles($filePath, $job);
 
       /*
+      // How many results are available?
+      $resultCount = length($job["data"]["results"]);
 
+      for ($r=0; $r<$resultCount; $r++) {
+
+         $result = $job["data"]["results"][$r];
+
+         $csvFilename = $result["blast_csv"];
+         if (!Utils::isNullOrEmpty($csvFilename)) { 
+            
+            // Open the file and retrieve its contents.
+            $contents = Common::getFileContents(true, $csvFilename, $filePath);
+            
+            if (!Utils::isNullOrEmpty($contents)) { $job["data"]["results"][$r]["csv_file"] = $contents; }
+         }
+
+         $htmlFilename = $result["blast_html"];
+         if (!Utils::isNullOrEmpty($htmlFilename)) { 
+            
+            // Open the file and retrieve its contents.
+            $contents = Common::getFileContents(true, $htmlFilename, $filePath);
+            
+            if (!Utils::isNullOrEmpty($contents)) { $job["data"]["results"][$r]["html_file"] = $contents; }
+         }
+      }*/
+
+      /*foreach ($job["data"]["results"] as $result) {
+
+         $csvFilename = $result["blast_csv"];
+         if (!Utils::isNullOrEmpty($csvFilename)) { 
+            
+            // Open the file and retrieve its contents.
+            $contents = Common::getFileContents(true, $csvFilename, $filePath);
+            
+            if (!Utils::isNullOrEmpty($contents)) { $result["csv_file"] = $contents; }
+         }
+
+         $htmlFilename = $result["blast_html"];
+         if (!Utils::isNullOrEmpty($htmlFilename)) { 
+            
+            // Open the file and retrieve its contents.
+            $contents = Common::getFileContents(true, $htmlFilename, $filePath);
+            
+            if (!Utils::isNullOrEmpty($contents)) { $result["html_file"] = $contents; }
+         }
+
+         $count = $count + 1;
+      }*/
+
+      /*
       {
          "program_name": "classify_sequence",
-         "version": "v0.2.cbdeb58",
+         "version": "v0.3.b4cd48a",
          "input_dir": "seq_in",
          "results": [
             {
@@ -260,9 +287,8 @@ class GetClassificationResult extends ResourceBase {
                      "genus": "WorldGenus",
                      "species": "WorldGenus specius"
                   },
-                  "blast_htmls": {
-                     "blast_results": "tax_results_1.html"
-                  }
+                  "blast_html": "tax_results_1.html",
+                  "blast_csv": "tax_results_1.csv"
             },
             {
                   "input_file": "test12.fa",
@@ -275,14 +301,13 @@ class GetClassificationResult extends ResourceBase {
                      "genus": "CountryGenus"
                   },
                   "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
-                  "blast_htmls": {
-                     "blast_results": "tax_results_2.html"
-                  }
+                  "blast_html": "tax_results_2.html",
+                  "blast_csv": "tax_results_2.csv"
             }
          ]
       }
-
       */
+
       return $job;
    }
 
