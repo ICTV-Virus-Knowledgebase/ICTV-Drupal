@@ -17,7 +17,7 @@ class ClassificationJob {
    public static function addResultFiles(string $filePath, array $job) {
 
       // If there are no results, return the job unmodified.
-      if ($job["data"]["results"] == null) { return $job; }
+      if ($job == null || $job["data"] == null || $job["data"]["results"] == null) { return $job; }
 
       // How many results are available?
       $resultCount = count($job["data"]["results"]);

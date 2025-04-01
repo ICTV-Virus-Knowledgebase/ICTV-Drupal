@@ -53,7 +53,7 @@ class IctvTaxonHistoryBlock extends BlockBase {
 
     $result = $query->fetchAll();
 
-    // TODO: validate result!
+    // TODO: validate results!
     $applicationURL = $result[0]->applicationURL;
     $baseWebServiceURL = $result[0]->baseWebServiceURL;
     $currentMslRelease = $result[0]->currentMslRelease;
@@ -64,7 +64,7 @@ class IctvTaxonHistoryBlock extends BlockBase {
         '#markup' => $this->t("<div id='taxon_history_container' class='ictv-custom'></div>"),
         '#attached' => [
             'library' => [
-                'ictv_taxon_history/ICTV',
+                'ictv_taxon_history/ICTV_TaxonReleaseHistory',
             ],
             'library' => [
               'ictv_taxon_history/taxonHistory',
