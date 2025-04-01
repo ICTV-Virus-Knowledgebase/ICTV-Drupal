@@ -37,19 +37,12 @@
             
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#taxon_history_container";
-        
-            // Get the taxnode ID from the URL search parameters
-            const urlParams = (new URL(document.location)).searchParams;
-            const taxNodeID = urlParams.get("taxnode_id");
-            if (!taxNodeID) { console.log("error!"); throw new Error("Unable to display taxonomy history: Invalid tax node ID parameter"); }
-
 
             // Create a new TaxonReleaseHistory instance.
             const taxonHistory = new window.ICTV_TaxonReleaseHistory.TaxonReleaseHistory(settings_.currentMslRelease, containerSelector);
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();
-            //taxonHistory.get(taxNodeID).then(() => {});
         }
     };
     
