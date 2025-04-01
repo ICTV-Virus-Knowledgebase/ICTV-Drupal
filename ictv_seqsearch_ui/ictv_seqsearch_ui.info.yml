@@ -1,0 +1,8 @@
+name: ICTV SeqSearch UI
+type: module
+description: 'A custom module that displays a UI for sequence searches'
+package: ICTV
+configure: ictv_seqsearch_ui.settings
+core_version_requirement: ^9 || ^10 || ^11
+dependencies:
+  - drupal:block

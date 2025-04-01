@@ -1,0 +1,12 @@
+services:
+  ictv_seqsearch_service.GetSeqSearchResult:
+    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetSeqSearchResult'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_seqsearch_service.UploadSequences:
+    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\UploadSequences'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

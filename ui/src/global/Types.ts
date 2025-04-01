@@ -10,6 +10,13 @@ export enum CuratedNameType {
    other = "other"
 }
 
+export enum IdPrefix {
+   ictvID = "ICTV",
+   MSL = "MSL",
+   taxnodeID = "TN",
+   VMR = "VMR"
+}
+
 export enum JobStatus {
    complete = "complete",
    crashed = "crashed",
@@ -212,9 +219,8 @@ export enum WebServiceKey {
    // Proposal service
    proposal = "proposal",
 
-   // Sequence classifier
-   getClassificationResult = "getClassificationResult",
-   getClassifiedSequences = "getClassifiedSequences",
+   // Sequence search
+   getSequenceSearchResult = "getSequenceSearchResult",
    uploadSequences = "uploadSequences",
 
    // Taxonomy
@@ -230,7 +236,7 @@ export enum WebServiceKey {
 
 // Keys used to set and retrieve data in local (web) storage.
 export enum WebStorageKey {
-   sequenceClassifierUserUID = "sequence_classifier_user_uid"
+   sequenceSearchUserUID = "sequence_search_user_uid"
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
