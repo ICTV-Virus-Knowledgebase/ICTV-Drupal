@@ -16,3 +16,9 @@ services:
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }
+
+  ictv_web_api.getUnassignedChildTaxaByName:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetUnassignedChildTaxaByName'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
