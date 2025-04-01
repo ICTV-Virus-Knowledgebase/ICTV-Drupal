@@ -1,9 +1,11 @@
+
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
 import { IRelease } from "../../models/TaxonHistory/IRelease";
 import { ITaxon } from "../../models/TaxonHistory/ITaxon";
+import { ITaxonDetail } from "../../models/TaxonHistory/ITaxonDetail";
 import { ITaxonHistoryResult } from "../../models/TaxonHistory/ITaxonHistoryResult";
-import { TaxaLevel } from "../../global/Types";
+import { IdPrefix, TaxaLevel } from "../../global/Types";
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 import { Utils } from "../../helpers/Utils";
 
@@ -26,56 +28,36 @@ enum LineageDisplayFormat {
    vertical = "vertical"
 }
 
+enum TaxonType {
+   current = "current",
+   selected = "selected"
+}
+
 
 export class TaxonReleaseHistory {
 
    allRankNamesArray: string[] = null;
 
-   // CSS classes
-   cssClasses: { [key: string]: string; } = {
-      container: "taxon-release-history",
-      copyStatus: "copy-status",
-      exportLineageLabel: "export-lineage-label",
-      includeEmptyControl: "include-empty-control",
-      includeEmptyLabel: "include-empty-label",
-      lineageCopyControl: "lineage-copy-control",
-      lineageDownloadControl: "lineage-download-control",
-      lineageExportFormat: "lineage-export-format",
-      lineageExportRanks: "lineage-export-ranks",
-      lineageExportRow: "lineage-export-row",
-      lineageRow: "lineage-row",
-      messagePanel: "taxon-release-history-message",
-      rankName: "rank-name",
-      releaseHeader: "release-header",
-      release: "release",
-      releaseBody: "release-body",
-      releases: "releases",
-      releaseTitle: "release-title",
-      releaseYear: "release-year",
-      settingsLabel: "settings-label",
-      settingsPanel: "settings-panel",
-      settingsRow: "settings-row",
-      settingsTitle: "settings-title",
-      taxonName: "taxon-name",
-      titleLineage: "title-lineage",
-      titleRow: "title-row",
-      titleName: "title-name",
-      titleRank: "title-rank",
-      titleRelease: "title-release"
-   }
+   // The DOM selector for the container element.
+   containerSelector: string = null;
 
    currentMslRelease: number;
 
    elements: {
       container: HTMLElement,
+      currentTaxon: HTMLElement,
+      dataContainer: HTMLElement,
       messagePanel: HTMLElement,
-      parent: HTMLElement,
-      releases: HTMLElement
+      releases: HTMLElement,
+      selectedTaxon: HTMLElement
    }
 
    icons: { [key: string]: string; } = {
+      file: "far fa-file",
       lineage: "fas fa-chevron-right",
-      spinner: "fas fa-spinner fa-spin"
+      pdf: "far fa-file-pdf",
+      spinner: "fas fa-spinner fa-spin",
+      zip: "far fa-file-archive"
    }
 
    // An ICTV ID provided as a query string parameter.
@@ -90,12 +72,6 @@ export class TaxonReleaseHistory {
 
    releaseLookup: Map<number, IRelease>;
 
-   // DOM selectors
-   selectors: { [key: string]: string; } = {
-      container: null,
-      parent: null
-   }
-
    taxaLookup: Map<number, ITaxon>;
 
    // A taxnode ID provided as a query string parameter.
@@ -107,24 +83,21 @@ export class TaxonReleaseHistory {
 
 
    // C-tor
-   constructor(currentMslRelease_: number, parentSelector_: string) {
+   constructor(containerSelector_: string, currentMslRelease_: number) {
+
+      if (!containerSelector_) { throw new Error("Invalid container selector"); }
+      this.containerSelector = containerSelector_;
 
       if (!currentMslRelease_) { throw new Error("Invalid current MSL release"); }
       this.currentMslRelease = currentMslRelease_;
 
-      if (!parentSelector_) { throw new Error("Invalid parent selector"); }
-
-      this.selectors.parent = parentSelector_;
-      this.selectors.container = `${parentSelector_} .${this.cssClasses.container}`;
-      this.selectors.messagePanel = `${parentSelector_} .${this.cssClasses.messagePanel}`;
-      this.selectors.releases = `${parentSelector_} .${this.cssClasses.releases}`;
-      this.selectors.titleRow = `${parentSelector_} .${this.cssClasses.titleRow}`;
-
       this.elements = {
          container: null,
+         currentTaxon: null,
+         dataContainer: null,
          messagePanel: null,
-         parent: null,
-         releases: null
+         releases: null,
+         selectedTaxon: null
       }
 
       // Populate the all rank names array.
@@ -156,20 +129,20 @@ export class TaxonReleaseHistory {
          if (isNaN(treeID)) { throw new Error("Invalid tree ID"); }
 
          // Get the export format (CSV or TSV)
-         const formatEl: HTMLSelectElement = document.querySelector(`${this.selectors.container} .${this.cssClasses.lineageExportFormat}`);
+         const formatEl: HTMLSelectElement = document.querySelector(`${this.containerSelector} .lineage-export-format`);
          if (!formatEl) { throw new Error("Invalid format Element"); }
 
          const exportFormat = formatEl.options[formatEl.selectedIndex].value as ExportFormat;
 
          // Should rank names be included?
-         const ranksEl: HTMLSelectElement = document.querySelector(`${this.selectors.container} .${this.cssClasses.lineageExportRanks}`);
+         const ranksEl: HTMLSelectElement = document.querySelector(`${this.containerSelector} .lineage-export-ranks`);
          if (!ranksEl) { throw new Error("Invalid ranks Element"); }
 
          let includeRanks = false;
          if (ranksEl.options[ranksEl.selectedIndex].value === "true") { includeRanks = true; }
 
          // Should empty ranks be included?
-         const includeEmptyEl: HTMLInputElement = document.querySelector(`${this.selectors.container} .${this.cssClasses.includeEmptyControl}`);
+         const includeEmptyEl: HTMLInputElement = document.querySelector(`${this.containerSelector} .include-empty-control`);
          if (!includeEmptyEl) { throw new Error("Invalid include empty Element"); }
 
          const includeEmptyRanks = includeEmptyEl.checked;
@@ -211,19 +184,19 @@ export class TaxonReleaseHistory {
       const formattedTitle = release_.title.replace(/;/g, ";<br/>");
 
       let html =
-         `<div class="${this.cssClasses.releaseHeader}">
-                <div class="${this.cssClasses.releaseYear}">${release_.year}</div>
-                <div class="${this.cssClasses.releaseTitle}">${formattedTitle}</div>
-            </div>
-            <div class="${this.cssClasses.releaseBody}"></div>`;
+         `<div class="release-header">
+            <div class="release-year">${release_.year}</div>
+            <div class="release-title">${formattedTitle}</div>
+         </div>
+         <div class="release-body"></div>`;
 
       // Create the release panel and populate it with HTML.
       const releaseEl = document.createElement("div");
-      releaseEl.className = this.cssClasses.release;
+      releaseEl.className = "release";
       releaseEl.setAttribute("data-tree-id", release_.treeID.toString());
       releaseEl.innerHTML = html;
 
-      jQuery(this.selectors.releases).append(releaseEl);
+      this.elements.releases.appendChild(releaseEl);
    }
 
    addTaxonChanges(parentEl_: HTMLElement, taxon_: ITaxon, index_: number) {
@@ -296,9 +269,9 @@ export class TaxonReleaseHistory {
          `<div class="taxon-tags">${tags}</div>
             <div class="taxon-lineage">${formattedLineage}</div>
             ${proposalRow}
-            <div class="${this.cssClasses.lineageExportRow}">
+            <div class="lineage-export-row">
                 <div class="lineage-title">Export lineage:</div>
-                <button class="btn btn-success ${this.cssClasses.lineageCopyControl}"
+                <button class="btn btn-success lineage-copy-control"
                     data-action="${ExportAction.copyToClipboard}"
                     data-lineage="${taxon_.lineage}"
                     data-ranks="${taxon_.rankNames}"
@@ -307,7 +280,7 @@ export class TaxonReleaseHistory {
                     <i class="far fa-copy"></i> Copy to the clipboard
                 </button>
                 <span class="between-buttons">or</span>
-                <button class="btn btn-primary ${this.cssClasses.lineageDownloadControl}"
+                <button class="btn btn-primary lineage-download-control"
                     data-action="${ExportAction.download}" 
                     data-lineage="${taxon_.lineage}"
                     data-ranks="${taxon_.rankNames}"
@@ -315,7 +288,7 @@ export class TaxonReleaseHistory {
                     data-tree-id="${taxon_.treeID}">
                     <i class="fas fa-download"></i> Download
                 </button>
-                <div class="${this.cssClasses.copyStatus}" data-taxnode-id="${taxon_.taxnodeID}" style="display: none">
+                <div class="copy-status" data-taxnode-id="${taxon_.taxnodeID}" style="display: none">
                     <i class="fas fa-check"></i> Copied successfully
                 </div>
             </div>`;
@@ -332,7 +305,7 @@ export class TaxonReleaseHistory {
       navigator.clipboard.writeText(text_).then(() => {
 
          // Populate and display the success message, then fade out and revert to the initial state.
-         jQuery(`${this.selectors.container} .${this.cssClasses.copyStatus}[data-taxnode-id="${taxNodeID_}"]`)
+         jQuery(`${this.containerSelector} .copy-status[data-taxnode-id="${taxNodeID_}"]`)
             .show()
             .fadeOut(this.messageFadeTime, () => {
                jQuery(this).hide();
@@ -352,6 +325,7 @@ export class TaxonReleaseHistory {
       if (lineageIDs_.endsWith(";")) { lineageIDs_ = lineageIDs_.substring(0, lineageIDs_.length - 1); }
       if (ranks_.endsWith(";")) { ranks_ = ranks_.substring(0, ranks_.length - 1); }
 
+      // Create arrays from the delimited strings.
       const lineageArray = lineage_.split(";");
       const lineageIdArray = lineageIDs_.split(";");
       const rankArray = ranks_.split(";");
@@ -380,14 +354,15 @@ export class TaxonReleaseHistory {
             // Add an icon to delimit the lineage entries.
             if (index_ > 0) { html += `<span class="lineage-chevron" aria-hidden="true"><i class="${this.icons.lineage}"></i></span>`; }
 
+            // Add the rank and linked name.
             html += `<span class="horizontal-lineage" title="${rankName}">${linkedName}</span>`;
 
          } else {
 
-            html +=
-               `<div class="${this.cssClasses.lineageRow}" style="margin-left: ${leftOffset}px">
-                  <div class="${this.cssClasses.rankName}">${rankName}</div>: 
-                  <div class="${this.cssClasses.taxonName}">${linkedName}</div>
+            // Add the rank and linked name.
+            html += `<div class="lineage-row" style="margin-left: ${leftOffset}px">
+                  <div class="rank-name">${rankName}</div>: 
+                  <div class="taxon-name">${linkedName}</div>
                </div>`;
          }
 
@@ -531,7 +506,6 @@ export class TaxonReleaseHistory {
       return result;
    }
 
-
    // Get the history of taxa with this ictv_id over all releases.
    async getByIctvID() {
 
@@ -601,11 +575,11 @@ export class TaxonReleaseHistory {
 
       switch (extension) {
          case ".pdf":
-            return "far fa-file-pdf";
+            return this.icons.pdf;
          case ".zip":
-            return "far fa-file-archive";
+            return this.icons.zip;
          default:
-            return "far fa-file";
+            return this.icons.file;
       }
    }
 
@@ -619,122 +593,189 @@ export class TaxonReleaseHistory {
 
    async initialize() {
 
-      // Get a reference to the parent Element.
-      this.elements.parent = document.querySelector(this.selectors.parent);
-      if (!this.elements.parent) { throw new Error("Invalid parent Element"); }
+      /*
+      Version as of 17:30 on 040125
 
+      <div class="taxon-title selected">Your selection</div>
+      <div class="taxon selected">
+         <div class="taxon-rank"></div>:
+         <div class="taxon-name"></div>
+         <div class="taxon-release"></div>
+      </div>
+      <div class="lineage selected"></div> 
+
+      <div class="taxon-title current">The current taxon</div>
+      <div class="taxon current">
+         <div class="taxon-rank"></div>:
+         <div class="taxon-name"></div>
+         <div class="taxon-release"></div>
+      </div>
+      <div class="lineage current"></div> 
+      */
+
+      // Generate the component's HTML.
       let html: string =
-         `<div class="${this.cssClasses.messagePanel}" data-is-visible="true"></div>
-            <div class="${this.cssClasses.container}" data-is-visible="false">
-                <div class="${this.cssClasses.titleRow}">
-                    <div class="${this.cssClasses.titleRank}"></div>:
-                    <div class="${this.cssClasses.titleName}"></div>
-                    <div class="${this.cssClasses.titleRelease}"></div>
-                </div>
-                <div class="${this.cssClasses.titleLineage}"></div>   
-                <div class="${this.cssClasses.settingsPanel}">
-                    <div class="${this.cssClasses.settingsTitle}">Export settings</div>
-                    <div class="${this.cssClasses.settingsRow}">
-                        <div class="${this.cssClasses.settingsLabel}">Export lineage as </div>
-                        <select class="${this.cssClasses.lineageExportFormat}">
-                            <option value="${ExportFormat.tsv}" selected>tab-separated text</option>
-                            <option value="${ExportFormat.csv}">comma-separated text</option>
-                        </select>
-                        <select class="${this.cssClasses.lineageExportRanks}">
-                            <option value="true">with rank names</option>
-                            <option value="false" selected>without rank names</option>
-                        </select>
-                    </div>
-                    <div class="${this.cssClasses.settingsRow}">
-                        <div class="${this.cssClasses.settingsLabel}">Include empty ranks</div>
-                        <input type="checkbox" class="${this.cssClasses.includeEmptyControl}" checked></input>
-                    </div>
-                </div>
-                <div class="${this.cssClasses.releases}"></div>
-            </div>`;
+         `<div class="message-panel" data-is-visible="true"></div>
+         <div class="data-container" data-is-visible="false">
 
-      this.elements.parent.innerHTML = html;
+            <div class="taxon selected">
+               <div class="taxon-title selected">Your selection: <span class="taxon-name"></span> <span class="taxon-release"></span></div>
+               <div class="info-row">
+                  <label>Rank:</label>
+                  <div class="taxon-rank"></div>
+               </div>
+               <div class="info-row">
+                  <label>ICTV ID:</label>
+                  <div class="taxon-ictv-id"></div>
+               </div>
+               <div class="info-row">Lineage</div>
+               <div class="lineage selected"></div>
+            </div>
+            
+            <div class="taxon current">
+               <div class="taxon-title current">The current taxon: <span class="taxon-name"></span><span class="taxon-release"></span></div>
+               <div class="info-row">
+                  <label>Rank:</label> 
+                  <div class="taxon-rank"></div>
+               </div>
+               <div class="info-row">
+                  <label>ICTV ID:</label>
+                  <div class="taxon-ictv-id"></div>
+               </div>
+               <div class="info-row">Lineage</div>
+               <div class="lineage current"></div>
+            </div>
+            
+            <div class="settings-panel">
+               <div class="settings-title">Export settings</div>
+               <div class="settings-row">
+                  <div class="settings-label">Export lineage as </div>
+                  <select class="lineage-export-format">
+                     <option value="${ExportFormat.tsv}" selected>tab-separated text</option>
+                     <option value="${ExportFormat.csv}">comma-separated text</option>
+                  </select>
+                  <select class="lineage-export-rank">
+                     <option value="true">with rank names</option>
+                     <option value="false" selected>without rank names</option>
+                  </select>
+               </div>
+               <div class="settings-row">
+                  <div class="settings-label">Include empty ranks</div>
+                  <input type="checkbox" class="include-empty-control" checked></input>
+               </div>
+            </div>
+            <div class="releases"></div>
+         </div>`;
 
       // Get a reference to the container Element.
-      this.elements.container = document.querySelector(this.selectors.container);
+      this.elements.container = document.querySelector(this.containerSelector);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
 
-      // Get a reference to the message panel Element.
-      this.elements.messagePanel = document.querySelector(this.selectors.messagePanel);
-      if (!this.elements.messagePanel) { throw new Error("Invalid message panel Element"); }
+      // Populate the container HTML.
+      this.elements.container.innerHTML = html;
 
-      // Get a reference to the releases Element.
-      this.elements.releases = document.querySelector(this.selectors.releases);
-      if (!this.elements.releases) { throw new Error("Invalid releases Element"); }
+      this.elements.currentTaxon = this.elements.container.querySelector(".taxon.current");
+      if (!this.elements.currentTaxon) { throw new Error("Invalid current taxon element"); }
+
+      this.elements.messagePanel = this.elements.container.querySelector(".message-panel");
+      if (!this.elements.messagePanel) { throw new Error("Invalid message panel element"); }
+
+      this.elements.releases = this.elements.container.querySelector(".releases");
+      if (!this.elements.releases) { throw new Error("Invalid releases element"); }
+
+      this.elements.selectedTaxon = this.elements.container.querySelector(".taxon.selected");
+      if (!this.elements.selectedTaxon) { throw new Error("Invalid selected taxon element"); }
 
 
       //---------------------------------------------------------------------------------------------------------------------------------------------------
       // Look for a taxnode_id, ictv_id, or taxon_name in the URL query parameters.
       //---------------------------------------------------------------------------------------------------------------------------------------------------
       const urlParams = new URLSearchParams(window.location.search);
-      //const urlParams = (new URL(window.location)).searchParams;
 
       // Taxnode_id takes precedence over other possible parameters.
       this.taxNodeID = Utils.safeTrim(urlParams.get("taxnode_id"));
       if (!!this.taxNodeID) {
-         console.log("found taxnodeID")
-         return await this.getByTaxNodeID(); }
+         if (this.taxNodeID.startsWith(IdPrefix.taxnodeID)) { this.taxNodeID = this.taxNodeID.replace(IdPrefix.taxnodeID, ""); }
+         return await this.getByTaxNodeID(); 
+      }
 
       // Ictv_id takes precedence over the taxon_name parameter.
       this.ictvID = Utils.safeTrim(urlParams.get("ictv_id"));
       if (!!this.ictvID) { 
-         console.log("found ictv_id")
-         return await this.getByIctvID(); }
+         if (this.ictvID.startsWith(IdPrefix.ictvID)) { this.ictvID = this.ictvID.replace(IdPrefix.ictvID, ""); }
+         return await this.getByIctvID(); 
+      }
 
       // Try to retrieve data using the taxon_name parameter.
       this.taxonName = Utils.safeTrim(urlParams.get("taxon_name"));
-      if (!!this.taxonName) {
-         console.log("found taxon_name")
-         return await this.getByTaxonName(); }
+      if (!!this.taxonName) { return await this.getByTaxonName(); }
       
       return await AlertBuilder.displayError("No valid parameters were provideed. The following parameters are accepted: taxnode_id, ictv_id, and taxon_name");
    }
 
 
+   populateTaxon(taxon_: ITaxonDetail, type_: TaxonType) {
+
+      // Convert the numeric tree ID to a release year.
+      const releaseYear = Utils.convertTreeIdToYear(taxon_.treeID);
+
+      const parentClass = `.taxon.${type_}`;
+
+      // The taxon's rank
+      const rankEl = this.elements.container.querySelector(`${parentClass} .taxon-rank`);
+      if (!rankEl) { throw new Error("Unable to find the taxon-rank element"); }
+      rankEl.innerHTML = taxon_.rankName;
+
+      // The taxon's name
+      const nameEl = this.elements.container.querySelector(`${parentClass} .taxon-name`);
+      if (!nameEl) { throw new Error("Unable to find the taxon-name element"); }
+      nameEl.innerHTML = taxon_.taxonName;
+
+      // The taxon's MSL release
+      const releaseEl = this.elements.container.querySelector(`${parentClass} .taxon-release`);
+      if (!releaseEl) { throw new Error("Unable to find the taxon-release element"); }
+      releaseEl.innerHTML = `(${releaseYear} Release, MSL #${taxon_.mslRelease})`
+      
+      const ictvIdEl = this.elements.container.querySelector(`${parentClass} .taxon-ictv-id`);
+      if (!!ictvIdEl) { ictvIdEl.innerHTML = `${taxon_.taxnodeID}`; }
+
+      // Display the full lineage of the taxa.
+      if (taxon_.lineage && taxon_.lineageIDs && taxon_.rankNames) {
+
+         // Format the lineage as HTML.
+         const formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.rankNames);
+
+         // Populate the lineage element.
+         const lineageEl = this.elements.container.querySelector(`.lineage.${type_}`);
+         if (!lineageEl) { throw new Error(`Invalid ${type_} lineage element`); }
+         lineageEl.innerHTML = formattedLineage;
+      }
+   }
+
+   
    processHistory() {
 
-      // Validate the taxon details
-      if (!this.taxonHistory.detail) {
-         return this.displayMessage("No history is available: Invalid taxon detail");
-      }
+      // Validate the current taxon.
+      if (!this.taxonHistory.currentTaxon) { return this.displayMessage("No history is available: Invalid current taxon"); }
+
+      // Validate the selected taxon.
+      if (!this.taxonHistory.selectedTaxon) { return this.displayMessage("No history is available: Invalid selected taxon"); }
 
       // Validate the releases
-      if (!this.taxonHistory.releases || this.taxonHistory.releases.length < 1) {
-         return this.displayMessage("No history is available: Invalid MSL Release(s)");
-      }
+      if (!this.taxonHistory.releases || this.taxonHistory.releases.length < 1) { return this.displayMessage("No history is available: Invalid MSL Release(s)"); }
 
       // Validate the taxa
-      if (!this.taxonHistory.taxa || this.taxonHistory.taxa.length < 1) {
-         return this.displayMessage("No history is available: No modified taxa available");
-      }
+      if (!this.taxonHistory.taxa || this.taxonHistory.taxa.length < 1) { return this.displayMessage("No history is available: No modified taxa available"); }
 
       // Show the container and hide the message panel.
       this.elements.container.setAttribute("data-is-visible", "true");
       this.elements.messagePanel.setAttribute("data-is-visible", "false");
 
-      // The taxon detail
-      const taxonDetail = this.taxonHistory.detail;
-
-      // Convert the numeric tree ID to a release year.
-      const releaseYear = Utils.convertTreeIdToYear(taxonDetail.treeID);
-
-      // Populate the taxon rank, name, and MSL release.
-      jQuery(`${this.selectors.titleRow} .${this.cssClasses.titleRank}`).html(taxonDetail.rankName);
-      jQuery(`${this.selectors.titleRow} .${this.cssClasses.titleName}`).html(taxonDetail.taxonName);
-      jQuery(`${this.selectors.titleRow} .${this.cssClasses.titleRelease}`).html(`(${releaseYear} Release, MSL #${taxonDetail.mslRelease})`);
-
-      // Display the full lineage of the taxa.
-      if (taxonDetail.lineage && taxonDetail.lineageIDs) {
-
-         const formattedLineage = this.displayLineage(taxonDetail.lineage, taxonDetail.lineageIDs, taxonDetail.rankNames);
-
-         jQuery(`${this.selectors.container} .${this.cssClasses.titleLineage}`).html(formattedLineage);
-      }
+      // Populate the selected taxon.
+      this.populateTaxon(this.taxonHistory.selectedTaxon, TaxonType.selected);
+      
+      // Populate the current taxon.
+      this.populateTaxon(this.taxonHistory.currentTaxon, TaxonType.current);
 
       // A lookup from release tree ID to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
@@ -761,9 +802,7 @@ export class TaxonReleaseHistory {
          release_.rankNames = rankNames;
 
          // Determine the CSS selector of the release's "taxa Element".
-         let taxaElementSelector = `${this.selectors.releases} 
-                .${this.cssClasses.release}[data-tree-id="${release_.treeID}"] 
-                .${this.cssClasses.releaseBody}`
+         let taxaElementSelector = `.releases .release[data-tree-id="${release_.treeID}"] .release-body`;
 
          release_.taxaElement = document.querySelector(taxaElementSelector);
          if (!release_.taxaElement) { throw new Error(`Invalid release panel for tree ID ${release_.treeID}`); }
@@ -772,6 +811,7 @@ export class TaxonReleaseHistory {
          this.releaseLookup.set(release_.treeID, release_);
       })
 
+      // Iterate over all taxa from the taxon's history.
       this.taxonHistory.taxa.forEach((taxon_: ITaxon) => {
 
          const treeID = taxon_.treeID;

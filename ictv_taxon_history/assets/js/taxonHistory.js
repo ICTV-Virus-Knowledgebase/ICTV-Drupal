@@ -39,7 +39,7 @@
             const containerSelector = "#taxon_history_container";
 
             // Create a new TaxonReleaseHistory instance.
-            const taxonHistory = new window.ICTV_TaxonReleaseHistory.TaxonReleaseHistory(settings_.currentMslRelease, containerSelector);
+            const taxonHistory = new window.ICTV_TaxonReleaseHistory.TaxonReleaseHistory(containerSelector, settings_.currentMslRelease);
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();

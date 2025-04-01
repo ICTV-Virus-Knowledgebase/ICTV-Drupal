@@ -1,0 +1,7 @@
+databaseName: 'ictv_apps'
+drupalRoot: '/var/www/drupal/site'
+inputDirectory: 'seq_in'
+jobsPath: '/var/www/drupal/files/jobs'
+jsonResultsFilename: 'tax_results.json'
+outputDirectory: 'tax_out'
+scriptName: 'curtish/ictv_seqquence_classifier:latest'

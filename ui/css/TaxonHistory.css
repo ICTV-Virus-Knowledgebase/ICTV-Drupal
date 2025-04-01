@@ -1,0 +1,231 @@
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Taxon release history
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The message panel */
+#taxon_history_container .message-panel {
+   margin-top: 2.0rem;
+   width: 100%;
+}
+
+/* The title above a taxon */
+#taxon_history_container .taxon-title {
+   font-size: 16pt;
+   margin: 1.5rem 0 0 0;
+}
+
+#taxon_history_container .taxon {
+   display: flex;
+   flex-flow: column nowrap;
+   font-size: 16pt;
+   margin: 1.5rem 0 0 0;
+}
+
+#taxon_history_container .taxon .taxon-rank {
+   /*font-weight: 700; */
+   text-transform: capitalize;
+}
+
+#taxon_history_container .taxon .taxon-name {
+   font-style: italic;
+   font-weight: 700;
+   margin-left: 0.25rem;
+}
+
+#taxon_history_container .taxon .taxon-release {
+   margin-left: 0.25rem;
+}
+
+#taxon_history_container .taxon .info-row {
+   display: flex;
+   font-size: 1.0rem;
+   flex-flow: row nowrap;
+}
+
+#taxon_history_container .lineage {
+   color: #777;
+   font-size: 11pt;
+   font-weight: normal;
+   margin: 5px 0 0 0;
+}
+
+#taxon_history_container .lineage .lineage-chevron {
+   color: #999;
+   margin: 0 0.25rem;
+}
+
+/* A vertically-oriented taxon row */
+#taxon_history_container .lineage-row {
+   display: flex;
+   flex-flow: row nowrap;
+   margin-bottom: 5px;
+}
+
+#taxon_history_container .lineage-row .rank-name {
+   font-weight: 700;
+   text-transform: capitalize;
+}
+
+#taxon_history_container .lineage-row .taxon-name {
+   margin-left: 0.2rem;
+}
+
+
+/* The settings panel */
+#taxon_history_container .settings-panel {
+   background-color: #efefef;
+   border-color: #ddd;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   margin: 1.5rem 0 2.0rem 0rem;
+   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+   width: fit-content;
+}
+
+#taxon_history_container .settings-title {
+   font-size: 1.1rem;
+   font-weight: 700;
+   /*margin-bottom: 0.25rem;*/
+}
+
+#taxon_history_container .settings-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-top: 0.5rem;
+   min-width: 500px;
+}
+
+#taxon_history_container .settings-row .settings-label {
+   margin-right: 0.25rem;
+   white-space: nowrap;
+}
+
+#taxon_history_container .settings-row select {
+   font-size: 0.9rem !important;
+   margin-right: 0.25rem;
+   padding: 2px 5px !important;
+}
+
+#taxon_history_container .settings-row .include-empty-control {
+   height: 16px;
+   width: 16px;
+}
+
+
+/* Panels for the MSL releases */
+#taxon_history_container .releases {
+   display: block;
+}
+
+#taxon_history_container .release {
+   background-color: #eee;
+   border-radius: 5px;
+   margin-bottom: 30px;
+}
+
+#taxon_history_container .release .release-header {
+   align-items: center;
+   background-color: #4aa3df;
+   border-radius: 5px 5px 0 0;
+   color: #fff;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   padding: 0 0.5rem;
+}
+
+#taxon_history_container .release .release-header .release-year {
+   font-size: 30pt;
+   margin-right: 1rem;
+}
+
+#taxon_history_container .release .release-header .release-title {
+   font-size: 12pt;
+}
+
+#taxon_history_container .release .release-body {
+   padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+}
+
+#taxon_history_container .release .release-body hr {
+   background-color: #fff;
+   border-color: #fff;
+   margin: 0.9rem 0 0.5rem 0;
+}
+
+#taxon_history_container .release .taxon-tags {
+   font-size: 15pt;
+   font-weight: 700;
+   margin: 0 0 10px 0;
+}
+
+#taxon_history_container .release .taxon-lineage {
+   font-size: 1.0rem;
+   margin: 10px 0 25px 0;
+}
+
+#taxon_history_container .release .taxon-lineage .lineage-chevron {
+   color: #aaa;
+   font-size: 1.0rem;
+   font-weight: normal;
+   margin: 0 0.25rem;
+}
+
+#taxon_history_container .release .taxon-proposal {
+   margin: 0 0 0.5rem 0;
+}
+
+#taxon_history_container .release .taxon-proposal .download-proposals-title {
+   color: #555;
+   font-size: 0.9rem;
+   font-weight: 700;
+   margin: 0 0.25rem 0 0;
+}
+
+#taxon_history_container .release .taxon-proposal i {
+   font-size: 14pt;
+}
+
+#taxon_history_container .release .taxon-proposal-link:hover {
+   text-decoration: underline;
+}
+
+#taxon_history_container .release .taxon-proposal-link i:hover {
+   text-decoration: none;
+}
+
+#taxon_history_container .release .lineage-export-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row;
+   justify-content: flex-start;
+   margin-bottom: 0.5rem;
+}
+
+#taxon_history_container .release .lineage-title {
+   color: #555;
+   font-size: 0.9rem;
+   font-weight: 700;
+   margin-right: 0.25rem;
+}
+
+#taxon_history_container .release .lineage-export-row button {
+   border-radius: 5px;
+   padding: .2rem .5rem;
+}
+
+#taxon_history_container .release .lineage-export-row .between-buttons {
+   margin: 0 0.25rem;
+}
+
+#taxon_history_container .release .lineage-export-row .copy-status i {
+   color: rgb(40, 167, 69);
+}
+
+#taxon_history_container .release .lineage-export-row .copy-status {
+   margin-left: 1.0rem;
+}

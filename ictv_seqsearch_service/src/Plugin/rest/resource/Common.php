@@ -1,0 +1,54 @@
+<?php
+
+namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+
+use Drupal\ictv_common\Utils;
+
+
+class Common {
+
+   // The name of the parent module.
+   public static string $MODULE_NAME = "ictv_seqsearch_service";
+
+
+   // Open a file and return its contents.
+   public static function getFileContents(bool $encodeBase64, string $filename, string $filePath) {
+
+      $handle = null;
+      $fileData = null;
+   
+      if (!str_ends_with($filePath, '/')) { $filePath = $filePath.'/'; }
+
+      // Concatenate the path and filename.
+      $filePathAndName = $filePath.$filename;
+
+      try {
+         // Get a file handle and read its contents.
+         $handle = fopen($filePathAndName, "r");
+         $fileData = fread($handle, filesize($filePathAndName));
+   
+      } catch (\Exception $e) {
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+         return null;
+   
+      } finally {
+         if ($handle != null) { fclose($handle); }
+      }
+   
+      if ($fileData == null) {
+         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid file ".$filename." in path ".$filePath);
+         return null;
+      }
+   
+      // Should we encode the file contents as base64?
+      if ($encodeBase64) {
+         return base64_encode($fileData);
+      } else {
+         return $fileData;
+      }
+   }
+
+}
+
+
+
