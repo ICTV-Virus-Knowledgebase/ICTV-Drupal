@@ -137,7 +137,7 @@ class SeqSearchJob {
       $row = $result->fetchAssoc();
       if (!$row) { return null; }
 
-      return ClassificationJob::fromArray($row);
+      return SeqSearchJob::fromArray($row);
    }
 
 }

@@ -45,7 +45,11 @@ export class SequenceSearch {
       chevronDown: string,
       chevronRight: string,
       close: string,
+      copy: string,
+      csv: string,
       download: string,
+      html: string,
+      lineageDelimiter: string,
       upload: string
    }
 
@@ -110,7 +114,11 @@ export class SequenceSearch {
          chevronDown: `<i class=\"fa fa-chevron-circle-down expanded\"></i>`,
          chevronRight: `<i class=\"fa fa-chevron-circle-right collapsed\"></i>`,
          close: `<i class=\"fa fa-xmark\"></i>`,
+         copy: `<i class=\"fa-regular fa-clipboard\"></i>`,
+         csv: `<i class="fa-regular fa-file-csv"></i>`,
          download: `<i class=\"fa fa-download\"></i>`,
+         html: `<i class="fa-regular fa-file-lines"></i>`,
+         lineageDelimiter: `<i class="fa-solid fa-chevron-right"></i>`,
          upload: `<i class=\"fa fa-upload\"></i>`
       }
    }
@@ -192,12 +200,69 @@ export class SequenceSearch {
       // Clear any existing content in the results body.
       this.elements.resultsBody.innerHTML = "";
 
-      this.job.data.results.forEach((result_: ISequenceResult) => {
+      let url = window.location.href;
 
-         // Create a row for a sequence that was submitted and processed.
-         const sequenceRow = document.createElement("div");
-         sequenceRow.className = "sequence-row";
+      // Remove any existing query string parameters.
+      let qIndex = url.indexOf("?");
+      if (qIndex > -1) { url = url.substring(0, qIndex); }
 
+      url += `?job=${this.job.uid}`;
+
+      console.log("url = ", url)
+
+      let resultsHTML = "";
+
+      this.job.data.results.forEach((result_: ISequenceResult, index_: number) => {
+
+         // One-based instead of zero-based.
+         index_ += 1;
+
+         let isFirstRank = true;
+         let lineageHTML = "";
+         
+         // Populate the lineage HTML.
+         if (!result_.classification_lineage) {
+            lineageHTML = "No lineage";
+
+         } else {
+            Object.keys(result_.classification_lineage).forEach(rank_ => {
+               let name = result_.classification_lineage[rank_];
+               if (isFirstRank) { 
+                  isFirstRank = false;
+               } else {
+                  lineageHTML += this.icons.lineageDelimiter;
+               }
+   
+               lineageHTML += `<div class="rank-name">${rank_}</div>: <div class="taxon-name">${name}</div>`;
+            })
+         }
+         
+         let resultHTML = 
+         `<div class="result">
+            <div class="result-row">
+               <label>Input file</label>: ${result_.input_file}
+            </div>
+            <div class="result-row">
+               <label>Input sequence</label>: ${result_.input_seq}
+            </div>
+            <div class="result-row">
+               <label>Status</label>: ${result_.status}
+            </div>
+            <div class="result-row">
+               <label>Rank</label>: ${result_.classification_rank}
+            </div>
+            <div class="result-row">
+               <label>Lineage</label>: ${lineageHTML}
+            </div>
+            <div class="result-row">
+               <button class="btn view-html-button" data-index="${index_}" data-type="html">${this.icons.html} View HTML results</button>
+            </div>
+            <div class="result-row">
+               <button class="btn view-csv-button" data-index="${index_}" data-type="csv">${this.icons.csv} View CSV results</button>
+            </div>
+         </div>`;
+
+         /*
          if (!!result_.blast_html && !!result_.html_file) {
 
             // Create a container for the HTML button.
@@ -239,11 +304,39 @@ export class SequenceSearch {
 
             csvRow.appendChild(link);
             sequenceRow.appendChild(csvRow);
-         }
+         }*/
 
-         this.elements.resultsBody.appendChild(sequenceRow);
+            resultsHTML += resultHTML;
       })
    
+      let html = 
+         `<div class="results-panel">
+            <div class="job-details">
+               <table>
+                  <tr>
+                     <th>Job name</th>
+                     <td>${this.job.name || "(none)"}</td>
+                  </tr>
+                  <tr>
+                     <th>Job status</th>
+                     <td>${this.job.status}</td>
+                  </tr>
+                  <tr>
+                     <th>Program and version</th>
+                     <td>${this.job.data.program_name} (version ${this.job.data.version})</td>
+                  </tr>
+               </table>
+               <div class="link-panel">You can view these results again using the following URL: 
+               <a href="${url}" target="_blank">${url}</a> <button class="btn copy-url-button">${this.icons.copy} Copy to clipboard</button>
+               </div>
+            </div>
+            <div class="results">${resultsHTML}</div>
+         </div>`;
+
+      this.elements.resultsBody.innerHTML = html;
+
+      // TODO: add event handlers!
+
       return;
    }
 

@@ -4,7 +4,6 @@ namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\ClassificationJob;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -21,15 +20,16 @@ use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SequenceSearch;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
 use Drupal\Serialization;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SequenceClassifier;
 use Drupal\ictv_common\Utils;
 
 /**
- * A sequence classifier web service for uploading sequence files.
+ * A web service for uploading sequence files and searching.
  * @RestResource(
  *   id = "upload-sequences",
- *   label = @Translation("ICTV Sequence Classifier: Upload Sequences"),
+ *   label = @Translation("ICTV SeqSearch: Upload Sequences"),
  *   uri_paths = {
  *      "canonical" = "/upload-sequences",
  *      "create" = "/upload-sequences"
@@ -329,7 +329,7 @@ class UploadSequences extends ResourceBase {
          $fullPath = $rootPath."/".$modulePath."/".$localPath;
       
          // Run the sequence search script. A job status should be returned.
-         $jobStatus = SequenceClassifier::runSearch($inputPath, $this->jsonResultsFilename, $outputPath, $this->scriptName, $fullPath);
+         $jobStatus = SequenceSearch::runSearch($inputPath, $this->jsonResultsFilename, $outputPath, $this->scriptName, $fullPath);
          
          if ($jobStatus == JobStatus::complete) {
 
@@ -372,11 +372,11 @@ class UploadSequences extends ResourceBase {
          JobService::updateJobJSON($this->connection, $jobID, $jsonForSQL, $message, $jobStatus);
       }
 
-      // Retrieve a job and return it as a Classification Job "object" (nested arrays).
-      $job = ClassificationJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
+      // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays).
+      $job = SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
 
       // Add result files to the job.
-      return ClassificationJob::addResultFiles($outputPath, $job);
+      return SeqSearchJob::addResultFiles($outputPath, $job);
    }
 
    
