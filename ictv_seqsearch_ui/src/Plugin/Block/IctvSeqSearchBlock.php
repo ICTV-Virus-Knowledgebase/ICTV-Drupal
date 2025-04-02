@@ -52,15 +52,15 @@ class IctvSeqSearchBlock extends BlockBase {
             '#markup' => $this->t("<div id=\"ictv_seqsearch_container\" class=\"ictv-custom\"></div>"),
             '#attached' => [
                 'library' => [
-                    'ictv_seqsearch_ui/ICTV_SequenceClassifier',
+                    'ictv_seqsearch_ui/ICTV_SequenceSearch',
                 ],
                 'library' => [
-                    'ictv_seqsearch_ui/sequenceClassifier',
+                    'ictv_seqsearch_ui/sequenceSearch',
                 ],
             ],
         ];
 
-        // Populate drupalSettings with variables needed by the ProposalSubmission object.
+        // Populate drupalSettings with variables needed by the ICTV_SequenceSearch object.
         $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
         $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
         $build['#attached']['drupalSettings']['userEmail'] = $email;

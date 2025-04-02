@@ -1,6 +1,6 @@
 ictv_seqsearch_service.settings:
   type: config_object
-  label: 'Settings for the ICTV Sequence Classifier Service'
+  label: 'Settings for the ICTV SeqSearch Service'
   mapping:
     databaseName:
       type: string

@@ -2,25 +2,9 @@ sequenceSearch:
   version: 1.x
   css:
     theme:
-      assets/css/fa-regular.css: {attributes:{type: "text/html"}}
-      assets/css/fa-solid.css: {attributes:{type: "text/html"}}
-      assets/css/fontawesome.css:  {attributes:{type: "text/html"}}
-      assets/css/jquery.dataTables.min.css: {}
       assets/css/ictv_common.css: {}
       assets/css/SequenceSearch.css: {}
-      assets/css/tippy.css:  {attributes:{type: "text/html"}}
       assets/css/light-border.css: {}
-  fonts:
-    assets/css/fonts/fa-regular-400.eot: {}
-    assets/css/fonts/fa-regular-400.svg: {}
-    assets/css/fonts/fa-regular-400.ttf: {}
-    assets/css/fonts/fa-regular-400.woff: {}
-    assets/css/fonts/fa-regular-400.woff2: {}
-    assets/css/fonts/fa-solid-900.eot: {}
-    assets/css/fonts/fa-solid-900.svg: {}
-    assets/css/fonts/fa-solid-900.ttf: {}
-    assets/css/fonts/fa-solid-900.woff: {}
-    assets/css/fonts/fa-solid-900.woff2: {}
   js:
     assets/js/ICTV_SequenceSearch.js: { preprocess: false }
     assets/js/sequenceSearch.js: { preprocess: false }
