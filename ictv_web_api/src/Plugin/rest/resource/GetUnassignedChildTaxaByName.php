@@ -85,7 +85,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
       $releaseNumber = (int)$strMslRelease;
     }
 
-    $data = $this->getUnassignedChildTaxaByNameHelper($releaseNumber, $taxonName);
+    $data = $this->getUnassignedChildTaxaByName($releaseNumber, $taxonName);
 
     $response = new ResourceResponse($data);
     $response->headers->set('Access-Control-Allow-Origin', '*');
@@ -108,79 +108,80 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
    * @return array
    *   Structure with keys: parentID, taxNodeID, taxonomy.
    */
-  protected function getUnassignedChildTaxaByNameHelper(?int $releaseNumber, string $taxonName): array {
-    $parentID = null;
-    $taxNodeID = null;
-    $taxa = [];
+  
+   public function getUnassignedChildTaxaByName(?int $releaseNumber, string $taxonName): array {
 
-    $parameters = [
-      ':taxonName' => $taxonName,
-      ':releaseNumber' => $releaseNumber,
-    ];
-
-    // Build the SQL query.
-    // In C#, declare @treeID and @taxNodeID. In PHP, use subqueries.
-    $sql = "
-    SELECT " . TaxonomyHelper::generatePartialQuery() . "
-    
-    CROSS JOIN (
-      SELECT taxnode_id AS targetTaxNodeID, udf_getTreeID(:releaseNumber) AS treeID
+    // 1) get treeID
+    $sql1 = "SELECT udf_getTreeID(:releaseNumber) AS treeID";
+    $stmt1 = $this->connection->query($sql1, [':releaseNumber' => $releaseNumber]);
+    $row1 = $stmt1->fetchAssoc();
+    $treeID = $row1['treeID'] ?? null;
+  
+    // 2) get taxNodeID
+    $sql2 = "
+      SELECT taxnode_id
       FROM taxonomy_node
       WHERE name = :taxonName
+        AND tree_id = :treeID
       LIMIT 1
-    ) AS target
-    JOIN taxonomy_node ptn 
-      ON tn.left_idx BETWEEN ptn.left_idx AND ptn.right_idx 
-         AND tn.tree_id = ptn.tree_id 
-         AND ptn.taxnode_id = target.targetTaxNodeID
-    LEFT JOIN taxonomy_node genus 
-      ON genus.taxnode_id = tn.genus_id
-    WHERE (genus.name = 'unassigned' OR (tn.genus_id IS NULL AND tn.subgenus_id IS NULL))
-      AND tn.is_hidden = 0
-      AND tn.is_deleted = 0
-    ORDER BY tn.left_idx ASC
-  ";
-
-    try {
-      $queryResults = $this->connection->query($sql, $parameters);
-
-      $tempTaxa = [];
-      foreach ($queryResults as $row) {
-        $taxon = Taxon::fromArray((array)$row);
-        $taxon->process();
-        $tempTaxa[] = $taxon;
-      }
-
-      if (!empty($tempTaxa)) {
-        // Use the first taxon as the reference.
-        $first = $tempTaxa[0];
-        $parentID = $first->parentID;
-        $taxNodeID = $first->taxnodeID;
-
-        // Adjust nodeDepth so that the top-level depth is 2.
-        $topLevelDepth = 2 - $first->nodeDepth;
-        for ($i = 0; $i < count($tempTaxa); $i++) {
-          $tempTaxa[$i]->nodeDepth += $topLevelDepth;
-        }
-
-        foreach ($tempTaxa as $t) {
-          $taxa[] = $t->normalize();
-        }
+    ";
+    $stmt2 = $this->connection->query($sql2, [
+      ':taxonName' => $taxonName,
+      ':treeID' => $treeID
+    ]);
+    $row2 = $stmt2->fetchAssoc();
+    $taxNodeID = $row2['taxnode_id'] ?? null;
+  
+    if (!$taxNodeID) {
+      // no match found or invalid taxnode
+      return ['parentID' => null, 'taxNodeID' => null, 'taxonomy' => []];
+    }
+  
+    // 3) final SELECT using generatePartialQuery inside TaxonomyHelper
+    $sql3 = "
+      SELECT " . TaxonomyHelper::generatePartialQuery() . "
+      JOIN taxonomy_node ptn ON tn.left_idx BETWEEN ptn.left_idx AND ptn.right_idx
+        AND tn.tree_id = ptn.tree_id
+        AND ptn.taxnode_id = :taxNodeID
+      LEFT JOIN taxonomy_node genus ON genus.taxnode_id = tn.genus_id
+      WHERE (genus.name = 'unassigned' OR (tn.genus_id IS NULL AND tn.subgenus_id IS NULL))
+        AND tn.is_hidden = 0
+        AND tn.is_deleted = 0
+      ORDER BY tn.left_idx ASC
+    ";
+  
+    $stmt3 = $this->connection->query($sql3, [':taxNodeID' => $taxNodeID]);
+    
+    $tempTaxa = [];
+    foreach ($stmt3 as $row) {
+      $taxon = Taxon::fromArray((array)$row);
+      $taxon->process();
+      $taxon->memberOf = $taxon->getMemberOf();
+      $tempTaxa[] = $taxon;
+    }
+  
+    // offset node depths, set parentID, etc.
+    $parentID = null;
+    if (!empty($tempTaxa)) {
+      $first = $tempTaxa[0];
+      $parentID = $first->parentID;
+      $taxNodeID = $first->taxnodeID;
+      $offset = 2 - $first->nodeDepth;
+      foreach ($tempTaxa as $t) {
+        $t->nodeDepth += $offset;
       }
     }
-    catch (\Exception $e) {
-      \Drupal::logger('ictv_web_api')->error($e->getMessage());
-      return [
-        'parentID' => null,
-        'taxNodeID' => null,
-        'taxonomy' => [],
-      ];
+  
+    // convert to normalized
+    $taxonomy = [];
+    foreach ($tempTaxa as $t) {
+      $taxonomy[] = $t->normalize();
     }
-
+  
     return [
       'parentID' => $parentID,
       'taxNodeID' => $taxNodeID,
-      'taxonomy' => $taxa,
+      'taxonomy' => $taxonomy,
     ];
   }
 }

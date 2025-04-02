@@ -88,7 +88,7 @@ class Taxon {
     $taxon->nodeDepth               = isset($data['node_depth']) ? (int)$data['node_depth'] : 0;
     $taxon->numChildren             = isset($data['num_children']) ? (int)$data['num_children'] : 0;
     $taxon->parentID                = isset($data['parent_id']) ? (int)$data['parent_id'] : null;
-    $taxon->parentLevelID           = isset($data['parent_level_id']) ? (int)$data['parent_level_id'] : null;
+    $taxon->parentLevelID           = isset($data['parent_level_id']) ? (int)$data['parent_level_id'] : 0;
     $taxon->parentLevelName         = $data['parent_level_name'] ?? null;
     $taxon->prevDeltaCount          = isset($data['prev_delta_count']) ? (int)$data['prev_delta_count'] : 0;
     $taxon->taxonName               = $data['taxon_name'] ?? null;
