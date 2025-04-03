@@ -35,6 +35,7 @@ use Drupal\ictv_web_api\Plugin\rest\resource\models\Taxon;
  *   }
  * )
  */
+
 class GetUnassignedChildTaxaByName extends ResourceBase {
 
   protected Connection $connection;
@@ -43,6 +44,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
   /**
    * Class constructor.
    */
+
   public function __construct(
     array $configuration,
     $plugin_id,
@@ -58,6 +60,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
   /**
    * {@inheritdoc}
    */
+
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
@@ -72,6 +75,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
   /**
    * Handle GET requests to /api/get-unassigned-child-taxa-by-name
    */
+
   public function get(Request $request): ResourceResponse {
     $strMslRelease = $request->get('msl_release');
     $taxonName = $request->get('taxon_name');
@@ -96,6 +100,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
   /**
    * {@inheritdoc}
    */
+
   public function permissions() {
     return [];
   }
@@ -114,6 +119,8 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     // 1) get treeID
     $sql1 = "SELECT udf_getTreeID(:releaseNumber) AS treeID";
     $stmt1 = $this->connection->query($sql1, [':releaseNumber' => $releaseNumber]);
+
+    // Fetch one row as an associative array
     $row1 = $stmt1->fetchAssoc();
     $treeID = $row1['treeID'] ?? null;
   
@@ -125,14 +132,17 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
         AND tree_id = :treeID
       LIMIT 1
     ";
+
     $stmt2 = $this->connection->query($sql2, [
       ':taxonName' => $taxonName,
       ':treeID' => $treeID
     ]);
+
     $row2 = $stmt2->fetchAssoc();
     $taxNodeID = $row2['taxnode_id'] ?? null;
   
     if (!$taxNodeID) {
+      
       // no match found or invalid taxnode
       return ['parentID' => null, 'taxNodeID' => null, 'taxonomy' => []];
     }
