@@ -41,6 +41,7 @@ use Drupal\ictv_web_api\Plugin\rest\resource\models\Taxon;
  *   }
  * )
  */
+
 class GetChildTaxa extends ResourceBase {
 
   // The connection to the ictv_apps database.
@@ -81,6 +82,7 @@ class GetChildTaxa extends ResourceBase {
   /**
    * {@inheritdoc}
    */
+
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
@@ -134,6 +136,7 @@ class GetChildTaxa extends ResourceBase {
     * 
     * Prevent this block from being cached.
     */
+
     public function getCacheMaxAge() {
         return 2;
   
@@ -146,6 +149,7 @@ class GetChildTaxa extends ResourceBase {
     * This function has to exist in order for the admin to assign user permissions 
     * to the web service.
     */ 
+
     public function permissions() {
         return []; 
      } 
@@ -171,9 +175,11 @@ class GetChildTaxa extends ResourceBase {
   ";
 
     try {
+
       // Run the mariadb query.
       $queryResults = $this->connection->query($sql, $parameters);
     } 
+
     catch (Exception $e) {
       \Drupal::logger('ictv_web_api')->error($e);
       return null;
@@ -197,6 +203,7 @@ class GetChildTaxa extends ResourceBase {
       // Build the Taxon object from that array
       $taxon = Taxon::fromArray($rowArr);
       $taxon->process();
+      
       // memberOf is calculated from the lineage column in the DB
       $taxon->memberOf = $taxon->getMemberOf();
   

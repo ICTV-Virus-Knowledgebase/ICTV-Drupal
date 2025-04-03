@@ -8,22 +8,23 @@
 
 namespace Drupal\ictv_web_api\Plugin\rest\resource;
 
-use Drupal\Core\Session\AccountProxyInterface;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Drupal\Core\Config;
-use Drupal\Core\Database;
-use Drupal\Core\Database\Connection;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Component\Serialization\Json;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Drupal\rest\Plugin\ResourceBase;
-use Drupal\rest\ResourceResponse;
-use Drupal\Serialization;
-use Drupal\ictv_common\Utils;
+// use Drupal\Core\Config;
+// use Drupal\Core\Database;
+// use Drupal\Component\Serialization\Json;
+// use Symfony\Component\HttpFoundation\JsonResponse;
+// use Drupal\Serialization;
 
-// Models
+use Drupal\Core\Session\AccountProxyInterface; // Used in the constructor and create() method
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException; // Used when throwing exceptions for invalid parameters
+use Drupal\Core\Database\Connection; // Used for the $connection property
+use Symfony\Component\DependencyInjection\ContainerInterface; // Used in the static create() method
+use Psr\Log\LoggerInterface; // Used in the constructor
+use Symfony\Component\HttpFoundation\Request; // Used in the get() method parameter
+use Drupal\rest\Plugin\ResourceBase; // Class SearchTaxonomy extends ResourceBase
+use Drupal\rest\ResourceResponse; // Used to build the response
+use Drupal\ictv_common\Utils; // Used for parameter validation (Utils::isNullOrEmpty)
+
+// Model
 use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonSearchResult;
 
 
@@ -38,6 +39,7 @@ use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonSearchResult;
  *   }
  * )
  */
+
 class SearchTaxonomy extends ResourceBase {
 
    // The connection to the ictv_apps database.
@@ -62,6 +64,7 @@ class SearchTaxonomy extends ResourceBase {
     * @param \Psr\Log\LoggerInterface $logger
     *   A logger instance.
     */
+
     public function __construct(
       array $config,
       $module_id,
@@ -80,6 +83,7 @@ class SearchTaxonomy extends ResourceBase {
    /**
     * {@inheritdoc}
     */
+
    public static function create(ContainerInterface $container, array $config, $module_id, $module_definition) {
       return new static(
          $config,
@@ -131,6 +135,7 @@ class SearchTaxonomy extends ResourceBase {
     * 
     * Prevent this block from being cached.
     */
+
    public function getCacheMaxAge() {
       return 2;
 
@@ -142,7 +147,8 @@ class SearchTaxonomy extends ResourceBase {
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
     * to the web service.
-    */ 
+    */
+
    public function permissions() {
       return []; 
    } 
@@ -160,6 +166,7 @@ class SearchTaxonomy extends ResourceBase {
          // Run the stored procedure.
          $queryResults = $this->connection->query($sql, $parameters);
       } 
+      
       catch (Exception $e) {
          \Drupal::logger('ictv_web_api')->error($e);
          return null;
