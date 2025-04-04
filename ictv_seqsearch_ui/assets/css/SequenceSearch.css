@@ -5,35 +5,35 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* General purpose button styles */
-#ictv_seqsearch_container.ictv-custom button i {
+#ictv_seqsearch_container button i {
    margin-right: 0.25rem;
 }
 
-#ictv_seqsearch_container.ictv-custom button.download-button {
+#ictv_seqsearch_container button.download-button {
    background-color: #0d6efd;
    color: #fff;
    cursor: pointer;
    min-width: 100px;
 }
 
-#ictv_seqsearch_container.ictv-custom button.close-button {
+#ictv_seqsearch_container button.close-button {
    background-color: #eee;
    color: #000;
    cursor: pointer;
    min-width: 100px;
 }
 
-#ictv_seqsearch_container.ictv-custom button.close-button i {
+#ictv_seqsearch_container button.close-button i {
    color: #000;
 }
 
 
 /* User row and upload panel */
-#ictv_seqsearch_container.ictv-custom .user-row {
+#ictv_seqsearch_container .user-row {
    margin-bottom: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel {
+#ictv_seqsearch_container .upload-panel {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
@@ -41,42 +41,94 @@
    margin-bottom: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .file-control {
+/* The upload panel's file selection section. */
+#ictv_seqsearch_container .upload-panel .file-selection {
+   display: none;
+   visibility: hidden;
+}
+#ictv_seqsearch_container .upload-panel .file-selection.active {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   visibility: visible;
+}
+#ictv_seqsearch_container .upload-panel .file-selection .upload-message {
+   font-size: 1.3rem;
+   margin-right: 0.5rem;
+}
+#ictv_seqsearch_container .upload-panel .file-selection .file-control {
    background-color: #0d6efd;
    color: #fff;
    margin-right: 1.0rem;
 }
-
-#ictv_seqsearch_container.ictv-custom #file_input {
+#ictv_seqsearch_container #file_input {
    opacity: 0;
    position: absolute;
    left: -1000px;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel .job-name-label {
-   margin-right: 0.5rem;
-}
-
-#ictv_seqsearch_container.ictv-custom .upload-panel .job-name {
-   margin-right: 1.0rem;
-}
-
-#ictv_seqsearch_container.ictv-custom .upload-panel button.upload-button {
-   background-color: #198754;
-   color: #fff;
-}
-
-#ictv_seqsearch_container.ictv-custom .upload-panel .hidden {
+/* The upload panel's file submission section. */
+#ictv_seqsearch_container .upload-panel .file-submission {
+   display: none;
    visibility: hidden;
 }
-
-#ictv_seqsearch_container.ictv-custom .upload-panel .visible {
+#ictv_seqsearch_container .upload-panel .file-submission.active {
+   align-items: center;
+   border-collapse: separate;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   line-height: 1.5;
+   margin: 0;
+   /*max-width: 600px;*/
    visibility: visible;
 }
+#ictv_seqsearch_container .upload-panel .file-submission .job-name-label {
+   font-weight: 700;
+   margin-right: 0.5rem;
+}
+#ictv_seqsearch_container .upload-panel .file-submission .job-name {
+   background-color: #fff;
+   /*background-image: none;*/
+   border: 1px solid #ccc;
+   border-radius: 0; /*4px 0 0 4px;*/
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+   color: #555;
+   height: max-content;
+   line-height: 1.0rem;
+   margin: 0;
+   padding: 5px 12px;
+   vertical-align: middle;
+   width: 300px;
+}
+#ictv_seqsearch_container .upload-panel .file-submission .job-name::placeholder {
+   font-size: 1.0rem;
+   opacity: 0.75;
+}
+#ictv_seqsearch_container .upload-panel .file-submission .job-name:focus {
+   background-color: #fff;
+   border-color: #80bdff;
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
+   color: #495057;
+   outline: 0;
+}
+#ictv_seqsearch_container .upload-panel .file-submission button.upload-button {
+   background-color: #198754;
+   border-radius: 0;
+   color: #fff;
+}
+#ictv_seqsearch_container .upload-panel .file-submission button.cancel-button {
+   background-color: #999;
+   border-radius: 0 5px 5px 0;
+   color: #fff;
+   min-width: 90px;
+}
+
 
 
 /* The status dialog */
-#ictv_seqsearch_container.ictv-custom .modal-background {
+#ictv_seqsearch_container .modal-background {
    align-items: center;
    background-attachment: scroll;
    background-clip: border-box;
@@ -106,7 +158,7 @@
    z-index: 1060;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-dialog {
+#ictv_seqsearch_container .modal-dialog {
    background-color: rgb(255, 255, 255);
    background-size: auto;
    border-color: rgb(84, 84, 84);
@@ -123,41 +175,41 @@
    width: 700px;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-title {
+#ictv_seqsearch_container .modal-title {
    font-size: 1.5rem;
    margin: 0 0 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-body {
+#ictv_seqsearch_container .modal-body {
    font-size: 1.0rem;
    text-align: left;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-contact {
+#ictv_seqsearch_container .modal-contact {
    font-size: 1.0rem;
    margin-top: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-instructions {
+#ictv_seqsearch_container .modal-instructions {
    font-size: 1.0rem;
    margin: 1.0rem 0;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-controls {
+#ictv_seqsearch_container .modal-controls {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: space-around;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-button-row {
+#ictv_seqsearch_container .modal-button-row {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-end;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-button-row .close-button {
+#ictv_seqsearch_container .modal-button-row .close-button {
    background-color: #eee;
    border-color: #999;
    border-radius: 5px;
@@ -171,41 +223,133 @@
 
 
 
-/* The results panel */
+/* Job details */
+#ictv_seqsearch_container .results .results-title {
+   font-size: 1.5rem;
+   margin: 3.0rem 0 1.5rem 0;
+}
 
-#ictv_seqsearch_container.ictv-custom .results-panel .job-details table th {
+#ictv_seqsearch_container .results .job-details table th {
    width: 200px;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .job-details .link-panel {
+#ictv_seqsearch_container .results .job-details .link-panel {
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
    margin-bottom: 2.0rem;
 }
+/*#ictv_seqsearch_container .results .job-details .link-panel .instructions {
+   margin-bottom: 0.25rem;;
+}*/
+#ictv_seqsearch_container .results .job-details .link-panel .controls {
+text-align: left;
+}
 
-#ictv_seqsearch_container.ictv-custom .results-panel button.copy-url-button {
+#ictv_seqsearch_container .results button.copy-url-button {
    background-color: #198754;
    color: #fff;
    cursor: pointer;
+   margin-left: 0.5rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .result {
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Sequence results
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .sequence-result {
    background-color: rgba(50, 50, 50, 0.03);
-   border-color: rgb(153,153,153);
+   border-color: #bbb;
+   border-radius: 5px;
    border-style: solid;
    border-width: 1px;
-   margin-bottom: 0.5rem;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   margin-bottom: 1.5rem;
    padding: 1.0rem;
+   width: 100%;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .result .result-row {
-   align-items: center;
+#ictv_seqsearch_container .sequence-result .info {
+   align-items: flex-start;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
+   width: 100%;
+}
+#ictv_seqsearch_container .sequence-result .info .result-index {
+   font-size: 0.9rem; 
+   margin-right: 1.0rem;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .lineage {
+   font-size: 0.9rem;
+   font-weight: 400;
+   margin-bottom: 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .lineage i.fa-chevron-right {
+   font-size: 0.7rem;
+   margin: 0 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: center;
+   z-index: 1000;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name {
+   font-size: 1.2rem;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name .rank-name {
+   font-weight: 700;
+   text-transform: capitalize;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name .taxon-name {
+   font-style: italic;
+   margin-left: 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-info {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 0.9rem;
+   justify-content: flex-start;
+   margin-top: 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-info label {
+   font-weight: 700;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .result .view-html-button,
-#ictv_seqsearch_container.ictv-custom .results-panel .result .view-csv-button {
-   background-color: #0d6efd;
-   color: #fff;
+#ictv_seqsearch_container .sequence-result .controls {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+}
+
+#ictv_seqsearch_container .sequence-result .controls .view-html-button,
+#ictv_seqsearch_container .sequence-result .controls .download-csv-button {
+   color: rgb(0, 104, 240);
+   font-size: 1.0rem;
+   margin-right: 0.25rem;
+   text-decoration: none;
+}
+#ictv_seqsearch_container .sequence-result .controls .view-html-button:hover,
+#ictv_seqsearch_container .sequence-result .controls .download-csv-button:hover {
    cursor: pointer;
+   text-decoration: underline;
+}
+#ictv_seqsearch_container .sequence-result .controls .view-html-button i,
+#ictv_seqsearch_container .sequence-result .controls .download-csv-button i {
+   color: #777;
+   cursor: pointer;
+   text-decoration: none;
 }

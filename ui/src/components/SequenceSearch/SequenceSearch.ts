@@ -4,14 +4,19 @@ import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { IFileData } from "../../models/IFileData";
 import { ISequenceResult } from "./ISequenceResult";
-import { SequenceSearchService } from "../../services/SequenceSearchService";
-import { Utils } from "../../helpers/Utils";
 import { LookupTaxonomyRank, WebStorageKey } from "../../global/Types";
-import { data } from "jquery";
+import * as pako from "pako";
+import { SequenceSearchService } from "../../services/SequenceSearchService";
+import tippy from "tippy.js";
+import { Utils } from "../../helpers/Utils";
 
-enum Buttons {
+
+// CSS class names for buttons.
+enum ButtonClass {
+   cancel = "cancel-button",
    copyURL = "copy-url-button",
    downloadCSV = "download-csv-button",
+   upload = "upload-button",
    viewHTML = "view-html-button"
 }
 
@@ -21,7 +26,7 @@ export class SequenceSearch {
    authToken: string;
 
    config = {
-      acceptedFileTypes: [".fasta", ".fastq"],
+      acceptedFileTypes: [".fa", ".faa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".mpfa", ".txt"],
       contactEmail: null
    }
 
@@ -29,14 +34,18 @@ export class SequenceSearch {
       NO_EMAIL: "NO_EMAIL"
    }
 
-   // TODO: I'm thinking about using this to flag new results the user has not yet viewed.
-   currentJobUID: string;
+   // The CSS selector for the container element where the Sequence Search UI will be rendered.
+   containerSelector: string = null;
 
+   // DOM elements
    elements: {
+      cancelButton: HTMLButtonElement,
       container: HTMLElement,
       copyIdButton: HTMLButtonElement,
       fileControl: HTMLElement,
       fileInput: HTMLInputElement,
+      fileSelection: HTMLElement,
+      fileSubmission: HTMLElement,
       fileUploadDetails: HTMLElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
@@ -45,8 +54,10 @@ export class SequenceSearch {
       uploadButton: HTMLButtonElement
    }
 
+   // Icons used on the page.
    icons: {
       browse: string,
+      cancel: string,
       chevronDown: string,
       chevronRight: string,
       close: string,
@@ -65,11 +76,6 @@ export class SequenceSearch {
    
    // The URL that can be used to return and view the job data.
    jobURL: string = null;
-
-   // CSS selectors
-   selectors: { [key: string]: string; } = {
-      container: null
-   }
 
    // User information
    user: {
@@ -94,7 +100,7 @@ export class SequenceSearch {
 
       this.authToken = authToken_;
       this.config.contactEmail = contactEmail_;
-      this.selectors.container = containerSelector_;
+      this.containerSelector = containerSelector_;
 
       this.user = {
          email: email_, 
@@ -103,10 +109,13 @@ export class SequenceSearch {
       }
 
       this.elements = {
-         copyIdButton: null,
+         cancelButton: null,
          container: null,
+         copyIdButton: null,
          fileControl: null,
          fileInput: null,
+         fileSelection: null,
+         fileSubmission: null,
          fileUploadDetails: null,
          jobName: null,
          jobNameLabel: null,
@@ -117,6 +126,7 @@ export class SequenceSearch {
 
       this.icons = {
          browse: `<i class=\"fa fa-file\"></i>`,
+         cancel: `<i class="fa-solid fa-xmark"></i>`,
          chevronDown: `<i class=\"fa fa-chevron-circle-down expanded\"></i>`,
          chevronRight: `<i class=\"fa fa-chevron-circle-right collapsed\"></i>`,
          close: `<i class=\"fa fa-xmark\"></i>`,
@@ -137,42 +147,6 @@ export class SequenceSearch {
 
       // Display a success message.
       return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
-   }
-
-
-   // Download the BLAST CSV data for a specific result.
-   async downloadCSV(index_: number) {
-
-      const result = this.job.data.results[index_];
-      if (!result || !result.csv_file || !result.blast_csv) {
-         await AlertBuilder.displayError("No CSV file is available for download.");
-         return;
-      }
-
-      const arrayBuffer: ArrayBuffer = decode(result.blast_csv);
-
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(new Blob(
-         [ arrayBuffer ],
-         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-      ))
-      link.download = result.csv_file;
-      link.click();
-
-      /*
-      const arrayBuffer: ArrayBuffer = decode(result.csv_file);
-
-      // Create the CSV link.
-      const link = document.createElement('a');
-      link.className = "csv-link";
-      link.href = URL.createObjectURL(new Blob(
-         [ arrayBuffer ],
-         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-      ))
-      link.innerHTML = `Download ${result.blast_csv}`;
-      link.download = result.blast_csv;
-      */
-      return;
    }
 
 
@@ -210,13 +184,12 @@ export class SequenceSearch {
          // Get the result's rank and taxon name.
          let taxonName = result_.classification_lineage[result_.classification_rank] || "Unknown";
 
-
          let isFirstRank = true;
-         let lineageHTML = "";
+         let lineage = "";
          
-         // Populate the lineage HTML.
+         // Populate the lineage to be displayed.
          if (!result_.classification_lineage) {
-            lineageHTML = "No lineage";
+            lineage = "No lineage";
 
          } else {
 
@@ -225,24 +198,26 @@ export class SequenceSearch {
 
                // Lookup this rank's taxon name in the lineage.
                let name = result_.classification_lineage[rank_];
+
+               // Should we add a lineage delimiter?
                if (isFirstRank) { 
                   isFirstRank = false;
                } else {
-                  lineageHTML += this.icons.lineageDelimiter;
+                  lineage += this.icons.lineageDelimiter;
                }
    
                const formattedRank = LookupTaxonomyRank(rank_);
 
-               lineageHTML += `<span class="result-lineage">${formattedRank}: <i>${name}</i></span>`;
+               lineage += `<span class="result-lineage">${formattedRank}: <i>${name}</i></span>`;
             })
          }
          
          let resultHTML =
-            `<div class="sequence-result-item">
+            `<div class="sequence-result">
                <div class="info">
                   <div class="result-index">#${displayIndex}</div>
                   <div class="lineage-and-result">
-                     <div class="lineage">${lineageHTML}</div>
+                     <div class="lineage">${lineage}</div>
                      <div class="result">
                         <div class="result-name">
                            <span class="rank-name">${result_.classification_rank}</span>: 
@@ -255,8 +230,14 @@ export class SequenceSearch {
                   </div>
                </div>
                <div class="controls">
-                  <button class="btn ${Buttons.viewHTML}" data-index="${index_}">${this.icons.html} View HTML results</button>
-                  <button class="btn ${Buttons.downloadCSV}" data-index="${index_}">${this.icons.csv} Download CSV results</button>
+                  <button class="btn ${ButtonClass.viewHTML} has-tooltip" 
+                     data-index="${index_}" 
+                     data-tippy-content="Click to view the HTML results (${result_.blast_html})"
+                  >${this.icons.html} View HTML results</button>
+                  <button class="btn ${ButtonClass.downloadCSV} has-tooltip" 
+                     data-index="${index_}"
+                     data-tippy-content="Click to download the results as a CSV file (${result_.blast_csv})"
+                  >${this.icons.csv} Download CSV results</button>
                </div>  
             </div>`;
 
@@ -265,6 +246,7 @@ export class SequenceSearch {
    
       let html = 
          `<div class="results">
+            <div class="results-title">Your results</div>
             <div class="job-details">
                <table>
                   <tr>
@@ -280,8 +262,12 @@ export class SequenceSearch {
                      <td>${this.job.data.program_name} (version ${this.job.data.version})</td>
                   </tr>
                </table>
-               <div class="link-panel">You can view these results again using the following URL: 
-               <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> <button class="btn ${Buttons.copyURL}">${this.icons.copy} Copy to clipboard</button>
+               <div class="link-panel">
+                  <div class="instructions">You can view these results again using the following URL:</div>
+                  <div class="controls">
+                     <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> 
+                     <button class="btn ${ButtonClass.copyURL}">${this.icons.copy} Copy to clipboard</button>
+                  </div>
                </div>
             </div>
             <div class="sequence-results">${resultsHTML}</div>
@@ -296,6 +282,39 @@ export class SequenceSearch {
 
       // Add event handlers
       this.elements.results.addEventListener("click", async (event_) => this.handleResultsClick(event_));
+
+      // Initialize tippy tooltips for the buttons
+      tippy(".has-tooltip");
+
+      return;
+   }
+
+
+   // Download the BLAST CSV data for a specific result.
+   async downloadCSV(index_: number) {
+
+      // Get the result with the specified index.
+      const result = this.job.data.results[index_];
+      if (!result || !result.csv_file || !result.blast_csv) {
+         await AlertBuilder.displayError("No CSV file is available for download.");
+         return;
+      }
+
+      // Decode the base64-encoded CSV file and decompress it.
+      const arrayBuffer: ArrayBuffer = pako.inflate(decode(result.csv_file));
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+         await AlertBuilder.displayError("The CSV file is invalid: It may be empty or corrupted.");
+         return;
+      }
+
+      // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(new Blob(
+         [ arrayBuffer ],
+         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      ))
+      link.download = result.blast_csv;
+      link.click();
 
       return;
    }
@@ -334,19 +353,22 @@ export class SequenceSearch {
 
       const button = event_.target as HTMLButtonElement;
 
+      // Get and validate the button's data index attribute.
       let strDataIndex = button.getAttribute("data-index");
       const dataIndex = parseInt(strDataIndex);
+      if (dataIndex < 0 || dataIndex > this.job.data.results.length) {
+         await AlertBuilder.displayError(`Invalid result index: ${dataIndex}`);
+         return;
+      }
 
-      console.log(`Button clicked: ${button.className}, data index = ${dataIndex}`, )
-
-      // Handle specific button actions based on class
-      if (button.classList.contains(Buttons.copyURL)) {
+      // The button's class determines which action to take.
+      if (button.classList.contains(ButtonClass.copyURL)) {
          await this.copyJobURL();
 
-      } else if (button.classList.contains(Buttons.downloadCSV)) {
+      } else if (button.classList.contains(ButtonClass.downloadCSV)) {
          await this.downloadCSV(dataIndex);
 
-      } else if (button.classList.contains(Buttons.viewHTML)) {
+      } else if (button.classList.contains(ButtonClass.viewHTML)) {
          await this.viewHTML(dataIndex);
       }
      
@@ -361,7 +383,7 @@ export class SequenceSearch {
       if (!this.user.uid) { this.setDefaultUserUID(); }
 
       // Get a reference to the container element.
-      this.elements.container = <HTMLElement>document.querySelector(this.selectors.container);
+      this.elements.container = <HTMLElement>document.querySelector(this.containerSelector);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
 
       // Format the accepted file types.
@@ -370,17 +392,32 @@ export class SequenceSearch {
       // Create HTML for the container Element.
       const html = 
          `<div class=\"upload-panel\">
+            <div class="file-selection active">
+               <div class="upload-message">Upload your sequence(s) (FASTA format only)</div>
                <button class=\"btn file-control\">${this.icons.browse} Select file(s)</button>
                <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
-               <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
-               <button class=\"btn upload-button hidden\">Submit file(s)</button>
+            </div>
+            <div class="file-submission">
+               <div class=\"job-name-label\">Job name</div>
+               <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
+               <button class=\"btn ${ButtonClass.upload}\">Submit file(s)</button>
+               <button class=\"btn ${ButtonClass.cancel}\">${this.icons.cancel} Cancel</button>
+            </div>
          </div>
          <div class=\"results-container\"></div>`;
 
       this.elements.container.innerHTML = html;
 
+      // Get and validate the file selection panel.
+      this.elements.fileSelection = <HTMLElement>this.elements.container.querySelector(".file-selection");
+      if (!this.elements.fileSelection) { throw new Error("Invalid file selection Element"); }
+
+      // Get and validate the file submission panel.
+      this.elements.fileSubmission = <HTMLElement>this.elements.container.querySelector(".file-submission");
+      if (!this.elements.fileSubmission) { throw new Error("Invalid file submission Element"); }  
+
       // Get and validate the upload button.
-      this.elements.uploadButton = <HTMLButtonElement>this.elements.container.querySelector(".upload-button");
+      this.elements.uploadButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.upload}`);
       if (!this.elements.uploadButton) { throw new Error("Invalid upload button Element"); }
 
       this.elements.uploadButton.addEventListener("click", () => { this.uploadSequences(); })
@@ -389,14 +426,13 @@ export class SequenceSearch {
       this.elements.fileInput = <HTMLInputElement>this.elements.container.querySelector("#file_input");
       if (!this.elements.fileInput) { throw new Error("Invalid file input Element"); }
 
+      // Handle a file selection change.
       this.elements.fileInput.addEventListener("change", async (event_: MouseEvent) => {
       
          if (!this.elements.fileInput.files || this.elements.fileInput.files.length < 1) {
                
-            // Hide the upload button and job name.
-            this.elements.uploadButton.innerHTML = `Nothing to upload`;
-            this.elements.uploadButton.classList.remove("visible");
-            this.elements.uploadButton.classList.add("hidden");
+            // Hide the file submission panel.
+            this.elements.fileSubmission.classList.remove("active");
             return;
          }
          
@@ -409,17 +445,15 @@ export class SequenceSearch {
             buttonText += ` ${this.elements.fileInput.files.length} files`;
          }
 
-         // Display the upload button.
-         this.elements.uploadButton.innerHTML = buttonText;
-         this.elements.uploadButton.classList.remove("hidden");
-         this.elements.uploadButton.classList.add("visible");
+         // Hide the file selection panel.
+         this.elements.fileSelection.classList.remove("active");
 
-         // Display the job name control and its label.
-         this.elements.jobNameLabel.classList.remove("hidden");
-         this.elements.jobNameLabel.classList.add("visible");
-         this.elements.jobName.classList.remove("hidden");
-         this.elements.jobName.classList.add("visible");
-      });
+         // Display the file submission panel.
+         this.elements.fileSubmission.classList.add("active");
+
+         // Update the upload button text.
+         this.elements.uploadButton.innerHTML = buttonText;
+      })
 
       this.elements.fileControl = <HTMLElement>this.elements.container.querySelector(".file-control");
       if (!this.elements.fileControl) { throw new Error("Invalid file control Element"); }
@@ -427,7 +461,7 @@ export class SequenceSearch {
       // Clicking on the file button will trigger a click on the file input element.
       this.elements.fileControl.addEventListener("click", async (event_: MouseEvent) => {
          this.elements.fileInput.click();
-      });
+      })
 
       // The job name control and its label.
       this.elements.jobNameLabel = <HTMLElement>this.elements.container.querySelector(".job-name-label");
@@ -436,11 +470,29 @@ export class SequenceSearch {
       this.elements.jobName = <HTMLInputElement>this.elements.container.querySelector(".job-name");
       if (!this.elements.jobName) { throw new Error("Invalid job name Element"); }
 
+      // The cancel (submission) button
+      this.elements.cancelButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.cancel}`);
+      if (!this.elements.cancelButton) { throw new Error("Invalid cancel button Element"); }
+
+      // Handle the cancel button click event.
+      this.elements.cancelButton.addEventListener("click", (event_: MouseEvent) => {
+
+         // Display the file selection panel again.
+         this.elements.fileSelection.classList.add("active");
+
+         // Hide the file submission panel.
+         this.elements.fileSubmission.classList.remove("active");
+
+         // Clear the file input
+         this.elements.fileInput.value = ""; 
+
+         // Clear the job name input
+         this.elements.jobName.value = ""; 
+      })
 
       // The job panel and results body.
       this.elements.resultsContainer = <HTMLElement>this.elements.container.querySelector(".results-container");
       if (!this.elements.resultsContainer) { throw new Error("Invalid results container Element"); }
-
 
       // Was a job UID parameter provided?
       const urlParams = new URLSearchParams(window.location.search);
@@ -525,9 +577,6 @@ export class SequenceSearch {
       if (!this.elements.fileInput) { throw new Error("Invalid file control"); }
       if (!this.elements.fileInput.files || !this.elements.fileInput.files[0]) { throw new Error("Invalid upload file"); }
       
-      // Disable the upload button.
-      this.elements.uploadButton.disabled = true;
-
       // Get the (optional) job name.
       let jobName = this.elements.jobName.value;
       if (!jobName) { jobName = null; }
@@ -539,25 +588,26 @@ export class SequenceSearch {
          // Iterate over all files
          for (let f=0; f < this.elements.fileInput.files.length; f++) {
 
-               const file = this.elements.fileInput.files.item(f);
-               if (!file) { continue; }
+            const file = this.elements.fileInput.files.item(f);
+            if (!file) { continue; }
 
-               // Get the file's contents
-               const contents = await this.readFileAsync(file);
-               if (!contents) { continue; }
+            // Get the file's contents
+            const contents = await this.readFileAsync(file);
+            if (!contents) { continue; }
 
-               if (filenames.length > 0) { filenames += ", "; }
-               filenames += file.name;
+            if (filenames.length > 0) { filenames += ", "; }
+            filenames += file.name;
 
-               // Add file data to the array.
-               files.push({
-                  name: file.name,
-                  contents: contents
-               })
+            // Add file data to the array.
+            files.push({
+               name: file.name,
+               contents: contents
+            })
          }
          
          if (files.length < 1) { 
             await AlertBuilder.displayError("Unable to upload: no valid files were found");
+            return;
          }
 
          await Promise.allSettled([
@@ -580,17 +630,10 @@ export class SequenceSearch {
       // Re-initialize the upload controls.
       this.elements.fileInput.files = null;
 
-      // Update the upload button and hide it.
-      this.elements.uploadButton.disabled = false;
+      // Update the upload button.
       this.elements.uploadButton.innerHTML = `Nothing to submit`;
-      this.elements.uploadButton.classList.remove("visible");
-      this.elements.uploadButton.classList.add("hidden");
 
-      // Hide the job name control and its label.
-      this.elements.jobNameLabel.classList.remove("visible");
-      this.elements.jobNameLabel.classList.add("hidden");
-      this.elements.jobName.classList.remove("visible");
-      this.elements.jobName.classList.add("hidden");
+      // Clear the job name control.
       this.elements.jobName.value = "";
 
       // If a job was returned, display it.
@@ -603,12 +646,18 @@ export class SequenceSearch {
    // Display the BLAST HTML data for a specific result.
    async viewHTML(index_: number) {
 
+      // Get the result with the specified index.
       const result = this.job.data.results[index_];
 
       // Open a new tab/window and populate it with the contents of the BLAST HTML file.
       const blastWindow = window.open("", "_blank");
-      blastWindow.document.title = result.blast_html;
-      blastWindow.document.writeln(atob(result.html_file));
+
+      // Decode the base64-encoded HTML file and decompress it.
+      const html = pako.inflate(decode(result.html_file), { to: 'string' });
+      blastWindow.document.writeln(html);
+
+      // Remove the extension from the file name and use it as the window's title.
+      blastWindow.document.title = result.blast_html.replace(".html", "");
 
       return;
    }

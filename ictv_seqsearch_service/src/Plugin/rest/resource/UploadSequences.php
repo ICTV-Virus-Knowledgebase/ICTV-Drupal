@@ -271,9 +271,6 @@ class UploadSequences extends ResourceBase {
          //-------------------------------------------------------------------------------------------------------
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_search, $jobUID, $userEmail, $userUID);
          
-         // TODO: This is for debugging and can be deleted later.
-         //\Drupal::logger(Common::$MODULE_NAME)->info("created job with ID ".$jobID." and UID ".$jobUID);
-         
          // Create the job directory and subdirectories and return the full path of the job directory.
          $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
 
@@ -303,6 +300,7 @@ class UploadSequences extends ResourceBase {
             $base64Data = substr($contents, $fileStartIndex + 1);
             if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The sequence file is empty"); }
 
+            // TODO: Consider gzipping the binary data in the browser and using gzuncompress() here.
             // Decode the file contents from base64.
             $binaryData = base64_decode($base64Data);
 
@@ -337,7 +335,8 @@ class UploadSequences extends ResourceBase {
             $taxResultJSON = TaxResult::getJSON($this->jsonResultsFilename, $outputPath);
       
             if (!$taxResultJSON) { 
-               $jobStatus = JobStatus::error; 
+               $jobStatus = JobStatus::error;
+               throw new \Exception("Error reading the JSON results file: ".$this->jsonResultsFilename);
 
             } else {
 
@@ -370,13 +369,20 @@ class UploadSequences extends ResourceBase {
 
          // Update the job record's JSON and status.
          JobService::updateJobJSON($this->connection, $jobID, $jsonForSQL, $message, $jobStatus);
+
+         // Return an invalid SeqSearch job.
+         return SeqSearchJob::createInvalidJob($jobName, $message, $jobStatus, $jobUID);
       }
 
       // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays).
       $job = SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
 
+      // Create compressed versions of the job's result files, add them to the job, and return the job.
+      return SeqSearchJob::createCompressedResultFiles($job, $outputPath);
+
+
       // Add result files to the job.
-      return SeqSearchJob::addResultFiles($outputPath, $job);
+      //return SeqSearchJob::addResultFiles($outputPath, $job);
    }
 
    
