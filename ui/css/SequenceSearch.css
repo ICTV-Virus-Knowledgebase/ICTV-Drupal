@@ -5,35 +5,35 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* General purpose button styles */
-#ictv_seqsearch_container.ictv-custom button i {
+#ictv_seqsearch_container button i {
    margin-right: 0.25rem;
 }
 
-#ictv_seqsearch_container.ictv-custom button.download-button {
+#ictv_seqsearch_container button.download-button {
    background-color: #0d6efd;
    color: #fff;
    cursor: pointer;
    min-width: 100px;
 }
 
-#ictv_seqsearch_container.ictv-custom button.close-button {
+#ictv_seqsearch_container button.close-button {
    background-color: #eee;
    color: #000;
    cursor: pointer;
    min-width: 100px;
 }
 
-#ictv_seqsearch_container.ictv-custom button.close-button i {
+#ictv_seqsearch_container button.close-button i {
    color: #000;
 }
 
 
 /* User row and upload panel */
-#ictv_seqsearch_container.ictv-custom .user-row {
+#ictv_seqsearch_container .user-row {
    margin-bottom: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel {
+#ictv_seqsearch_container .upload-panel {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
@@ -41,42 +41,42 @@
    margin-bottom: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .file-control {
+#ictv_seqsearch_container .file-control {
    background-color: #0d6efd;
    color: #fff;
    margin-right: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom #file_input {
+#ictv_seqsearch_container #file_input {
    opacity: 0;
    position: absolute;
    left: -1000px;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel .job-name-label {
+#ictv_seqsearch_container .upload-panel .job-name-label {
    margin-right: 0.5rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel .job-name {
+#ictv_seqsearch_container .upload-panel .job-name {
    margin-right: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel button.upload-button {
+#ictv_seqsearch_container .upload-panel button.upload-button {
    background-color: #198754;
    color: #fff;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel .hidden {
+#ictv_seqsearch_container .upload-panel .hidden {
    visibility: hidden;
 }
 
-#ictv_seqsearch_container.ictv-custom .upload-panel .visible {
+#ictv_seqsearch_container .upload-panel .visible {
    visibility: visible;
 }
 
 
 /* The status dialog */
-#ictv_seqsearch_container.ictv-custom .modal-background {
+#ictv_seqsearch_container .modal-background {
    align-items: center;
    background-attachment: scroll;
    background-clip: border-box;
@@ -106,7 +106,7 @@
    z-index: 1060;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-dialog {
+#ictv_seqsearch_container .modal-dialog {
    background-color: rgb(255, 255, 255);
    background-size: auto;
    border-color: rgb(84, 84, 84);
@@ -123,41 +123,41 @@
    width: 700px;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-title {
+#ictv_seqsearch_container .modal-title {
    font-size: 1.5rem;
    margin: 0 0 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-body {
+#ictv_seqsearch_container .modal-body {
    font-size: 1.0rem;
    text-align: left;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-contact {
+#ictv_seqsearch_container .modal-contact {
    font-size: 1.0rem;
    margin-top: 1.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-instructions {
+#ictv_seqsearch_container .modal-instructions {
    font-size: 1.0rem;
    margin: 1.0rem 0;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-controls {
+#ictv_seqsearch_container .modal-controls {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: space-around;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-button-row {
+#ictv_seqsearch_container .modal-button-row {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-end;
 }
 
-#ictv_seqsearch_container.ictv-custom .modal-button-row .close-button {
+#ictv_seqsearch_container .modal-button-row .close-button {
    background-color: #eee;
    border-color: #999;
    border-radius: 5px;
@@ -171,41 +171,187 @@
 
 
 
-/* The results panel */
 
-#ictv_seqsearch_container.ictv-custom .results-panel .job-details table th {
+/* Job details */
+#ictv_seqsearch_container .results .job-details table th {
    width: 200px;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .job-details .link-panel {
+#ictv_seqsearch_container .results .job-details .link-panel {
    margin-bottom: 2.0rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel button.copy-url-button {
+#ictv_seqsearch_container .results button.copy-url-button {
    background-color: #198754;
    color: #fff;
    cursor: pointer;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .result {
-   background-color: rgba(50, 50, 50, 0.03);
-   border-color: rgb(153,153,153);
+
+/* The results panel 
+#ictv_seqsearch_container .results .result {
+   background-color: #efefef;
+   border-color: #ddd;
+   border-radius: 5px;
    border-style: solid;
    border-width: 1px;
-   margin-bottom: 0.5rem;
-   padding: 1.0rem;
+   margin-bottom: 1.5rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .result .result-row {
+#ictv_seqsearch_container .results .result .result-header {
+   background-color: #4aa3df;
+   border-radius: 5px 5px 0 0;
+   color: #fff;
+   font-size: 1.3rem;
+   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+}
+#ictv_seqsearch_container .results .result .result-header .rank-name {
+   margin-left: 0.25rem;
+   text-transform: capitalize;
+}
+#ictv_seqsearch_container .results .result .result-header .taxon-name {
+   font-style: italic;
+}
+
+
+
+#ictv_seqsearch_container .results .result .result-body {
+   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+}
+
+#ictv_seqsearch_container .results .result .result-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+}
+
+#ictv_seqsearch_container .results .result .result-row label {
+   font-weight: 700;
+}
+
+#ictv_seqsearch_container .results .result .result-row .lineage {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
+   font-size: 1.0rem;
+}
+#ictv_seqsearch_container .results .result .result-row .lineage .rank-name {
+   font-weight: 700;
+   margin-left: 0.25rem;
+   text-transform: capitalize;
+}
+#ictv_seqsearch_container .results .result .result-row .lineage .taxon-name {
+   font-style: italic;
+   margin: 0 0.25rem 0 0.25rem;
 }
 
-#ictv_seqsearch_container.ictv-custom .results-panel .result .view-html-button,
-#ictv_seqsearch_container.ictv-custom .results-panel .result .view-csv-button {
+#ictv_seqsearch_container .results .result .result-row i {
+   font-size: 0.75rem;
+}
+*/
+
+/*
+#ictv_seqsearch_container .results .result .button-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+   margin-top: 1.5rem;
+}*/
+
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Sequence results
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .sequence-result-item {
+   background-color: #e9e9e9;
+   border-color: #999;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   margin-bottom: 1.5rem;
+   padding: 1.0rem;
+   width: 100%;
+}
+
+#ictv_seqsearch_container .sequence-result-item .info {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-left: 1.0rem;
+   width: 100%;
+}
+#ictv_seqsearch_container .sequence-result-item .info .result-index {
+   font-size: 0.9rem; 
+   margin-right: 1.0rem;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .lineage {
+   font-size: 0.9rem;
+   font-weight: 400;
+   margin-bottom: 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .lineage i.fa-chevron-right {
+   font-size: 0.7rem;
+   margin: 0 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: center;
+   z-index: 1000;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-name {
+   font-size: 1.2rem;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-name .rank-name {
+   font-weight: 700;
+   text-transform: capitalize;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-name .taxon-name {
+   font-style: italic;
+   margin-left: 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-info {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 0.9rem;
+   justify-content: flex-start;
+   margin-top: 0.25rem;
+}
+#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-info label {
+   font-weight: 700;
+}
+
+#ictv_seqsearch_container .sequence-result-item .controls {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+}
+
+#ictv_seqsearch_container .sequence-result-item .controls .view-html-button,
+#ictv_seqsearch_container .sequence-result-item .controls .download-csv-button {
+   /*background-color: #999;*/
    background-color: #0d6efd;
    color: #fff;
    cursor: pointer;
+   margin-right: 0.25rem;
 }

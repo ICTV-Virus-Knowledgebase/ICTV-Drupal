@@ -619,30 +619,18 @@ export class TaxonReleaseHistory {
          <div class="data-container" data-is-visible="false">
 
             <div class="taxon selected">
-               <div class="taxon-title selected">Your selection: <span class="taxon-name"></span> <span class="taxon-release"></span></div>
+               <div class="taxon-title selected">Your selection <span class="taxon-release"></span></div>
                <div class="info-row">
-                  <label>Rank:</label>
-                  <div class="taxon-rank"></div>
+                  <div class="taxon-rank"></div>: <div class="taxon-name"></div>
                </div>
-               <div class="info-row">
-                  <label>ICTV ID:</label>
-                  <div class="taxon-ictv-id"></div>
-               </div>
-               <div class="info-row">Lineage</div>
                <div class="lineage selected"></div>
             </div>
             
             <div class="taxon current">
-               <div class="taxon-title current">The current taxon: <span class="taxon-name"></span><span class="taxon-release"></span></div>
+               <div class="taxon-title current">Current release <span class="taxon-release"></span></div>
                <div class="info-row">
-                  <label>Rank:</label> 
-                  <div class="taxon-rank"></div>
+                  <div class="taxon-rank"></div>: <div class="taxon-name"></div>
                </div>
-               <div class="info-row">
-                  <label>ICTV ID:</label>
-                  <div class="taxon-ictv-id"></div>
-               </div>
-               <div class="info-row">Lineage</div>
                <div class="lineage current"></div>
             </div>
             
@@ -721,24 +709,24 @@ export class TaxonReleaseHistory {
 
       const parentClass = `.taxon.${type_}`;
 
+      const parentEl = this.elements.container.querySelector(parentClass);
+      if (!parentEl) { throw new Error(`Unable to find the ${type_} taxon element`)};
+
       // The taxon's rank
-      const rankEl = this.elements.container.querySelector(`${parentClass} .taxon-rank`);
+      const rankEl = parentEl.querySelector(`.taxon-rank`);
       if (!rankEl) { throw new Error("Unable to find the taxon-rank element"); }
       rankEl.innerHTML = taxon_.rankName;
 
       // The taxon's name
-      const nameEl = this.elements.container.querySelector(`${parentClass} .taxon-name`);
+      const nameEl = parentEl.querySelector(`.taxon-name`);
       if (!nameEl) { throw new Error("Unable to find the taxon-name element"); }
       nameEl.innerHTML = taxon_.taxonName;
 
       // The taxon's MSL release
-      const releaseEl = this.elements.container.querySelector(`${parentClass} .taxon-release`);
+      const releaseEl = parentEl.querySelector(`.taxon-release`);
       if (!releaseEl) { throw new Error("Unable to find the taxon-release element"); }
       releaseEl.innerHTML = `(${releaseYear} Release, MSL #${taxon_.mslRelease})`
       
-      const ictvIdEl = this.elements.container.querySelector(`${parentClass} .taxon-ictv-id`);
-      if (!!ictvIdEl) { ictvIdEl.innerHTML = `${taxon_.taxnodeID}`; }
-
       // Display the full lineage of the taxa.
       if (taxon_.lineage && taxon_.lineageIDs && taxon_.rankNames) {
 
@@ -746,10 +734,13 @@ export class TaxonReleaseHistory {
          const formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.rankNames);
 
          // Populate the lineage element.
-         const lineageEl = this.elements.container.querySelector(`.lineage.${type_}`);
+         const lineageEl = parentEl.querySelector(`.lineage`);
          if (!lineageEl) { throw new Error(`Invalid ${type_} lineage element`); }
          lineageEl.innerHTML = formattedLineage;
       }
+
+      // Make the taxon element visible.
+      parentEl.classList.add("visible");
    }
 
    

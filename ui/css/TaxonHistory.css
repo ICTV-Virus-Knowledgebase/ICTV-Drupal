@@ -11,25 +11,33 @@
 
 /* The title above a taxon */
 #taxon_history_container .taxon-title {
-   font-size: 16pt;
-   margin: 1.5rem 0 0 0;
+   font-size: 1.2rem;
 }
 
 #taxon_history_container .taxon {
+   visibility: hidden;
+}
+
+#taxon_history_container .taxon.visible {
+   background-color: #efefef;
+   border-color: #ddd;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
    display: flex;
    flex-flow: column nowrap;
-   font-size: 16pt;
-   margin: 1.5rem 0 0 0;
+   font-size: 1.0rem;
+   margin-bottom: 0.5rem;
+   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
 }
 
 #taxon_history_container .taxon .taxon-rank {
-   /*font-weight: 700; */
+   font-weight: 700;
    text-transform: capitalize;
 }
 
 #taxon_history_container .taxon .taxon-name {
    font-style: italic;
-   font-weight: 700;
    margin-left: 0.25rem;
 }
 
@@ -39,7 +47,7 @@
 
 #taxon_history_container .taxon .info-row {
    display: flex;
-   font-size: 1.0rem;
+   font-size: 1.3rem;
    flex-flow: row nowrap;
 }
 
@@ -81,7 +89,7 @@
    border-width: 1px;
    margin: 1.5rem 0 2.0rem 0rem;
    padding: 0.5rem 0.5rem 0.75rem 0.5rem;
-   width: fit-content;
+   /*width: fit-content;*/
 }
 
 #taxon_history_container .settings-title {
