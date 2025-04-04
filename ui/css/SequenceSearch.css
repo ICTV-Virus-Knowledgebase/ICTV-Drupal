@@ -41,38 +41,90 @@
    margin-bottom: 1.0rem;
 }
 
-#ictv_seqsearch_container .file-control {
+/* The upload panel's file selection section. */
+#ictv_seqsearch_container .upload-panel .file-selection {
+   display: none;
+   visibility: hidden;
+}
+#ictv_seqsearch_container .upload-panel .file-selection.active {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   visibility: visible;
+}
+#ictv_seqsearch_container .upload-panel .file-selection .upload-message {
+   font-size: 1.3rem;
+   margin-right: 0.5rem;
+}
+#ictv_seqsearch_container .upload-panel .file-selection .file-control {
    background-color: #0d6efd;
    color: #fff;
    margin-right: 1.0rem;
 }
-
 #ictv_seqsearch_container #file_input {
    opacity: 0;
    position: absolute;
    left: -1000px;
 }
 
-#ictv_seqsearch_container .upload-panel .job-name-label {
-   margin-right: 0.5rem;
-}
-
-#ictv_seqsearch_container .upload-panel .job-name {
-   margin-right: 1.0rem;
-}
-
-#ictv_seqsearch_container .upload-panel button.upload-button {
-   background-color: #198754;
-   color: #fff;
-}
-
-#ictv_seqsearch_container .upload-panel .hidden {
+/* The upload panel's file submission section. */
+#ictv_seqsearch_container .upload-panel .file-submission {
+   display: none;
    visibility: hidden;
 }
-
-#ictv_seqsearch_container .upload-panel .visible {
+#ictv_seqsearch_container .upload-panel .file-submission.active {
+   align-items: center;
+   border-collapse: separate;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   line-height: 1.5;
+   margin: 0;
+   /*max-width: 600px;*/
    visibility: visible;
 }
+#ictv_seqsearch_container .upload-panel .file-submission .job-name-label {
+   font-weight: 700;
+   margin-right: 0.5rem;
+}
+#ictv_seqsearch_container .upload-panel .file-submission .job-name {
+   background-color: #fff;
+   /*background-image: none;*/
+   border: 1px solid #ccc;
+   border-radius: 0; /*4px 0 0 4px;*/
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+   color: #555;
+   height: max-content;
+   line-height: 1.0rem;
+   margin: 0;
+   padding: 5px 12px;
+   vertical-align: middle;
+   width: 300px;
+}
+#ictv_seqsearch_container .upload-panel .file-submission .job-name::placeholder {
+   font-size: 1.0rem;
+   opacity: 0.75;
+}
+#ictv_seqsearch_container .upload-panel .file-submission .job-name:focus {
+   background-color: #fff;
+   border-color: #80bdff;
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
+   color: #495057;
+   outline: 0;
+}
+#ictv_seqsearch_container .upload-panel .file-submission button.upload-button {
+   background-color: #198754;
+   border-radius: 0;
+   color: #fff;
+}
+#ictv_seqsearch_container .upload-panel .file-submission button.cancel-button {
+   background-color: #999;
+   border-radius: 0 5px 5px 0;
+   color: #fff;
+   min-width: 90px;
+}
+
 
 
 /* The status dialog */
@@ -171,107 +223,44 @@
 
 
 
-
 /* Job details */
+#ictv_seqsearch_container .results .results-title {
+   font-size: 1.5rem;
+   margin: 3.0rem 0 0.5rem 0;
+}
+
 #ictv_seqsearch_container .results .job-details table th {
    width: 200px;
 }
 
 #ictv_seqsearch_container .results .job-details .link-panel {
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
    margin-bottom: 2.0rem;
+}
+/*#ictv_seqsearch_container .results .job-details .link-panel .instructions {
+   margin-bottom: 0.25rem;;
+}*/
+#ictv_seqsearch_container .results .job-details .link-panel .controls {
+text-align: left;
 }
 
 #ictv_seqsearch_container .results button.copy-url-button {
    background-color: #198754;
    color: #fff;
    cursor: pointer;
+   margin-left: 0.5rem;
 }
-
-
-/* The results panel 
-#ictv_seqsearch_container .results .result {
-   background-color: #efefef;
-   border-color: #ddd;
-   border-radius: 5px;
-   border-style: solid;
-   border-width: 1px;
-   margin-bottom: 1.5rem;
-}
-
-#ictv_seqsearch_container .results .result .result-header {
-   background-color: #4aa3df;
-   border-radius: 5px 5px 0 0;
-   color: #fff;
-   font-size: 1.3rem;
-   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
-}
-#ictv_seqsearch_container .results .result .result-header .rank-name {
-   margin-left: 0.25rem;
-   text-transform: capitalize;
-}
-#ictv_seqsearch_container .results .result .result-header .taxon-name {
-   font-style: italic;
-}
-
-
-
-#ictv_seqsearch_container .results .result .result-body {
-   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
-}
-
-#ictv_seqsearch_container .results .result .result-row {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   font-size: 1.0rem;
-   justify-content: flex-start;
-}
-
-#ictv_seqsearch_container .results .result .result-row label {
-   font-weight: 700;
-}
-
-#ictv_seqsearch_container .results .result .result-row .lineage {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
-   font-size: 1.0rem;
-}
-#ictv_seqsearch_container .results .result .result-row .lineage .rank-name {
-   font-weight: 700;
-   margin-left: 0.25rem;
-   text-transform: capitalize;
-}
-#ictv_seqsearch_container .results .result .result-row .lineage .taxon-name {
-   font-style: italic;
-   margin: 0 0.25rem 0 0.25rem;
-}
-
-#ictv_seqsearch_container .results .result .result-row i {
-   font-size: 0.75rem;
-}
-*/
-
-/*
-#ictv_seqsearch_container .results .result .button-row {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   font-size: 1.0rem;
-   justify-content: flex-start;
-   margin-top: 1.5rem;
-}*/
-
 
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Sequence results
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_seqsearch_container .sequence-result-item {
-   background-color: #e9e9e9;
-   border-color: #999;
+#ictv_seqsearch_container .sequence-result {
+   background-color: rgba(50, 50, 50, 0.03);
+   border-color: #bbb;
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
@@ -283,52 +272,51 @@
    width: 100%;
 }
 
-#ictv_seqsearch_container .sequence-result-item .info {
+#ictv_seqsearch_container .sequence-result .info {
    align-items: flex-start;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
-   margin-left: 1.0rem;
    width: 100%;
 }
-#ictv_seqsearch_container .sequence-result-item .info .result-index {
+#ictv_seqsearch_container .sequence-result .info .result-index {
    font-size: 0.9rem; 
    margin-right: 1.0rem;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result {
    align-items: flex-start;
    display: flex;
    flex-flow: column nowrap;
    justify-content: flex-start;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .lineage {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .lineage {
    font-size: 0.9rem;
    font-weight: 400;
    margin-bottom: 0.25rem;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .lineage i.fa-chevron-right {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .lineage i.fa-chevron-right {
    font-size: 0.7rem;
    margin: 0 0.25rem;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result {
    align-items: flex-start;
    display: flex;
    flex-flow: column nowrap;
    justify-content: center;
    z-index: 1000;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-name {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name {
    font-size: 1.2rem;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-name .rank-name {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name .rank-name {
    font-weight: 700;
    text-transform: capitalize;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-name .taxon-name {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name .taxon-name {
    font-style: italic;
    margin-left: 0.25rem;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-info {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-info {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
@@ -336,22 +324,32 @@
    justify-content: flex-start;
    margin-top: 0.25rem;
 }
-#ictv_seqsearch_container .sequence-result-item .info .lineage-and-result .result .result-info label {
+#ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-info label {
    font-weight: 700;
 }
 
-#ictv_seqsearch_container .sequence-result-item .controls {
+#ictv_seqsearch_container .sequence-result .controls {
    align-items: flex-start;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-end;
 }
 
-#ictv_seqsearch_container .sequence-result-item .controls .view-html-button,
-#ictv_seqsearch_container .sequence-result-item .controls .download-csv-button {
-   /*background-color: #999;*/
-   background-color: #0d6efd;
-   color: #fff;
-   cursor: pointer;
+#ictv_seqsearch_container .sequence-result .controls .view-html-button,
+#ictv_seqsearch_container .sequence-result .controls .download-csv-button {
+   color: rgb(0, 104, 240);
+   font-size: 1.0rem;
    margin-right: 0.25rem;
+   text-decoration: none;
+}
+#ictv_seqsearch_container .sequence-result .controls .view-html-button:hover,
+#ictv_seqsearch_container .sequence-result .controls .download-csv-button:hover {
+   cursor: pointer;
+   text-decoration: underline;
+}
+#ictv_seqsearch_container .sequence-result .controls .view-html-button i,
+#ictv_seqsearch_container .sequence-result .controls .download-csv-button i {
+   color: #777;
+   cursor: pointer;
+   text-decoration: none;
 }

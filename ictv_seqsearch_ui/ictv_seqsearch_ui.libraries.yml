@@ -4,6 +4,7 @@ sequenceSearch:
     theme:
       assets/css/ictv_common.css: {}
       assets/css/SequenceSearch.css: {}
+      assets/css/tippy.css: {}
       assets/css/light-border.css: {}
   js:
     assets/js/ICTV_SequenceSearch.js: { preprocess: false }

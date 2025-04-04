@@ -35,8 +35,9 @@ printf "Copying ICTV_SequenceSearch.js to ictv_seqsearch_ui/assets/js\n\n"
 cp ./dist/ICTV_SequenceSearch.js ../ictv_seqsearch_ui/assets/js/
 
 #------------------------------------------------------------------------------
-# Copy the Sequence Search CSS file to the module's asset directory.
+# Copy the Sequence Search CSS files to the module's asset directory.
 #------------------------------------------------------------------------------
 printf "Copying CSS files to ictv_seqsearch_ui/assets/css\n\n"
 
 cp ./css/SequenceSearch.css ../ictv_seqsearch_ui/assets/css/
+cp ./css/tippy.css ../ictv_seqsearch_ui/assets/css/

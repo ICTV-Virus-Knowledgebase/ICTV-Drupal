@@ -32,6 +32,9 @@ class SeqSearchJob {
          $csvFilename = $result["blast_csv"];
          if (!Utils::isNullOrEmpty($csvFilename)) { 
             
+            // Open the compressed version of the CSV file.
+            $csvFilename = $csvFilename.".gz";
+
             // Open the file and retrieve its contents.
             $contents = Common::getFileContents(true, $csvFilename, $filePath);
             
@@ -42,6 +45,9 @@ class SeqSearchJob {
          $htmlFilename = $result["blast_html"];
          if (!Utils::isNullOrEmpty($htmlFilename)) { 
             
+            // Open the compressed version of the CSV file.
+            $htmlFilename = $htmlFilename.".gz";
+
             // Open the file and retrieve its contents.
             $contents = Common::getFileContents(true, $htmlFilename, $filePath);
             
@@ -51,6 +57,90 @@ class SeqSearchJob {
       }
 
       return $job;
+   }
+
+
+   // Create compressed versions of the job's result files, add them to the job object, and return the job.
+   public static function createCompressedResultFiles(array $job, string $outputPath) {
+
+      // Are there any results?
+      if ($job == null || $job["data"] == null || $job["data"]["results"] == null) { return $job; }
+
+      // How many results are available?
+      $resultCount = count($job["data"]["results"]);
+      if ($resultCount < 1) { return $job;}
+
+      // Make sure the file path ends with a slash.
+      if (!str_ends_with($outputPath, '/')) { $outputPath = $outputPath.'/'; }
+
+      // Iterate over all results.
+      for ($r=0; $r<$resultCount; $r++) {
+
+         // Get the next result and validate it.
+         $result = $job["data"]["results"][$r];
+         if ($result == null) { continue; }
+
+         // Get the CSV filename.
+         $csvFilename = $result["blast_csv"];
+         if (!Utils::isNullOrEmpty($csvFilename)) {
+
+            $encodedData = null;
+
+            // Compress the CSV file, create a new compressed file, and return the compressed data.
+            $compressedData = Common::createCompressedFile($csvFilename, $outputPath); 
+
+            if ($compressedData != null) {
+
+               // Encode the compressed data as base64.
+               $encodedData = base64_encode($compressedData);
+            }
+            
+            // Populate the "csv_file" attribute.
+            if (!Utils::isNullOrEmpty($encodedData)) { $job["data"]["results"][$r]["csv_file"] = $encodedData; }
+         }
+
+         // Get the HTML filename.
+         $htmlFilename = $result["blast_html"];
+         if (!Utils::isNullOrEmpty($htmlFilename)) { 
+
+            $encodedData = null;
+
+            // Compress the HTML file, create a new compressed file, and return the compressed data.
+            $compressedData = Common::createCompressedFile($htmlFilename, $outputPath); 
+
+            if ($compressedData != null) {
+
+               // Encode the compressed data as base64.
+               $encodedData = base64_encode($compressedData);
+            }
+            
+            // Populate the "csv_file" attribute.
+            if (!Utils::isNullOrEmpty($encodedData)) { $job["data"]["results"][$r]["html_file"] = $encodedData; }
+         }
+      }
+
+      return $job;
+   }
+
+
+   // Create an invalid SeqSearch Job "object" (nested arrays) to return when a job is not found or is invalid.
+   public static function createInvalidJob(string $jobName, string $message, JobStatus $status, string $jobUID) {
+
+      // TODO: Validate input parameters
+
+      $createdOn = null; // TODO: get current datetime as string.
+      $endedOn = null; 
+
+      return [
+         "createdOn" => $createdOn,
+         "data" => null,
+         "endedOn" => $endedOn,
+         "files" => null,
+         "name" => $jobName,
+         "message" => $message,
+         "status" => $status->value,
+         "uid" => $jobUID
+      ];
    }
 
 
@@ -129,7 +219,7 @@ class SeqSearchJob {
          if (!$result) { return null; }
       } 
       catch (Exception $e) {
-         \Drupal::logger('ictv_seqsearch_service')->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return null;
       }
 
