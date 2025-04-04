@@ -415,10 +415,10 @@ export class VirusNameLookup {
 
       } else if (!!exemplar && exemplar.length > 0 && !!genbankAccession && genbankAccession.length > 0) { 
          
-            const genbankLink = this.createAccessionLink(genbankAccession);
+         const genbankLink = this.createAccessionLink(genbankAccession);
 
-            // Display the exemplar virus and its GenBank accession(s).
-            examplarInfo = `Exemplar virus: ${exemplar} (${genbankLink})`;
+         // Display the exemplar virus and its GenBank accession(s).
+         examplarInfo = `Exemplar virus: ${exemplar} (${genbankLink})`;
       }
 
       let html =

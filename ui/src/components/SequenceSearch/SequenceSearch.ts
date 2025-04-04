@@ -6,7 +6,14 @@ import { IFileData } from "../../models/IFileData";
 import { ISequenceResult } from "./ISequenceResult";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
 import { Utils } from "../../helpers/Utils";
-import { WebStorageKey } from "../../global/Types";
+import { LookupTaxonomyRank, WebStorageKey } from "../../global/Types";
+import { data } from "jquery";
+
+enum Buttons {
+   copyURL = "copy-url-button",
+   downloadCSV = "download-csv-button",
+   viewHTML = "view-html-button"
+}
 
 
 export class SequenceSearch {
@@ -26,7 +33,6 @@ export class SequenceSearch {
    currentJobUID: string;
 
    elements: {
-      anonymousID: HTMLInputElement,
       container: HTMLElement,
       copyIdButton: HTMLButtonElement,
       fileControl: HTMLElement,
@@ -34,10 +40,9 @@ export class SequenceSearch {
       fileUploadDetails: HTMLElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
-      jobPanel: HTMLElement,
-      resultsBody: HTMLElement,
-      uploadButton: HTMLButtonElement,
-      userInfo: HTMLElement
+      results: HTMLElement,
+      resultsContainer: HTMLElement,
+      uploadButton: HTMLButtonElement
    }
 
    icons: {
@@ -58,6 +63,9 @@ export class SequenceSearch {
    // The current job UID (optional)
    jobUID: string = null;
    
+   // The URL that can be used to return and view the job data.
+   jobURL: string = null;
+
    // CSS selectors
    selectors: { [key: string]: string; } = {
       container: null
@@ -95,7 +103,6 @@ export class SequenceSearch {
       }
 
       this.elements = {
-         anonymousID: null,
          copyIdButton: null,
          container: null,
          fileControl: null,
@@ -103,10 +110,9 @@ export class SequenceSearch {
          fileUploadDetails: null,
          jobName: null,
          jobNameLabel: null,
-         jobPanel: null,
-         resultsBody: null,
-         uploadButton: null,
-         userInfo: null
+         results: null,
+         resultsContainer: null,
+         uploadButton: null
       }
 
       this.icons = {
@@ -123,69 +129,49 @@ export class SequenceSearch {
       }
    }
 
-   /*
-   // Copy the user's unique identifier to the clipboard.
-   async copyIdentifier() {
-         
-      if (!this.elements.anonymousID) { throw new Error("Invalid anonymous ID Element"); }
-      let uid = Utils.safeTrim(this.elements.anonymousID.value);
-      if (!uid) { throw new Error("Invalid anonymous ID"); }
+   
+   async copyJobURL() {
 
       // Copy the URL to the clipboard.
-      await navigator.clipboard.writeText(uid);
+      await navigator.clipboard.writeText(this.jobURL);
 
-      const message = "Your unique identifier has been copied to your clipboard. Please keep it in a safe place and " +
-         "enter it in the ID text field when you return to the page.";
-
-      // Display a success message. When it is closed, the reset password dialog will be closed.
-      return await AlertBuilder.displaySuccess(message);
-   }*/
-
-   /*
-   async createDynamicWindow() {
-
-      const newWindow = window.open("", "_blank", "width=600,height=400"); 
-      if (!newWindow) { throw new Error("Unable to open a new window"); }
-
-      newWindow.document.write(`
-         <!DOCTYPE html>
-         <html>
-            <head>
-            <title>Dynamic Content</title>
-            <style>
-               body { font-family: Arial, sans-serif; padding: 20px; }
-               h1 { color: #4CAF50; }
-            </style>
-            </head>
-            <body>
-            <h1>Hello from JavaScript!</h1>
-            <p>This content was dynamically generated.</p>
-            <div id="content"></div>
-            </body>
-         </html>
-      `);
-
-      // Ensure that the document is fully loaded.
-      newWindow.document.close(); 
-      return;
-   }*/
+      // Display a success message.
+      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
+   }
 
 
-   // Decode the base64-encoded file and download it.
-   async decodeAndDownload(base64_: string, filename_: string) {
+   // Download the BLAST CSV data for a specific result.
+   async downloadCSV(index_: number) {
 
-      if (!base64_) { throw new Error("The base64-encoded file is empty"); }
-      if (!filename_) { filename_ = "file.xlsx"; }
+      const result = this.job.data.results[index_];
+      if (!result || !result.csv_file || !result.blast_csv) {
+         await AlertBuilder.displayError("No CSV file is available for download.");
+         return;
+      }
 
-      const arrayBuffer: ArrayBuffer = decode(base64_);
+      const arrayBuffer: ArrayBuffer = decode(result.blast_csv);
 
       const link = document.createElement('a')
       link.href = URL.createObjectURL(new Blob(
          [ arrayBuffer ],
          { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
       ))
-      link.download = filename_;
+      link.download = result.csv_file;
       link.click();
+
+      /*
+      const arrayBuffer: ArrayBuffer = decode(result.csv_file);
+
+      // Create the CSV link.
+      const link = document.createElement('a');
+      link.className = "csv-link";
+      link.href = URL.createObjectURL(new Blob(
+         [ arrayBuffer ],
+         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      ))
+      link.innerHTML = `Download ${result.blast_csv}`;
+      link.download = result.blast_csv;
+      */
       return;
    }
 
@@ -193,29 +179,37 @@ export class SequenceSearch {
    async displayJob() {
 
       if (!this.job.data || !this.job.data.results) {
-         this.elements.resultsBody.innerHTML = "No results";
+         this.elements.resultsContainer.innerHTML = "No results";
          return;
       }
 
-      // Clear any existing content in the results body.
-      this.elements.resultsBody.innerHTML = "";
+      // Clear any existing content in the results container.
+      this.elements.resultsContainer.innerHTML = "";
 
-      let url = window.location.href;
+      //----------------------------------------------------------------------------------------------------------------
+      // Create the URL that can be used to view the job data.
+      //----------------------------------------------------------------------------------------------------------------
+      this.jobURL = window.location.href;
 
       // Remove any existing query string parameters.
-      let qIndex = url.indexOf("?");
-      if (qIndex > -1) { url = url.substring(0, qIndex); }
+      let qIndex = this.jobURL.indexOf("?");
+      if (qIndex > -1) { this.jobURL = this.jobURL.substring(0, qIndex); }
 
-      url += `?job=${this.job.uid}`;
+      this.jobURL += `?job=${this.job.uid}`;
 
-      console.log("url = ", url)
-
+      //----------------------------------------------------------------------------------------------------------------
+      // Generate the HTML for the job results.
+      //----------------------------------------------------------------------------------------------------------------
       let resultsHTML = "";
 
       this.job.data.results.forEach((result_: ISequenceResult, index_: number) => {
 
          // One-based instead of zero-based.
-         index_ += 1;
+         const displayIndex = index_ + 1;
+
+         // Get the result's rank and taxon name.
+         let taxonName = result_.classification_lineage[result_.classification_rank] || "Unknown";
+
 
          let isFirstRank = true;
          let lineageHTML = "";
@@ -225,7 +219,11 @@ export class SequenceSearch {
             lineageHTML = "No lineage";
 
          } else {
+
+            // Iterate over the classification lineage ranks.
             Object.keys(result_.classification_lineage).forEach(rank_ => {
+
+               // Lookup this rank's taxon name in the lineage.
                let name = result_.classification_lineage[rank_];
                if (isFirstRank) { 
                   isFirstRank = false;
@@ -233,84 +231,40 @@ export class SequenceSearch {
                   lineageHTML += this.icons.lineageDelimiter;
                }
    
-               lineageHTML += `<div class="rank-name">${rank_}</div>: <div class="taxon-name">${name}</div>`;
+               const formattedRank = LookupTaxonomyRank(rank_);
+
+               lineageHTML += `<span class="result-lineage">${formattedRank}: <i>${name}</i></span>`;
             })
          }
          
-         let resultHTML = 
-         `<div class="result">
-            <div class="result-row">
-               <label>Input file</label>: ${result_.input_file}
-            </div>
-            <div class="result-row">
-               <label>Input sequence</label>: ${result_.input_seq}
-            </div>
-            <div class="result-row">
-               <label>Status</label>: ${result_.status}
-            </div>
-            <div class="result-row">
-               <label>Rank</label>: ${result_.classification_rank}
-            </div>
-            <div class="result-row">
-               <label>Lineage</label>: ${lineageHTML}
-            </div>
-            <div class="result-row">
-               <button class="btn view-html-button" data-index="${index_}" data-type="html">${this.icons.html} View HTML results</button>
-            </div>
-            <div class="result-row">
-               <button class="btn view-csv-button" data-index="${index_}" data-type="csv">${this.icons.csv} View CSV results</button>
-            </div>
-         </div>`;
+         let resultHTML =
+            `<div class="sequence-result-item">
+               <div class="info">
+                  <div class="result-index">#${displayIndex}</div>
+                  <div class="lineage-and-result">
+                     <div class="lineage">${lineageHTML}</div>
+                     <div class="result">
+                        <div class="result-name">
+                           <span class="rank-name">${result_.classification_rank}</span>: 
+                           <span class="taxon-name">${taxonName}</span>
+                        </div>
+                        <div class="result-info">
+                           <label>Input file</label>: ${result_.input_file},&nbsp;<label>Input sequence</label>: ${result_.input_seq}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="controls">
+                  <button class="btn ${Buttons.viewHTML}" data-index="${index_}">${this.icons.html} View HTML results</button>
+                  <button class="btn ${Buttons.downloadCSV}" data-index="${index_}">${this.icons.csv} Download CSV results</button>
+               </div>  
+            </div>`;
 
-         /*
-         if (!!result_.blast_html && !!result_.html_file) {
-
-            // Create a container for the HTML button.
-            const htmlRow = document.createElement("div");
-            htmlRow.className = "html-row";
-
-            // Create the button that will open the BLAST HTML in a new window.
-            const htmlButton = document.createElement("button");
-            htmlButton.innerHTML = `View ${result_.blast_html}`;
-            htmlButton.addEventListener("click", () => {
-
-               // Open a new tab/window and populate it with the contents of the BLAST HTML file.
-               const blastWindow = window.open("", "_blank");
-               blastWindow.document.title = result_.blast_html;
-               blastWindow.document.writeln(atob(result_.html_file));
-            })
-
-            htmlRow.appendChild(htmlButton);
-            sequenceRow.appendChild(htmlRow);
-         }
-
-         if (!!result_.blast_csv && !!result_.csv_file) {
-
-            // Create a container for the CSV link.
-            const csvRow = document.createElement("div");
-            csvRow.className = "csv-row";
-
-            const arrayBuffer: ArrayBuffer = decode(result_.csv_file);
-
-            // Create the CSV link.
-            const link = document.createElement('a');
-            link.className = "csv-link";
-            link.href = URL.createObjectURL(new Blob(
-               [ arrayBuffer ],
-               { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-            ))
-            link.innerHTML = `Download ${result_.blast_csv}`;
-            link.download = result_.blast_csv;
-
-            csvRow.appendChild(link);
-            sequenceRow.appendChild(csvRow);
-         }*/
-
-            resultsHTML += resultHTML;
+         resultsHTML += resultHTML;
       })
    
       let html = 
-         `<div class="results-panel">
+         `<div class="results">
             <div class="job-details">
                <table>
                   <tr>
@@ -327,15 +281,21 @@ export class SequenceSearch {
                   </tr>
                </table>
                <div class="link-panel">You can view these results again using the following URL: 
-               <a href="${url}" target="_blank">${url}</a> <button class="btn copy-url-button">${this.icons.copy} Copy to clipboard</button>
+               <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> <button class="btn ${Buttons.copyURL}">${this.icons.copy} Copy to clipboard</button>
                </div>
             </div>
-            <div class="results">${resultsHTML}</div>
+            <div class="sequence-results">${resultsHTML}</div>
          </div>`;
 
-      this.elements.resultsBody.innerHTML = html;
+      this.elements.resultsContainer.innerHTML = html;
 
-      // TODO: add event handlers!
+
+      // Get a reference to the results element.
+      this.elements.results = this.elements.resultsContainer.querySelector(".results");
+      if (!this.elements.results) { throw new Error("Invalid results element"); }
+
+      // Add event handlers
+      this.elements.results.addEventListener("click", async (event_) => this.handleResultsClick(event_));
 
       return;
    }
@@ -368,6 +328,32 @@ export class SequenceSearch {
    }
 
 
+   async handleResultsClick(event_) {
+
+      if (event_.target.tagName !== 'BUTTON') { return; }
+
+      const button = event_.target as HTMLButtonElement;
+
+      let strDataIndex = button.getAttribute("data-index");
+      const dataIndex = parseInt(strDataIndex);
+
+      console.log(`Button clicked: ${button.className}, data index = ${dataIndex}`, )
+
+      // Handle specific button actions based on class
+      if (button.classList.contains(Buttons.copyURL)) {
+         await this.copyJobURL();
+
+      } else if (button.classList.contains(Buttons.downloadCSV)) {
+         await this.downloadCSV(dataIndex);
+
+      } else if (button.classList.contains(Buttons.viewHTML)) {
+         await this.viewHTML(dataIndex);
+      }
+     
+      return;
+   }
+
+
    // Initialize the Sequence Search component.
    async initialize() {
 
@@ -389,10 +375,7 @@ export class SequenceSearch {
                <label class=\"job-name-label hidden\">Job name</label><input type=\"text\" class=\"job-name hidden\" placeholder=\"(optional)\" />
                <button class=\"btn upload-button hidden\">Submit file(s)</button>
          </div>
-         <div class=\"job-panel\">
-            <div class=\"title\">Your results</div>
-            <div class=\"body\"></div>
-         </div>`;
+         <div class=\"results-container\"></div>`;
 
       this.elements.container.innerHTML = html;
 
@@ -455,11 +438,8 @@ export class SequenceSearch {
 
 
       // The job panel and results body.
-      this.elements.jobPanel = <HTMLElement>this.elements.container.querySelector(".job-panel");
-      if (!this.elements.jobPanel) { throw new Error("Invalid job panel Element"); }
-
-      this.elements.resultsBody = <HTMLElement>this.elements.container.querySelector(".job-panel .body");
-      if (!this.elements.resultsBody) { throw new Error("Invalid results body Element"); }
+      this.elements.resultsContainer = <HTMLElement>this.elements.container.querySelector(".results-container");
+      if (!this.elements.resultsContainer) { throw new Error("Invalid results container Element"); }
 
 
       // Was a job UID parameter provided?
@@ -476,12 +456,13 @@ export class SequenceSearch {
    }
 
 
+   // Read the contents of a file asynchronously and return it as a base64-encoded string.
    async readFileAsync(file_): Promise<string> {
 
       return new Promise((resolve, reject) => {
          const reader = new FileReader();
          reader.onload = () => {
-               resolve(<string>reader.result);
+            resolve(<string>reader.result);
          };
          reader.onerror = reject;
          reader.readAsDataURL(file_);
@@ -617,4 +598,19 @@ export class SequenceSearch {
 
       return;
    }
+
+
+   // Display the BLAST HTML data for a specific result.
+   async viewHTML(index_: number) {
+
+      const result = this.job.data.results[index_];
+
+      // Open a new tab/window and populate it with the contents of the BLAST HTML file.
+      const blastWindow = window.open("", "_blank");
+      blastWindow.document.title = result.blast_html;
+      blastWindow.document.writeln(atob(result.html_file));
+
+      return;
+   }
+
 }
