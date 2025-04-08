@@ -2,6 +2,7 @@
 
 namespace Drupal\ictv_web_api\helpers;
 
+// This class is used inside GetTaxonDetails getLineage function.
 class SimpleTaxon {
 
   public bool $isHidden;
@@ -10,6 +11,7 @@ class SimpleTaxon {
   public int $taxNodeID;
 
   public function __construct() {
+
     $this->isHidden = false;
     $this->level = null;
     $this->name = null;
@@ -37,7 +39,7 @@ class SimpleTaxon {
   /**
    * Optional processing logic.
    */
-  
+
   public function process(): void {
     // Add any extra processing or formatting if needed.
   }
