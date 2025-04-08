@@ -22,7 +22,7 @@ use Drupal\ictv_common\Utils;
 use Drupal\ictv_web_api\Plugin\rest\resource\models\Taxon;
 
 // Helper 
-// For generatePartialQuery()
+// For generatePartialQuery() method
 use Drupal\ictv_web_api\helpers\TaxonomyHelper;              
 
 /**
@@ -82,15 +82,12 @@ class GetReleaseTaxa extends ResourceBase {
     // 1) Retrieve the 'msl_release' param
     $strMslRelease = $request->get('msl_release');
     $releaseNumber = null;
-    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) {
-      $releaseNumber = (int) $strMslRelease;
-    }
+
+    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int) $strMslRelease; }
 
     // 2) The 'top_level_rank' param
     $topLevelRank = $request->get('top_level_rank');
-    if (Utils::isNullOrEmpty($topLevelRank)) {
-      $topLevelRank = null;
-    }
+    if (Utils::isNullOrEmpty($topLevelRank)) { $topLevelRank = null; }
 
     // 3) Call a helper method to replicate the C# logic:
     $data = $this->getByReleaseNumber($releaseNumber, $topLevelRank);
@@ -191,7 +188,7 @@ class GetReleaseTaxa extends ResourceBase {
 
       $taxon = Taxon::fromArray((array) $row);
       $taxon->process();
-      
+
       // Call getMemberOf to get memberOf value
       $taxon->memberOf = $taxon->getMemberOf();
       $tempTaxa[] = $taxon;

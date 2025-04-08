@@ -80,14 +80,10 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     $strMslRelease = $request->get('msl_release');
     $taxonName = $request->get('taxon_name');
 
-    if (Utils::isNullOrEmpty($taxonName)) {
-      throw new BadRequestHttpException("Invalid taxon name");
-    }
+    if (Utils::isNullOrEmpty($taxonName)) { throw new BadRequestHttpException("Invalid taxon name"); }
 
     $releaseNumber = null;
-    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) {
-      $releaseNumber = (int)$strMslRelease;
-    }
+    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int)$strMslRelease; }
 
     $data = $this->getUnassignedChildTaxaByName($releaseNumber, $taxonName);
 
@@ -142,7 +138,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     $taxNodeID = $row2['taxnode_id'] ?? null;
   
     if (!$taxNodeID) {
-      
+
       // no match found or invalid taxnode
       return ['parentID' => null, 'taxNodeID' => null, 'taxonomy' => []];
     }
