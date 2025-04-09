@@ -40,6 +40,9 @@ cp ./dist/ICTV_TaxonReleaseHistory.js ../ictv_taxon_history/assets/js/
 printf "Copying CSS files to ictv_taxon_history/assets/css\n\n"
 
 cp ./css/TaxonHistory.css ../ictv_taxon_history/assets/css/
+cp ./node_modules/swiper/swiper.css ../ictv_taxon_history/assets/css/
+cp ./node_modules/swiper/modules/navigation.css ../ictv_taxon_history/assets/css/
+cp ./node_modules/swiper/modules/pagination.css ../ictv_taxon_history/assets/css/
 
 #cp ./css/ICTV.css ../ictv_taxon_history/assets/css/
 

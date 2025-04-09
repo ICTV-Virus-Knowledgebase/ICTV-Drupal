@@ -9,6 +9,10 @@
    width: 100%;
 }
 
+#taxon_history_container .selected-taxon {
+   margin-bottom: 2.0rem;
+}
+
 /* The title above a taxon */
 #taxon_history_container .taxon-title {
    font-size: 1.2rem;
@@ -28,7 +32,7 @@
    flex-flow: column nowrap;
    font-size: 1.0rem;
    margin-bottom: 0.5rem;
-   padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+   padding: 1.0rem 1.5rem 1.0rem 1.5rem;
 }
 
 #taxon_history_container .taxon .taxon-rank {
@@ -41,14 +45,22 @@
    margin-left: 0.25rem;
 }
 
+#taxon_history_container .taxon .x-of-y {
+   color: #555;
+   font-size: 1.0rem;
+   margin-left: 0.15rem;
+}
+
 #taxon_history_container .taxon .taxon-release {
    margin-left: 0.25rem;
 }
 
 #taxon_history_container .taxon .info-row {
+   align-items: center;
    display: flex;
-   font-size: 1.3rem;
    flex-flow: row nowrap;
+   font-size: 1.3rem;
+   justify-content: flex-start;
 }
 
 #taxon_history_container .lineage {
@@ -161,8 +173,8 @@
 
 #taxon_history_container .release .release-body hr {
    background-color: #fff;
-   border-color: #fff;
-   margin: 0.9rem 0 0.5rem 0;
+   border-color: #555; 
+   margin: 1.5rem 0 1.0rem 0;
 }
 
 #taxon_history_container .release .taxon-tags {
@@ -184,17 +196,29 @@
 }
 
 #taxon_history_container .release .taxon-proposal {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
    margin: 0 0 0.5rem 0;
 }
 
-#taxon_history_container .release .taxon-proposal .download-proposals-title {
-   color: #555;
-   font-size: 0.9rem;
-   font-weight: 700;
-   margin: 0 0.25rem 0 0;
+#taxon_history_container .release .taxon-proposal a {
+   font-size: 1.0rem;
 }
 
+#taxon_history_container .release .taxon-proposal .proposals-title {
+   color: #555;
+   font-size: 1.0rem;
+   font-weight: 700;
+   margin: 0.15rem 0.25rem 0 0;
+}
+/*#taxon_history_container .release .taxon-proposal .proposal-links {
+
+}*/
+
 #taxon_history_container .release .taxon-proposal i {
+   color: #888;
    font-size: 14pt;
 }
 
@@ -211,12 +235,12 @@
    display: flex;
    flex-flow: row;
    justify-content: flex-start;
-   margin-bottom: 0.5rem;
+   margin-bottom: 1.0rem 0 0.5rem 0;
 }
 
 #taxon_history_container .release .lineage-title {
    color: #555;
-   font-size: 0.9rem;
+   font-size: 1.0rem;
    font-weight: 700;
    margin-right: 0.25rem;
 }
@@ -236,4 +260,23 @@
 
 #taxon_history_container .release .lineage-export-row .copy-status {
    margin-left: 1.0rem;
+}
+
+
+
+/* Swiper */
+#taxon_history_container .swiper .swiper-pagination-bullet {
+   width: 20px;
+   height: 20px;
+   text-align: center;
+   line-height: 20px;
+   font-size: 12px;
+   color: #000;
+   opacity: 1;
+   background: rgba(0, 0, 0, 0.2);
+}
+
+#taxon_history_container .swiper .swiper-pagination-bullet-active {
+   color: #fff;
+   background: #007aff;
 }

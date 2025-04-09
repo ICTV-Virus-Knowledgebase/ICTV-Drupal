@@ -9,6 +9,9 @@ taxonHistory:
       assets/css/TaxonHistory.css: {} 
       assets/css/tippy.css: {} 
       assets/css/light-border.css: {}
+      assets/css/swiper.css: {}
+      assets/css/navigation.css: {}
+      assets/css/pagination.css: {}
   fonts:
     assets/css/fonts/fa-regular-400.eot: {}
     assets/css/fonts/fa-regular-400.svg: {}

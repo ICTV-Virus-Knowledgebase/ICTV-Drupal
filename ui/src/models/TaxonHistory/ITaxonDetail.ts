@@ -7,6 +7,7 @@ export interface ITaxonDetail {
    rankName: string;
    rankNames: string;
    resultType: string;
+   tags: string;
    taxnodeID: number;
    taxonName: string;
    treeID: number;
