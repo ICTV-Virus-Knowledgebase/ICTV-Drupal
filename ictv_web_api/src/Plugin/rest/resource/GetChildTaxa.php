@@ -131,28 +131,28 @@ class GetChildTaxa extends ResourceBase {
     return $response;
   }
 
-     /**
-    * {@inheritdoc}
-    * 
-    * Prevent this block from being cached.
-    */
+  /**
+  * {@inheritdoc}
+  * 
+  * Prevent this block from being cached.
+  */
 
-    public function getCacheMaxAge() {
-        return 2;
+  public function getCacheMaxAge() {
+    return 2;
   
-        // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
-        // return Cache::PERMANENT;
-     }
+    // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
+    // return Cache::PERMANENT;
+  }
 
-     /** 
-    * {@inheritdoc} 
-    * This function has to exist in order for the admin to assign user permissions 
-    * to the web service.
-    */ 
+  /** 
+  * {@inheritdoc} 
+  * This function has to exist in order for the admin to assign user permissions 
+  * to the web service.
+  */ 
 
-    public function permissions() {
-        return []; 
-     } 
+  public function permissions() {
+    return []; 
+  } 
 
 
   public function getByParentTaxon(int $taxnodeID): array {
