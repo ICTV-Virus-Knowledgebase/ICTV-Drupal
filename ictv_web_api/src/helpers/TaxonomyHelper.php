@@ -2,20 +2,21 @@
 
 namespace Drupal\ictv_web_api\helpers;
 
-// Model
+// Models
 use Drupal\ictv_web_api\Plugin\rest\resource\models\Taxon;
-
 
 // The code here is translated from the Taxonomy.cs file in the C# code base. 
 // It only includes methods that I thought fit the helper category.
 
 class LevelInfo {
+
   public int $nodeDepth;
   public int $levelID;
   public int $parentID;
   public int $taxNodeID;
 
   public function __construct(int $nodeDepth, int $levelID, int $parentID, int $taxNodeID) {
+
     $this->nodeDepth = $nodeDepth;
     $this->levelID = $levelID;
     $this->parentID = $parentID;

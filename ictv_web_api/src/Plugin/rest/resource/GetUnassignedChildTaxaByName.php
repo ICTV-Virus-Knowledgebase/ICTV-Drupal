@@ -80,14 +80,10 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     $strMslRelease = $request->get('msl_release');
     $taxonName = $request->get('taxon_name');
 
-    if (Utils::isNullOrEmpty($taxonName)) {
-      throw new BadRequestHttpException("Invalid taxon name");
-    }
+    if (Utils::isNullOrEmpty($taxonName)) { throw new BadRequestHttpException("Invalid taxon name"); }
 
     $releaseNumber = null;
-    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) {
-      $releaseNumber = (int)$strMslRelease;
-    }
+    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int)$strMslRelease; }
 
     $data = $this->getUnassignedChildTaxaByName($releaseNumber, $taxonName);
 
@@ -95,6 +91,19 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     $response->headers->set('Access-Control-Allow-Origin', '*');
     $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
     return $response;
+  }
+
+  /**
+  * {@inheritdoc}
+  * 
+  * Prevent this block from being cached.
+  */
+
+  public function getCacheMaxAge() {
+    return 2;
+
+    // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
+    // return Cache::PERMANENT;
   }
 
   /**
@@ -142,7 +151,7 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     $taxNodeID = $row2['taxnode_id'] ?? null;
   
     if (!$taxNodeID) {
-      
+
       // no match found or invalid taxnode
       return ['parentID' => null, 'taxNodeID' => null, 'taxonomy' => []];
     }

@@ -16,7 +16,6 @@ use Drupal\rest\ResourceResponse;
 use Psr\Log\LoggerInterface;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-
 use Drupal\ictv_common\Utils;
 
 // Helper
@@ -36,6 +35,7 @@ use Drupal\ictv_web_api\Plugin\rest\resource\models\Taxon;
  *   }
  * )
  */
+
 class GetTaxaByName extends ResourceBase {
 
   protected Connection $connection;
@@ -44,6 +44,7 @@ class GetTaxaByName extends ResourceBase {
   /**
    * Class constructor.
    */
+
   public function __construct(
     array $configuration,
     $plugin_id,
@@ -61,6 +62,7 @@ class GetTaxaByName extends ResourceBase {
   /**
    * {@inheritdoc}
    */
+
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
@@ -83,15 +85,11 @@ class GetTaxaByName extends ResourceBase {
     $taxonName = $request->get('taxon_name');
     
     // Validate
-    if (Utils::isNullOrEmpty($taxonName)) {
-      throw new BadRequestHttpException("Invalid taxon name");
-    }
+    if (Utils::isNullOrEmpty($taxonName)) { throw new BadRequestHttpException("Invalid taxon name"); }
     
     // Convert msl_release to int if present
     $releaseNumber = null;
-    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) {
-      $releaseNumber = (int) $strMslRelease;
-    }
+    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int) $strMslRelease; }
 
     // 2) Call a helper method to replicate the C# logic:
     //    getByTaxonName(...) that returns [parentID, taxNodeID, taxonomy].
@@ -105,8 +103,22 @@ class GetTaxaByName extends ResourceBase {
   }
 
   /**
+  * {@inheritdoc}
+  * 
+  * Prevent this block from being cached.
+  */
+
+  public function getCacheMaxAge() {
+    return 2;
+
+    // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
+    // return Cache::PERMANENT;
+  }
+
+  /**
    * {@inheritdoc}
    */
+
   public function permissions() {
     return [];
   }
@@ -205,6 +217,7 @@ class GetTaxaByName extends ResourceBase {
     }
     catch (\Exception $e) {
       \Drupal::logger('ictv_web_api')->error($e->getMessage());
+
       // Return some fallback
       return [
         'parentID' => null,
