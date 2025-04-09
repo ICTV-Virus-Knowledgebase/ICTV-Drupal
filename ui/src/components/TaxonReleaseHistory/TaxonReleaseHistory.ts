@@ -6,9 +6,16 @@ import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { ITaxonDetail } from "../../models/TaxonHistory/ITaxonDetail";
 import { ITaxonHistoryResult } from "../../models/TaxonHistory/ITaxonHistoryResult";
 import { IdPrefix, TaxaLevel } from "../../global/Types";
+import Swiper from 'swiper';
+import { Navigation, Pagination } from 'swiper/modules';
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 import { Utils } from "../../helpers/Utils";
 
+/*
+// import Swiper and modules styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination'; */
 
 // "Forward declarations" for external JavaScript libraries.
 declare var jQuery: any;
@@ -45,7 +52,7 @@ export class TaxonReleaseHistory {
 
    elements: {
       container: HTMLElement,
-      currentTaxon: HTMLElement,
+      currentTaxa: HTMLElement,
       dataContainer: HTMLElement,
       messagePanel: HTMLElement,
       releases: HTMLElement,
@@ -93,7 +100,7 @@ export class TaxonReleaseHistory {
 
       this.elements = {
          container: null,
-         currentTaxon: null,
+         currentTaxa: null,
          dataContainer: null,
          messagePanel: null,
          releases: null,
@@ -232,6 +239,7 @@ export class TaxonReleaseHistory {
       let proposalLinks = "";
       if (taxon_.prevProposal && taxon_.prevProposal.length > 0) {
 
+         
          // If there are multiple proposal files, they should be delimited by semicolons.
          const filenames = taxon_.prevProposal.split(";");
          if (filenames && filenames.length > 0) {
@@ -247,21 +255,28 @@ export class TaxonReleaseHistory {
                   // Get an icon class specific to the file type.
                   const iconClass = this.getFileIconClass(filename_);
 
-                  // Separate multiple links with a comma.
-                  if (proposalLinks.length > 0) { proposalLinks += ", "; }
+                  // Separate multiple links with a line break.
+                  if (proposalLinks.length > 0) { proposalLinks += "<br/>"; }
 
                   // Add a link to the release proposal file(s).
-                  proposalLinks += `<a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer"
-                            class="release-proposal-link"><i class="${iconClass}" aria-hidden="true"></i> ${displayLabel}</a>`;
+                  proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
+                     <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
+                     class="release-proposal-link">${displayLabel}</a>`;
                }
             })
          }
 
+         
+
          if (!!proposalLinks) {
+
+            let proposalsTitle = filenames.length > 1 ? "Proposals" : "Proposal";
+
             proposalRow =
                `<div class="taxon-proposal">
-                        <span class="download-proposals-title">Proposal:</span>${proposalLinks}
-                    </div>`;
+                  <div class="proposals-title">${proposalsTitle}:</div>
+                  <div class="proposal-links">${proposalLinks}</div>
+               </div>`;
          }
       }
 
@@ -294,6 +309,7 @@ export class TaxonReleaseHistory {
             </div>`;
 
       let taxonChangesEl: HTMLDivElement = document.createElement("div");
+      taxonChangesEl.className = "taxon-changes";
       taxonChangesEl.innerHTML = html;
       parentEl_.append(taxonChangesEl);
    }
@@ -315,6 +331,105 @@ export class TaxonReleaseHistory {
          // The Promise was rejected.
          throw new Error(`Unable to copy to clipboard: ${reason_}`);
       })
+   }
+
+   // Create a slider component with current taxa.
+   createCurrentTaxaSlider(currentTaxa_: ITaxonDetail[]) {
+
+      let slidesHTML = "";
+
+      // Create slides for each taxon.
+      currentTaxa_.forEach((taxon_: ITaxonDetail, index_: number) => {
+
+         const xOfY = `<span class="x-of-y">(${index_ + 1} of ${currentTaxa_.length})</span>`;
+
+         // Create HTML for the taxon.
+         const taxonHTML = this.createTaxonHTML(taxon_, TaxonType.current, xOfY);
+
+         slidesHTML += `<div class="swiper-slide">${taxonHTML}</div>`
+      })
+
+      let html = 
+         `<div class="swiper">
+            <div class="swiper-wrapper">${slidesHTML}</div>
+            <div class="swiper-pagination"></div>
+            <div class="swiper-scrollbar"></div>
+         </div>`;
+
+      /*<div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>*/
+
+      this.elements.currentTaxa.innerHTML = html;
+
+      const swiper = new Swiper(`${this.containerSelector} .current-taxa .swiper`, {
+
+         // Configure Swiper to use modules
+         modules: [Pagination],  // Navigation
+         
+         pagination: {
+            clickable: true,
+            el: ".swiper-pagination",
+            renderBullet: function (index, className) {
+              return `<span class="${className}">${index + 1}</span>`;
+            }
+         },
+
+         /* Navigation arrows
+         navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev'
+         },*/
+
+         // And if we need scrollbar
+         scrollbar: {
+            el: '.swiper-scrollbar',
+         }
+      });
+   }
+
+   // Create HTML for a taxon detail object.
+   createTaxonHTML(taxon_: ITaxonDetail, type_: TaxonType, xOfY_: string = "") {
+
+      let formattedLineage = "";
+      let title = "";
+
+      // Convert the numeric tree ID to a release year.
+      const releaseYear = Utils.convertTreeIdToYear(taxon_.treeID);
+
+      const tags = Utils.safeTrim(taxon_.tags);
+      const isAbolished = !tags ? false : tags.includes("Abolished");
+
+      // Determine the title text.
+      if (isAbolished) {
+
+         title = type_ === TaxonType.current 
+            ? `Abolished in ${releaseYear} Release (MSL #${taxon_.mslRelease})`
+            : `Your selection: Abolished in ${releaseYear} Release (MSL #${taxon_.mslRelease})`;
+         
+      } else {
+
+         title = type_ === TaxonType.current 
+            ? `Current release (${releaseYear} Release, MSL #${taxon_.mslRelease})`
+            : `Your selection (${releaseYear} Release, MSL #${taxon_.mslRelease})`;
+      }
+
+      // Display the full lineage of the taxa.
+      if (taxon_.lineage && taxon_.lineageIDs && taxon_.rankNames) {
+
+         // Format the lineage as HTML.
+         formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.rankNames);
+      }
+
+      let html = 
+         `<div class="taxon ${type_} visible">
+            <div class="taxon-title selected">${title}</div>
+            <div class="info-row">
+               <div class="taxon-rank">${taxon_.rankName}</div>: <div class="taxon-name">${taxon_.taxonName}</div>${xOfY_}
+            </div>
+            <div class="lineage selected">${formattedLineage}</div>
+         </div>`;
+
+      return html;
    }
 
    displayLineage(lineage_: string, lineageIDs_: string, ranks_: string): string {
@@ -593,46 +708,14 @@ export class TaxonReleaseHistory {
 
    async initialize() {
 
-      /*
-      Version as of 17:30 on 040125
-
-      <div class="taxon-title selected">Your selection</div>
-      <div class="taxon selected">
-         <div class="taxon-rank"></div>:
-         <div class="taxon-name"></div>
-         <div class="taxon-release"></div>
-      </div>
-      <div class="lineage selected"></div> 
-
-      <div class="taxon-title current">The current taxon</div>
-      <div class="taxon current">
-         <div class="taxon-rank"></div>:
-         <div class="taxon-name"></div>
-         <div class="taxon-release"></div>
-      </div>
-      <div class="lineage current"></div> 
-      */
-
       // Generate the component's HTML.
       let html: string =
          `<div class="message-panel" data-is-visible="true"></div>
          <div class="data-container" data-is-visible="false">
 
-            <div class="taxon selected">
-               <div class="taxon-title selected">Your selection <span class="taxon-release"></span></div>
-               <div class="info-row">
-                  <div class="taxon-rank"></div>: <div class="taxon-name"></div>
-               </div>
-               <div class="lineage selected"></div>
-            </div>
+            <div class="selected-taxon"></div>
             
-            <div class="taxon current">
-               <div class="taxon-title current">Current release <span class="taxon-release"></span></div>
-               <div class="info-row">
-                  <div class="taxon-rank"></div>: <div class="taxon-name"></div>
-               </div>
-               <div class="lineage current"></div>
-            </div>
+            <div class="current-taxa"></div>
             
             <div class="settings-panel">
                <div class="settings-title">Export settings</div>
@@ -662,8 +745,8 @@ export class TaxonReleaseHistory {
       // Populate the container HTML.
       this.elements.container.innerHTML = html;
 
-      this.elements.currentTaxon = this.elements.container.querySelector(".taxon.current");
-      if (!this.elements.currentTaxon) { throw new Error("Invalid current taxon element"); }
+      this.elements.currentTaxa = this.elements.container.querySelector(".current-taxa");
+      if (!this.elements.currentTaxa) { throw new Error("Invalid current taxa element"); }
 
       this.elements.messagePanel = this.elements.container.querySelector(".message-panel");
       if (!this.elements.messagePanel) { throw new Error("Invalid message panel element"); }
@@ -671,7 +754,7 @@ export class TaxonReleaseHistory {
       this.elements.releases = this.elements.container.querySelector(".releases");
       if (!this.elements.releases) { throw new Error("Invalid releases element"); }
 
-      this.elements.selectedTaxon = this.elements.container.querySelector(".taxon.selected");
+      this.elements.selectedTaxon = this.elements.container.querySelector(".selected-taxon");
       if (!this.elements.selectedTaxon) { throw new Error("Invalid selected taxon element"); }
 
 
@@ -701,7 +784,8 @@ export class TaxonReleaseHistory {
       return await AlertBuilder.displayError("No valid parameters were provideed. The following parameters are accepted: taxnode_id, ictv_id, and taxon_name");
    }
 
-
+   
+   /*
    populateTaxon(taxon_: ITaxonDetail, type_: TaxonType) {
 
       // Convert the numeric tree ID to a release year.
@@ -741,13 +825,13 @@ export class TaxonReleaseHistory {
 
       // Make the taxon element visible.
       parentEl.classList.add("visible");
-   }
+   }*/
 
    
    processHistory() {
 
       // Validate the current taxon.
-      if (!this.taxonHistory.currentTaxon) { return this.displayMessage("No history is available: Invalid current taxon"); }
+      if (!this.taxonHistory.currentTaxa) { return this.displayMessage("No history is available: Invalid current taxa"); }
 
       // Validate the selected taxon.
       if (!this.taxonHistory.selectedTaxon) { return this.displayMessage("No history is available: Invalid selected taxon"); }
@@ -762,11 +846,22 @@ export class TaxonReleaseHistory {
       this.elements.container.setAttribute("data-is-visible", "true");
       this.elements.messagePanel.setAttribute("data-is-visible", "false");
 
-      // Populate the selected taxon.
-      this.populateTaxon(this.taxonHistory.selectedTaxon, TaxonType.selected);
+      // Create HTML for the selected taxon.
+      this.elements.selectedTaxon.innerHTML = this.createTaxonHTML(this.taxonHistory.selectedTaxon, TaxonType.selected);
       
-      // Populate the current taxon.
-      this.populateTaxon(this.taxonHistory.currentTaxon, TaxonType.current);
+      // Populate the current taxa.
+      if (!!this.taxonHistory.currentTaxa && this.taxonHistory.currentTaxa.length === 1) {
+
+         const currentTaxon = this.taxonHistory.currentTaxa[0]
+         
+         // Create HTML for the current taxon.
+         this.elements.currentTaxa.innerHTML = this.createTaxonHTML(currentTaxon, TaxonType.current);
+
+      } else if (!!this.taxonHistory.currentTaxa && this.taxonHistory.currentTaxa.length > 1) {
+
+         // Create a slider component with current taxa.
+         this.createCurrentTaxaSlider(this.taxonHistory.currentTaxa);
+      }
 
       // A lookup from release tree ID to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
