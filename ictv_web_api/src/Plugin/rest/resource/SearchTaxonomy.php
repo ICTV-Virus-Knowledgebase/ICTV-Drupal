@@ -1,7 +1,7 @@
 <?php
 
 // PHP api call:
-// https://test.ictv.global/api/search-taxonomy?searchText=pox&currentRelease=39&includeAllReleases=1
+// https://logan1.ictv.global/api/search-taxonomy?searchText=pox&currentRelease=39&includeAllReleases=1
 
 // C# api call:
 // https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=search_taxonomy&search_text=pox&current_release=39&include_all_releases=True
@@ -163,8 +163,12 @@ class SearchTaxonomy extends ResourceBase {
       $sql = "CALL searchTaxonomy(:currentRelease, :includeAllReleases, :searchText, :selectedRelease);";
 
       try {
+         
          // Run the stored procedure.
-         $queryResults = $this->connection->query($sql, $parameters);
+         // fetchAll directly gets db rows as an array, so there is no need to convert in the loop.
+         $queryResults = $this->connection->query($sql, $parameters)->fetchAll(\PDO::FETCH_ASSOC);
+         // $queryResults = $this->connection->query($sql, $parameters);
+         // \Drupal::logger('ictv_web_api')->notice(print_r($queryResults, true));
       } 
       
       catch (Exception $e) {
@@ -177,17 +181,21 @@ class SearchTaxonomy extends ResourceBase {
 
       // Iterate over the result rows and add each row to the search results.
       foreach($queryResults as $row) {
-
+         
          // Create a taxon search result instance from the row of data.
-         $searchResult = TaxonSearchResult::fromArray((array) $row);
+         // $searchResult = TaxonSearchResult::fromArray((array) $row);
+         $searchResult = TaxonSearchResult::fromArray($row);
 
          // Set lineageHTML and name.
          $searchResult->process();
 
          // Normalize the search result object and add it to the results.
-         array_push($searchResults, $searchResult->normalize());
-      }
+         // array_push($searchResults, $searchResult->normalize());
 
+         // AI says that $array[] is slightly faster than array_push since 1
+         // element is being added each iteration instead of multiple at once.
+         $searchResults[] = $searchResult->normalize();
+      }
       return $searchResults;
    }
 
