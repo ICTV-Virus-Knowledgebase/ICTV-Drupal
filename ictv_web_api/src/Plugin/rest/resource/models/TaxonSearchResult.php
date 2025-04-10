@@ -12,9 +12,9 @@ class TaxonSearchResult {
 
    public ?int $ictvID;
 
-   public ?int $jsonID;
+   // public ?int $jsonID;
 
-   public ?string $jsonLineage;
+   // public ?string $jsonLineage;
 
    public ?string $lineage;
 
@@ -43,26 +43,24 @@ class TaxonSearchResult {
 
 
    // C-tor
-   public function __construct(?int $displayOrder = NULL, ?int $ictvID = NULL, ?string $lineage = NULL, ?string $name = NULL, 
-      ?int $parentTaxnodeID = NULL, ?string $rankName = NULL, ?int $releaseNumber = NULL, ?string $searchText = NULL, ?int $taxnodeID = NULL, 
-      ?string $taxnodeLineage = NULL, ?int $treeID = NULL, ?string $treeName = NULL) {
+   // public function __construct(?int $displayOrder = NULL, ?int $ictvID = NULL, ?string $lineage = NULL, ?string $name = NULL, 
+   //    ?int $parentTaxnodeID = NULL, ?string $rankName = NULL, ?int $releaseNumber = NULL, ?string $searchText = NULL, ?int $taxnodeID = NULL, 
+   //    ?string $taxnodeLineage = NULL, ?int $treeID = NULL, ?string $treeName = NULL) {
 
-      $this->displayOrder = $displayOrder;
-      $this->ictvID = $ictvID;
-      $this->jsonID = $jsonID;
-      $this->jsonLineage = $jsonLineage;
-      $this->lineage = $lineage;
-      $this->lineageHTML = $lineageHTML;
-      $this->name = $name;
-      $this->parentTaxnodeID = $parentTaxnodeID;
-      $this->rankName = $rankName;
-      $this->releaseNumber = $releaseNumber;
-      $this->searchText = $searchText;
-      $this->taxnodeID = $taxnodeID;
-      $this->taxnodeLineage = $taxnodeLineage;
-      $this->treeID = $treeID;
-      $this->treeName = $treeName;
-   }
+   //    $this->displayOrder = $displayOrder;
+   //    $this->ictvID = $ictvID;
+   //    $this->lineage = $lineage;
+   //    $this->lineageHTML = $lineageHTML;
+   //    $this->name = $name;
+   //    $this->parentTaxnodeID = $parentTaxnodeID;
+   //    $this->rankName = $rankName;
+   //    $this->releaseNumber = $releaseNumber;
+   //    $this->searchText = $searchText;
+   //    $this->taxnodeID = $taxnodeID;
+   //    $this->taxnodeLineage = $taxnodeLineage;
+   //    $this->treeID = $treeID;
+   //    $this->treeName = $treeName;
+   // }
 
    // This is called after filling the object from DB row, 
    // to replicate "process()" in C# that sets lineageHTML + name
@@ -92,10 +90,10 @@ class TaxonSearchResult {
    
       $instance->displayOrder = $data["display_order"];
       $instance->ictvID = $data["ictv_id"];
-      $instance->jsonID = $data["json_id"]; 
-      $instance->jsonLineage = $data["json_lineage"]; 
+      // $instance->jsonID = $data["json_id"]; 
+      // $instance->jsonLineage = $data["json_lineage"]; 
       $instance->lineage = $data["lineage"];
-      $instance->name = $data["name"];
+      // $instance->name = $data["name"];
       $instance->parentTaxnodeID = $data["parent_taxnode_id"];
       $instance->rankName = $data["rank_name"];
       $instance->releaseNumber = $data["release_number"];
@@ -112,8 +110,8 @@ class TaxonSearchResult {
       return [
          "displayOrder" => $this->displayOrder,
          "ictvID" => $this->ictvID,
-         "jsonID" => $this->jsonID,
-         "jsonLineage" => $this->jsonLineage,
+         // "jsonID" => $this->jsonID,
+         // "jsonLineage" => $this->jsonLineage,
          "lineage" => $this->lineage,
          "lineageHTML"  => $this->lineageHTML,
          "name" => $this->name,
