@@ -22,4 +22,7 @@ ictv_seqsearch_service.settings:
       label: 'The directory where output files are stored'
     scriptName:
       type: string
-      label: 'The name of the sequence classifier script (from within a Docker container)'
+      label: 'The name of the seqsearch script (from within a Docker container)'
+    scriptParameters:
+      type: string
+      label: 'Command line parameters for the seqsearch script'
