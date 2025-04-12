@@ -379,10 +379,6 @@ class UploadSequences extends ResourceBase {
 
       // Create compressed versions of the job's result files, add them to the job, and return the job.
       return SeqSearchJob::createCompressedResultFiles($job, $outputPath);
-
-
-      // Add result files to the job.
-      //return SeqSearchJob::addResultFiles($outputPath, $job);
    }
 
    

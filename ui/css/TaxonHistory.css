@@ -23,7 +23,7 @@
 }
 
 #taxon_history_container .taxon.visible {
-   background-color: #efefef;
+   background-color: #f7f7f7;
    border-color: #ddd;
    border-radius: 5px;
    border-style: solid;
@@ -142,9 +142,10 @@
 }
 
 #taxon_history_container .release {
-   background-color: #eee;
+   background-color: #f7f7f7;
    border-radius: 5px;
    margin-bottom: 30px;
+   /*width: 600px;*/
 }
 
 #taxon_history_container .release .release-header {
@@ -168,7 +169,11 @@
 }
 
 #taxon_history_container .release .release-body {
-   padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+   border-color: #ddd;
+   border-style: solid;
+   border-width: 0 1px 1px 1px;
+   padding: 1.0rem 1.5rem 1.5rem 1.5rem;
+   /*padding: 0.5rem 0.5rem 0.25rem 0.5rem;*/
 }
 
 #taxon_history_container .release .release-body hr {
@@ -177,11 +182,65 @@
    margin: 1.5rem 0 1.0rem 0;
 }
 
+
+#taxon_history_container .release .taxon-rank-and-name {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.3rem;
+   justify-content: flex-start;
+}
+#taxon_history_container .release .taxon-rank-and-name .rank-name {
+   font-weight: 700;
+   margin-right: 0.25rem;
+}
+#taxon_history_container .release .taxon-rank-and-name .taxon-name {
+   font-style: italic;
+}
+#taxon_history_container .release .taxon-rank-and-name .taxon-changes {
+   margin-left: 0.25rem;
+}
+
+/* New, Abolished, Promoted, Demoted, Moved, Lineage updated, Merged, Split, Renamed, and Unchanged */
+#taxon_history_container .release .taxon-rank-and-name .change {
+   border-bottom: 1px dashed black;
+   cursor: pointer;
+   display: inline-block;
+}
+#taxon_history_container .release .taxon-rank-and-name .new,
+#taxon_history_container .release .taxon-rank-and-name .split,
+#taxon_history_container .release .taxon-rank-and-name .renamed  {
+   /*color: rgb(25, 135, 84);*/
+   font-weight: normal;
+}
+#taxon_history_container .release .taxon-rank-and-name .promoted,
+#taxon_history_container .release .taxon-rank-and-name .moved,
+#taxon_history_container .release .taxon-rank-and-name .lineage-updated,
+#taxon_history_container .release .taxon-rank-and-name .merged {
+   /*color: rgb(23, 162, 184);*/
+   font-weight: normal;
+}
+#taxon_history_container .release .taxon-rank-and-name .unchanged {
+   /*color: #777;*/
+   font-weight: normal;
+}
+#taxon_history_container .release .taxon-rank-and-name .demoted {
+   /*color: rgb(255, 193, 7);*/
+   font-weight: normal;
+}
+#taxon_history_container .release .taxon-rank-and-name .abolished {
+   /*color: rgb(220, 53, 69);*/
+   font-weight: normal;
+}
+
+
+
+/*
 #taxon_history_container .release .taxon-tags {
    font-size: 15pt;
    font-weight: 700;
    margin: 0 0 10px 0;
-}
+}*/
 
 #taxon_history_container .release .taxon-lineage {
    font-size: 1.0rem;

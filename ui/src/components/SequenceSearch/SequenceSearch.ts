@@ -152,7 +152,7 @@ export class SequenceSearch {
 
    async displayJob() {
 
-      if (!this.job.data || !this.job.data.results) {
+      if (!this.job || !this.job.data || !this.job.data.results) {
          this.elements.resultsContainer.innerHTML = "No results";
          return;
       }
@@ -248,20 +248,20 @@ export class SequenceSearch {
          `<div class="results">
             <div class="results-title">Your results</div>
             <div class="job-details">
-               <table>
-                  <tr>
-                     <th>Job name</th>
-                     <td>${this.job.name || "(none)"}</td>
-                  </tr>
-                  <tr>
-                     <th>Job status</th>
-                     <td>${this.job.status}</td>
-                  </tr>
-                  <tr>
-                     <th>Program and version</th>
-                     <td>${this.job.data.program_name} (version ${this.job.data.version})</td>
-                  </tr>
-               </table>
+               <div class="job-table">
+                  <div class="job-row">
+                     <label>Job name:</label>
+                     <div class="job-value">${this.job.name || "(none)"}</div>
+                  </div>
+                  <div class="job-row">
+                     <label>Job status:</label>
+                     <div class="job-value">${this.job.status}</div>
+                  </div>
+                  <div class="job-row">
+                     <label>Program and version:</label>
+                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.version})</div>
+                  </div>
+               </div>
                <div class="link-panel">
                   <div class="instructions">You can view these results again using the following URL:</div>
                   <div class="controls">
@@ -274,7 +274,6 @@ export class SequenceSearch {
          </div>`;
 
       this.elements.resultsContainer.innerHTML = html;
-
 
       // Get a reference to the results element.
       this.elements.results = this.elements.resultsContainer.querySelector(".results");
@@ -393,7 +392,7 @@ export class SequenceSearch {
       const html = 
          `<div class=\"upload-panel\">
             <div class="file-selection active">
-               <div class="upload-message">Upload your sequence(s) (FASTA format only)</div>
+               <div class="upload-message">Upload your FASTA sequence(s)</div>
                <button class=\"btn file-control\">${this.icons.browse} Select file(s)</button>
                <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
             </div>
@@ -635,6 +634,12 @@ export class SequenceSearch {
 
       // Clear the job name control.
       this.elements.jobName.value = "";
+
+      // Display the file selection panel.
+      this.elements.fileSelection.classList.add("active");
+
+      // Hide the file submission panel.
+      this.elements.fileSubmission.classList.remove("active");
 
       // If a job was returned, display it.
       if (this.job !== null) { await this.displayJob(); }

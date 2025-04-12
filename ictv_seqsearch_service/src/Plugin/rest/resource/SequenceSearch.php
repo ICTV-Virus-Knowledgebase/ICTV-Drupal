@@ -32,7 +32,7 @@ class SequenceSearch {
       );
       
       // Generate the command to be run.
-      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -v ";  // NOTE: seq_in\" previously ended in :ro
+      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -v ";
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
@@ -104,7 +104,7 @@ class SequenceSearch {
 
    Test code for running the container: https://github.com/ICTV-Virus-Knowledgebase/VMR_to_BlastDB/blob/cbdeb5822a0bf415f046f9de70fdb69f7acff6bb/docker_run.sh#L15
 
-   sudo docker run -v ./out:/tax_out curtish/ictv_sequence_classifier:latest -h
+   sudo docker run -v ./out:/tax_out curtish/ictv_seqsearch:latest -h
 
    usage: classify_sequence [-h] [-verbose] [-indir INDIR] [-outdir OUTDIR]
                            [-json JSON]

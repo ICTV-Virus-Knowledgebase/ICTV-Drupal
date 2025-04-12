@@ -2,12 +2,22 @@
 
 export interface ITaxon {
    ictvID: number;
-   isType: boolean;
+   isDeleted: boolean;
+   isDemoted: boolean;
+   isLineageUpdated: boolean;
+   isMerged: boolean;
+   isMoved: boolean;
+   isNew: boolean;
+   isPromoted: boolean;
+   isRenamed: boolean;
+   isSplit: boolean;
    lineage: string;
    lineageIDs: string;
+   mslReleaseNumber: number;
+   name: string;
+   previousNames: string;
    prevNotes: string;
    prevProposal: string;
-   prevTagCSV: string;
    rankNames: string;
    taxnodeID: number;
    treeID: number;

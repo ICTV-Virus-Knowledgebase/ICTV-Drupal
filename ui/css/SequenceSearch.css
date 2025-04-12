@@ -222,28 +222,40 @@
 }
 
 
-
 /* Job details */
 #ictv_seqsearch_container .results .results-title {
    font-size: 1.5rem;
-   margin: 3.0rem 0 0.5rem 0;
+   font-weight: 700;
+   margin: 3.0rem 0 0.75rem 0;
 }
 
-#ictv_seqsearch_container .results .job-details table th {
-   width: 200px;
+#ictv_seqsearch_container .job-table {
+   margin-bottom: 1.0rem;
 }
+#ictv_seqsearch_container .job-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+}
+#ictv_seqsearch_container .job-row label {
+   font-size: 1.0rem;
+   font-weight: 700;
+   margin-right: 0.25rem;
+}
+/*#ictv_seqsearch_container .job-row .job-value {
+
+}*/
 
 #ictv_seqsearch_container .results .job-details .link-panel {
    display: flex;
    flex-flow: column nowrap;
+   font-size: 1.0rem;
    justify-content: flex-start;
    margin-bottom: 2.0rem;
 }
-/*#ictv_seqsearch_container .results .job-details .link-panel .instructions {
-   margin-bottom: 0.25rem;;
-}*/
 #ictv_seqsearch_container .results .job-details .link-panel .controls {
-text-align: left;
+   text-align: left;
 }
 
 #ictv_seqsearch_container .results button.copy-url-button {
@@ -267,7 +279,7 @@ text-align: left;
    display: flex;
    flex-flow: row nowrap;
    justify-content: space-between;
-   margin-bottom: 1.5rem;
+   margin-bottom: 1.0rem;
    padding: 1.0rem;
    width: 100%;
 }

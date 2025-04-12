@@ -76,7 +76,7 @@ export class _WebService {
       catch (error_) {
          // TODO: handle the exception!
          console.log("in drupalPost error is ", error_)
-         result = null;
+         //result = null;
       }
 
       return result;
