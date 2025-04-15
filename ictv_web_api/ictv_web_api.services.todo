@@ -10,12 +10,6 @@ ictv_web_api.getByReleasePreExpanded:
     tags:
       - { name: 'rest.resource' }
 
-  ictv_web_api.getReleaseHistory:
-    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetReleaseHistory'
-    arguments: ['@current_user']
-    tags:
-      - { name: 'rest.resource' }
-
   ictv_web_api.getTreeExpandedToNode:
     class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTreeExpandedToNode'
     arguments: ['@current_user']
