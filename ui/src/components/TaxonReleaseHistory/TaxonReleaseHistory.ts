@@ -52,7 +52,6 @@ export class TaxonReleaseHistory {
 
    elements: {
       container: HTMLElement,
-      currentTaxa: HTMLElement,
       dataContainer: HTMLElement,
       messagePanel: HTMLElement,
       releases: HTMLElement,
@@ -79,6 +78,8 @@ export class TaxonReleaseHistory {
 
    releaseLookup: Map<number, IRelease>;
 
+   selectedTaxon: ITaxon = null;
+
    taxaLookup: Map<number, ITaxon>;
 
    // A taxnode ID provided as a query string parameter.
@@ -100,7 +101,6 @@ export class TaxonReleaseHistory {
 
       this.elements = {
          container: null,
-         currentTaxa: null,
          dataContainer: null,
          messagePanel: null,
          releases: null,
@@ -760,9 +760,7 @@ export class TaxonReleaseHistory {
          `<div class="message-panel" data-is-visible="true"></div>
          <div class="data-container" data-is-visible="false">
 
-            <div class="selected-taxon"></div>
-            
-            <div class="current-taxa"></div>
+            <div class="selected-taxon">TODO: display selected taxon</div>
             
             <div class="settings-panel">
                <div class="settings-title">Export settings</div>
@@ -791,9 +789,6 @@ export class TaxonReleaseHistory {
 
       // Populate the container HTML.
       this.elements.container.innerHTML = html;
-
-      this.elements.currentTaxa = this.elements.container.querySelector(".current-taxa");
-      if (!this.elements.currentTaxa) { throw new Error("Invalid current taxa element"); }
 
       this.elements.messagePanel = this.elements.container.querySelector(".message-panel");
       if (!this.elements.messagePanel) { throw new Error("Invalid message panel element"); }
@@ -855,9 +850,16 @@ export class TaxonReleaseHistory {
       // Validate the taxa
       if (!this.taxonHistory.taxa || this.taxonHistory.taxa.length < 1) { return this.displayMessage("No history is available: No modified taxa available"); }
 
+      // Validate the selected taxon
+      if (!this.taxonHistory.selectedTaxon) { return this.displayMessage("No history is available: Invalid selected taxon"); }
+
       // Show the container and hide the message panel.
       this.elements.container.setAttribute("data-is-visible", "true");
       this.elements.messagePanel.setAttribute("data-is-visible", "false");
+
+      // Display the selected taxon.
+
+
 
       // A lookup from release tree ID to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
@@ -892,11 +894,6 @@ export class TaxonReleaseHistory {
          this.releaseLookup.set(release_.treeID, release_);
       })
 
-      console.log("this.releaseLookup = ", this.releaseLookup)
-
-      // The selected taxon that will be displayed at the top of the page.
-      let selectedTaxon: ITaxon = null;
-
       // Iterate over all taxa from the taxon's history.
       this.taxonHistory.taxa.forEach((taxon_: ITaxon) => {
 
@@ -915,12 +912,6 @@ export class TaxonReleaseHistory {
 
          this.addTaxonChanges(release.taxaElement, taxon_, taxonIndex);
       })
-
-      if (selectedTaxon !== null) {
-
-         // Create HTML for the selected taxon.
-         this.elements.selectedTaxon.innerHTML = this.createTaxonHTML(selectedTaxon, TaxonType.selected);
-      }
 
       // Add event handlers to all controls.
       this.addEventHandlers();
