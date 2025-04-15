@@ -27,7 +27,7 @@ taxonomyBrowser:
     assets/images/sort_desc_disabled.png: {}
     assets/images/sort_desc.png: {}
   js:
-    assets/js/ICTV.js: { preprocess: false }
+    assets/js/ICTV_TaxonomyBrowser.js: { preprocess: false }
     assets/js/taxonomyBrowser.js: { preprocess: false }
   dependencies:
     - core/jquery
