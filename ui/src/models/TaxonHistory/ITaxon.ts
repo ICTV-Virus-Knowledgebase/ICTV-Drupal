@@ -21,4 +21,5 @@ export interface ITaxon {
    rankNames: string;
    taxnodeID: number;
    treeID: number;
+   year?: string;
 }
