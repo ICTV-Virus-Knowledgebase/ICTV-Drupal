@@ -1,7 +1,7 @@
 <?php
 
 // PHP api call:
-// https://test.ictv.global/api/get-child-taxa?taxnode_id=202312129
+// https://logan1.ictv.global/api/get-child-taxa?taxnode_id=202312129
 
 // C# api call:
 // https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=get_child_taxa&taxnode_id=202312129

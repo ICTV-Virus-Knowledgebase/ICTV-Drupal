@@ -12,10 +12,6 @@ class TaxonSearchResult {
 
    public ?int $ictvID;
 
-   // public ?int $jsonID;
-
-   // public ?string $jsonLineage;
-
    public ?string $lineage;
 
    // Populate via process()
@@ -90,10 +86,7 @@ class TaxonSearchResult {
    
       $instance->displayOrder = $data["display_order"];
       $instance->ictvID = $data["ictv_id"];
-      // $instance->jsonID = $data["json_id"]; 
-      // $instance->jsonLineage = $data["json_lineage"]; 
       $instance->lineage = $data["lineage"];
-      // $instance->name = $data["name"];
       $instance->parentTaxnodeID = $data["parent_taxnode_id"];
       $instance->rankName = $data["rank_name"];
       $instance->releaseNumber = $data["release_number"];
@@ -110,8 +103,6 @@ class TaxonSearchResult {
       return [
          "displayOrder" => $this->displayOrder,
          "ictvID" => $this->ictvID,
-         // "jsonID" => $this->jsonID,
-         // "jsonLineage" => $this->jsonLineage,
          "lineage" => $this->lineage,
          "lineageHTML"  => $this->lineageHTML,
          "name" => $this->name,
