@@ -54,7 +54,7 @@
    visibility: visible;
 }
 #ictv_seqsearch_container .upload-panel .file-selection .upload-message {
-   font-size: 1.3rem;
+   font-size: 1.2rem;
    margin-right: 0.5rem;
 }
 #ictv_seqsearch_container .upload-panel .file-selection .file-control {
@@ -221,16 +221,21 @@
    min-width: 100px;
 }
 
+#ictv_seqsearch_container .results-container hr {
+   border-color: #555;
+   border-style: solid;
+   margin: 1.5rem 0 1.2rem 0;
+}
 
 /* Job details */
 #ictv_seqsearch_container .results .results-title {
    font-size: 1.5rem;
    font-weight: 700;
-   margin: 3.0rem 0 0.75rem 0;
+   margin: 1.75rem 0 0.75rem 0;
 }
 
 #ictv_seqsearch_container .job-table {
-   margin-bottom: 1.0rem;
+   margin-bottom: 1.5rem;
 }
 #ictv_seqsearch_container .job-row {
    align-items: center;
@@ -241,7 +246,9 @@
 #ictv_seqsearch_container .job-row label {
    font-size: 1.0rem;
    font-weight: 700;
-   margin-right: 0.25rem;
+   margin-right: 0.4rem;
+   text-align: right;
+   width: 200px;
 }
 /*#ictv_seqsearch_container .job-row .job-value {
 
@@ -265,7 +272,11 @@
    margin-left: 0.5rem;
 }
 
-
+#ictv_seqsearch_container .results .blast-hits-title {
+   font-size: 1.5rem;
+   font-weight: 700;
+   margin: 0 0 0.75rem 0;
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Sequence results
@@ -326,7 +337,7 @@
 }
 #ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name .taxon-name {
    font-style: italic;
-   margin-left: 0.25rem;
+   /*margin-left: 0.25rem;*/
 }
 #ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-info {
    align-items: center;
@@ -340,11 +351,23 @@
    font-weight: 700;
 }
 
+#ictv_seqsearch_container .sequence-result .info .data-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 0.9rem;
+   justify-content: flex-start;
+}
+
+#ictv_seqsearch_container .sequence-result .info .data-row label {
+   font-weight: 700;
+}
+
 #ictv_seqsearch_container .sequence-result .controls {
    align-items: flex-start;
    display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-end;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
 }
 
 #ictv_seqsearch_container .sequence-result .controls .view-html-button,

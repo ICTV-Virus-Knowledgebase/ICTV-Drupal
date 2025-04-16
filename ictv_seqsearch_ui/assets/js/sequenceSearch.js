@@ -14,7 +14,7 @@
             initialized = true;
             
             const authToken = settings_.authToken;
-            const contactEmail = "info@ictv.global";
+            const contactEmail = "info@ictv.global"; 
             let userEmail = settings_.userEmail;
             let userName = settings_.userName;
             let userUID = settings_.userUID;
@@ -25,6 +25,9 @@
 
             // The Drupal web service base URL.
             window.ICTV_SequenceSearch.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+
+            // The taxonomy details/history page.
+            window.ICTV_SequenceSearch.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_seqsearch_container";

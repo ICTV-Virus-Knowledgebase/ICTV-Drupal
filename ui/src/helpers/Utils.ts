@@ -19,6 +19,70 @@ export class Utils {
    }
 
 
+   // Create a link to GenBank using one or more accessions.
+   static createGenBankAccessionLink(accessions_: string) {
+
+      if (!accessions_) { return ""; }
+
+      accessions_ = accessions_.trim();
+      if (accessions_.length < 1) { return ""; }
+
+      // If commas were used as a delimiter, replace them with semicolons.
+      accessions_ = accessions_.replace(",", ";");
+
+      let accessionCount = 0;
+      let accessionList = "";
+      let linkText = "";
+
+      // Tokenize using a semicolon as the delimiter. If there aren't any semicolons, the input text will be the only token.
+      const tokens = accessions_.split(";");
+      if (Array.isArray(tokens) && tokens.length > 0) {
+
+         tokens.forEach((token_: string) => {
+
+            if (!token_) { return; }
+
+            let trimmedToken = token_.trim();
+            if (trimmedToken.length < 1) { return; }
+
+            let accession = null;
+
+            // Get the accession from the token.
+            let colonIndex = trimmedToken.indexOf(":");
+            if (colonIndex > 0) {
+               accession = trimmedToken.substring(colonIndex + 1);
+               accession = accession.trim();
+               if (accession.length < 1) { return; }
+            } else {
+               accession = trimmedToken;
+            }
+
+            if (accessionCount > 0) {
+
+               // Add a semicolon and line break before all but the first link.
+               linkText += "; ";
+
+               // Add a comma before all but the first accession number.
+               accessionList += ","
+            }
+
+            // Add the token to the link text.
+            linkText += trimmedToken;
+
+            // Add the accession number to the comma-delimited list.
+            accessionList += accession;
+
+            // Increment the accession count.
+            accessionCount += 1;
+         })
+      }
+
+      if (accessionList.length < 1 || linkText.length < 1) { return ""; }
+
+      return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${linkText}</a>`;
+   }
+
+   
    // Italicize the taxon name, if appropriate.
    static italicizeTaxonName(taxonName_: string) {
 
