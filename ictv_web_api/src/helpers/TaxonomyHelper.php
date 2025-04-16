@@ -82,8 +82,8 @@ class TaxonomyHelper {
    * @return array
    */
 
-  public static function getByReleasePreExpandedData(Connection $connection, ?int $releaseNumber, ?string $preExpandToRank, 
-  ?string $topLevelRank): array {
+  public static function getByReleasePreExpandedData(Connection $connection, ?int $releaseNumber, ?string $preExpandToRank,
+    ?string $topLevelRank): array {
 
     // Provide defaults:
     if (empty($topLevelRank)) { $topLevelRank = 'tree'; }
@@ -125,7 +125,7 @@ class TaxonomyHelper {
         END
     ";
 
-    // 3) Execute that query
+    // Execute that query
     $params = [
       ':treeID'             => $treeID,
       ':topLevelID'         => $topLevelID,
@@ -139,14 +139,21 @@ class TaxonomyHelper {
 
     // Convert each row to a Taxon (assuming you have Taxon::fromArray)
     $taxa = [];
+
+    // Results for taxonomyHTML in GetTreeExpandedToNode.php.
     foreach ($rows1 as $row) {
+
       // $taxa[] = Taxon::fromArray($row); // if you have special fields for parent_level_id, is_expanded, etc. handle them
       $taxon = Taxon::fromArray($row);
       $taxon->process();
+
+      // memberOf is calculated from the lineage column in the DB
+      $taxon->memberOf = $taxon->getMemberOf();
+
       $taxa[] = $taxon;
     }
 
-    // 4) Next, replicate the “SELECT tn.taxnode_id as taxnode_id…"
+    // Next, replicate the “SELECT tn.taxnode_id as taxnode_id…"
     $sqlTopLevelNodes = "
       SELECT tn.taxnode_id AS taxnode_id
       FROM taxonomy_node tn
@@ -176,7 +183,7 @@ class TaxonomyHelper {
       $topLevelTaxNodeIDs[] = (int)$r['taxnode_id'];
     }
 
-    // 5) The final “SELECT top_level_id = @topLevelID, pre_expand_to_level_id = @preExpandToLevelID”
+    // The final “SELECT top_level_id = @topLevelID, pre_expand_to_level_id = @preExpandToLevelID”
     // Actually, we already have them in $topLevelID and $preExpandToLevelID from earlier. 
     // If you want them in the return structure:
     $finalTopLevelID      = $topLevelID;       // in T-SQL, you might store them
@@ -344,7 +351,7 @@ class TaxonomyHelper {
       return 0;
     }
 
-    // If you do have a MySQL function named udf_getTreeId, you can do:
+    // Call udf_getTreeID stored function.
     $sql = "SELECT udf_getTreeID(:releaseNumber) AS treeID";
     $stmt = $connection->query($sql, [':releaseNumber' => $releaseNumber]);
     $row = $stmt->fetchAssoc();
@@ -352,7 +359,7 @@ class TaxonomyHelper {
   }
 
   /**
-   * Example function to fetch a rank level ID from `taxonomy_level` table where name = ?
+   * Function to fetch a rank level ID from `taxonomy_level` table where name = ?
    */
 
   protected static function fetchTaxonomyLevelID(Connection $connection, string $rankName): int {
@@ -623,16 +630,16 @@ class TaxonomyHelper {
     if (empty($preExpandToRank)) { throw new \Exception("Invalid preExpandToRank"); }
     if (empty($topLevelRank)) { throw new \Exception("Invalid topLevelRank"); }
 
-    // 1) get treeID
+    // get treeID
     $treeID = self::fetchTreeID($connection, $releaseNumber);
 
-    // 2) get topLevelID
+    // get topLevelID
     $topLevelID = self::fetchTaxonomyLevelID($connection, $topLevelRank);
 
-    // 3) get preExpandToLevelID
+    // preExpandToLevelID
     $preExpandToLevelID = self::fetchTaxonomyLevelID($connection, $preExpandToRank);
 
-    // 4) get the selectedLevelID for $taxNodeID (i.e. the rank of that node)
+    // get the selectedLevelID for $taxNodeID (i.e. the rank of that node)
     // Also get the left_idx for that node
     // Then build the partial query that references:
     //   - "parent_level_id = parent.level_id"
@@ -642,7 +649,7 @@ class TaxonomyHelper {
 
     // For T-SQL, we see multiple DECLARE statements. We'll replicate them with subselects or multiple queries in MySQL.
 
-    // A) fetch selectedLevelID and selectedLeftIdx for that node
+    // fetch selectedLevelID and selectedLeftIdx for that node
     $sqlSelected = "
       SELECT
         level_id    AS selectedLevelID,
@@ -655,6 +662,7 @@ class TaxonomyHelper {
     $rowSelected = $connection->query($sqlSelected, [':taxNodeID' => $taxNodeID])->fetchAssoc();
 
     if (!$rowSelected) {
+
       // if node not found
       throw new \Exception("Taxnode ID not found: $taxNodeID");
     }
@@ -662,9 +670,9 @@ class TaxonomyHelper {
     $selectedLevelID = (int)$rowSelected['selectedLevelID'];
     $selectedLeftIdx = (int)$rowSelected['selectedLeftIdx'];
 
-    // B) replicate your partial query with is_expanded logic
+    // Replicate your partial query with is_expanded logic
     $partial = self::generatePartialQuery(); // the large snippet
-    // We'll inject the "parent_level_id = parent.level_id, ... is_expanded = CASE WHEN ..."
+    // Inject the "parent_level_id = parent.level_id, ... is_expanded = CASE WHEN ..."
 
     // Because we have "and tn.level_id <= @selectedLevelID", we can add that as well
     $sqlSubTree = "
@@ -722,11 +730,16 @@ class TaxonomyHelper {
 
       $taxon = Taxon::fromArray($r);
       $taxon->process();
+
+      // memberOf is calculated from the lineage column in the DB
+      $taxon->memberOf = $taxon->getMemberOf();
       $taxa[] = $taxon;
+
+      
       // $taxa[] = $taxon->normalize();
     }
 
-    // C) get topLevelRankID, preExpandToRankID, plus parent_taxnode_id, selected_level_id from the second result set
+    // get topLevelRankID, preExpandToRankID, plus parent_taxnode_id, selected_level_id from the second result set
     // In T-SQL, you had a second SELECT returning "top_level_id, pre_expand_to_level_id, parent_taxnode_id, selected_level_id".
     // So we do the same in MySQL:
     $sqlSecond = "
