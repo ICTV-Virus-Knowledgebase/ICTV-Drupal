@@ -857,7 +857,7 @@ export class TaxonReleaseHistory {
       this.elements.container.setAttribute("data-is-visible", "true");
       this.elements.messagePanel.setAttribute("data-is-visible", "false");
 
-      // Display the selected taxon.
+      // TODO: Display the selected taxon.
 
 
 
@@ -900,7 +900,8 @@ export class TaxonReleaseHistory {
          const treeID = taxon_.treeID;
 
          const release = this.releaseLookup.get(treeID);
-         if (!release) { throw new Error(`Invalid release for tree ID ${treeID}`); }
+         if (!release) { console.log("invalid release for taxon ", taxon_); return; }
+            //throw new Error(`Invalid release for tree ID ${treeID}`); }
 
          const taxonIndex = release.taxa.length;
 

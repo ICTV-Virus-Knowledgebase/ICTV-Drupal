@@ -9,6 +9,7 @@ import * as pako from "pako";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
 import tippy from "tippy.js";
 import { Utils } from "../../helpers/Utils";
+import { AppSettings } from "../CuratedNameManager";
 
 
 // CSS class names for buttons.
@@ -165,6 +166,9 @@ export class SequenceSearch {
       //----------------------------------------------------------------------------------------------------------------
       this.jobURL = window.location.href;
 
+      // TODO: Get rid of this line soon!!!
+      this.jobURL = this.jobURL.replace("test.ictv.global", "ictv.global");
+
       // Remove any existing query string parameters.
       let qIndex = this.jobURL.indexOf("?");
       if (qIndex > -1) { this.jobURL = this.jobURL.substring(0, qIndex); }
@@ -176,28 +180,35 @@ export class SequenceSearch {
       //----------------------------------------------------------------------------------------------------------------
       let resultsHTML = "";
 
+      let inputFiles = [];
+      //let inputSequences = [];
+
       this.job.data.results.forEach((result_: ISequenceResult, index_: number) => {
 
          // One-based instead of zero-based.
          const displayIndex = index_ + 1;
 
-         // Get the result's rank and taxon name.
-         let taxonName = result_.classification_lineage[result_.classification_rank] || "Unknown";
+         // Get the result's taxon name.
+         let taxonName = result_.sseqid_lineage.species || "Unknown";
 
          let isFirstRank = true;
          let lineage = "";
          
          // Populate the lineage to be displayed.
-         if (!result_.classification_lineage) {
+         if (!result_.sseqid_lineage) {
             lineage = "No lineage";
 
          } else {
 
             // Iterate over the classification lineage ranks.
-            Object.keys(result_.classification_lineage).forEach(rank_ => {
+            Object.keys(result_.sseqid_lineage).forEach(rank_ => {
+
+               // Skip the species rank.
+               if (rank_ === "species") { return; } 
 
                // Lookup this rank's taxon name in the lineage.
-               let name = result_.classification_lineage[rank_];
+               let name = Utils.safeTrim(result_.sseqid_lineage[rank_]);
+               if (!name || name.length < 1) { return; }
 
                // Should we add a lineage delimiter?
                if (isFirstRank) { 
@@ -212,6 +223,26 @@ export class SequenceSearch {
             })
          }
          
+         // Add the input file to the list of files.
+         if (!inputFiles.includes(result_.input_file)) { inputFiles.push(result_.input_file); }
+
+         // Add the input sequence to the list of sequences.
+         //if (!inputSequences.includes(result_.input_seq)) { inputSequences.push(result_.input_seq); }
+
+         let subjectInfo = "";
+
+         // Display the BLAST subject and its GenBank accession(s), if available.
+         if (!!result_.sseqid_accession && !!result_.sseqid_species_name) {
+            
+            const genbankLink = Utils.createGenBankAccessionLink(result_.sseqid_accession);
+
+            subjectInfo = `<label>Virus name</label>: ${result_.sseqid_virus_names} (${genbankLink})`;
+         }
+
+         // Link the taxon name to the taxon details/history page.
+         const detailsURL = `https://${window.location.hostname}/${AppSettings.taxonHistoryPage}?taxon_name=${taxonName}`;
+         const linkedName = `<a href="${detailsURL}" target="_blank">${taxonName}</a>`;
+
          let resultHTML =
             `<div class="sequence-result">
                <div class="info">
@@ -220,11 +251,15 @@ export class SequenceSearch {
                      <div class="lineage">${lineage}</div>
                      <div class="result">
                         <div class="result-name">
-                           <span class="rank-name">${result_.classification_rank}</span>: 
-                           <span class="taxon-name">${taxonName}</span>
+                           <span class="rank-name">Species</span>: 
+                           <span class="taxon-name">${linkedName}</span>
                         </div>
-                        <div class="result-info">
-                           <label>Input file</label>: ${result_.input_file},&nbsp;<label>Input sequence</label>: ${result_.input_seq}
+                        <div class="data-row">${subjectInfo}</div>
+                        <div class="data-row">
+                           <label>Bitscore</label>: ${result_.bitscore} bits
+                        </div>
+                        <div class="data-row">
+                           <label>E-value</label>: ${result_.evalue}
                         </div>
                      </div>
                   </div>
@@ -244,8 +279,18 @@ export class SequenceSearch {
          resultsHTML += resultHTML;
       })
    
+      
+      // Should the input file and input sequence labels be singular or plural?
+      const filesS = inputFiles.length == 1 ? "" : "s";
+      //const sequenceS = inputSequences.length == 1 ? "" : "s";
+
+      // Convert the lists of files and sequences to delimited strings.
+      const inputFilesHTML = inputFiles.join(", ");
+      //const inputSequencesHTML = inputSequences.join(", ");
+
       let html = 
-         `<div class="results">
+         `<hr />
+         <div class="results">
             <div class="results-title">Your results</div>
             <div class="job-details">
                <div class="job-table">
@@ -259,7 +304,19 @@ export class SequenceSearch {
                   </div>
                   <div class="job-row">
                      <label>Program and version:</label>
-                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.version})</div>
+                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.program_version})</div>
+                  </div>
+                  <div class="job-row">
+                     <label>Database:</label>
+                     <div class="job-value">${this.job.data.database_title}</div>
+                  </div>
+                  <div class="job-row">
+                     <label>Database size:</label>
+                     <div class="job-value">${this.job.data.database_size}</div>
+                  </div>
+                  <div class="job-row">
+                     <label>Input file${filesS}:</label>
+                     <div class="job-value">${inputFilesHTML}</div>
                   </div>
                </div>
                <div class="link-panel">
@@ -270,6 +327,8 @@ export class SequenceSearch {
                   </div>
                </div>
             </div>
+            <hr />
+            <div class="blast-hits-title">BLAST Hits</div>
             <div class="sequence-results">${resultsHTML}</div>
          </div>`;
 
