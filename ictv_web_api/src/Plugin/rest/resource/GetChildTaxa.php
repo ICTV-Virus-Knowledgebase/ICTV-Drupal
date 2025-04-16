@@ -202,9 +202,8 @@ class GetChildTaxa extends ResourceBase {
   
       // Build the Taxon object from that array
       $taxon = Taxon::fromArray($rowArr);
-      // \Drupal::logger('ictv_debug')->notice('TaxonName before process = '.$taxon->taxonName);
       $taxon->process();
-      \Drupal::logger('ictv_debug')->notice('TaxonName after process = '.$taxon->taxonName);
+      
       // memberOf is calculated from the lineage column in the DB
       $taxon->memberOf = $taxon->getMemberOf();
   

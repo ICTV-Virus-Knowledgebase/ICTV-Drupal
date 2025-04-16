@@ -100,9 +100,9 @@ class GetTreeExpandedToNode extends ResourceBase {
       $topLevelRank = null;
     }
 
-    // 2) Step A: Build the "pre-expanded" taxonomy HTML
-    //    (i.e. replicate C# getByReleasePreExpanded(...) => htmlResults_)
-    //    We'll call a method in TaxonomyHelper, e.g. buildPreExpandedHtml.
+    // Build the "pre-expanded" taxonomy HTML
+    // (i.e. replicate C# getByReleasePreExpanded(...) => htmlResults_)
+    // Call a method in TaxonomyHelper, e.g. buildPreExpandedHtml.
     $htmlResults = TaxonomyHelper::buildPreExpandedHtml(
       $this->connection,
       $displayChildCount,
@@ -115,8 +115,8 @@ class GetTreeExpandedToNode extends ResourceBase {
       $useSmallFont
     );
 
-    // 3) Step B: Get the sub-tree containing $taxNodeID
-    //    (i.e. replicate getSubTreeContainingNode => we get the parentTaxNodeID, sub-tree taxa, etc.)
+    // Step B: Get the sub-tree containing $taxNodeID
+    // (i.e. replicate getSubTreeContainingNode => we get the parentTaxNodeID, sub-tree taxa, etc.)
     $subTreeData = TaxonomyHelper::getSubTreeContainingNodeData(
       $this->connection,
       $preExpandToRank,
@@ -139,7 +139,7 @@ class GetTreeExpandedToNode extends ResourceBase {
     $topLevelRankID   = $subTreeData['topLevelRankID'];
     $preExpandRankID  = $subTreeData['preExpandToRankID'];
 
-    // 4) Step C: Format that sub-tree => subTreeHTML
+    //    Step C: Format that sub-tree => subTreeHTML
     //    i.e. replicate C# formatSubTreeContainingNode(...).
     //    You presumably have it in TaxonomyHelper as well:
     $subTreeHTML = TaxonomyHelper::formatSubTreeContainingNode(
@@ -156,12 +156,12 @@ class GetTreeExpandedToNode extends ResourceBase {
       $useSmallFont
     );
 
-    // 5) Return final structure
+    // Return final structure
     $data = [
       'parentTaxNodeID' => $parentTaxnodeID,
       'taxNodeID'       => $taxNodeID,
-      'taxonomyHTML'    => $htmlResults,  // from step 2
-      'subTreeHTML'     => $subTreeHTML,  // from step 4
+      'taxonomyHTML'    => $htmlResults,
+      'subTreeHTML'     => $subTreeHTML,
     ];
 
     $response = new ResourceResponse($data);

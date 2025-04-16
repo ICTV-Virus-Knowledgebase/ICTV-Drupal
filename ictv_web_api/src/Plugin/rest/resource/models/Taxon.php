@@ -108,7 +108,7 @@ class Taxon {
       'levelName'               => $this->levelName,
       'levelID'                 => $this->levelID,
       'lineage'                 => $this->lineage,
-      'memberOf'                => $this->memberOf,
+      'memberOf'                => $this->memberOf, // Calculated by getMemberOf()
       'nextDeltaCount'          => $this->nextDeltaCount,
       'nodeDepth'               => $this->nodeDepth,
       'numChildren'             => $this->numChildren,
@@ -122,7 +122,7 @@ class Taxon {
     ];
   }
   
-
+  // Calculate memberOf value.
   public function getMemberOf(): string {
     if (empty($this->lineage)) {
       return "";
