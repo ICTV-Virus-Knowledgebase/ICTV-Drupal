@@ -81,9 +81,7 @@ class GetByReleasePreExpanded extends ResourceBase {
     // Optional integer (nullable) parameter
     $releaseNumber = NULL;
     $str = $request->get('msl_release');
-    if (!Utils::isNullOrEmpty($str) && is_numeric($str)) {
-      $releaseNumber = (int) $str;
-    }
+    if (!Utils::isNullOrEmpty($str) && is_numeric($str)) { $releaseNumber = (int) $str; }
 
     // Build the HTML
     $html = TaxonomyHelper::buildPreExpandedHtml(
@@ -101,7 +99,6 @@ class GetByReleasePreExpanded extends ResourceBase {
     // Return wrapped in the expected key
     $data = ['taxonomyHTML' => $html];
     $response = new ResourceResponse($data);
-    // disable caching
     $response->headers->set('Access-Control-Allow-Origin', '*');
     $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
     return $response;
