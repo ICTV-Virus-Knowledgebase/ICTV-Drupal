@@ -67,7 +67,7 @@ class GetTreeExpandedToNode extends ResourceBase {
 
   public function get(Request $request): ResourceResponse {
 
-    // 1) Parse parameters from the request
+    // Parse parameters from the request
     $displayChildCount    = $this->getBoolParam($request, 'display_child_count', true);
     $displayHistoryCtrls  = $this->getBoolParam($request, 'display_history_controls', true);
     $displayMemberOfCtrls = $this->getBoolParam($request, 'display_member_of_controls', true);
@@ -90,15 +90,11 @@ class GetTreeExpandedToNode extends ResourceBase {
     // releaseNumber
     $strMslRelease = $request->get('msl_release');
     $releaseNumber = null;
-    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) {
-      $releaseNumber = (int)$strMslRelease;
-    }
+    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int)$strMslRelease; }
 
     // topLevelRank
     $topLevelRank = $request->get('top_level_rank');
-    if (Utils::isNullOrEmpty($topLevelRank)) {
-      $topLevelRank = null;
-    }
+    if (Utils::isNullOrEmpty($topLevelRank)) { $topLevelRank = null; }
 
     // Build the "pre-expanded" taxonomy HTML
     // (i.e. replicate C# getByReleasePreExpanded(...) => htmlResults_)
@@ -115,7 +111,7 @@ class GetTreeExpandedToNode extends ResourceBase {
       $useSmallFont
     );
 
-    // Step B: Get the sub-tree containing $taxNodeID
+    // Get the sub-tree containing $taxNodeID
     // (i.e. replicate getSubTreeContainingNode => we get the parentTaxNodeID, sub-tree taxa, etc.)
     $subTreeData = TaxonomyHelper::getSubTreeContainingNodeData(
       $this->connection,
@@ -139,7 +135,7 @@ class GetTreeExpandedToNode extends ResourceBase {
     $topLevelRankID   = $subTreeData['topLevelRankID'];
     $preExpandRankID  = $subTreeData['preExpandToRankID'];
 
-    //    Step C: Format that sub-tree => subTreeHTML
+    //    Format that sub-tree => subTreeHTML
     //    i.e. replicate C# formatSubTreeContainingNode(...).
     //    You presumably have it in TaxonomyHelper as well:
     $subTreeHTML = TaxonomyHelper::formatSubTreeContainingNode(

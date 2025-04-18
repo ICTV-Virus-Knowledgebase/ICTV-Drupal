@@ -6,13 +6,14 @@
 // C# api call:
 // https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=search_taxonomy&search_text=pox&current_release=39&include_all_releases=True
 
-namespace Drupal\ictv_web_api\Plugin\rest\resource;
-
+// Commented out these imports as they seemed to not be in use:
 // use Drupal\Core\Config;
 // use Drupal\Core\Database;
 // use Drupal\Component\Serialization\Json;
 // use Symfony\Component\HttpFoundation\JsonResponse;
 // use Drupal\Serialization;
+
+namespace Drupal\ictv_web_api\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface; // Used in the constructor and create() method
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException; // Used when throwing exceptions for invalid parameters
@@ -42,7 +43,7 @@ use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonSearchResult;
 
 class SearchTaxonomy extends ResourceBase {
 
-   // The connection to the ictv_apps database.
+   // The connection to the ictv_taxonomy database.
    protected Connection $connection;
 
    // The name of the database used by this web service.
@@ -171,7 +172,7 @@ class SearchTaxonomy extends ResourceBase {
          // \Drupal::logger('ictv_web_api')->notice(print_r($queryResults, true));
       } 
       
-      catch (Exception $e) {
+      catch (\Exception $e) {
          \Drupal::logger('ictv_web_api')->error($e);
          return null;
       }
