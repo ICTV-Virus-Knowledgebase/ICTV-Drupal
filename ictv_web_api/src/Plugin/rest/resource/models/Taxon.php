@@ -34,28 +34,28 @@ class Taxon {
   // ?string $levelName, ?int $levelID, ?string $lineage, ?int $nextDeltaCount, ?int $nodeDepth, ?int $numChildren, ?int $parentID, ?int $parentLevelID,
   // ?string $parentLevelName, ?int $prevDeltaCount, ?string $taxonName, ?int $taxnodeID, ?int $treeID
   // C-tor
-  public function __construct() {
+  // public function __construct() {
 
-    // $this->childTaxaCount = $childTaxaCount;
-    // $this->filename = $filename;
-    // $this->immediateChildTaxaCount = $immediateChildTaxaCount;
-    // $this->isExpanded = $isExpanded;
-    // $this->isReference = $isReference;
-    // $this->levelName = $levelName;
-    // $this->levelID = $levelID;
-    // $this->lineage = $lineage;
-    // $this->nextDeltaCount = $nextDeltaCount;
-    // $this->nodeDepth = $nodeDepth;
-    // $this->numChildren = $numChildren;
-    // $this->parentID = $parentID;
-    // $this->parentLevelID = $parentLevelID;
-    // $this->parentLevelName = $parentLevelName;
-    // $this->prevDeltaCount = $prevDeltaCount;
-    // $this->taxonName = $taxonName;
-    // $this->taxnodeID = $taxnodeID;
-    // $this->treeID = $treeID;
+  //   $this->childTaxaCount = $childTaxaCount;
+  //   $this->filename = $filename;
+  //   $this->immediateChildTaxaCount = $immediateChildTaxaCount;
+  //   $this->isExpanded = $isExpanded;
+  //   $this->isReference = $isReference;
+  //   $this->levelName = $levelName;
+  //   $this->levelID = $levelID;
+  //   $this->lineage = $lineage;
+  //   $this->nextDeltaCount = $nextDeltaCount;
+  //   $this->nodeDepth = $nodeDepth;
+  //   $this->numChildren = $numChildren;
+  //   $this->parentID = $parentID;
+  //   $this->parentLevelID = $parentLevelID;
+  //   $this->parentLevelName = $parentLevelName;
+  //   $this->prevDeltaCount = $prevDeltaCount;
+  //   $this->taxonName = $taxonName;
+  //   $this->taxnodeID = $taxnodeID;
+  //   $this->treeID = $treeID;
     
-  }
+  // }
 
   /**
    * Equivalent to `process()` in the C# code.

@@ -106,9 +106,11 @@ class GetUnassignedChildTaxaByName extends ResourceBase {
     // return Cache::PERMANENT;
   }
 
-  /**
-   * {@inheritdoc}
-   */
+  /** 
+  * {@inheritdoc} 
+  * This function has to exist in order for the admin to assign user permissions 
+  * to the web service.
+  */
 
   public function permissions() {
     return [];

@@ -1,7 +1,7 @@
 <?php
 
 // PHP api call:
-// https://test.ictv.global/api/get-taxa-by-name?msl_release=39&taxon_name=Taleaviricota
+// https://logan1.ictv.global/api/get-taxa-by-name?msl_release=39&taxon_name=Taleaviricota
 
 // C# api call:
 // https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=get_taxa_by_name&msl_release=39&taxon_name=Taleaviricota
@@ -80,7 +80,7 @@ class GetTaxaByName extends ResourceBase {
 
   public function get(Request $request): ResourceResponse {
     
-    // 1) Retrieve the parameters from the request
+    // Retrieve the parameters from the request
     $strMslRelease = $request->get('msl_release');
     $taxonName = $request->get('taxon_name');
     
@@ -91,8 +91,8 @@ class GetTaxaByName extends ResourceBase {
     $releaseNumber = null;
     if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int) $strMslRelease; }
 
-    // 2) Call a helper method to replicate the C# logic:
-    //    getByTaxonName(...) that returns [parentID, taxNodeID, taxonomy].
+    // Call a helper method to replicate the C# logic:
+    // getByTaxonName(...) that returns [parentID, taxNodeID, taxonomy].
     $data = $this->getByTaxonName($releaseNumber, $taxonName);
 
     // Build the response
@@ -115,9 +115,12 @@ class GetTaxaByName extends ResourceBase {
     // return Cache::PERMANENT;
   }
 
-  /**
-   * {@inheritdoc}
-   */
+
+  /** 
+  * {@inheritdoc} 
+  * This function has to exist in order for the admin to assign user permissions 
+  * to the web service.
+  */
 
   public function permissions() {
     return [];

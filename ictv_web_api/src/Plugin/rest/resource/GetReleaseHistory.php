@@ -70,32 +70,31 @@ class GetReleaseHistory extends ResourceBase {
 
   public function get(Request $request): ResourceResponse {
 
-    // 1) Call MslRelease::getAll() to retrieve all releases
+    // Call MslRelease::getAll() to retrieve all releases
     $allReleases = MslRelease::getAll($this->connection);
 
-    // 2) Convert each MslRelease object to a plain array
+    // Convert each MslRelease object to a plain array
     $output = [];
     foreach ($allReleases as $releaseObj) {
       $output[] = $releaseObj->normalize();
     }
 
-    // 3) Return them as "releases"
+    // Return them as "releases"
     $data = [
       'releases' => $output
     ];
 
     $response = new ResourceResponse($data);
-    // Optionally allow cross-origin requests:
     $response->headers->set('Access-Control-Allow-Origin', '*');
     $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
     return $response;
   }
   
-  /**
-    * {@inheritdoc}
-    * 
-    * Prevent this block from being cached.
-    */
+/**
+* {@inheritdoc}
+* 
+* Prevent this block from being cached.
+*/
 
 public function getCacheMaxAge() {
     return 2;
@@ -104,9 +103,11 @@ public function getCacheMaxAge() {
     // return Cache::PERMANENT;
     }
 
-  /**
-   * {@inheritdoc}
-   */
+  /** 
+  * {@inheritdoc} 
+  * This function has to exist in order for the admin to assign user permissions 
+  * to the web service.
+  */
 
 public function permissions() {
     return [];
