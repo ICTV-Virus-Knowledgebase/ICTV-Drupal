@@ -71,19 +71,19 @@ class GetTaxonDetails extends ResourceBase {
 
   public function get(Request $request): ResourceResponse {
 
-    // 1) Retrieve the 'taxnode_id' parameter
+    // Retrieve the 'taxnode_id' parameter
     $strTaxNodeID = $request->get('taxnode_id');
     if (Utils::isNullOrEmpty($strTaxNodeID) || !is_numeric($strTaxNodeID)) { throw new BadRequestHttpException("Invalid tax node ID"); }
 
     $taxNodeID = (int) $strTaxNodeID;
 
-    // 2) Get lineage (ancestors)
+    // Get lineage (ancestors)
     $lineage = $this->getLineage($taxNodeID);
 
-    // 3) Get all releases for this taxnode ID
+    // Get all releases for this taxnode ID
     $releases = $this->getAllReleases($taxNodeID);
 
-    // 4) The C# code returns { ancestors: lineage, lineage: lineage, releases: releases }
+    // The C# code returns { ancestors: lineage, lineage: lineage, releases: releases }
     $data = [
       'ancestors' => $lineage,
       'lineage'   => $lineage,
@@ -165,10 +165,10 @@ class GetTaxonDetails extends ResourceBase {
 
   protected function getAllReleases(int $taxNodeID): array {
 
-    // 1) Let the ReleaseListEntry class handle the logic
+    // Let the ReleaseListEntry class handle the logic
     $entries = ReleaseListEntry::getAll($this->connection, $taxNodeID, true);
 
-    // 2) Convert each ReleaseListEntry to an array
+    // Convert each ReleaseListEntry to an array
     $output = [];
     foreach ($entries as $e) {
       $output[] = $e->normalize();

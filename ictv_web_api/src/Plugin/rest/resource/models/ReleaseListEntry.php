@@ -3,7 +3,7 @@
 namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
 
 use Drupal\Core\Database\Connection;
-use Drupal\ictv_web_api\helpers\SimpleTaxon;
+// use Drupal\ictv_web_api\helpers\SimpleTaxon;
 
 class ReleaseListEntry {
 
@@ -14,9 +14,9 @@ class ReleaseListEntry {
   public ?string $year = null;
 
   // C-tor
-  public function __construct() {
+  // public function __construct() {
 
-  }
+  // }
 
   /**
    * Build a ReleaseListEntry from an associative array.

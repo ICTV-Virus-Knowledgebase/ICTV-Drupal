@@ -6,21 +6,24 @@
 // C# api call:
 // https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=get_child_taxa&taxnode_id=202312129
 
+// Commented out these imports as they seemed to not be in use:
+// use Drupal\Core\Config;
+// use Drupal\Core\Database;
+// use Drupal\Component\Serialization\Json;
+// use Symfony\Component\HttpFoundation\JsonResponse;
+// use Drupal\Serialization;
+// use Exception;
+
 namespace Drupal\ictv_web_api\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Drupal\Core\Config;
-use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Component\Serialization\Json;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
-use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 // Helpers
@@ -155,7 +158,7 @@ class GetChildTaxa extends ResourceBase {
   } 
 
 
-  public function getByParentTaxon(int $taxnodeID): array {
+  public function getByParentTaxon(int $taxnodeID): ?array {
 
     // Populate the query parameters.
     $parameters = [':taxnode_id' => $taxnodeID];
@@ -180,7 +183,7 @@ class GetChildTaxa extends ResourceBase {
       $queryResults = $this->connection->query($sql, $parameters);
     } 
 
-    catch (Exception $e) {
+    catch (\Exception $e) {
       \Drupal::logger('ictv_web_api')->error($e);
       return null;
     }

@@ -79,20 +79,20 @@ class GetReleaseTaxa extends ResourceBase {
 
   public function get(Request $request): ResourceResponse {
 
-    // 1) Retrieve the 'msl_release' param
+    // Retrieve the 'msl_release' param
     $strMslRelease = $request->get('msl_release');
     $releaseNumber = null;
 
     if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int) $strMslRelease; }
 
-    // 2) The 'top_level_rank' param
+    // The 'top_level_rank' param
     $topLevelRank = $request->get('top_level_rank');
     if (Utils::isNullOrEmpty($topLevelRank)) { $topLevelRank = null; }
 
-    // 3) Call a helper method to replicate the C# logic:
+    // Call a helper method to replicate the C# logic:
     $data = $this->getByReleaseNumber($releaseNumber, $topLevelRank);
 
-    // 4) Build the response
+    // Build the response
     // The C# returns { "taxonomy": taxa }.
     $responseData = [
       'taxonomy' => $data,
@@ -117,9 +117,11 @@ class GetReleaseTaxa extends ResourceBase {
     // return Cache::PERMANENT;
   }
 
-  /**
-   * {@inheritdoc}
-   */
+  /** 
+  * {@inheritdoc} 
+  * This function has to exist in order for the admin to assign user permissions 
+  * to the web service.
+  */
 
   public function permissions() {
     return [];
