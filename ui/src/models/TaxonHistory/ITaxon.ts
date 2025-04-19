@@ -13,12 +13,13 @@ export interface ITaxon {
    isSplit: boolean;
    lineage: string;
    lineageIDs: string;
+   lineageRanks: string;
    mslReleaseNumber: number;
    name: string;
    previousNames: string;
    prevNotes: string;
    prevProposal: string;
-   rankNames: string;
+   rankName?: string;
    taxnodeID: number;
    treeID: number;
    year?: string;

@@ -104,6 +104,20 @@ export enum OrderedTaxaLevel {
    species = 15
 }
 
+export enum ReleaseAction {
+   abolished = "abolished",
+   current = "current",
+   demoted = "demoted",
+   lineageUpdated = "lineage_updated",
+   merged = "merged",
+   moved = "moved",
+   new = "new",
+   promoted = "promoted",
+   renamed = "renamed",
+   split = "split",
+   unchanged = "unchanged"
+}
+
 export enum SearchModifier {
    all_words = "all_words",
    any_words = "any_words",
@@ -270,6 +284,7 @@ export enum WebServiceKey {
 
 // Keys used to set and retrieve data in local (web) storage.
 export enum WebStorageKey {
+   lineageExportSettings = "lineage_export_settings",
    sequenceSearchUserUID = "sequence_search_user_uid"
 }
 
@@ -443,6 +458,67 @@ export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: Ta
          case NameClass.type_material:
             return "A name related to the type specimen or type material upon which the taxon's description is based";
       }
+   }
+}
+
+// Return a display value for this release action.
+export function LookupReleaseAction(releaseAction_: ReleaseAction) {
+
+   switch (releaseAction_) {
+      case ReleaseAction.abolished:
+         return "abolished";
+      case ReleaseAction.current:
+         return "current";
+      case ReleaseAction.demoted:
+         return "demoted";
+      case ReleaseAction.lineageUpdated:
+         return "lineage updated";
+      case ReleaseAction.merged:
+         return "merged";
+      case ReleaseAction.moved:
+         return "moved";
+      case ReleaseAction.new:
+         return "new";
+      case ReleaseAction.promoted:
+         return "promoted";
+      case ReleaseAction.renamed: 
+         return "renamed";
+      case ReleaseAction.split:
+         return "split";
+      case ReleaseAction.unchanged:
+         return "unchanged";
+      default:
+         return releaseAction_;
+   }
+}
+
+export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
+
+   switch (releaseAction_) {
+      case ReleaseAction.abolished:
+         return "The taxon is abolished (deleted) from the MSL. All constituent taxa need to be moved, otherwise they will also be deleted.";
+      case ReleaseAction.current:
+         return "TODO";
+      case ReleaseAction.demoted:
+         return "A higher rank taxon is moved to a lower rank (potentially requiring a rename). This does NOT necessarily imply that the constituent members of the promoted taxon are subject to any change.";
+      case ReleaseAction.lineageUpdated:
+         return "TODO";
+      case ReleaseAction.merged:
+         return "Two separate taxa will be merged into a single taxon. The single taxon may be one of the initial two, or it could be a newly created taxon. All constituent, lower rank members will be automatically moved into the merged taxon.";
+      case ReleaseAction.moved:
+         return "A lower rank taxon and its constituent members is moved from one higher rank taxon to another. (The move usually, but not necessarily, is to a taxon (existing or new) at the same rank as the original parent.)";
+      case ReleaseAction.new:
+         return "Creation of a new taxon. New ranks higher than Species must contain new (or moved) lower-rank members.";
+      case ReleaseAction.promoted:
+         return "A lower rank taxon is moved to a higher rank (usually also requiring a rename). This does NOT necessarily imply that the constituent members of the promoted taxon are subject to any change.";
+      case ReleaseAction.renamed: 
+      return "A taxon is renamed. The new name must adhere to the naming rules of the ICTV Code of Virus Classification and Nomenclature.";
+      case ReleaseAction.split:
+         return "A taxon, along with its constituent members, are split into two or more taxa. The original taxon that was split may, or may not, be retained, and the resulting set of taxa into which the original was split, may consist of existing or new taxa. The change must be accompanied with an indication of where each of the constituent member taxa are to be moved. Theoretically, this action could be accomplished with a combination of changes involving Moved, Abolished, and New, but was created to maintain the history of all changes to the original taxon and its members.";
+      case ReleaseAction.unchanged:
+         return "The taxon is unchanged. This is used to indicate that the taxon is not subject to any change in the current release.";
+      default:
+         return releaseAction_;
    }
 }
 

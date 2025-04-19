@@ -4,9 +4,9 @@ import { AppSettings } from "../../global/AppSettings";
 import { IRelease } from "../../models/TaxonHistory/IRelease";
 import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { ITaxonHistoryResult } from "../../models/TaxonHistory/ITaxonHistoryResult";
-import { IdentifierType, TaxaLevel } from "../../global/Types";
-import Swiper from 'swiper';
-import { Navigation, Pagination } from 'swiper/modules';
+import { IdentifierType, LookupReleaseAction, LookupReleaseActionDefinition, ReleaseAction, TaxaLevel, WebStorageKey } from "../../global/Types";
+/*import Swiper from 'swiper';
+import { Navigation, Pagination } from 'swiper/modules';*/
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 import { Utils } from "../../helpers/Utils";
 import { IIdentifierData } from "../../models/IIdentifierData";
@@ -55,23 +55,41 @@ export class TaxonReleaseHistory {
       dataContainer: HTMLElement,
       messagePanel: HTMLElement,
       releases: HTMLElement,
-      selectedTaxon: HTMLElement
+      selectedTaxon: HTMLElement,
+      settingsDialog: HTMLElement
+   }
+
+   // Settings for the lineage export.
+   exportSettings: {
+      format: ExportFormat,
+      includeEmptyRanks: boolean,
+      includeRanks: boolean,
    }
 
    icons: { [key: string]: string; } = {
+      close: "fa-solid fa-ban",
+      collapsed: "fa fa-chevron-right",
+      copy: "far fa-copy",
+      download: "fas fa-download",
+      expanded: "fa fa-chevron-down",
       file: "far fa-file",
       lineage: "fas fa-chevron-right",
       pdf: "far fa-file-pdf",
+      save: "fa-solid fa-floppy-disk",
+      settings: "fa-solid fa-gear",
       spinner: "fas fa-spinner fa-spin",
+      success: "fas fa-check",
       zip: "far fa-file-archive"
    }
 
    // An ICTV ID provided as a query string parameter.
    ictvID: string = null;
 
+   // Should lineages be displayed horizontally or vertically?
    lineageDisplayFormat: LineageDisplayFormat = LineageDisplayFormat.vertical;
 
-   lineageLeftOffset = 15;
+   // Each lineage rank will be indented by this amount when displayed vertically.
+   lineageLeftOffset = 0.75;
 
    // The time it will take to fade out a status message (for now this is only used by copyToClipboard).
    messageFadeTime: number = 5000;
@@ -86,6 +104,9 @@ export class TaxonReleaseHistory {
    taxNodeID: string = null;
 
    taxonHistory: ITaxonHistoryResult;
+
+   // TEST
+   taxonLookup: Map<string, ITaxon>;
 
    taxonName: string = null;
 
@@ -104,7 +125,15 @@ export class TaxonReleaseHistory {
          dataContainer: null,
          messagePanel: null,
          releases: null,
-         selectedTaxon: null
+         selectedTaxon: null,
+         settingsDialog: null
+      }
+
+      // Default settings for the lineage export.
+      this.exportSettings = {
+         format: ExportFormat.tsv,
+         includeEmptyRanks: false,
+         includeRanks: false
       }
 
       // Populate the all rank names array.
@@ -112,76 +141,52 @@ export class TaxonReleaseHistory {
       for (let rankName in TaxaLevel) {
          if (rankName !== TaxaLevel.tree) { this.allRankNamesArray.push(rankName); }
       }
+
+      // TEST
+      this.taxonLookup = new Map<string, ITaxon>();
    }
 
    addEventHandlers() {
 
       this.elements.releases.addEventListener("click", (event_) => {
 
-         const target = (event_.target as HTMLElement);
-         if (target.nodeName !== "BUTTON") { return false; }
+         let target = (event_.target as HTMLElement);
+      
+         // Was the export settings button clicked?
+         if (target.classList.contains("settings-button")) { return this.openSettingsDialog(); }
 
-         // TODO: don't I need to consume the event???
+         // Was the lineage control clicked?
+         if (target.classList.contains("taxon-lineage")) {
 
-         // Get the action, lineage, and rank names attributes.
-         const action = target.getAttribute("data-action") as ExportAction;
-         const lineage = target.getAttribute("data-lineage");
-         const rankNames = target.getAttribute("data-ranks");
+            // Get the panel's data ID.
+            const dataID = target.getAttribute("data-id");
+            if (!dataID) { return; }
+            
+            event_.preventDefault();
+            event_.stopPropagation();
 
-         const taxNodeID = target.getAttribute("data-taxnode-id");
-
-         // Get the tree ID and try to parse as an integer.
-         const strTreeID: string = target.getAttribute("data-tree-id");
-         const treeID = parseInt(strTreeID);
-         if (isNaN(treeID)) { throw new Error("Invalid tree ID"); }
-
-         // Get the export format (CSV or TSV)
-         const formatEl: HTMLSelectElement = document.querySelector(`${this.containerSelector} .lineage-export-format`);
-         if (!formatEl) { throw new Error("Invalid format Element"); }
-
-         const exportFormat = formatEl.options[formatEl.selectedIndex].value as ExportFormat;
-
-         // Should rank names be included?
-         const ranksEl: HTMLSelectElement = document.querySelector(`${this.containerSelector} .lineage-export-ranks`);
-         if (!ranksEl) { throw new Error("Invalid ranks Element"); }
-
-         let includeRanks = false;
-         if (ranksEl.options[ranksEl.selectedIndex].value === "true") { includeRanks = true; }
-
-         // Should empty ranks be included?
-         const includeEmptyEl: HTMLInputElement = document.querySelector(`${this.containerSelector} .include-empty-control`);
-         if (!includeEmptyEl) { throw new Error("Invalid include empty Element"); }
-
-         const includeEmptyRanks = includeEmptyEl.checked;
-
-         // Use the tree ID to lookup the corresponding release.
-         const release = this.releaseLookup.get(treeID);
-         if (!release) { throw new Error(`Invalid release for tree ID ${treeID}`); }
-
-         // Format the lineage for export, possibly including rank names.
-         const formattedLineage = this.formatLineageForExport(exportFormat, includeEmptyRanks, includeRanks, lineage, rankNames);
-
-         switch (action) {
-
-            case ExportAction.copyToClipboard:
-
-               this.copyToClipboard(formattedLineage, taxNodeID);
-               break;
-
-            case ExportAction.download:
-
-               // Use the MSL release as the filename.
-               const filename = `mslRelease${release.releaseNumber || ""}.${exportFormat}`;
-
-               // Initiate the download.
-               this.download(filename, formattedLineage);
-               break;
-
-            default:
-               throw new Error("Invalid export action");
+            // Toggle the visibility of the lineage panel.
+            return this.toggleLineageDisplay(dataID);
          }
 
-         return false;
+         // Was an export button clicked?
+         const action = target.getAttribute("data-action") as ExportAction;
+         if (!!action) {
+
+            const lineage = target.getAttribute("data-lineage");
+            const rankNames = target.getAttribute("data-ranks");
+            const taxNodeID = target.getAttribute("data-taxnode-id");
+
+            // Get the MSL release number and try to parse as an integer.
+            const strMSL: string = target.getAttribute("data-msl");
+            const releaseNumber = parseInt(strMSL);
+            if (isNaN(releaseNumber)) { throw new Error("Invalid release number"); }
+
+            // Export the lineage
+            return this.exportLineage(action, lineage, rankNames, releaseNumber, taxNodeID);
+         }
+         
+         return;
       })
    }
 
@@ -200,12 +205,11 @@ export class TaxonReleaseHistory {
       // Create the release panel and populate it with HTML.
       const releaseEl = document.createElement("div");
       releaseEl.className = "release";
-      releaseEl.setAttribute("data-tree-id", release_.treeID.toString());
+      releaseEl.setAttribute("data-msl", release_.releaseNumber.toString());
       releaseEl.innerHTML = html;
 
       this.elements.releases.appendChild(releaseEl);
    }
-
 
    addTaxonChanges(parentEl_: HTMLElement, taxon_: ITaxon, index_: number) {
 
@@ -214,10 +218,10 @@ export class TaxonReleaseHistory {
       if (index_ > 0) { html += "<hr />"; }
 
       // Format the lineage (taxon names and ranks).
-      const formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.rankNames);
+      const formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.lineageRanks);
 
       // Get the rank name
-      let rankNames = taxon_.rankNames;
+      let rankNames = taxon_.lineageRanks;
       rankNames = rankNames.substring(0, rankNames.lastIndexOf(";"));
       const rankNameArray = rankNames.split(";");
       const rankName = Utils.safeTrim(rankNameArray[rankNameArray.length - 1]);
@@ -225,7 +229,7 @@ export class TaxonReleaseHistory {
       // Create the summary of changes for this taxon.
       let changeSummary = this.createChangeSummary(taxon_);
 
-      let proposalRow = "";
+      let proposalPanel = "";
 
       // Proposal link(s)
       let proposalLinks = "";
@@ -234,34 +238,38 @@ export class TaxonReleaseHistory {
          // If there are multiple proposal files, they should be delimited by semicolons.
          const filenames = taxon_.prevProposal.split(";");
          if (filenames && filenames.length > 0) {
+
+            let previousFilename = null;
+
             filenames.forEach((filename_: string) => {
                filename_ = filename_.trim();
-               if (filename_.length > 0) {
+               if (filename_.length < 1) { return; }
 
-                  let displayLabel = filename_;
+               // Make sure we don't add the same filename multiple times.
+               if (filename_ === previousFilename) { return; }
 
-                  const periodIndex = filename_.lastIndexOf(".");
-                  if (periodIndex > 0) { displayLabel = filename_.substring(0, periodIndex); }
+               let displayLabel = filename_;
 
-                  // Get an icon class specific to the file type.
-                  const iconClass = this.getFileIconClass(filename_);
+               const periodIndex = displayLabel.lastIndexOf(".");
+               if (periodIndex > 0) { displayLabel = filename_.substring(0, periodIndex); }
 
-                  // Separate multiple links with a line break.
-                  if (proposalLinks.length > 0) { proposalLinks += "<br/>"; }
+               // Get an icon class specific to the file type.
+               const iconClass = this.getFileIconClass(filename_);
 
-                  // Add a link to the release proposal file(s).
-                  proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
-                     <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
-                     class="release-proposal-link">${displayLabel}</a>`;
-               }
+               // Separate multiple links with a line break.
+               if (proposalLinks.length > 0) { proposalLinks += "<br/>"; }
+
+               // Add a link to the release proposal file(s).
+               proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
+                  <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
+                  class="release-proposal-link">${displayLabel}</a>`;   
             })
          }
 
          if (!!proposalLinks) {
 
             let proposalsTitle = filenames.length > 1 ? "Proposals" : "Proposal";
-
-            proposalRow =
+            proposalPanel =
                `<div class="taxon-proposal">
                   <div class="proposals-title">${proposalsTitle}:</div>
                   <div class="proposal-links">${proposalLinks}</div>
@@ -275,39 +283,47 @@ export class TaxonReleaseHistory {
             <div class="taxon-name">${taxon_.name}</div>
             <div class="taxon-changes">${changeSummary}</div>
          </div>
-         
-         <div class="taxon-lineage">${formattedLineage}</div>
-         ${proposalRow}
-         <div class="lineage-export-row">
+         <div class="taxon-lineage" data-id="lineage_${taxon_.taxnodeID}">
+            <div class="lineage-control">
+               <i class="${this.icons.collapsed}"></i>
+            </div>
+            <div class="lineage-label">Lineage</div>
+         </div>
+         <div class="taxon-lineage-panel" data-id="lineage_${taxon_.taxnodeID}" data-taxnodeid="${taxon_.taxnodeID}">
+            <div class="formatted-lineage">${formattedLineage}</div>
+
+            <div class="lineage-export-row">
                <div class="lineage-title">Export lineage:</div>
                <button class="btn btn-success lineage-copy-control"
                   data-action="${ExportAction.copyToClipboard}"
-                  data-lineage="${taxon_.lineage}"
-                  data-ranks="${taxon_.rankNames}"
-                  data-taxnode-id="${taxon_.taxnodeID}" 
-                  data-tree-id="${taxon_.treeID}">
-                  <i class="far fa-copy"></i> Copy to the clipboard
+                  data-lineage="${taxon_.lineage}" 
+                  data-msl="${taxon_.mslReleaseNumber}"
+                  data-ranks="${taxon_.lineageRanks}"
+                  data-taxnode-id="${taxon_.taxnodeID}">
+                  <i class="${this.icons.copy}"></i> Copy to the clipboard
                </button>
-               <span class="between-buttons">or</span>
                <button class="btn btn-primary lineage-download-control"
                   data-action="${ExportAction.download}" 
-                  data-lineage="${taxon_.lineage}"
-                  data-ranks="${taxon_.rankNames}"
-                  data-taxnode-id="${taxon_.taxnodeID}" 
-                  data-tree-id="${taxon_.treeID}">
-                  <i class="fas fa-download"></i> Download
+                  data-lineage="${taxon_.lineage}" 
+                  data-msl="${taxon_.mslReleaseNumber}"
+                  data-ranks="${taxon_.lineageRanks}"
+                  data-taxnode-id="${taxon_.taxnodeID}">
+                  <i class="${this.icons.download}"></i> Download
                </button>
+               <button class="btn btn-default settings-button"><i class="${this.icons.settings}"></i> Update settings</button>
                <div class="copy-status" data-taxnode-id="${taxon_.taxnodeID}" style="display: none">
-                  <i class="fas fa-check"></i> Copied successfully
+                  <i class="${this.icons.success}"></i> Copied successfully
                </div>
-         </div>`;
+            </div>
+
+         </div>
+         ${proposalPanel}`;
 
       let taxonChangesEl: HTMLDivElement = document.createElement("div");
       taxonChangesEl.className = "taxon-changes";
       taxonChangesEl.innerHTML = html;
       parentEl_.append(taxonChangesEl);
    }
-
 
    // Copy the text to the clipboard.
    // Info: https://caniuse.com/?search=clipboard
@@ -388,36 +404,36 @@ export class TaxonReleaseHistory {
       let summary = "";
 
       // The order of changes is New, Abolished, Promoted, Demoted, Moved, Lineage updated, Merged, Split, Renamed, and Unchanged.
-      if (taxon_.isNew) { summary + `is <span class=\"change new\">new</span>`; }
-      if (taxon_.isDeleted) { summary + `was <span class=\"change abolished\">abolished</span>`; }
-      if (taxon_.isPromoted) { summary + `was <span class=\"change promoted\">promoted</span>`; }
-      if (taxon_.isDemoted) { summary + `was <span class=\"change demoted\">demoted</span>`; }
+      if (taxon_.isNew) { summary += `is ${this.formatAction(ReleaseAction.new)}`; }
+      if (taxon_.isDeleted) { summary += `was ${this.formatAction(ReleaseAction.abolished)}`; }
+      if (taxon_.isPromoted) { summary += `was ${this.formatAction(ReleaseAction.promoted)}`; }
+      if (taxon_.isDemoted) { summary += `was ${this.formatAction(ReleaseAction.demoted)}`; }
 
       if (taxon_.isMoved) {
          if (summary.length > 0) { summary += ", "; }
-         summary += `was <span class=\"change moved\">moved</span>`;
+         summary += `was ${this.formatAction(ReleaseAction.moved)}`;
       }
 
       if (taxon_.isLineageUpdated) {
          if (summary.length > 0) { summary += ", "; }
-         summary += `had its <span class=\"change lineage-updated\">lineage updated</span>`;
+         summary += `had its ${this.formatAction(ReleaseAction.lineageUpdated)}`;
       }
 
       if (taxon_.isMerged || taxon_.isSplit || taxon_.isRenamed) {
 
          if (taxon_.isMerged) {
             if (summary.length > 0) { summary += ", "; }
-            summary += `was <span class=\"change merged\">merged</span>`;
+            summary += `was ${this.formatAction(ReleaseAction.merged)}`;
          }
 
          if (taxon_.isSplit) {
             if (summary.length > 0) { summary += ", "; }
-            summary += `was <span class=\"change split\">split</span>`;
+            summary += `was ${this.formatAction(ReleaseAction.split)}`;
          }
 
          if (taxon_.isRenamed) {
             if (summary.length > 0) { summary += ", "; }
-            summary += `was <span class=\"change renamed\">renamed</span>`;
+            summary += `was ${this.formatAction(ReleaseAction.renamed)}`;
          }
 
          let previousNames = Utils.safeTrim(taxon_.previousNames);
@@ -428,11 +444,59 @@ export class TaxonReleaseHistory {
          }
       }
 
-      if (summary.length < 1) { summary = "is <span class=\"change unchanged\">unchanged</span>"; }
+      if (summary.length < 1) {
+         summary = (taxon_.mslReleaseNumber === this.currentMslRelease) 
+            ? `is ${this.formatAction(ReleaseAction.current)}`
+            : `is ${this.formatAction(ReleaseAction.unchanged)}`;
+      }
 
       return summary;
    }
 
+   // Create HTML for the export settings dialog.
+   createSettingsDialogHTML() {
+      
+      // Which export format should be selected?
+      let csvSelected = this.exportSettings.format === ExportFormat.csv ? "selected" : "";
+      let tsvSelected = this.exportSettings.format === ExportFormat.tsv ? "selected" : "";
+
+      // Should empty ranks be included?
+      let includeEmpty = this.exportSettings.includeEmptyRanks ? "checked" : "";
+
+      // Should rank names be included?
+      let ranksSelected = this.exportSettings.includeRanks ? "selected" : "";
+      let ranksNotSelected = !this.exportSettings.includeRanks ? "selected" : "";
+
+      // Return the HTML for the dialog.
+      return `<div id="export_settings_dialog" class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+               <div class="modal-title">Lineage export settings</div>
+            </div>
+            <div class="modal-body">
+               <div class="settings-row">
+                  <div class="settings-label">Export lineage as </div>
+                  <select class="lineage-export-format">
+                     <option value="${ExportFormat.tsv}" ${tsvSelected}>tab-separated text</option>
+                     <option value="${ExportFormat.csv}" ${csvSelected}>comma-separated text</option>
+                  </select>
+                  <select class="lineage-export-ranks">
+                     <option value="true" ${ranksSelected}>with rank names</option>
+                     <option value="false" ${ranksNotSelected}>without rank names</option>
+                  </select>
+               </div>
+            <div class="settings-row">
+               <div class="settings-label">Include empty ranks</div>
+               <input type="checkbox" class="include-empty-control" ${includeEmpty}></input>
+            </div>
+            </div>
+            <div class="modal-footer">
+               <button class="btn btn-success save-button"><i class="${this.icons.save}"></i> Save</button>
+               <button class="btn btn-default close-button"><i class="${this.icons.close}"></i> Close</button>
+            </div>
+         </div>
+      </div>`;
+   }
 
    // Create HTML for a taxon detail object.
    createTaxonHTML(taxon_: ITaxon, type_: TaxonType, xOfY_: string = "") {
@@ -457,15 +521,19 @@ export class TaxonReleaseHistory {
             : `Your selection (${releaseYear} Release, MSL #${taxon_.mslReleaseNumber})`;
       }
 
+      // Lineage ranks
+      let lineageRanks = taxon_.lineageRanks;
+      if (lineageRanks.endsWith(";")) { lineageRanks = lineageRanks.substring(0, lineageRanks.length - 1); }
+
       // Display the full lineage of the taxa.
-      if (taxon_.lineage && taxon_.lineageIDs && taxon_.rankNames) {
+      if (taxon_.lineage && taxon_.lineageIDs && lineageRanks) {
 
          // Format the lineage as HTML.
-         formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.rankNames);
+         formattedLineage = this.displayLineage(taxon_.lineage, taxon_.lineageIDs, lineageRanks);
       }
 
-      const rankNames = taxon_.rankNames.split(";");
-      let rankName = Utils.safeTrim(rankNames[rankNames.length - 1]);
+      const rankArray = lineageRanks.split(";");
+      let rankName = Utils.safeTrim(rankArray[rankArray.length - 1]);
 
       let html = 
          `<div class="taxon ${type_} visible">
@@ -479,18 +547,18 @@ export class TaxonReleaseHistory {
       return html;
    }
 
-   displayLineage(lineage_: string, lineageIDs_: string, ranks_: string): string {
+   displayLineage(lineage_: string, lineageIDs_: string, lineageRanks_: string): string {
 
       let html = "";
 
       if (lineage_.endsWith(";")) { lineage_ = lineage_.substring(0, lineage_.length - 1); }
       if (lineageIDs_.endsWith(";")) { lineageIDs_ = lineageIDs_.substring(0, lineageIDs_.length - 1); }
-      if (ranks_.endsWith(";")) { ranks_ = ranks_.substring(0, ranks_.length - 1); }
+      if (lineageRanks_.endsWith(";")) { lineageRanks_ = lineageRanks_.substring(0, lineageRanks_.length - 1); }
 
       // Create arrays from the delimited strings.
       const lineageArray = lineage_.split(";");
       const lineageIdArray = lineageIDs_.split(";");
-      const rankArray = ranks_.split(";");
+      const rankArray = lineageRanks_.split(";");
 
       // Validate the array lengths.
       if (lineageArray.length !== rankArray.length) { throw new Error("The number of taxa and ranks don't match"); }
@@ -522,7 +590,7 @@ export class TaxonReleaseHistory {
          } else {
 
             // Add the rank and linked name.
-            html += `<div class="lineage-row" style="margin-left: ${leftOffset}px">
+            html += `<div class="lineage-row" style="margin-left: ${leftOffset}rem">
                   <div class="rank-name">${rankName}</div>: 
                   <div class="taxon-name">${linkedName}</div>
                </div>`;
@@ -562,8 +630,51 @@ export class TaxonReleaseHistory {
       }
    }
 
+   // Export the selected lineage.
+   exportLineage(action_: ExportAction, lineage_: string, rankNames_: string, releaseNumber_: number, taxNodeID_: string) {
+
+      // Use the release number to lookup the corresponding release.
+      const release = this.releaseLookup.get(releaseNumber_);
+      if (!release) { throw new Error(`Invalid release for release number ${releaseNumber_}`); }
+
+      // Format the lineage for export, possibly including rank names.
+      const formattedLineage = this.formatLineageForExport(this.exportSettings.format, this.exportSettings.includeEmptyRanks, 
+         this.exportSettings.includeRanks, lineage_, rankNames_);
+
+      switch (action_) {
+
+         case ExportAction.copyToClipboard:
+
+            this.copyToClipboard(formattedLineage, taxNodeID_);
+            break;
+
+         case ExportAction.download:
+
+            // Use the MSL release as the filename.
+            const filename = `mslRelease${release.releaseNumber || ""}.${this.exportSettings.format}`;
+
+            // Initiate the download.
+            this.download(filename, formattedLineage);
+            break;
+
+         default:
+            throw new Error("Invalid lineage export action");
+      }
+
+      return;
+   }
+
+   // Format the action to include a tooltip.
+   formatAction(action_: ReleaseAction) {
+
+      let label = LookupReleaseAction(action_);
+      let definition = LookupReleaseActionDefinition(action_);
+
+      return `<span class=\"change ${action_} has-tooltip\">${label}<span class="tooltip">${definition}</span></span>`;
+   }
+
    // Format the lineage for export, possibly including rank names.
-   formatLineageForExport(format_: string, includeEmptyRanks_: boolean, includeRanks_: boolean, names_: string,
+   formatLineageForExport(format_: ExportFormat, includeEmptyRanks_: boolean, includeRanks_: boolean, names_: string,
       rankNames_: string): string {
 
       if (!names_) { throw new Error("Invalid names parameter"); }
@@ -755,32 +866,25 @@ export class TaxonReleaseHistory {
 
    async initialize() {
 
+      // Look for export settings in web storage.
+      let settings = localStorage.getItem(WebStorageKey.lineageExportSettings);
+      if (!!settings && settings.length > 0) { this.exportSettings = JSON.parse(settings); }
+
       // Generate the component's HTML.
       let html: string =
          `<div class="message-panel" data-is-visible="true"></div>
+         <div class="test-panel">
+            <b>TEST!</b>&nbsp;
+            <label>Lineage orientation</label>
+            <select class="lineage-display-format">
+               <option value="${LineageDisplayFormat.horizontal}">Horizontal</option>
+               <option value="${LineageDisplayFormat.vertical}" selected>Vertical</option>
+            </select>
+         </div>
          <div class="data-container" data-is-visible="false">
-
-            <div class="selected-taxon">TODO: display selected taxon</div>
-            
-            <div class="settings-panel">
-               <div class="settings-title">Export settings</div>
-               <div class="settings-row">
-                  <div class="settings-label">Export lineage as </div>
-                  <select class="lineage-export-format">
-                     <option value="${ExportFormat.tsv}" selected>tab-separated text</option>
-                     <option value="${ExportFormat.csv}">comma-separated text</option>
-                  </select>
-                  <select class="lineage-export-rank">
-                     <option value="true">with rank names</option>
-                     <option value="false" selected>without rank names</option>
-                  </select>
-               </div>
-               <div class="settings-row">
-                  <div class="settings-label">Include empty ranks</div>
-                  <input type="checkbox" class="include-empty-control" checked></input>
-               </div>
-            </div>
+            <div class="selected-taxon"></div>
             <div class="releases"></div>
+            ${this.createSettingsDialogHTML()}
          </div>`;
 
       // Get a reference to the container Element.
@@ -798,6 +902,55 @@ export class TaxonReleaseHistory {
 
       this.elements.selectedTaxon = this.elements.container.querySelector(".selected-taxon");
       if (!this.elements.selectedTaxon) { throw new Error("Invalid selected taxon element"); }
+
+      this.elements.settingsDialog = this.elements.container.querySelector("#export_settings_dialog");
+      if (!this.elements.settingsDialog) { throw new Error("Invalid settings dialog element"); }
+
+      this.elements.settingsDialog.addEventListener("click", (event_) => {
+         
+         const target = (event_.target) as HTMLElement;
+
+         if (target.classList.contains("modal-dialog") || target.classList.contains("close-button")) {
+            this.elements.settingsDialog.style.display = "none";
+
+         } else if (target.classList.contains("save-button")) {
+            this.saveExportSettings();
+            this.elements.settingsDialog.style.display = "none";
+         }
+
+         return;
+      })
+
+      // TESTING
+      const lineageFormatEl: HTMLSelectElement = this.elements.container.querySelector(".lineage-display-format");
+      if (!lineageFormatEl) { throw new Error("Invalid lineage format Element"); }
+
+      lineageFormatEl.addEventListener("change", (event_) => {
+
+         const target = (event_.target) as HTMLSelectElement;
+         this.lineageDisplayFormat = target.value as LineageDisplayFormat;
+
+         const lineagePanels = this.elements.container.querySelectorAll(".taxon-lineage-panel");
+         if (!lineagePanels) { throw new Error("Invalid lineage rows"); }
+
+         lineagePanels.forEach((panel_: HTMLDivElement) => {
+            
+            const taxnodeID = panel_.getAttribute("data-taxnodeid");
+            if (!taxnodeID) { throw new Error("Invalid taxnode ID"); }
+
+            // Lookup the taxon by its taxnode ID. 
+            const taxon = this.taxonLookup.get(taxnodeID);
+            if (!taxon) { throw new Error(`Invalid taxon for taxnode ID ${taxnodeID}`); }
+
+            // Format the lineage (taxon names and ranks).
+            const formattedLineage = this.displayLineage(taxon.lineage, taxon.lineageIDs, taxon.lineageRanks);
+
+            const lineageEl = panel_.querySelector(".formatted-lineage");
+            if (!lineageEl) { throw new Error("Invalid lineage Element"); }
+
+            lineageEl.innerHTML = formattedLineage;
+         })
+      })
 
       //---------------------------------------------------------------------------------------------------------------------------------------------------
       // Look for a taxnode_id, ictv_id, taxon_name, or other ID in the URL query parameters.
@@ -842,6 +995,12 @@ export class TaxonReleaseHistory {
       return await AlertBuilder.displayError("No valid parameters were provideed. The following parameters are accepted: taxnode_id, ictv_id, and taxon_name");
    }
 
+   // Open the lineage export settings dialog.
+   openSettingsDialog() {
+      this.elements.settingsDialog.style.display = "block";
+      return;
+   }
+
    processHistory() {
 
       // Validate the releases
@@ -857,14 +1016,14 @@ export class TaxonReleaseHistory {
       this.elements.container.setAttribute("data-is-visible", "true");
       this.elements.messagePanel.setAttribute("data-is-visible", "false");
 
-      // TODO: Display the selected taxon.
+      // Display the selected taxon.
+      const selectedTaxonHTML = this.createTaxonHTML(this.taxonHistory.selectedTaxon, TaxonType.selected);
+      this.elements.selectedTaxon.innerHTML = selectedTaxonHTML;
 
-
-
-      // A lookup from release tree ID to the corresponding release object.
+      // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
 
-      // An array of release tree IDs in descending order.
+      // An array of MSL release numbers in descending order.
       let releaseOrder = [];
 
       // Iterate over all releases where this taxon has been updated.
@@ -873,8 +1032,8 @@ export class TaxonReleaseHistory {
          // Create HTML for the release and add it to the page.
          this.addReleasePanel(release_);
 
-         // Add the release's tree ID to the ordered list
-         releaseOrder.push(release_.treeID);
+         // Add the release's MSL release number to the ordered list
+         releaseOrder.push(release_.releaseNumber);
 
          // Initialize the release's aray of modified taxa.
          release_.taxa = [];
@@ -885,23 +1044,22 @@ export class TaxonReleaseHistory {
          release_.rankNames = rankNames;
 
          // Determine the CSS selector of the release's "taxa Element".
-         let taxaElementSelector = `.releases .release[data-tree-id="${release_.treeID}"] .release-body`;
+         let taxaElementSelector = `.releases .release[data-msl="${release_.releaseNumber}"] .release-body`;
 
          release_.taxaElement = document.querySelector(taxaElementSelector);
-         if (!release_.taxaElement) { throw new Error(`Invalid release panel for tree ID ${release_.treeID}`); }
+         if (!release_.taxaElement) { throw new Error(`Invalid release panel for MSL release number ${release_.releaseNumber}`); }
 
          // Add the release to the lookup.
-         this.releaseLookup.set(release_.treeID, release_);
+         this.releaseLookup.set(release_.releaseNumber, release_);
       })
 
       // Iterate over all taxa from the taxon's history.
       this.taxonHistory.taxa.forEach((taxon_: ITaxon) => {
 
-         const treeID = taxon_.treeID;
+         const releaseNumber = taxon_.mslReleaseNumber;
 
-         const release = this.releaseLookup.get(treeID);
+         const release = this.releaseLookup.get(releaseNumber);
          if (!release) { console.log("invalid release for taxon ", taxon_); return; }
-            //throw new Error(`Invalid release for tree ID ${treeID}`); }
 
          const taxonIndex = release.taxa.length;
 
@@ -909,13 +1067,64 @@ export class TaxonReleaseHistory {
          release.taxa.push(taxon_);
 
          // Add the release back to the lookup.
-         this.releaseLookup.set(treeID, release);
+         this.releaseLookup.set(releaseNumber, release);
 
          this.addTaxonChanges(release.taxaElement, taxon_, taxonIndex);
+
+         // TEST
+         this.taxonLookup.set(taxon_.taxnodeID.toString(), taxon_);
       })
 
       // Add event handlers to all controls.
       this.addEventHandlers();
+   }
+
+   saveExportSettings() {
+
+      // The export format (CSV or TSV)
+      const formatEl: HTMLSelectElement = document.querySelector(`${this.containerSelector} .modal-dialog .lineage-export-format`);
+      if (!formatEl) { throw new Error("Invalid format Element"); }
+
+      this.exportSettings.format = formatEl.options[formatEl.selectedIndex].value as ExportFormat;
+
+      // Should rank names be included?
+      const ranksEl: HTMLSelectElement = document.querySelector(`${this.containerSelector} .modal-dialog .lineage-export-ranks`);
+      if (!ranksEl) { throw new Error("Invalid ranks Element"); }
+
+      this.exportSettings.includeRanks = false;
+      if (ranksEl.options[ranksEl.selectedIndex].value === "true") { this.exportSettings.includeRanks = true; }
+
+      // Should empty ranks be included?
+      const includeEmptyEl: HTMLInputElement = document.querySelector(`${this.containerSelector} .modal-dialog .include-empty-control`);
+      if (!includeEmptyEl) { throw new Error("Invalid include empty Element"); }
+
+      this.exportSettings.includeEmptyRanks = includeEmptyEl.checked;
+
+      // Persist the settings to local storage.
+      const settings = JSON.stringify(this.exportSettings);
+      localStorage.setItem(WebStorageKey.lineageExportSettings, settings);
+
+      return;
+   }
+
+   // Toggle the display of the lineage for the taxon with the data index provided.
+   toggleLineageDisplay(dataID_: string) {
+
+      const containerEl = this.elements.container.querySelector(`.taxon-lineage-panel[data-id="${dataID_}"]`) as HTMLElement;
+      if (!containerEl) { throw new Error(`Invalid taxon lineage element for ${dataID_}`); }
+
+      const iconEl = this.elements.container.querySelector(`.taxon-lineage[data-id="${dataID_}"] .lineage-control i`) as HTMLElement;
+      if (!iconEl) { return; }
+
+      if (containerEl.classList.contains("visible")) {
+         containerEl.classList.remove("visible");
+         iconEl.className = this.icons.collapsed;
+      } else {
+         containerEl.classList.add("visible");
+         iconEl.className = this.icons.expanded;
+      }
+
+      return;
    }
 
 }
