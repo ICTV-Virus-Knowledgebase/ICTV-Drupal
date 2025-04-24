@@ -2,19 +2,21 @@
 namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
 
 class TaxonHistoryRelease {
-  public string $rankNames;
+  public ?string $rankNames;
   public int    $releaseNumber;
-  public string $title;
+  public ?string $title;
   public int    $treeID;
-  public string $year;
+  public ?string $year;
 
   public static function fromArray(array $d): self {
+
     $o = new self();
-    $o->rankNames     = $d['rank_names'];
-    $o->releaseNumber = (int)$d['release_number'];
-    $o->title         = $d['release_title'];
+    
+    $o->rankNames     = $d['rel_rank_names'];
+    $o->releaseNumber = (int)$d['rel_release_number'];
+    $o->title         = $d['rel_title'];
     $o->treeID        = (int)$d['tree_id'];
-    $o->year          = $d['year'];
+    $o->year          = $d['rel_year'];
     return $o;
   }
 

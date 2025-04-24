@@ -3,19 +3,24 @@
 namespace Drupal\ictv_web_api\helpers;
 
 use Drupal\Core\Database\Connection;
+use Exception;
+
+// Models
 use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonHistoryDetail;
 use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonHistoryRelease;
 use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonHistoryTaxon;
-use Exception;
-
 
 class TaxonReleaseHistory {
 
   /**
-   * Call the SQL Server proc `getTaxonReleaseHistory` and slice its 3 resultsets.
+   * Call the (single‐result) proc `getTaxonReleaseHistory`
+   *
+   * @param Connection   $connection
+   * @param int|null     $currentMSL
+   * @param int          $taxNodeID
    *
    * @return array{
-   *   details: array,
+   *   detail: obj,
    *   messages: string,
    *   releases: array,
    *   taxa: array
@@ -23,40 +28,64 @@ class TaxonReleaseHistory {
    */
 
   public static function fetch(Connection $connection, ?int $currentMSL, int $taxNodeID): array {
+
     $messages = '';
     $details  = [];
     $releases = [];
     $taxa     = [];
 
-    $parameters = [":currentMSL" => $currentMSL, ":taxNodeID" => $taxNodeID];
-    $sql = "CALL getTaxonReleaseHistory(:currentMSL, :taxNodeID);";
-    $stmt = $connection->query($sql, $parameters);
-    // $stmt->nextRowset();
+    // call the stored procedure
+    $sql = 'CALL getTaxonReleaseHistory(:currentMSL, :taxNodeID)';
+    $params = [
+      ':currentMSL' => $currentMSL,
+      ':taxNodeID'  => $taxNodeID,
+    ];
 
-    \Drupal::logger('ictv_web_api')->debug('Statement executed: @stmt', ['@stmt' => print_r($stmt, TRUE)]);
+    try {
+      $rows = $connection->query($sql, $params)->fetchAll(\PDO::FETCH_ASSOC);
+      // \Drupal::logger('ictv_web_api')->debug('Query results: @rows', ['@rows' => print_r($rows, TRUE)]);
+    }
+
+    catch (\Exception $e) {
+
+      // if the proc itself failed, capture its message
+      return [
+        'details'  => [],
+        'messages' => $e->getMessage(),
+        'releases' => [],
+        'taxa'     => [],
+      ];
+    }
+
+    foreach ($rows as $r) {
+
+      // use the real column name coming from mariadb
+      $type = strtoupper($r['rec_type'] ?? '');   // TAXON / RELEASE / MODIFICATION
     
-    // $params = [":currentMSL" => $currentMSL, ":taxNodeID" => $taxNodeID];
+      switch ($type) {
+        case 'TAXON':         // this is the “detail” table in the old API
+          $details[]  = TaxonHistoryDetail::fromArray($r)->normalize();
+          break;
+    
+        case 'RELEASE':
+          $releases[] = TaxonHistoryRelease::fromArray($r)->normalize();
+          break;
+    
+        case 'MODIFICATION':
+          $taxa[]     = TaxonHistoryTaxon::fromArray($r)->normalize();
+          break;
+      }
+    }
 
-    // $sql1  = 'CALL getTaxonReleaseHistoryDetails :currentMSL, :taxNodeID';
-    // $rows1 = $connection->query($sql1, $params)->fetchAllAssoc(\PDO::FETCH_ASSOC);
-    // foreach ($rows1 as $row) {
-    //   $details[] = TaxonHistoryDetail::fromArray($row)->normalize();
-    // }
-  
-    // $sql2  = 'CALL getTaxonReleaseHistoryDetails :currentMSL, :taxNodeID';
-    // $rows2 = $connection->query($sql2, $params)->fetchAllAssoc(\PDO::FETCH_ASSOC);
-    // foreach ($rows2 as $row) {
-    //   $details[] = TaxonHistoryRelease::fromArray($row)->normalize();
-    // }
-  
-    // $sql3  = 'CALL getTaxonReleaseHistoryDetails :currentMSL, :taxNodeID';
-    // $rows3 = $connection->query($sql3, $params)->fetchAllAssoc(\PDO::FETCH_ASSOC);
-    // foreach ($rows3 as $row) {
-    //   $details[] = TaxonHistoryTaxon::fromArray($row)->normalize();
-    // }
-  
+    // \Drupal::logger('ictv_web_module')->debug('Details array: @details', ['@details' => print_r($details, TRUE)]);
+
+    $detailObj = null;
+    if (!empty($details)) {
+        $detailObj = $details[0];   // first (only) TAXON row
+    }
+
     return [
-      'details'  => $details,
+      'detail'  => $detailObj,
       'messages' => $messages,
       'releases' => $releases,
       'taxa'     => $taxa,

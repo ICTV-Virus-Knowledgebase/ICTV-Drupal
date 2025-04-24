@@ -46,3 +46,27 @@ services:
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }
+
+  ictv_web_api.getVirusIsolates:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetVirusIsolates'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getTaxonHistory:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTaxonHistory'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getByReleasePreExpanded:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetByReleasePreExpanded'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_web_api.getTreeExpandedToNode:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTreeExpandedToNode'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
