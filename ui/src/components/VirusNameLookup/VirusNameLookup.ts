@@ -5,6 +5,7 @@ import DataTables from "datatables.net-dt";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
 import { LookupNameClass, LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
+import { Utils } from "../../helpers/Utils";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
 
@@ -22,8 +23,7 @@ export class VirusNameLookup {
    // The DOM selector of the module's container Element.
    containerSelector: string = null;
 
-   currentVMR: string = AppSettings.currentVMR;
-
+   // Important DOM Elements used by the component.
    elements: {
       abolishedTabButton: HTMLElement,
       abolishedTabCount: HTMLElement,
@@ -73,6 +73,7 @@ export class VirusNameLookup {
    // Configuration settings
    settings = {
       currentMslRelease: NaN,
+      currentVMR: null,
       pageSize: 10
    }
 
@@ -82,8 +83,16 @@ export class VirusNameLookup {
       if (!containerSelector_) { throw new Error("Invalid container selector in VirusNameLookup"); }
       this.containerSelector = containerSelector_;
 
-      // Use the current MSL release from the AppSettings.
+      // Get the current MSL release from the AppSettings.
       this.settings.currentMslRelease = AppSettings.currentMslRelease;
+
+      // Get the current VMR version from the AppSettings and default to the current MSL release.
+      this.settings.currentVMR = AppSettings.currentVMR;
+      if (!this.settings.currentVMR) { this.settings.currentVMR = `${this.settings.currentMslRelease} v1`; } 
+
+      // Make sure the current VMR version doesn't include the "VMR" or "MSL" prefix.
+      Utils.safeTrim(this.settings.currentVMR.replace("VMR ", ""));
+      Utils.safeTrim(this.settings.currentVMR.replace("MSL ", ""));
 
       this.elements = {
          abolishedTabButton: null,
@@ -308,7 +317,7 @@ export class VirusNameLookup {
                source = `ICTV: MSL ${result_.versionID}`;
                break;
             case TaxonomyDB.ictv_vmr:
-               source = `ICTV: VMR ${this.currentVMR}`;
+               source = `ICTV: VMR MSL ${this.settings.currentVMR}`;
                break;
             case TaxonomyDB.ncbi_taxonomy:
                source = "NCBI";
