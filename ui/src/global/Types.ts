@@ -23,12 +23,12 @@ export enum IdParameterName {
    ictv = "ictv",
    ictv_id = "ictv_id",
 
-   // ID
-   id = "id",
-
    // VMR ID
    vmr = "vmr",
    vmr_id = "vmr_id",
+
+   // ID
+   id = "id",
 
    // MSL ID
    msl = "msl",
@@ -496,27 +496,27 @@ export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
 
    switch (releaseAction_) {
       case ReleaseAction.abolished:
-         return "The taxon is abolished (deleted) from the MSL. All constituent taxa need to be moved, otherwise they will also be deleted.";
+         return "The taxon is abolished (deleted) from the MSL";
       case ReleaseAction.current:
-         return "TODO";
+         return "This is the latest MSL release";
       case ReleaseAction.demoted:
-         return "A higher rank taxon is moved to a lower rank (potentially requiring a rename). This does NOT necessarily imply that the constituent members of the promoted taxon are subject to any change.";
+         return "A higher rank taxon is moved to a lower rank (potentially requiring a rename)";
       case ReleaseAction.lineageUpdated:
-         return "TODO";
+         return "One or more higher rank taxa have been updated";
       case ReleaseAction.merged:
-         return "Two separate taxa will be merged into a single taxon. The single taxon may be one of the initial two, or it could be a newly created taxon. All constituent, lower rank members will be automatically moved into the merged taxon.";
+         return "Two separate taxa will be merged into a single taxon";
       case ReleaseAction.moved:
-         return "A lower rank taxon and its constituent members is moved from one higher rank taxon to another. (The move usually, but not necessarily, is to a taxon (existing or new) at the same rank as the original parent.)";
+         return "A lower rank taxon and its constituent members were moved from one higher rank taxon to another taxon";
       case ReleaseAction.new:
-         return "Creation of a new taxon. New ranks higher than Species must contain new (or moved) lower-rank members.";
+         return "Creation of a new taxon";
       case ReleaseAction.promoted:
-         return "A lower rank taxon is moved to a higher rank (usually also requiring a rename). This does NOT necessarily imply that the constituent members of the promoted taxon are subject to any change.";
+         return "A lower rank taxon is moved to a higher rank";
       case ReleaseAction.renamed: 
-      return "A taxon is renamed. The new name must adhere to the naming rules of the ICTV Code of Virus Classification and Nomenclature.";
+      return "A taxon is renamed";
       case ReleaseAction.split:
-         return "A taxon, along with its constituent members, are split into two or more taxa. The original taxon that was split may, or may not, be retained, and the resulting set of taxa into which the original was split, may consist of existing or new taxa. The change must be accompanied with an indication of where each of the constituent member taxa are to be moved. Theoretically, this action could be accomplished with a combination of changes involving Moved, Abolished, and New, but was created to maintain the history of all changes to the original taxon and its members.";
+         return "A taxon, along with its constituent members, are split into two or more taxa";
       case ReleaseAction.unchanged:
-         return "The taxon is unchanged. This is used to indicate that the taxon is not subject to any change in the current release.";
+         return "The taxon has not been changed in this release";
       default:
          return releaseAction_;
    }

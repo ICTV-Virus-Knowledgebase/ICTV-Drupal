@@ -10,7 +10,7 @@ BEGIN
    DECLARE vocabID INT;
 
 
-   -- Updates for Sequence Classification in late February 2025.
+   -- Updates for SeqSearch in Spring 2025.
 
    -- Get the job_status vocabulary
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'job_status');

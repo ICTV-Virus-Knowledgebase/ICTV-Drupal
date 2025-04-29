@@ -98,8 +98,7 @@ export class Utils {
       return taxonName_;
    }
    
-
-   // TODO: Consider including a parameter for expected ID prefix.
+   // Try to determine what type of identifier was provided using an optional "expected type" (which can be inferred by the query string parameter name).
    static processIdentifer(id_: string, expectedType_: IdentifierType = IdentifierType.none): IIdentifierData {
 
       if (!id_) { return null; }
@@ -115,18 +114,23 @@ export class Utils {
       // Convert to uppercase for case-insensitive comparison.
       id_ = id_.toUpperCase();
 
-      let idType: IdentifierType;
+      let idPrefix: IdentifierPrefix = null;
+      let idType: IdentifierType = null;
       
       if (id_.startsWith(IdentifierPrefix.ICTV)) {
+         idPrefix = IdentifierPrefix.ICTV;
          idType = IdentifierType.ICTV;
          
       } else if (id_.startsWith(IdentifierPrefix.MSL)) {
+         idPrefix = IdentifierPrefix.MSL;
          idType = IdentifierType.MSL;
 
       } else if (id_.startsWith(IdentifierPrefix.taxonomy)) {
+         idPrefix = IdentifierPrefix.taxonomy;
          idType = IdentifierType.taxonomy;
 
       } else if (id_.startsWith(IdentifierPrefix.VMR)) {
+         idPrefix = IdentifierPrefix.VMR;
          idType = IdentifierType.VMR;
 
       } else {
@@ -134,7 +138,7 @@ export class Utils {
       }
 
       // Remove the prefix, parse as an integer, and validate.
-      const strValue = id_.replace(idType, "");
+      const strValue = id_.replace(idPrefix, "");
       const value = parseInt(strValue);
       if (isNaN(value)) { throw new Error("Identifier is non-numeric"); }
 

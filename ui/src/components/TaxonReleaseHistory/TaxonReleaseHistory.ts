@@ -107,6 +107,9 @@ export class TaxonReleaseHistory {
 
    taxonName: string = null;
 
+   // A VMR ID provided as a query string parameter.
+   vmrID: string = null;
+
 
    // C-tor
    constructor(containerSelector_: string, currentMslRelease_: number) {
@@ -153,17 +156,15 @@ export class TaxonReleaseHistory {
          const action = target.getAttribute("data-action") as ExportAction;
          if (!!action) {
 
+            const ictvID = target.getAttribute("data-ictv-id");
             const lineage = target.getAttribute("data-lineage");
+            const name = target.getAttribute("data-name");
             const rankNames = target.getAttribute("data-ranks");
+            const releaseNumber = target.getAttribute("data-msl");
             const taxNodeID = target.getAttribute("data-taxnode-id");
 
-            // Get the MSL release number and try to parse as an integer.
-            const strMSL: string = target.getAttribute("data-msl");
-            const releaseNumber = parseInt(strMSL);
-            if (isNaN(releaseNumber)) { throw new Error("Invalid release number"); }
-
             // Export the lineage
-            return this.exportLineage(action, lineage, rankNames, releaseNumber, taxNodeID);
+            return this.exportLineage(action, ictvID, lineage, name, rankNames, releaseNumber, taxNodeID);
          }
          
          return;
@@ -173,12 +174,18 @@ export class TaxonReleaseHistory {
    // Append a release panel under the "releases" container Element.
    addReleasePanel(release_: IRelease) {
 
-      const formattedTitle = release_.title.replace(/;/g, ";<br/>");
+      // Replace the semicolons with line breaks.
+      const formattedTitle = release_.title.replace(/;/g, "<br/>");
+
+      // The current release will have the label "CURRENT" added.
+      const isCurrent = release_.releaseNumber == this.currentMslRelease ? "CURRENT RELEASE" : "";
 
       let html =
-         `<div class="release-header">
+         `<a name="release_${release_.releaseNumber}"></a>
+         <div class="release-header">
             <div class="release-year">${release_.year}</div>
             <div class="release-title">${formattedTitle}</div>
+            <div class="is-current">${isCurrent}</div>
          </div>
          <div class="release-body"></div>`;
 
@@ -191,6 +198,52 @@ export class TaxonReleaseHistory {
       this.elements.releases.appendChild(releaseEl);
    }
 
+   // Add the selected taxon to the page.
+   addSelectedTaxon(release_: IRelease, taxon_: ITaxon) {
+
+      let title = "";
+
+      // Determine the taxon's rank name.
+      const rankName = this.getRankName(taxon_.lineageRanks);
+
+      // Create HTML for the rank and linked taxon name.
+      let linkedName = `<div class="taxon-rank">${rankName}</div>: 
+      <a href="#release_${release_.releaseNumber}"><div class="taxon-name">${taxon_.name}</div></a>`;
+
+      // Populate the title text.
+      if (taxon_.mslReleaseNumber === this.currentMslRelease) {
+
+         // They selected the current release.
+         title = `You selected the ${release_.year} (current) release of ${linkedName} (MSL ${release_.releaseNumber})`;
+         
+      } else if (taxon_.mslReleaseNumber === release_.releaseNumber) {
+
+         // They selected a release that's displayed on the page.
+         title = `You selected the ${release_.year} release of ${linkedName} (MSL ${release_.releaseNumber})`;
+         
+      } else if (taxon_.mslReleaseNumber > release_.releaseNumber) {
+
+         // Convert the numeric tree ID to a release year.
+         const selectedYear = Utils.convertTreeIdToYear(taxon_.treeID);
+
+         // They selected a release that's not displayed on the page.
+         title = `You selected the ${selectedYear} release of ${linkedName} (MSL ${taxon_.mslReleaseNumber}) which is the same as the ${release_.year} release (MSL ${release_.releaseNumber})`;
+
+      } else if (taxon_.isDeleted) {
+
+         // They selected an abolished release.
+         title = `You selected ${linkedName} which was abolished in the ${release_.year} release (MSL ${release_.releaseNumber})`;
+
+      } else {
+         
+         // NOTE: We probably shouldn't have gotten here!
+         title = `You selected the ${release_.year} release of ${linkedName} (MSL ${release_.releaseNumber})`;
+      }
+
+      this.elements.selectedTaxon.innerHTML = title;
+      return;
+   }
+
    addTaxonChanges(parentEl_: HTMLElement, taxon_: ITaxon, index_: number) {
 
       let html = "";
@@ -201,63 +254,14 @@ export class TaxonReleaseHistory {
       const formattedLineage = this.formatLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.lineageRanks);
 
       // Get the rank name
-      let rankNames = taxon_.lineageRanks;
-      rankNames = rankNames.substring(0, rankNames.lastIndexOf(";"));
-      const rankNameArray = rankNames.split(";");
-      const rankName = Utils.safeTrim(rankNameArray[rankNameArray.length - 1]);
+      const rankName = this.getRankName(taxon_.lineageRanks);
 
       // Create the summary of changes for this taxon.
       let changeSummary = this.createChangeSummary(taxon_);
 
-      let proposalPanel = "";
-
-      // Proposal link(s)
-      let proposalLinks = "";
-      if (taxon_.prevProposal && taxon_.prevProposal.length > 0) {
-
-         // If there are multiple proposal files, they should be delimited by semicolons.
-         let prevProposal = taxon_.prevProposal.substring(0, taxon_.prevProposal.lastIndexOf(";"));
-         const filenames = prevProposal.split(";");
-         if (filenames && filenames.length > 0) {
-
-            let previousFilename = null;
-
-            filenames.forEach((filename_: string) => {
-               filename_ = filename_.trim();
-               if (filename_.length < 1) { return; }
-
-               // Make sure we don't add the same filename multiple times.
-               if (filename_ === previousFilename) { return; }
-
-               let displayLabel = filename_;
-
-               const periodIndex = displayLabel.lastIndexOf(".");
-               if (periodIndex > 0) { displayLabel = filename_.substring(0, periodIndex); }
-
-               // Get an icon class specific to the file type.
-               const iconClass = this.getFileIconClass(filename_);
-
-               // Separate multiple links with a line break.
-               if (proposalLinks.length > 0) { proposalLinks += "<br/>"; }
-
-               // Add a link to the release proposal file(s).
-               proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
-                  <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
-                  class="release-proposal-link">${displayLabel}</a>`;   
-            })
-         }
-
-         if (!!proposalLinks) {
-
-            let proposalsLabel = filenames.length > 1 ? "Proposals" : "Proposal";
-            proposalPanel =
-               `<div class="taxon-proposal">
-                  <div class="label">${proposalsLabel}:</div>
-                  <div class="proposal-links">${proposalLinks}</div>
-               </div>`;
-         }
-      }
-
+      // If there are associated proposals, create a panel to display them.
+      let proposalPanel = this.createProposalPanel(taxon_.prevProposal);
+   
       html +=
          `<div class="taxon-rank-and-name">
             <div class="rank-name">${rankName}:</div>
@@ -279,9 +283,11 @@ export class TaxonReleaseHistory {
                <i class="${this.icons.copy}"></i> Copy to the clipboard
             </button>
             <button class="btn btn-default lineage-download-control"
-               data-action="${ExportAction.download}" 
+               data-action="${ExportAction.download}"
+               data-ictv-id="${taxon_.ictvID}"
                data-lineage="${taxon_.lineage}" 
                data-msl="${taxon_.mslReleaseNumber}"
+               data-name="${taxon_.name}"
                data-ranks="${taxon_.lineageRanks}"
                data-taxnode-id="${taxon_.taxnodeID}">
                <i class="${this.icons.download}"></i> Download
@@ -372,6 +378,55 @@ export class TaxonReleaseHistory {
       return summary;
    }
 
+   createProposalPanel(prevProposal_: string) {
+
+      prevProposal_ = Utils.safeTrim(prevProposal_);
+      if (prevProposal_.length < 1) { return ""; }
+
+      let proposalLinks = "";
+
+      // Remove a trailing semicolon.
+      if (prevProposal_.endsWith(";")) { prevProposal_ = prevProposal_.substring(0, prevProposal_.length - 1); }
+
+      // If there are multiple proposal files, they will be delimited by semicolons.
+      const filenames = prevProposal_.split(";");
+      if (!filenames || filenames.length < 1) { return ""; }
+
+      // Remove any duplicate filenames
+      const uniqueFilenames = [...new Set(filenames)];
+
+      uniqueFilenames.forEach((filename_: string) => {
+
+         filename_ = filename_.trim();
+         if (filename_.length < 1) { return; }
+
+         let displayLabel = filename_;
+
+         const periodIndex = displayLabel.lastIndexOf(".");
+         if (periodIndex > 0) { displayLabel = filename_.substring(0, periodIndex); }
+
+         // Get an icon class specific to the file type.
+         const iconClass = this.getFileIconClass(filename_);
+
+         // Separate multiple links with a line break.
+         if (proposalLinks.length > 0) { proposalLinks += "<br/>"; }
+
+         // Add a link to the release proposal file(s).
+         proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
+            <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
+            class="release-proposal-link">${displayLabel}</a>`;   
+      })
+   
+      if (proposalLinks.length < 1) { return ""; }
+
+      let proposalsLabel = filenames.length > 1 ? "Proposals" : "Proposal";
+
+      return `<div class="taxon-proposal">
+         <div class="label">${proposalsLabel}:</div>
+         <div class="proposal-links">${proposalLinks}</div>
+      </div>`;
+   }
+
    // Create HTML for the export settings dialog.
    createSettingsDialogHTML() {
       
@@ -417,7 +472,7 @@ export class TaxonReleaseHistory {
       </div>`;
    }
 
-   // Create HTML for a taxon detail object.
+   // Create HTML for a taxon.
    createTaxonHTML(taxon_: ITaxon, type_: TaxonType) {
 
       let formattedLineage = "";
@@ -451,8 +506,8 @@ export class TaxonReleaseHistory {
          formattedLineage = this.formatLineage(taxon_.lineage, taxon_.lineageIDs, lineageRanks);
       }
 
-      const rankArray = lineageRanks.split(";");
-      let rankName = Utils.safeTrim(rankArray[rankArray.length - 1]);
+      // Get the taxons' rank name.
+      const rankName = this.getRankName(taxon_.lineageRanks);
 
       let html = 
          `<div class="taxon ${type_} visible">
@@ -495,11 +550,11 @@ export class TaxonReleaseHistory {
    }
 
    // Export the selected lineage.
-   exportLineage(action_: ExportAction, lineage_: string, rankNames_: string, releaseNumber_: number, taxNodeID_: string) {
+   exportLineage(action_: ExportAction, ictvID_: string, lineage_: string, name_: string, rankNames_: string, releaseNumber_: string, taxNodeID_: string) {
 
       // Use the release number to lookup the corresponding release.
-      const release = this.releaseLookup.get(releaseNumber_);
-      if (!release) { throw new Error(`Invalid release for release number ${releaseNumber_}`); }
+      //const release = this.releaseLookup.get(releaseNumber_);
+      //if (!release) { throw new Error(`Invalid release for release number ${releaseNumber_}`); }
 
       // Format the lineage for export, possibly including rank names.
       const formattedLineage = this.formatLineageForExport(this.exportSettings.format, this.exportSettings.includeEmptyRanks, 
@@ -514,8 +569,10 @@ export class TaxonReleaseHistory {
 
          case ExportAction.download:
 
+            let formattedName = Utils.safeTrim(name_).toLowerCase().replace(" ", "_");
+         
             // Use the MSL release as the filename.
-            const filename = `mslRelease${release.releaseNumber || ""}.${this.exportSettings.format}`;
+            const filename = `ictv.MSL${releaseNumber_}.ICTV${ictvID_}.${formattedName}.${this.exportSettings.format}`;
 
             // Initiate the download.
             this.download(filename, formattedLineage);
@@ -755,6 +812,25 @@ export class TaxonReleaseHistory {
       return this.processHistory();
    }
 
+   // Get the history of taxa with this vmr_id over all releases.
+   async getByVmrID() {
+
+      // Validate the VMR ID.
+      if (!this.vmrID) { return await AlertBuilder.displayError("Invalid VMR ID"); }
+
+      // Create and display the spinner.
+      const spinner: string = this.getSpinnerHTML("Loading history...");
+      this.displayMessage(spinner);
+
+      this.taxonHistory = await TaxonomyHistoryService.getByVmrID(this.currentMslRelease, this.vmrID);
+      if (!this.taxonHistory) { return this.displayMessage("No history is available"); }
+
+      // Hide the spinner icon.
+      this.displayMessage("");
+
+      return this.processHistory();
+   }
+
    // Get the icon class that matches the filename's extension.
    getFileIconClass(filename_: string): string {
 
@@ -773,6 +849,17 @@ export class TaxonReleaseHistory {
          default:
             return this.icons.file;
       }
+   }
+
+   // Get the last rank name from a taxon's lineage ranks.
+   getRankName(lineageRanks_: string): string {
+
+      if (!lineageRanks_) { return ""; }
+
+      let rankNames = lineageRanks_;
+      rankNames = rankNames.substring(0, rankNames.lastIndexOf(";"));
+      const rankNameArray = rankNames.split(";");
+      return Utils.safeTrim(rankNameArray[rankNameArray.length - 1]);
    }
 
    // Return a DIV that contains the spinner icon and optional text.
@@ -863,6 +950,14 @@ export class TaxonReleaseHistory {
                // Get the history by ictv_id.
                return await this.getByIctvID();
 
+            case IdentifierType.VMR:
+
+               // Set the VMR ID attribute.
+               this.vmrID = idData.value.toString();
+
+               // Get the history by vmr_id.
+               return await this.getByVmrID();
+
             default:
                return await AlertBuilder.displayError(`Sorry, but the ${idData.idType} identifier is not yet supported`);
          }
@@ -896,15 +991,15 @@ export class TaxonReleaseHistory {
       this.elements.container.setAttribute("data-is-visible", "true");
       this.elements.messagePanel.setAttribute("data-is-visible", "false");
 
-      // Display the selected taxon.
-      const selectedTaxonHTML = this.createTaxonHTML(this.taxonHistory.selectedTaxon, TaxonType.selected);
-      this.elements.selectedTaxon.innerHTML = selectedTaxonHTML;
-
       // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
 
       // An array of MSL release numbers in descending order.
       let releaseOrder = [];
+
+      // While iterating over releases, we will determine the the release number equal to or immediately before the selected MSL.
+      let foundSelectedRelease = false;
+      let selectedMSL = this.taxonHistory.selectedTaxon.mslReleaseNumber;
 
       // Iterate over all releases where this taxon has been updated.
       this.taxonHistory.releases.forEach((release_: IRelease) => {
@@ -912,10 +1007,21 @@ export class TaxonReleaseHistory {
          // Create HTML for the release and add it to the page.
          this.addReleasePanel(release_);
 
+         // If we haven't found the release number equal to or immediately before the selected release number, use 
+         // this release number for the selected taxon.
+         if (!foundSelectedRelease && release_.releaseNumber <= selectedMSL) {
+            
+            // We found the release to associate with the selected taxon.
+            foundSelectedRelease = true;
+
+            // Add the selected taxon to the page.
+            this.addSelectedTaxon(release_, this.taxonHistory.selectedTaxon);
+         }
+
          // Add the release's MSL release number to the ordered list
          releaseOrder.push(release_.releaseNumber);
 
-         // Initialize the release's aray of modified taxa.
+         // Initialize the release's array of modified taxa.
          release_.taxa = [];
 
          // Trim the list of available rank names and remove a trailing comma.
