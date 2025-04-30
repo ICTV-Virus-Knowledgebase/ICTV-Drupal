@@ -14,7 +14,7 @@
 #taxon_history_container .selected-taxon {
    align-items: center;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: row wrap;
    font-size: 1.3rem;
    justify-content: flex-start;
    margin-bottom: 2.5rem;
@@ -182,6 +182,14 @@
 #taxon_history_container .release .taxon-rank-and-name .taxon-changes {
    margin-left: 0.25rem;
 }
+
+#taxon_history_container .release .taxon-rank-and-name .subtle-rank-name {
+   font-weight: normal;
+} 
+#taxon_history_container .release .taxon-rank-and-name .subtle-taxon-name {
+   font-style: italic;
+}
+
 
 /* New, Abolished, Promoted, Demoted, Moved, Lineage updated, Merged, Split, Renamed, and Unchanged */
 #taxon_history_container .release .taxon-rank-and-name .change {
