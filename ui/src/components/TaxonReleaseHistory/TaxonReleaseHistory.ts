@@ -322,14 +322,20 @@ export class TaxonReleaseHistory {
       })
    }
 
+   // Create a summary of changes to a taxon.
    createChangeSummary(taxon_: ITaxon): string {
 
       let descriptions = [];
 
       // The order of changes is New, Abolished, Promoted, Demoted, Moved, Lineage updated, Merged, Split, Renamed, and Unchanged.
+
+      // New
       if (taxon_.isNew) { descriptions.push(`is ${this.formatAction(ReleaseAction.new)}`); }
+
+      // Abolished (deleted)
       if (taxon_.isDeleted) { descriptions.push(`was ${this.formatAction(ReleaseAction.abolished)}`); }
 
+      // Promoted or demoted
       if (taxon_.isPromoted) { 
          
          // Look for the taxon's rank in the previous release.
@@ -345,6 +351,7 @@ export class TaxonReleaseHistory {
          descriptions.push(`was ${this.formatAction(ReleaseAction.demoted)}${previousRank}`);
       }
 
+      // Moved
       if (taxon_.isMoved) {
 
          // A formatted version of the taxon's parent in the previous MSL release.
@@ -353,16 +360,21 @@ export class TaxonReleaseHistory {
          descriptions.push(`was ${this.formatAction(ReleaseAction.moved)}${previousParent}`);
       }
 
+      // Lineage updated
       if (taxon_.isLineageUpdated) { descriptions.push(`had its ${this.formatAction(ReleaseAction.lineageUpdated)}`); }
 
+      // Merged / split / renamed
       if (taxon_.isMerged || taxon_.isSplit || taxon_.isRenamed) {
 
          let tempDescription = "";
 
+         // Format the list of delimited previous names.
+         const fromPreviousNames = this.formatPreviousNames(taxon_.previousNames);
+
          if (taxon_.isMerged) { 
-            tempDescription += `was ${this.formatAction(ReleaseAction.merged)}`; 
+            tempDescription += `was ${this.formatAction(ReleaseAction.merged)}${fromPreviousNames}`; 
          } else if (taxon_.isSplit) { 
-            tempDescription += `was ${this.formatAction(ReleaseAction.split)}`; 
+            tempDescription += `was ${this.formatAction(ReleaseAction.split)}${fromPreviousNames}`; 
          }
 
          if (taxon_.isRenamed) { 
@@ -370,22 +382,14 @@ export class TaxonReleaseHistory {
             if (taxon_.isMerged || taxon_.isSplit) {
                tempDescription += ` and ${this.formatAction(ReleaseAction.renamed)}`
             } else {
-               tempDescription += `was ${this.formatAction(ReleaseAction.renamed)}`;
+               tempDescription += `was ${this.formatAction(ReleaseAction.renamed)}${fromPreviousNames}`;
             }
-         }
-
-         let previousNames = Utils.safeTrim(taxon_.previousNames);
-         if (previousNames.length > 0) {
-
-            // Remove a trailing comma.
-            if (previousNames.endsWith(",")) { previousNames = previousNames.substring(0, previousNames.length - 1); }
-
-            tempDescription += ` from <i>${previousNames}</i>`;
          }
 
          descriptions.push(tempDescription);
       }
 
+      // No actions
       if (descriptions.length < 1) {
          descriptions.push(taxon_.mslReleaseNumber === this.currentMslRelease
             ? `is ${this.formatAction(ReleaseAction.current)}`
@@ -393,13 +397,12 @@ export class TaxonReleaseHistory {
       }
 
       let lastIndex = descriptions.length - 1;
-      // TODO: validate
-
       let summary = "";
+
       descriptions.forEach((description_, index_) => {
 
+         // Precede each non-first description with a comma, and preface the final description with "and".
          if (summary.length > 0 && index_ < lastIndex) { summary += ", "; }
-
          if (index_ === lastIndex && descriptions.length > 1) { summary += " and "; }
 
          summary += description_;
@@ -801,10 +804,15 @@ export class TaxonReleaseHistory {
 
       console.log("previousTaxa = ", previousTaxa)
 
-      if (previousTaxa.length < 2) { return ""; }
-
       // Get the last taxon.
-      parent = Utils.safeTrim(previousTaxa[previousTaxa.length - 1]);
+      if (previousTaxa.length === 0) { 
+         return ""; 
+      } else if (previousTaxa.length === 1) {
+         parent = Utils.safeTrim(previousTaxa[0]);
+      } else {
+         parent = Utils.safeTrim(previousTaxa[previousTaxa.length - 2]);
+      }
+      
       if (parent.length < 1) { return ""; }
 
       // Split into rank name and name.
@@ -814,6 +822,41 @@ export class TaxonReleaseHistory {
 
       // Return the formatted rank and taxon names.
       return ` from <span class="subtle-rank-name">${names[0]}</span> <span class="subtle-taxon-name">${names[1]}</span>`;
+   }
+
+   // Format the comma-delimited list of previous names so that each name is italicized and the 
+   // last comma is followed by " and ".
+   formatPreviousNames(previousNames_: string) {
+
+      let previousNames = Utils.safeTrim(previousNames_);
+      if (previousNames.length < 1) { return ""; }
+
+      // Remove a trailing comma.
+      if (previousNames.endsWith(",")) { previousNames = previousNames.substring(0, previousNames.length - 1); }
+
+      let formattedNames = "";
+
+      // Split the comma-delimited list into an array.
+      const prevNameArray = previousNames.split(",");
+      if (prevNameArray.length < 1) { return ""; }
+
+      const lastIndex = prevNameArray.length - 1;
+
+      // Iterate over every name and format them.
+      prevNameArray.forEach((prevName_, index_) => {
+
+         if (formattedNames.length > 0 && index_ < lastIndex) { formattedNames += ", "; }
+         if (prevNameArray.length > 1 && index_ === lastIndex) {
+            if (prevNameArray.length > 2) { formattedNames += ","; }
+            formattedNames += " and "; 
+         }
+
+         formattedNames += `<i>${Utils.safeTrim(prevName_)}</i>`;
+      })
+      
+      if (formattedNames.length < 1) { return ""; }
+
+      return ` from ${formattedNames}`; 
    }
 
    // Get the history of taxa with this ictv_id over all releases.
