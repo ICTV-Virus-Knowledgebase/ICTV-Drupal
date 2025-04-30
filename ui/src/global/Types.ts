@@ -10,36 +10,38 @@ export enum CuratedNameType {
    other = "other"
 }
 
-// Commonly used URL query string parameter names for identifiers. Note that these 
-// enums are in order of precedence.
+// Commonly used URL query string parameter names for identifiers.
 export enum IdParameterName {
-
-   // Taxnode ID
-   taxnode_id = "taxnode_id",
-   tn = "tn",
-   tn_id = "tn_id",
 
    // ICTV ID
    ictv = "ictv",
    ictv_id = "ictv_id",
-
-   // VMR ID
-   vmr = "vmr",
-   vmr_id = "vmr_id",
 
    // ID
    id = "id",
 
    // MSL ID
    msl = "msl",
-   msl_id = "msl_id"
+   //msl_id = "msl_id",
+
+   // Taxnode ID
+   taxnode_id = "taxnode_id",
+   tn = "tn",
+   tn_id = "tn_id",
+
+   // Taxon name
+   taxon_name = "taxon_name",
+
+   // VMR ID
+   vmr = "vmr",
+   vmr_id = "vmr_id"
 }
 
 export enum IdentifierPrefix {
    ICTV = "ICTV",
    MSL = "MSL",
    none = "none",
-   taxonomy = "TN",
+   TaxNodeID = "TN",
    VMR = "VMR"
 }
 
@@ -47,7 +49,8 @@ export enum IdentifierType {
    ICTV = "ICTV",
    MSL = "MSL",
    none = "none",
-   taxonomy = "taxonomy",
+   TaxNodeID = "TaxNodeID",
+   TaxonName = "TaxonName",
    VMR = "VMR"
 }
 
@@ -307,14 +310,18 @@ export function LookupIdParameterType(parameterName_: IdParameterName): Identifi
 
       // MSL ID
       case IdParameterName.msl:
-      case IdParameterName.msl_id:
+      //case IdParameterName.msl_id:
          return IdentifierType.MSL;
 
       // Taxnode ID
       case IdParameterName.taxnode_id:
       case IdParameterName.tn:
       case IdParameterName.tn_id:
-         return IdentifierType.taxonomy;
+         return IdentifierType.TaxNodeID;
+
+      // Taxon name
+      case IdParameterName.taxon_name:
+         return IdentifierType.TaxonName;
 
       // VMR ID
       case IdParameterName.vmr:
@@ -325,23 +332,6 @@ export function LookupIdParameterType(parameterName_: IdParameterName): Identifi
          return IdentifierType.none;
    }
 }
-
-/*
-export function LookupIdPrefix(type_: IdentifierType): string {
-
-   switch (type_) {
-      case IdentifierType.ICTV:
-         return IdentifierPrefix.ICTV;
-      case IdentifierType.MSL:
-         return IdentifierPrefix.MSL;
-      case IdentifierType.TAXONOMY:
-         return IdentifierPrefix.TAXONOMY;
-      case IdentifierType.VMR:
-         return IdentifierPrefix.VMR;
-      default:
-         return IdentifierType.none;
-   }
-}*/
 
 
 export function LookupNameClass(nameClass_: NameClass, taxonomyDB_: TaxonomyDB) {
