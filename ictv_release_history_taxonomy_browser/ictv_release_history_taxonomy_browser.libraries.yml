@@ -21,7 +21,7 @@ releaseHistoryTaxonomyBrowser:
     assets/css/fonts/fa-solid-900.woff: {}
     assets/css/fonts/fa-solid-900.woff2: {}
   js:
-    assets/js/ICTV.js: { preprocess: false }
+    assets/js/ICTV_TaxonomyBrowser.js: { preprocess: false }
     assets/js/releaseHistoryTaxonomyBrowser.js: { preprocess: false }
   dependencies:
     - core/jquery
