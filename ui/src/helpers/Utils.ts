@@ -209,28 +209,6 @@ export class Utils {
    }
    
 
-   /*
-   // Process URL query string parameters for ID parameters.
-   static processUrlParamsForIdentifiers(params_: URLSearchParams): IIdentifierData[] {
-
-      let results: IIdentifierData[] = [];
-
-      // Iterate over ID parameter names until we find one. Note that the IdParameterName 
-      // enum values are in order of precedence.
-      Object.values(IdParameterName).forEach((name_) => {
-
-         let testValue = Utils.safeTrim(params_.get(name_));
-         if (testValue.length > 0) {
-            const expectedType = LookupIdParameterType(name_);
-            const idData = Utils.processIdentifer(testValue, expectedType);
-            if (idData !== null) { results.push(idData); }
-         }
-      })
-      
-      return results;
-   }*/
-
-
    // If the text is empty, null, or undefined, return an empty string. Otherwise, trim
    // the text and return it.
    static safeTrim(text_: string): string {

@@ -66,7 +66,7 @@ export class TaxonReleaseHistory {
       download: "fa-regular fa-download",
       expanded: "fa fa-chevron-down",
       file: "far fa-file",
-      lineage: "fas fa-chevron-right",
+      lineage: "fa-light fa-chevron-right",
       pdf: "far fa-file-pdf",
       save: "fa-solid fa-floppy-disk",
       settings: "fa-solid fa-gear",
@@ -290,7 +290,7 @@ export class TaxonReleaseHistory {
                data-taxnode-id="${taxon_.taxnodeID}">
                <i class="${this.icons.download}"></i> Download
             </button>
-            <button class="btn btn-default settings-button"><i class="${this.icons.settings}"></i> Update settings</button>
+            <button class="btn btn-default settings-button"><i class="${this.icons.settings}"></i> Settings</button>
             <div class="copy-status" data-taxnode-id="${taxon_.taxnodeID}" style="display: none">
                <i class="${this.icons.success}"></i> Copied successfully
             </div>
@@ -325,15 +325,16 @@ export class TaxonReleaseHistory {
    // Create a summary of changes to a taxon.
    createChangeSummary(taxon_: ITaxon): string {
 
-      let descriptions = [];
+      let actions: ReleaseAction[] = [];
+      let descriptions: string[] = [];
 
       // The order of changes is New, Abolished, Promoted, Demoted, Moved, Lineage updated, Merged, Split, Renamed, and Unchanged.
 
       // New
-      if (taxon_.isNew) { descriptions.push(`is ${this.formatAction(ReleaseAction.new)}`); }
+      if (taxon_.isNew) { return `is ${this.formatAction(ReleaseAction.new)}`; }
 
       // Abolished (deleted)
-      if (taxon_.isDeleted) { descriptions.push(`was ${this.formatAction(ReleaseAction.abolished)}`); }
+      if (taxon_.isDeleted) { return `was ${this.formatAction(ReleaseAction.abolished)}`; }
 
       // Promoted or demoted
       if (taxon_.isPromoted) { 
@@ -341,14 +342,22 @@ export class TaxonReleaseHistory {
          // Look for the taxon's rank in the previous release.
          const previousRank = this.getPreviousRank(taxon_.previousLineage);
 
-         descriptions.push(`was ${this.formatAction(ReleaseAction.promoted)}${previousRank}`);
+         // Add a description
+         descriptions.push(`${this.formatAction(ReleaseAction.promoted)}${previousRank}`);
+
+         // Update the list of actions.
+         actions.push(ReleaseAction.promoted);
 
       } else if (taxon_.isDemoted) { 
          
          // Look for the taxon's rank in the previous release.
          const previousRank = this.getPreviousRank(taxon_.previousLineage);
 
-         descriptions.push(`was ${this.formatAction(ReleaseAction.demoted)}${previousRank}`);
+         // Add a description
+         descriptions.push(`${this.formatAction(ReleaseAction.demoted)}${previousRank}`);
+
+         // Update the list of actions.
+         actions.push(ReleaseAction.demoted);
       }
 
       // Moved
@@ -357,52 +366,89 @@ export class TaxonReleaseHistory {
          // A formatted version of the taxon's parent in the previous MSL release.
          const previousParent = this.formatPreviousLineage(taxon_.previousLineage);
 
-         descriptions.push(`was ${this.formatAction(ReleaseAction.moved)}${previousParent}`);
+         // Add a description
+         descriptions.push(`${this.formatAction(ReleaseAction.moved)}${previousParent}`);
+
+         // Update the list of actions.
+         actions.push(ReleaseAction.moved);
       }
 
       // Lineage updated
-      if (taxon_.isLineageUpdated) { descriptions.push(`had its ${this.formatAction(ReleaseAction.lineageUpdated)}`); }
+      if (taxon_.isLineageUpdated) { 
+
+         // Add a description
+         descriptions.push(`had its ${this.formatAction(ReleaseAction.lineageUpdated)}`);
+
+         // Update the list of actions.
+         actions.push(ReleaseAction.lineageUpdated);
+      }
 
       // Merged / split / renamed
       if (taxon_.isMerged || taxon_.isSplit || taxon_.isRenamed) {
 
-         let tempDescription = "";
-
          // Format the list of delimited previous names.
          const fromPreviousNames = this.formatPreviousNames(taxon_.previousNames);
 
+         // Merged or split
          if (taxon_.isMerged) { 
-            tempDescription += `was ${this.formatAction(ReleaseAction.merged)}${fromPreviousNames}`; 
-         } else if (taxon_.isSplit) { 
-            tempDescription += `was ${this.formatAction(ReleaseAction.split)}${fromPreviousNames}`; 
+
+            // Add a description
+            descriptions.push(`${this.formatAction(ReleaseAction.merged)}${fromPreviousNames}`);
+
+            // Update the list of actions.
+            actions.push(ReleaseAction.merged);
+   
+         } else if (taxon_.isSplit) {
+
+            // Add a description
+            descriptions.push(`${this.formatAction(ReleaseAction.split)}${fromPreviousNames}`);
+
+            // Update the list of actions.
+            actions.push(ReleaseAction.split);    
          }
 
+         // Renamed
          if (taxon_.isRenamed) { 
 
             if (taxon_.isMerged || taxon_.isSplit) {
-               tempDescription += ` and ${this.formatAction(ReleaseAction.renamed)}`
+               
+               // Add a description
+               descriptions.push(`${this.formatAction(ReleaseAction.renamed)}`);
+
             } else {
-               tempDescription += `was ${this.formatAction(ReleaseAction.renamed)}${fromPreviousNames}`;
+               // Add a description
+               descriptions.push(`${this.formatAction(ReleaseAction.renamed)}${fromPreviousNames}`);
             }
+            
+            // Update the list of actions.
+            actions.push(ReleaseAction.renamed);
          }
-
-         descriptions.push(tempDescription);
       }
 
-      // No actions
+      // If no descriptions have been added, this taxon is unchanged or current (if this is the current release).
       if (descriptions.length < 1) {
-         descriptions.push(taxon_.mslReleaseNumber === this.currentMslRelease
-            ? `is ${this.formatAction(ReleaseAction.current)}`
-            : `is ${this.formatAction(ReleaseAction.unchanged)}`);
+         if (taxon_.mslReleaseNumber === this.currentMslRelease) {
+            return `is ${this.formatAction(ReleaseAction.current)}`;
+         } else {
+            return `is ${this.formatAction(ReleaseAction.unchanged)}`;
+         }
       }
 
+      // Get the last index (zero-based).
       let lastIndex = descriptions.length - 1;
       let summary = "";
 
+      // Combine the descriptions into a summary.
       descriptions.forEach((description_, index_) => {
 
+         if (index_ === 0) {
+
+            // The summary will begin with "was" for all actions other than "lineage updated". 
+            if (actions[0] != ReleaseAction.lineageUpdated) { summary += "was "; }
+         }
+
          // Precede each non-first description with a comma, and preface the final description with "and".
-         if (summary.length > 0 && index_ < lastIndex) { summary += ", "; }
+         if (index_ > 0 && descriptions.length > 2) { summary += ", "; }
          if (index_ === lastIndex && descriptions.length > 1) { summary += " and "; }
 
          summary += description_;
@@ -957,8 +1003,6 @@ export class TaxonReleaseHistory {
 
    getPreviousRank(previousLineage_: string) {
 
-      console.log(`in getPreviousRank previousLineage_ = ${previousLineage_}`)
-
       previousLineage_ = Utils.safeTrim(previousLineage_);
       if (previousLineage_.length < 1) { return ""; }
 
@@ -968,21 +1012,15 @@ export class TaxonReleaseHistory {
       // Split the delimited taxa into an array.
       const previousTaxa = previousLineage_.split(";");
 
-      console.log("in getPreviousRank previousTaxa = ", previousTaxa)
-
       // Get the last taxon.
       let lastTaxon = Utils.safeTrim(previousTaxa[previousTaxa.length - 1]);
-
-      console.log(`lastTaxon = ${lastTaxon}`)
-
       if (lastTaxon.length < 1) { return ""; }
 
       // Split into rank name and name.
       const names = lastTaxon.split(":");
       if (names.length != 2) { return ""; }
 
-      console.log("in getPreviousRank names = ", names)
-
+      // Get the rank name
       let rankName = names[0];
       if (rankName.length < 1) { return ""; }
 
@@ -1094,6 +1132,7 @@ export class TaxonReleaseHistory {
       return;
    }
 
+   // Process and display the data returned from the web service.
    processHistory() {
 
       // Validate the releases

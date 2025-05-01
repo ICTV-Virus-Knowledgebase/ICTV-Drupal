@@ -104,9 +104,6 @@ class GetTaxonDetails extends ResourceBase {
 
   public function getCacheMaxAge() {
     return 2;
-
-    // NOTE: ChatGPT suggested that we disable caching by setting the max-age to permanent (no expiration).
-    // return Cache::PERMANENT;
    }
 
   public function permissions() {

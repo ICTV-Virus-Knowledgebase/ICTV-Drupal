@@ -22,11 +22,6 @@ printf "Building the Sequence Search component \n\n"
 
 printf "\n\n"
 
-
-# This can be used to test locally.
-#cp ./dist/ICTV_SequenceSearch.js /c/inetpub/wwwroot/ictvTest/js/
-#cp ./css/SequenceSearch.css /c/inetpub/wwwroot/ictvTest/css/
-
 #------------------------------------------------------------------------------
 # Copy the generated JavaScript file to the module's asset directory.
 #------------------------------------------------------------------------------

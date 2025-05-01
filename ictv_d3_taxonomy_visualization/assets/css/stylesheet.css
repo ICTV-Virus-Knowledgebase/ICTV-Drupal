@@ -1,6 +1,5 @@
 
 /* Drupal module div container */
-/* dmd 04/26/24 Replaced class "_none" here to avoid side effects outside the module. */
 body .block-ictv-d3-taxonomy-visualization { 
    border-style: solid;
    border-color: white;
@@ -9,16 +8,12 @@ body .block-ictv-d3-taxonomy-visualization {
 
 /* The module's top-level container Element */
 #d3_taxonomy_vis_container {
-   /*border-style: solid;
-   border-radius: 10px;
-   border-width: 1px;
-   border-color: #d3d3d3;*/
    height: 100%;
    overflow: hidden;
    width: 100%;
 }
 
-/* dmd 04/26/24 Experimenting with CSS variables */
+/* TODO: Experimenting with CSS variables */
 #d3_taxonomy_vis_container {
 
    /* Colors */
@@ -418,7 +413,7 @@ body .block-ictv-d3-taxonomy-visualization {
 }
 
 #d3_taxonomy_vis_container text.legend-node-text {
-   color: #999; /* dmd test 043024 */
+   color: #999;
    font-size: 1.5rem;
    font-style: normal;
    text-align: center;

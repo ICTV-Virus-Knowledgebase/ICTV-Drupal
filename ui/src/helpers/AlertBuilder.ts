@@ -80,7 +80,6 @@ export class AlertBuilder {
       return this.displayAlert(AlertIcon.error, message, title_, onClose_);
    }
 
-   // dmd testing 020525
    // A synchronous version of displayError().
    static displayErrorSync(message_: string | Error, title_?: string, onClose_?: Function) {
 

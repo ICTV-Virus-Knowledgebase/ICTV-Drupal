@@ -1,5 +1,4 @@
 
-import { AppSettings } from "../global/AppSettings";
 import { IFileData } from "../models/IFileData";
 import { IJob } from "../components/ProposalSubmission/IJob";
 import { IUploadResult } from "../components/ProposalSubmission/IUploadResult";
