@@ -23,7 +23,7 @@ export class _AppSettings {
    releaseProposalsURL: string = null;
 
    // The taxon history page name.
-   taxonHistoryPage: string = null; //"taxonHistory"; 
+   taxonHistoryPage: string = null;
    
    // A lookup from web service keys to web service URLs (not including the full path).
    webServiceLookup: {[key_ in WebServiceKey]: string } = {

@@ -490,21 +490,21 @@ export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
       case ReleaseAction.current:
          return "This is the latest MSL release";
       case ReleaseAction.demoted:
-         return "A higher rank taxon is moved to a lower rank (potentially requiring a rename)";
+         return "A higher rank taxon was moved to a lower rank";
       case ReleaseAction.lineageUpdated:
          return "One or more higher rank taxa have been updated";
       case ReleaseAction.merged:
-         return "Two separate taxa will be merged into a single taxon";
+         return "Two or more separate taxa were merged into a single taxon";
       case ReleaseAction.moved:
          return "A lower rank taxon and its constituent members were moved from one higher rank taxon to another taxon";
       case ReleaseAction.new:
-         return "Creation of a new taxon";
+         return "A new taxon was created";
       case ReleaseAction.promoted:
-         return "A lower rank taxon is moved to a higher rank";
+         return "A lower rank taxon was moved to a higher rank";
       case ReleaseAction.renamed: 
-      return "A taxon is renamed";
+      return "The taxon was renamed";
       case ReleaseAction.split:
-         return "A taxon, along with its constituent members, are split into two or more taxa";
+         return "The taxon, along with its constituent members, were split into two or more taxa";
       case ReleaseAction.unchanged:
          return "The taxon has not been changed in this release";
       default:

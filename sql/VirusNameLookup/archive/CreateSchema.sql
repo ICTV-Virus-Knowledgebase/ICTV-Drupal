@@ -474,7 +474,7 @@ DELIMITER //
 CREATE PROCEDURE `populateVocabsAndTerms`()
 BEGIN
 
-	-- dmd 07/06/24 TODO: finish this!!!
+	-- TODO: finish this!!!
 	
 	-- Declare variables used below.
    DECLARE vocabID INT;
@@ -825,7 +825,7 @@ CREATE TABLE IF NOT EXISTS `species_isolates` (
   `update_prev_taxnode_id` int(10) unsigned DEFAULT NULL,
   `update_change_proposal` varchar(512) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   PRIMARY KEY (`isolate_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=28000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='dmd 07/06/24: I don''t think this is necessary since I created a stored procedure (and Python export code) to export from ICTVonline39 and Python code to import into taxon_name.';
+) ENGINE=InnoDB AUTO_INCREMENT=28000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='I don''t think this is necessary since I created a stored procedure (and Python export code) to export from ICTVonline39 and Python code to import into taxon_name.';
 
 -- Data exporting was unselected.
 

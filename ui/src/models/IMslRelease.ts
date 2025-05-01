@@ -4,7 +4,7 @@ export interface IMslRelease {
 
     notes: string;
 
-    releaseNumber: string; //number;
+    releaseNumber: string;
 
     treeID: number;
 

@@ -24,7 +24,7 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
     //\Drupal::logger('ictv_d3_taxonomy_visualization')->info("test module path = ".$testModulePath);
     //$assetPath = $modulePath."/assets";
 
-    // dmd 030223 the code above doesn't work in prod, so we use this hard-coded version.
+    // TODO: The code above doesn't work in prod, so we use this hard-coded version.
     $assetPath = "/modules/custom/ictv_d3_taxonomy_visualization/assets";
 
     // Use the default database instance.
