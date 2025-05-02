@@ -16,13 +16,13 @@ export class _TaxonomyHistoryService {
       if (isNaN(mslRelease_)) { mslRelease_ = null; }
 
       let data = {
-         action_code: "get_taxon_history",
+         // action_code: "get_taxon_history",
          current_release: currentMslRelease_,
          "ictv_id": ictvID_,
          "msl_release": mslRelease_
       };
 
-      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
    }
 
 
@@ -33,12 +33,12 @@ export class _TaxonomyHistoryService {
       if (!taxonName_) { throw new Error("Invalid taxon name in getByName"); }
 
       const data = {
-         action_code: "get_taxon_history",
+         // action_code: "get_taxon_history",
          current_release: currentMslRelease_,
          "taxon_name": taxonName_
       };
 
-      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
    }
 
 
@@ -49,12 +49,12 @@ export class _TaxonomyHistoryService {
       if (!taxNodeID_) { throw new Error("Invalid taxnode ID"); }
 
       const data = {
-         action_code: "get_taxon_history",
+         // action_code: "get_taxon_history",
          current_release: currentMslRelease_,
          taxnode_id: taxNodeID_
       };
 
-      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
    }
 
    
@@ -65,12 +65,12 @@ export class _TaxonomyHistoryService {
       if (!vmrID_) { throw new Error("Invalid VMR ID") }
 
       const data = {
-         action_code: "get_taxon_history",
+         // action_code: "get_taxon_history",
          current_release: currentMslRelease_,
          "vmr_id": vmrID_
       };
 
-      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+      return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
    }
 
 }
