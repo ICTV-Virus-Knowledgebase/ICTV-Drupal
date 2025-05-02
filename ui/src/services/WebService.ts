@@ -76,7 +76,6 @@ export class _WebService {
       catch (error_) {
          // TODO: handle the exception!
          console.log("in drupalPost error is ", error_)
-         //result = null;
       }
 
       return result;
@@ -101,7 +100,6 @@ export class _WebService {
       }
       catch (error_) {
          // TODO: handle the exception!
-         //AlertBuilder.displayError(`Error in ${webServiceKey_} WebService: ${getErrorMessage(error_)}`);
          result = null;
       }
 
@@ -195,7 +193,6 @@ export class _WebService {
       }
       catch (error_) {
          // TODO: handle the exception!
-         //AlertBuilder.displayError(`Error in ${webServiceKey_} WebService: ${getErrorMessage(error_)}`);
          result = null;
       }
 

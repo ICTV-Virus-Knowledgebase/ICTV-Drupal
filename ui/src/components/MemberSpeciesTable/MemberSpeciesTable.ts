@@ -19,7 +19,7 @@ export class MemberSpeciesTable {
       "refSeqAccession",
       "taxNodeID",
 
-      // Lineage names
+      // Rank names
       "subrealm",
       "kingdom",
       "subkingdom",

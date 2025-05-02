@@ -97,31 +97,6 @@ class SequenceSearch {
 
       return $jobStatus;
    }
-
-   /* 
-   
-   Here are some details Curtis provided about the command:
-
-   Test code for running the container: https://github.com/ICTV-Virus-Knowledgebase/VMR_to_BlastDB/blob/cbdeb5822a0bf415f046f9de70fdb69f7acff6bb/docker_run.sh#L15
-
-   sudo docker run -v ./out:/tax_out curtish/ictv_seqsearch:latest -h
-
-   usage: classify_sequence [-h] [-verbose] [-indir INDIR] [-outdir OUTDIR]
-                           [-json JSON]
-   
-   options:
-   -h, --help      show this help message and exit
-   -verbose        print details during run
-   -indir INDIR    directory for fasta files with NUCLEOTIDE seqeunces to
-                     classify
-   -outdir OUTDIR  output directory for tax_results.json
-   -json JSON      output json filename
-
-   IN_DIR:  seq_in
-   OUT_DIR: tax_out
-   OUT_JSON: tax_results.json
-
-   */
 };
 
 

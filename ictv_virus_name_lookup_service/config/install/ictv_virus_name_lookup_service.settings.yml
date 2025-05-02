@@ -1,2 +1,2 @@
-databaseName: 'virus_name_lookup'
-drupalRoot: '/var/www/dapp/web'
+databaseName: 'ictv_apps'
+drupalRoot: '/var/www/drupal/site/'

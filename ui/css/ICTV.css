@@ -1346,7 +1346,6 @@ table.dataTable.compact thead td {
    padding: 0.5rem 0.5rem 0.5rem 0.5rem !important;
 }
 
-/* dmd 102323 */
 table.dataTable.compact thead th {
    text-align: left !important;
 }

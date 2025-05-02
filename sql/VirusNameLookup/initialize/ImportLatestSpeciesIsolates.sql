@@ -3,8 +3,6 @@ DROP PROCEDURE IF EXISTS `ImportLatestSpeciesIsolates`;
 
 DELIMITER //
 
--- dmd 010825: Removing intermediate names and intermediate ranks.
-
 CREATE PROCEDURE ImportLatestSpeciesIsolates()
 BEGIN
    DECLARE delimitedName LONGTEXT;
@@ -151,7 +149,7 @@ BEGIN
             taxnodeID, rankName, ictvVmrDB, isolateID, mslRelease);
       END IF;
 
-      /* dmd 12/05/24 There aren't currently any refseq organisms in VMR.
+      /* NOTE: There aren't currently any refseq organisms in VMR.
       -- Was a RefSeq organism provided?
       SET refseqOrganism = TRIM(refseqOrganism);
       IF refseqOrganism IS NOT NULL AND LENGTH(refseqOrganism) > 0 THEN

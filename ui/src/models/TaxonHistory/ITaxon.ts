@@ -16,6 +16,7 @@ export interface ITaxon {
    lineageRanks: string;
    mslReleaseNumber: number;
    name: string;
+   previousLineage: string;
    previousNames: string;
    prevNotes: string;
    prevProposal: string;
