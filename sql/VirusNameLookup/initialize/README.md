@@ -1,11 +1,11 @@
-# Setting up the database for Virus Name Lookup 
+# Setting up the database for Virus Name Lookup ("Find the Species")
 
 
 ## Create the database schema in MariaDB
 
 ### Tables
 
-- Populate the vocabulary and term tables using **InitializeVocabularyAndTerms.sql**. The script will also create the tables if they don't already exist.
+- Create and populate the vocabulary and term tables using **InitializeVocabularyAndTerms.sql**.
 - Run **CreateTaxonNameTable.sql** to create the taxon_name table.
 - Run **CreateTaxonHistogramTable.sql** to create the taxonomy_histogram table.
 - Run **CreateNcbiTaxonomyTables.sql** to create the ncbi_names, ncbi_nodes, and ncbi_division tables.

@@ -256,11 +256,7 @@ export class TaxonomySearchPanel {
       let searchResults = null;
 
       // Call the search web service
-      //if (this.searchContext === SearchContext.TaxonomyBrowser) {
       searchResults = await TaxonomyService.search(AppSettings.currentMslRelease, includeAllReleases, searchText);
-      //} else {
-      //   searchResults = await TaxonomyService.searchVisualTaxonomy(AppSettings.currentMslRelease, includeAllReleases, searchText, this.selectedRelease);
-      //}
 
       // Re-enable the search and reset buttons.
       this.elements.searchControl.disabled = false;
@@ -348,7 +344,6 @@ export class TaxonomySearchPanel {
 
       // Convert the table into a DataTable instance. 
       new DataTable(`${this.containerSelector} .${this.cssClasses.searchResultsTable}`, {
-      //jQuery(`${this.containerSelector} .${this.cssClasses.searchResultsTable}`).DataTable({
          dom: "ltip",
          "order": [],
          searching: false

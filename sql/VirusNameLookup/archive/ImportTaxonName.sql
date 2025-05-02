@@ -1,7 +1,7 @@
-DELIMITER //
 
--- dmd 10/29/24: This line prevented the script from running on test.ictv.global.
--- DROP PROCEDURE IF EXISTS `importTaxonName`;
+DROP PROCEDURE IF EXISTS `importTaxonName`;
+
+DELIMITER // 
 
 CREATE PROCEDURE `importTaxonName`(
    IN `ictvMslRelease` INT,

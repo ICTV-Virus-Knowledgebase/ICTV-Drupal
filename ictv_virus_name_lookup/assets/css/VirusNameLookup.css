@@ -118,7 +118,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Accordion 
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-.ictv-accordion-item {
+#ictv_virus_name_lookup_container .ictv-accordion-item {
    border-color: #999;
    border-style: solid;
    border-right-width: 1px;
@@ -130,7 +130,7 @@
 #ictv_virus_name_lookup_container .ictv-accordion-item:first-of-type {
    border-top-width: 1px;
 }
-.ictv-accordion-header {
+#ictv_virus_name_lookup_container .ictv-accordion-header {
    align-items: center;
    background-color: #e9e9e9;
    display: flex;
@@ -141,14 +141,14 @@
    will-change: background-color color;
 }
 
-.ictv-accordion-control {
+#ictv_virus_name_lookup_container .ictv-accordion-control {
    color: #777;
    font-weight: 400;
    padding: 1.0rem;
    transition: ease .3s transform;
 }
 
-.ictv-accordion-body {
+#ictv_virus_name_lookup_container .ictv-accordion-body {
    max-height: 0;
    opacity: 0;
    overflow: hidden;
@@ -156,7 +156,7 @@
    visibility: hidden;
    will-change: max-height;
 }
-.ictv-accordion-item.active .ictv-accordion-body {
+#ictv_virus_name_lookup_container .ictv-accordion-item.active .ictv-accordion-body {
    border-width: 1px 0 0 0;
    border-color: #999;
    border-style: solid;
@@ -164,11 +164,11 @@
    opacity: 1;
    visibility: visible;
 }
-.ictv-accordion-item.active .ictv-accordion-control {
+#ictv_virus_name_lookup_container .ictv-accordion-item.active .ictv-accordion-control {
    transform: rotate(-180deg);
 }
 
-.ictv-accordion-item .ictv-accordion-content {
+#ictv_virus_name_lookup_container .ictv-accordion-item .ictv-accordion-content {
    margin: 1.0rem;
 }
 

@@ -13,7 +13,7 @@ export class ProposalSubmission {
 
    authToken: string;
 
-   contactEmail = null; // "info@ictv.global";
+   contactEmail = null;
 
    // TODO: I'm thinking about using this to flag new results the user has not yet viewed.
    currentJobUID: string;

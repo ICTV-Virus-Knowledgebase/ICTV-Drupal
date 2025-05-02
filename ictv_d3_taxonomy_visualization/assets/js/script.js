@@ -1534,9 +1534,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                // TODO: the if condition above can be simplified to:
                //      !d.data.name && !d.data.has_assigned_siblings && !d.data.has_unassigned_siblings
 
-               // dmd 02/08/23 The for loop appears to be unnecessary.
+               // TODO: The for loop appears to be unnecessary.
                for (var i = 0; i < 1; i++) {
-                  // dmd 02/08/23 "open" isn't referenced anywhere
+                  // TODO: "open" isn't referenced anywhere
                   var open = d.children[i];
                   d.children.forEach(collapse);
                }

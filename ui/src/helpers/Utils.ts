@@ -1,6 +1,7 @@
 
 import { IdParameterName, IdentifierPrefix, IdentifierType, LookupIdParameterType } from "../global/Types";
 import { IIdentifierData } from "../models/IIdentifierData";
+import { Identifiers } from "../models/Identifiers";
 
 
 export class Utils {
@@ -83,6 +84,57 @@ export class Utils {
    }
 
    
+   // Look for URL query string parameters that represent identifiers.
+   static getIdentifiersFromURL(params_: URLSearchParams) {
+
+      let identifiers = new Identifiers();
+
+      // Iterate over ID parameter names to find identifier values.
+      Object.values(IdParameterName).forEach((name_) => {
+
+         // Look for all possible parameter names and try to return all values for each one.
+         params_.getAll(name_).forEach(value_ => {
+
+            let value = Utils.safeTrim(value_);
+            if (value.length < 1) { return; }
+
+            // Try to determine the expected type.
+            const expectedType = LookupIdParameterType(name_ as IdParameterName);
+
+            // Process the identifier value, removing a prefix if appropriate.
+            const idData = Utils.processIdentiferValue(value, expectedType);
+
+            switch (idData.idType) {
+
+               case IdentifierType.ICTV:
+                  identifiers.ictvID = idData.value as number;
+                  break;
+
+               case IdentifierType.MSL:
+                  identifiers.msl = idData.value as number;
+                  break;
+
+               case IdentifierType.TaxNodeID:
+                  identifiers.taxNodeID = idData.value as number;
+                  break;
+
+               case IdentifierType.TaxonName:
+                  identifiers.taxonName = idData.value as string;
+                  break;
+
+               case IdentifierType.VMR:
+                  identifiers.vmrID = idData.value as number;
+                  break;
+               
+               default: 
+                  return;
+            }
+         })
+      })
+
+      return identifiers;
+   }
+
    // Italicize the taxon name, if appropriate.
    static italicizeTaxonName(taxonName_: string) {
 
@@ -98,13 +150,12 @@ export class Utils {
       return taxonName_;
    }
    
-
-   // TODO: Consider including a parameter for expected ID prefix.
-   static processIdentifer(id_: string, expectedType_: IdentifierType = IdentifierType.none): IIdentifierData {
+   // Try to determine what type of identifier was provided using an optional "expected type" (which can be inferred by the query string parameter name).
+   static processIdentiferValue(id_: string, expectedType_: IdentifierType = IdentifierType.none): IIdentifierData {
 
       if (!id_) { return null; }
 
-      // Is the id parameter exclusively numeric?
+      // Is the id parameter entirely numeric?
       if (/^\d+$/.test(id_)) {
          return {
             idType: expectedType_,
@@ -112,21 +163,34 @@ export class Utils {
          }
       }
 
+      // No processing needs to happen for a taxon name (string) value.
+      if (expectedType_ === IdentifierType.TaxonName) {
+         return {
+            idType: IdentifierType.TaxonName,
+            value: Utils.safeTrim(id_)
+         }
+      }
+
       // Convert to uppercase for case-insensitive comparison.
       id_ = id_.toUpperCase();
 
-      let idType: IdentifierType;
+      let idPrefix: IdentifierPrefix = null;
+      let idType: IdentifierType = null;
       
       if (id_.startsWith(IdentifierPrefix.ICTV)) {
+         idPrefix = IdentifierPrefix.ICTV;
          idType = IdentifierType.ICTV;
          
       } else if (id_.startsWith(IdentifierPrefix.MSL)) {
+         idPrefix = IdentifierPrefix.MSL;
          idType = IdentifierType.MSL;
 
-      } else if (id_.startsWith(IdentifierPrefix.taxonomy)) {
-         idType = IdentifierType.taxonomy;
+      } else if (id_.startsWith(IdentifierPrefix.TaxNodeID)) {
+         idPrefix = IdentifierPrefix.TaxNodeID;
+         idType = IdentifierType.TaxNodeID;
 
       } else if (id_.startsWith(IdentifierPrefix.VMR)) {
+         idPrefix = IdentifierPrefix.VMR;
          idType = IdentifierType.VMR;
 
       } else {
@@ -134,7 +198,7 @@ export class Utils {
       }
 
       // Remove the prefix, parse as an integer, and validate.
-      const strValue = id_.replace(idType, "");
+      const strValue = id_.replace(idPrefix, "");
       const value = parseInt(strValue);
       if (isNaN(value)) { throw new Error("Identifier is non-numeric"); }
 
@@ -145,39 +209,10 @@ export class Utils {
    }
    
 
-   // Process URL query string parameters for ID parameters.
-   static processUrlParamsForIdentifiers(params_: URLSearchParams): IIdentifierData[] {
-
-      let results: IIdentifierData[] = [];
-
-      // Iterate over ID parameter names until we find one. Note that the IdParameterName 
-      // enum values are in order of precedence.
-      Object.values(IdParameterName).forEach((name_) => {
-
-         let testValue = Utils.safeTrim(params_.get(name_));
-         if (testValue.length > 0) {
-
-            console.log(`name: ${name_}, value: ${testValue}`)
-
-            const expectedType = LookupIdParameterType(name_);
-            const idData = Utils.processIdentifer(testValue, expectedType);
-            if (idData !== null) { 
-               results.push(idData); 
-               
-               console.log("idData = ", idData)
-            }
-         }
-      })
-      
-      return results;
-   }
-
-
    // If the text is empty, null, or undefined, return an empty string. Otherwise, trim
    // the text and return it.
    static safeTrim(text_: string): string {
-      if (!text_) { return ""; }
-      return text_.trim();
+      return !text_ ? "" : text_.trim();
    }
 
 }
