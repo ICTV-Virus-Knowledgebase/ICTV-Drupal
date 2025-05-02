@@ -273,7 +273,20 @@ export enum WebServiceKey {
 
    // Taxonomy
    taxonomy = "taxonomy",
+   getMslRelease = "getMslRelease",
+   getByReleasePreExpanded = "getByReleasePreExpanded",
+   getChildTaxa = "getChildTaxa",
+   searchTaxonomy = "searchTaxonomy",
+   getTreeExpandedToNode = "getTreeExpandedToNode",
+   getTaxaByName = "getTaxaByName",
+   getTaxonDetails = "getTaxonDetails",
+   getUnassignedChildTaxaByName = "getUnassignedChildTaxaByName",
+   getReleaseHistory = "getReleaseHistory",
+   getReleaseTaxa = "getReleaseTaxa",
+
+   // TaxonomyHistory
    taxonomyHistory = "taxonomyHistory",
+   getTaxonHistory = "getTaxonHistory",
    
    // Member species table
    virusIsolate = "virusIsolate",

@@ -100,19 +100,19 @@ class SearchTaxonomy extends ResourceBase {
    public function get(Request $request) {
 
       // The current MSL release
-      $currentRelease = $request->get("currentRelease");
+      $currentRelease = $request->get("current_release");
       if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
 
       // Include all MSL releases?
-      $includeAllReleases = $request->get("includeAllReleases");
+      $includeAllReleases = $request->get("include_all_releases");
       if (Utils::isNullOrEmpty($includeAllReleases)) { $includeAllReleases = 0; }
 
       // The selected MSL release (optional)
-      $selectedRelease = $request->get("selectedRelease");
+      $selectedRelease = $request->get("selected_release");
       if (Utils::isNullOrEmpty($selectedRelease)) { $selectedRelease = $currentRelease; }
 
       // Search text
-      $searchText = $request->get("searchText");
+      $searchText = $request->get("search_text");
       if (Utils::isNullOrEmpty($searchText)) { throw new BadRequestHttpException("Please provide non-empty search text"); }
 
       // Search the taxonomy

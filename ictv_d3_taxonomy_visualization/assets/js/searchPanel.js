@@ -193,11 +193,12 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
       const searchResults = await jQuery.ajax({
          dataType: "json",
          processData: true,
-         type: "POST",
+         // type: "POST",
+         type: "GET",
          url: self.taxonomyURL,
          data: {
             // action_code: "search_visual_taxonomy",
-            action_code: "search_taxonomy",
+            // action_code: "search_taxonomy",
             current_release: self.releaseNumber.current,
             include_all_releases: includeAllReleases,
             search_text: searchText,

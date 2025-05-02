@@ -12,11 +12,11 @@ export class _TaxonomyService {
     async getChildTaxa(taxNodeID_: string) {
 
         const data = {
-            action_code: "get_child_taxa",
+            // action_code: "get_child_taxa",
             taxnode_id: taxNodeID_
         };
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getChildTaxa, data);
         
         return responseData;
     }
@@ -26,11 +26,11 @@ export class _TaxonomyService {
         let mslRelease: IMslRelease = null;
 
         const data = {
-            action_code: "get_msl_release",
+            // action_code: "get_msl_release",
             msl_release: releaseNumber_
         }
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getMslRelease, data);
         if (responseData && responseData.release) { mslRelease = responseData.release as IMslRelease}
 
         return mslRelease;
@@ -40,10 +40,10 @@ export class _TaxonomyService {
     async getReleaseHistory() {
 
         const data = {
-            action_code: "get_release_history"
+            // action_code: "get_release_history"
         }
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getReleaseHistory, data);
 
         return responseData;
     }
@@ -56,7 +56,7 @@ export class _TaxonomyService {
         // TODO: validate displaySettings_
 
         let data = {
-            action_code: "get_by_release_pre_expanded",
+            // action_code: "get_by_release_pre_expanded",
             display_child_count: displaySettings_.displayChildCount,
             display_history_controls: displaySettings_.displayHistoryCtrls,
             display_member_of_controls: displaySettings_.displayMemberOfCtrls,
@@ -67,7 +67,7 @@ export class _TaxonomyService {
             use_small_font: displaySettings_.useSmallFont
         }
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getByReleasePreExpanded, data);
 
         let taxonomyHTML: string = null;
         if (responseData && responseData.taxonomyHTML) { taxonomyHTML = responseData.taxonomyHTML; }
@@ -79,12 +79,12 @@ export class _TaxonomyService {
     async getTaxaByName(releaseNumber_: string, taxonName_: string) {
 
         const data = {
-            action_code: "get_taxa_by_name",
+            // action_code: "get_taxa_by_name",
             msl_release: releaseNumber_,
             taxon_name: taxonName_
         };
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getTaxaByName, data);
 
         return responseData;
     }
@@ -95,11 +95,11 @@ export class _TaxonomyService {
         if (!taxNodeID_) { throw new Error("Invalid taxNodeID"); }
         
         const data = {
-            action_code: "get_taxon_details",
+            // action_code: "get_taxon_details",
             taxnode_id: taxNodeID_
         };
 
-        const responseData = await WebService.post<ITaxonDetailsResult>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<ITaxonDetailsResult>(WebServiceKey.getTaxonDetails, data);
 
         console.log(responseData);
 
@@ -114,7 +114,7 @@ export class _TaxonomyService {
         if (!taxNodeID_) { throw new Error("Invalid taxNodeID in getTreeExpandedToNode"); }
 
         const data = {
-            action_code: "get_tree_expanded_to_node",
+            // action_code: "get_tree_expanded_to_node",
             display_child_count: displaySettings_.displayChildCount,
             display_history_controls: displaySettings_.displayHistoryCtrls,
             display_member_of_controls: displaySettings_.displayMemberOfCtrls,
@@ -126,7 +126,7 @@ export class _TaxonomyService {
             use_small_font: displaySettings_.useSmallFont
         }
         
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getTreeExpandedToNode, data);
 
         return responseData;
     }
@@ -135,12 +135,12 @@ export class _TaxonomyService {
     async getUnassignedChildTaxaByName(releaseNumber_: string, taxonName_: string) {
 
         const data = {
-            action_code: "get_unassigned_child_taxa_by_name",
+            // action_code: "get_unassigned_child_taxa_by_name",
             msl_release: releaseNumber_,
             taxon_name: taxonName_
         }
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+        const responseData = await WebService.get<any>(WebServiceKey.getUnassignedChildTaxaByName, data);
 
         return responseData;
     }
@@ -154,14 +154,14 @@ export class _TaxonomyService {
         if (!selectedRelease_) { selectedRelease_ = null; }
 
         const data = {
-            action_code: "search_taxonomy",
+            // action_code: "search_taxonomy",
             current_release: currentRelease_,
             include_all_releases: includeAllReleases_,
             search_text: searchText_,
             selected_release: selectedRelease_
         };
 
-        return await WebService.post<ITaxonSearchResult[]>(WebServiceKey.taxonomy, data);
+        return await WebService.get<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
     }
 
     
@@ -173,14 +173,14 @@ export class _TaxonomyService {
         if (!selectedRelease_) { selectedRelease_ = null; }
 
         const data = {
-            action_code: "search_visual_taxonomy",
+            // action_code: "search_visual_taxonomy",
             current_release: currentRelease_,
             include_all_releases: includeAllReleases_,
             search_text: searchText_,
             selected_release: selectedRelease_
         };
 
-        return await WebService.post<ITaxonSearchResult[]>(WebServiceKey.taxonomy, data);
+        return await WebService.get<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
     }
 
 

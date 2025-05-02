@@ -13,13 +13,13 @@ export class _VirusIsolateService {
         if (!taxonName_) { throw new Error("Please enter a valid taxon name"); }
 
         const data = {
-            action_code: "get_virus_isolates",
+            // action_code: "get_virus_isolates",
             msl_release: mslRelease_,
             only_unassigned: onlyUnassigned_,
             taxon_name: taxonName_
         };
 
-        const responseData = await WebService.post<IVirusIsolate[]>(WebServiceKey.virusIsolate, data);
+        const responseData = await WebService.get<IVirusIsolate[]>(WebServiceKey.virusIsolate, data);
 
         return responseData;
     }

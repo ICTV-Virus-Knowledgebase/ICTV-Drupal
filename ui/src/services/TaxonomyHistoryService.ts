@@ -14,12 +14,12 @@ export class _TaxonomyHistoryService {
         if (!ictvID_) { throw new Error("Invalid ICTV ID") }
 
         const data = {
-            action_code: "get_taxon_history",
+            // action_code: "get_taxon_history",
             current_release: currentMslRelease_,
             "ictv_id": ictvID_
         };
 
-        return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+        return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
     }
 
 
@@ -30,12 +30,12 @@ export class _TaxonomyHistoryService {
         if (!taxonName_) { throw new Error("Invalid taxon name in getByName"); }
 
         const data = {
-            action_code: "get_taxon_history",
+            // action_code: "get_taxon_history",
             current_release: currentMslRelease_,
             "taxon_name": taxonName_
         };
 
-        return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+        return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
     }
 
 
@@ -46,12 +46,12 @@ export class _TaxonomyHistoryService {
         if (!taxNodeID_) { throw new Error("Invalid taxnode ID"); }
         
         const data = {
-            action_code: "get_taxon_history",
+            // action_code: "get_taxon_history",
             current_release: currentMslRelease_,
             taxnode_id: taxNodeID_
         };
 
-        return await WebService.get<ITaxonHistoryResult>(WebServiceKey.taxonomyHistory, data);
+        return await WebService.get<ITaxonHistoryResult>(WebServiceKey.getTaxonHistory, data);
     }
 
 }
