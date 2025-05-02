@@ -39,7 +39,8 @@
             const taxonDetailsURL = settings_.taxonHistoryPage;
 
             // The taxonomy web service URL.
-            const taxonomyURL = `${window.ICTV.AppSettings.baseWebServiceURL}taxonomy.ashx`;
+            // const taxonomyURL = `${window.ICTV.AppSettings.baseWebServiceURL}taxonomy.ashx`;
+            const taxonomyURL = `${window.ICTV.AppSettings.baseWebServiceURL}search-taxonomy`;
 
             // Load the releases metadata from the releases JSON file.
             $.getJSON(`${dataURL}/data/releases.json`).done((releases) => {

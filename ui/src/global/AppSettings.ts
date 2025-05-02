@@ -47,10 +47,24 @@ export class _AppSettings {
 
       // Taxonomy
       taxonomy: "taxonomy.ashx",
+      getMslRelease: "get-msl-release",
+      getByReleasePreExpanded: "get-by-release-pre-expanded",
+      getChildTaxa: "get-child-taxa",
+      searchTaxonomy: "search-taxonomy",
+      getTreeExpandedToNode: "get-tree-expanded-to-node",
+      getTaxaByName: "get-taxa-by-name",
+      getTaxonDetails: "get-taxon-details",
+      getUnassignedChildTaxaByName: "get-unassigned-child-taxa-by-name",
+      getReleaseHistory: "get-release-history",
+      getReleaseTaxa: "get-release-taxa",
+
+      // TaxonHistory
       taxonomyHistory: "taxonomyHistory.ashx",
+      getTaxonHistory: "get-taxon-history",
       
       // Member species table
-      virusIsolate: "virusIsolate.ashx",
+      // virusIsolate: "virusIsolate.ashx",
+      virusIsolate: "get-virus-isolates",
 
       // Virus name lookup
       virusNameLookup: "virus-name-lookup"

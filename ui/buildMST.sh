@@ -3,7 +3,7 @@
 # https://devhints.io/bash
 
 #------------------------------------------------------------------------------
-# Run webpack for the Visual Browser component.
+# Run webpack for the Member Species Table component.
 #------------------------------------------------------------------------------
 
 # The subdirectory for ICTV components.
@@ -17,27 +17,21 @@ printf "\n"
 #------------------------------------------------------------------------------
 # Build the TypeScript component.
 #------------------------------------------------------------------------------
-printf "Building the Visual Browser component \n\n"
-"${webpack}" --config "$componentPath/VisualBrowser/webpack.config.js"
+printf "Building the member species table component \n\n"
+"${webpack}" --config "$componentPath/MemberSpeciesTable/webpack.config.js"
 
 printf "\n\n"
-
-
-# This is temporary...
-cp ./dist/ICTV_VisualBrowser.js ../ictv_d3_taxonomy_visualization/assets/js/
-cp ./css/ICTV.css ../ictv_d3_taxonomy_visualization/assets/css/
 
 #------------------------------------------------------------------------------
 # Copy the generated JavaScript file to the module's asset directory.
 #------------------------------------------------------------------------------
-#printf "Copying ICTV_CuratedNameManager.js to ictv_curated_name_manager/assets/js\n\n"
+printf "Copying ICTV_MemberSpeciesTable.js to ictv_member_species_table/assets/js\n\n"
 
-#cp ./dist/ICTV_CuratedNameManager.js ../ictv_curated_name_manager/assets/js/
+cp ./dist/ICTV_MemberSpeciesTable.js ../ictv_member_species_table/assets/js/
 
 #------------------------------------------------------------------------------
-# Copy the Curated Name Manager CSS file to the module's asset directory.
+# Copy the Member Species Table CSS file(s) to the module's asset directory.
 #------------------------------------------------------------------------------
-#printf "Copying CSS files to ictv_curated_name_manager/assets/css\n\n"
+printf "Copying CSS file(s) to ictv_member_species_table/assets/css\n\n"
 
-#cp ./css/CuratedNameManager.css ../ictv_curated_name_manager/assets/css/
-#cp ./css/dataTables.dataTables.min.css ../ictv_curated_name_manager/assets/css/
+cp ./css/ICTV.css ../ictv_member_species_table/assets/css/
