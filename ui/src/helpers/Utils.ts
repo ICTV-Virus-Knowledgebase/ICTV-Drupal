@@ -7,6 +7,16 @@ import { Identifiers } from "../models/Identifiers";
 export class Utils {
 
 
+   // Convert a string containing an integer to an integer.
+   static convertStringToInt(strInt_: string): number {
+
+      const strValue = Utils.safeTrim(strInt_);
+      if (strValue.length < 1) { return NaN; }
+
+      return parseInt(strValue);
+   }
+
+   
    // Convert a numeric tree ID to a release year.
    static convertTreeIdToYear(treeID_: number): string {
 
