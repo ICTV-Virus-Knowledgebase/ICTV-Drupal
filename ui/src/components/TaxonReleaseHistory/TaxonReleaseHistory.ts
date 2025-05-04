@@ -438,7 +438,7 @@ export class TaxonReleaseHistory {
          if (taxon_.isMerged) { 
 
             // Add a description
-            descriptions.push(`${this.formatAction(ReleaseAction.merged)}${fromPreviousNames}`);
+            descriptions.push(`${this.formatAction(ReleaseAction.merged)} from ${fromPreviousNames}`);
 
             // Update the list of actions.
             actions.push(ReleaseAction.merged);
@@ -446,7 +446,7 @@ export class TaxonReleaseHistory {
          } else if (taxon_.isSplit) {
 
             // Add a description
-            descriptions.push(`${this.formatAction(ReleaseAction.split)}${fromPreviousNames}`);
+            descriptions.push(`${this.formatAction(ReleaseAction.split)} from ${fromPreviousNames}`);
 
             // Update the list of actions.
             actions.push(ReleaseAction.split);    
@@ -461,8 +461,9 @@ export class TaxonReleaseHistory {
                descriptions.push(`${this.formatAction(ReleaseAction.renamed)}`);
 
             } else {
+
                // Add a description
-               descriptions.push(`${this.formatAction(ReleaseAction.renamed)}${fromPreviousNames}`);
+               descriptions.push(`${this.formatAction(ReleaseAction.renamed)} of ${fromPreviousNames}`);
             }
             
             // Update the list of actions.
@@ -489,7 +490,7 @@ export class TaxonReleaseHistory {
          if (index_ === 0) {
 
             // The summary will begin with "was" for all actions other than "lineage updated". 
-            if (actions[0] != ReleaseAction.lineageUpdated) { summary += "was "; }
+            if (actions[0] !== ReleaseAction.lineageUpdated && actions[0] !== ReleaseAction.renamed) { summary += "was "; }
          }
 
          // Precede each non-first description with a comma, and preface the final description with "and".
@@ -940,7 +941,7 @@ export class TaxonReleaseHistory {
       
       if (formattedNames.length < 1) { return ""; }
 
-      return ` from ${formattedNames}`; 
+      return `${formattedNames}`; 
    }
 
    // Get the history of taxa with this ictv_id over all releases.
@@ -1090,8 +1091,6 @@ export class TaxonReleaseHistory {
       // Only highlight changed taxa if there are enough distinct ICTV IDs.
       if (this.distinctIctvIDs < this.MIN_ICTV_IDS_FOR_HIGHLIGHT) { console.log("not highlighting"); return; }
 
-      console.log("highlighting")
-
       // Lowlight (?) any currently highlighted changed-taxa.
       const highlightedTaxaEls = this.elements.releases.querySelectorAll(`.changed-taxon.highlighted`);
       if (!!highlightedTaxaEls) { highlightedTaxaEls.forEach(el_ => el_.classList.remove("highlighted")); }
@@ -1208,9 +1207,6 @@ export class TaxonReleaseHistory {
       this.selectedTaxon = this.taxonHistory.selectedTaxon;
       if (!this.selectedTaxon) { return this.displayMessage("Invalid selected taxon"); }
       
-      // Display the instructions panel.
-      this.elements.instructions.classList.add("visible");
-
       // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
 
@@ -1294,8 +1290,11 @@ export class TaxonReleaseHistory {
       // Set the number of distinct ICTV IDs from taxa displayed on the page.
       this.distinctIctvIDs = ictvIDs.length;
 
-      console.log(`this.distinctIctvIDs = ${this.distinctIctvIDs}`)
-
+      // Should we display the instructions panel?
+      if (this.distinctIctvIDs > this.MIN_ICTV_IDS_FOR_HIGHLIGHT) {
+         this.elements.instructions.classList.add("visible");
+      }
+      
       // Try to highlight all changed taxa with the selected ICTV ID
       this.highlightSelectedLineage(this.selectedTaxon.ictvID);
    }
