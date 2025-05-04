@@ -472,7 +472,7 @@ export function LookupReleaseAction(releaseAction_: ReleaseAction) {
       case ReleaseAction.promoted:
          return "promoted";
       case ReleaseAction.renamed: 
-         return "renamed";
+         return "is a rename";
       case ReleaseAction.split:
          return "split";
       case ReleaseAction.unchanged:
