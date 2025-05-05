@@ -1118,16 +1118,16 @@ export class TaxonomyBrowser {
             await this.getReleaseHistory();
             break;
 
-         case TaxonomyDisplayType.display_unassigned_child_taxa:
+         /*case TaxonomyDisplayType.display_unassigned_child_taxa:
             await this.getRelease(this.initialData.releaseNumber);
             await this.getUnassignedChildTaxaByName();
-            break;
+            break;*/
 
          default:
             await this.getRelease(this.initialData.releaseNumber);
             await this.getTaxaByName();
       }
-      
+
       return;
    }
 
