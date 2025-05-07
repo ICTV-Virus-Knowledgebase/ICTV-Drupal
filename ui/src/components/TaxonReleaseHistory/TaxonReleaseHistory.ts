@@ -1230,13 +1230,18 @@ export class TaxonReleaseHistory {
       // We will use this list to keep track of distinct ICTV IDs.
       let ictvIDs = [];
 
+      let lastTaxonString: string = null;
+
       // Iterate over all taxa from the taxon's history.
       this.taxonHistory.taxa.forEach((taxon_: ITaxon) => {
 
-         const releaseNumber = taxon_.mslReleaseNumber;
+         // If this taxon is the same as the one we previously encountered, skip it to avoid duplicates.
+         const taxonString = JSON.stringify(taxon_);
+         if (lastTaxonString && lastTaxonString === taxonString) { return; }
+         lastTaxonString = taxonString;
 
          // Get the MSL release associated with the taxon.
-         const release = this.releaseLookup.get(releaseNumber);
+         const release = this.releaseLookup.get(taxon_.mslReleaseNumber);
          if (!release) { console.log("invalid release for taxon ", taxon_); return; }
 
          // Add metadata to the taxon.
@@ -1248,7 +1253,7 @@ export class TaxonReleaseHistory {
          release.taxa.push(taxon_);
 
          // Add the release back to the lookup.
-         this.releaseLookup.set(releaseNumber, release);
+         this.releaseLookup.set(taxon_.mslReleaseNumber, release);
 
          // Add the taxon, a summary of its changes, and its lineage to the associated release.
          this.addTaxonChanges(taxonIndex, release.taxaElement, taxon_);
