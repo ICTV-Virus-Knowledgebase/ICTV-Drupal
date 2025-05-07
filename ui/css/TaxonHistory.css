@@ -5,6 +5,7 @@
 
 /* CSS variables used in this component. */
 #taxon_history_container {
+   --abolished-color: #cf2222; /* #f22727; */
    --darker-highlight-color: #ffe770;
    --highlight-color: #fff6c4;
 }
@@ -14,9 +15,6 @@
    margin-top: 2.0rem;
    width: 100%;
 }
-/*#taxon_history_container .message-panel {
-   display: none;
-}*/
 
 
 /* The selected taxon */
@@ -189,6 +187,10 @@
    background-color: var(--highlight-color);
 }
 
+/* The taxon rank and name are displayed in red for abolished taxa. */
+#taxon_history_container .release .release-body .changed-taxon.abolished .taxon-rank-and-name {
+   color: var(--abolished-color);
+}
 
 #taxon_history_container .release .taxon-rank-and-name {
    align-items: flex-start;
