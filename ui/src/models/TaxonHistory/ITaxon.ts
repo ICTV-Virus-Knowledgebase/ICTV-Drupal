@@ -24,4 +24,12 @@ export interface ITaxon {
    taxnodeID: number;
    treeID: number;
    year?: string;
+
+   // The following properties are added after the JSON is returned by the web service.
+   formattedLineage?: string;
+   previousParent?: {
+      name: string;
+      rank: string;
+   };
+   previousRank?: string;
 }
