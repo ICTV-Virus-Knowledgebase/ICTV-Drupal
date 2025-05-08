@@ -33,7 +33,7 @@ enum TaxonType {
 }
 
 
-export class TaxonReleaseHistory {
+export class TaxonHistory {
 
    allRankNamesArray: string[] = null;
 
@@ -1082,7 +1082,7 @@ export class TaxonReleaseHistory {
          <div class="data-container">
             <div class="selected-taxon"></div>
             <div class="instructions">
-               (Changes in the history of <span class="selected-name"></span> are <span class="highlighted">highlighted in yellow</span>.
+               (The history of <span class="selected-name"></span> is <span class="highlighted">highlighted in yellow</span>.
                Click on a taxon to select it and highlight its history.)
             </div>
             <div class="releases"></div>
