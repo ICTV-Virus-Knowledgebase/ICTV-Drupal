@@ -33,7 +33,7 @@ enum TaxonType {
 }
 
 
-export class TaxonReleaseHistory {
+export class TaxonHistory {
 
    allRankNamesArray: string[] = null;
 
@@ -42,10 +42,13 @@ export class TaxonReleaseHistory {
 
    currentMslRelease: number;
 
+   // The number of distinct ICTV IDs from all displayed taxa.
+   distinctIctvIDs = 0;
+
    // Important DOM elements used by this component.
    elements: {
       container: HTMLElement,
-      dataContainer: HTMLElement,
+      instructions: HTMLElement,
       messagePanel: HTMLElement,
       releases: HTMLElement,
       selectedTaxon: HTMLElement,
@@ -96,6 +99,9 @@ export class TaxonReleaseHistory {
       noData: "No history is available"
    }
 
+   // The minimum number of distinct ICTV IDs to enable highlighting.
+   MIN_ICTV_IDS_FOR_HIGHLIGHT = 2;
+
    releaseLookup: Map<number, IRelease>;
 
    // The taxon specified by the identifier parameter(s).
@@ -118,7 +124,7 @@ export class TaxonReleaseHistory {
 
       this.elements = {
          container: null,
-         dataContainer: null,
+         instructions: null,
          messagePanel: null,
          releases: null,
          selectedTaxon: null,
@@ -139,21 +145,26 @@ export class TaxonReleaseHistory {
       }
 
       this.identifiers = null;
+
+      // Initialize the taxa lookup.
+      this.taxaLookup = new Map<number, ITaxon>();
    }
 
    addEventHandlers() {
 
+      // Add a click event handler to the "releases" panel.
       this.elements.releases.addEventListener("click", (event_) => {
 
          let target = (event_.target as HTMLElement);
-      
+
          // Was the export settings button clicked?
          if (target.classList.contains("settings-button")) { return this.openSettingsDialog(); }
 
          // Was an export button clicked?
          const action = target.getAttribute("data-action") as ExportAction;
-         if (!!action) {
+         if (action) {
 
+            // Get data attributes from the button element.
             const ictvID = target.getAttribute("data-ictv-id");
             const lineage = target.getAttribute("data-lineage");
             const name = target.getAttribute("data-name");
@@ -165,6 +176,24 @@ export class TaxonReleaseHistory {
             return this.exportLineage(action, ictvID, lineage, name, rankNames, releaseNumber, taxNodeID);
          }
          
+         // Was a "changed taxon" element clicked?
+         const changedTaxonEl = target.closest(".changed-taxon");
+         if (changedTaxonEl) {
+
+            // Get the ICTV ID and taxnode ID attributes from the element.
+            const ictvID: number = Utils.convertStringToInt(changedTaxonEl.getAttribute("data-ictv-id"));
+            const taxNodeID: number = Utils.convertStringToInt(changedTaxonEl.getAttribute("data-taxnode-id"));
+
+            if (!isNaN(ictvID) && !isNaN(taxNodeID)) {
+
+               // Highlight all changed taxa with this ICTV ID as a data attribute.
+               this.highlightSelectedLineage(ictvID);
+
+               // Update the selected taxon.
+               this.updateSelectedTaxon(taxNodeID);
+            }
+         }
+
          return;
       })
    }
@@ -201,12 +230,9 @@ export class TaxonReleaseHistory {
 
       let title = "";
 
-      // Determine the taxon's rank name.
-      const rankName = this.getRankName(taxon_.lineageRanks);
-
       // Create HTML for the rank and linked taxon name.
-      let linkedName = `<span class="taxon-rank">${rankName}</span>: 
-      <a href="#release_${release_.releaseNumber}"><span class="taxon-name">${taxon_.name}</span></a>`;
+      let linkedName = `<span class="taxon-rank">${taxon_.rankName}</span>  
+         <a href="#release_${release_.releaseNumber}"><span class="taxon-name">${taxon_.name}</span></a>`;
 
       // Populate the title text.
       if (taxon_.mslReleaseNumber === this.currentMslRelease) {
@@ -238,31 +264,38 @@ export class TaxonReleaseHistory {
          title = `You selected the ${release_.year} release of ${linkedName} (MSL ${release_.releaseNumber})`;
       }
 
+      // Populate the selected taxon panel.
       this.elements.selectedTaxon.innerHTML = title;
+
+      // Update the selected taxon name in the instructions.
+      const selectedNameEl = this.elements.container.querySelector(".instructions .selected-name");
+      if (!selectedNameEl) { throw new Error("Invalid selected name element in the instructions"); }
+
+      selectedNameEl.innerHTML = taxon_.name;
+
       return;
    }
 
-   addTaxonChanges(parentEl_: HTMLElement, taxon_: ITaxon, index_: number) {
+   // Add the taxon, a summary of its changes, and its lineage to the associated release.
+   addTaxonChanges(index_: number, parentEl_: HTMLElement, taxon_: ITaxon) {
 
       let html = "";
 
-      if (index_ > 0) { html += "<hr />"; }
-
-      // Format the lineage (taxon names and ranks).
-      const formattedLineage = this.formatLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.lineageRanks);
-
-      // Get the rank name
-      const rankName = this.getRankName(taxon_.lineageRanks);
+      // Add an HR element between the "changed taxon" sections.
+      if (index_ > 0) { parentEl_.append(document.createElement("hr")); }
 
       // Create the summary of changes for this taxon.
       let changeSummary = this.createChangeSummary(taxon_);
+
+      // Format the lineage as HTML, adding "taxon details" links to each taxon name.
+      const formattedLineage = this.formatLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.lineageRanks);
 
       // If there are associated proposals, create a panel to display them.
       let proposalPanel = this.createProposalPanel(taxon_.prevProposal);
    
       html +=
          `<div class="taxon-rank-and-name">
-            <div class="rank-name">${rankName}:</div>
+            <div class="rank-name">${taxon_.rankName}</div>
             <div class="taxon-name">${taxon_.name}</div>
             <div class="taxon-changes">${changeSummary}</div>
          </div>
@@ -298,8 +331,14 @@ export class TaxonReleaseHistory {
          ${proposalPanel}`;
 
       let taxonChangesEl: HTMLDivElement = document.createElement("div");
-      taxonChangesEl.className = "taxon-changes";
+      taxonChangesEl.classList.add("changed-taxon");
+
+      if (taxon_.isDeleted) { taxonChangesEl.classList.add("abolished"); }
+
+      taxonChangesEl.setAttribute("data-ictv-id", taxon_.ictvID.toString());
+      taxonChangesEl.setAttribute("data-taxnode-id", taxon_.taxnodeID.toString())
       taxonChangesEl.innerHTML = html;
+      
       parentEl_.append(taxonChangesEl);
    }
 
@@ -331,55 +370,66 @@ export class TaxonReleaseHistory {
       // The order of changes is New, Abolished, Promoted, Demoted, Moved, Lineage updated, Merged, Split, Renamed, and Unchanged.
 
       // New
-      if (taxon_.isNew) { return `is ${this.formatAction(ReleaseAction.new)}`; }
+      if (taxon_.isNew) {
+
+         // Add a description and update the list of actions.
+         descriptions.push(this.formatAction(ReleaseAction.new)); 
+         actions.push(ReleaseAction.new);
+      }
 
       // Abolished (deleted)
-      if (taxon_.isDeleted) { return `was ${this.formatAction(ReleaseAction.abolished)}`; }
+      if (taxon_.isDeleted) { 
+         
+         // Add a description and update the list of actions.
+         descriptions.push(this.formatAction(ReleaseAction.abolished)); 
+         actions.push(ReleaseAction.abolished);
+      }
 
       // Promoted or demoted
       if (taxon_.isPromoted) { 
          
-         // Look for the taxon's rank in the previous release.
-         const previousRank = this.getPreviousRank(taxon_.previousLineage);
-
-         // Add a description
-         descriptions.push(`${this.formatAction(ReleaseAction.promoted)}${previousRank}`);
-
-         // Update the list of actions.
+         // Add a description and update the list of actions.
+         descriptions.push(`${this.formatAction(ReleaseAction.promoted)}${taxon_.previousRank}`);
          actions.push(ReleaseAction.promoted);
 
       } else if (taxon_.isDemoted) { 
          
-         // Look for the taxon's rank in the previous release.
-         const previousRank = this.getPreviousRank(taxon_.previousLineage);
-
-         // Add a description
-         descriptions.push(`${this.formatAction(ReleaseAction.demoted)}${previousRank}`);
-
-         // Update the list of actions.
+         // Add a description and update the list of actions.
+         descriptions.push(`${this.formatAction(ReleaseAction.demoted)}${taxon_.previousRank}`);
          actions.push(ReleaseAction.demoted);
       }
 
-      // Moved
-      if (taxon_.isMoved) {
+      // Moved (don't include if the lineage has been updated, as well)
+      if (taxon_.isMoved && !taxon_.isLineageUpdated) {
 
-         // A formatted version of the taxon's parent in the previous MSL release.
-         const previousParent = this.formatPreviousLineage(taxon_.previousLineage);
+         let formattedPrevParent = "";
+         
+         if (taxon_.previousParent && taxon_.previousParent.name) {
 
-         // Add a description
-         descriptions.push(`${this.formatAction(ReleaseAction.moved)}${previousParent}`);
+            let prevParentName = taxon_.previousParent.name;
 
-         // Update the list of actions.
+            // Make sure the taxon doesn't still have the "moved from" taxon in its current lineage.
+            let lineage = Utils.safeTrim(taxon_.lineage);
+            if (lineage.endsWith(";")) { lineage = lineage.substring(0, lineage.length - 1); }
+            
+            const lineageArray = lineage.split(";")
+            if (!lineageArray.includes(prevParentName) && prevParentName !== taxon_.name) { 
+               
+               // A formatted version of the taxon's parent in the previous MSL release.
+               formattedPrevParent = this.formatPreviousParent(taxon_);
+            }
+         } 
+         
+         // Add a description and update the list of actions.
+         descriptions.push(`${this.formatAction(ReleaseAction.moved)}${formattedPrevParent}`);
          actions.push(ReleaseAction.moved);
       }
 
       // Lineage updated
       if (taxon_.isLineageUpdated) { 
 
-         // Add a description
+         // Add a description and update the list of actions.
          descriptions.push(`had its ${this.formatAction(ReleaseAction.lineageUpdated)}`);
-
-         // Update the list of actions.
          actions.push(ReleaseAction.lineageUpdated);
       }
 
@@ -392,18 +442,14 @@ export class TaxonReleaseHistory {
          // Merged or split
          if (taxon_.isMerged) { 
 
-            // Add a description
-            descriptions.push(`${this.formatAction(ReleaseAction.merged)}${fromPreviousNames}`);
-
-            // Update the list of actions.
+            // Add a description and update the list of actions.
+            descriptions.push(`${this.formatAction(ReleaseAction.merged)} from ${fromPreviousNames}`);
             actions.push(ReleaseAction.merged);
    
          } else if (taxon_.isSplit) {
 
-            // Add a description
-            descriptions.push(`${this.formatAction(ReleaseAction.split)}${fromPreviousNames}`);
-
-            // Update the list of actions.
+            // Add a description and update the list of actions.
+            descriptions.push(`${this.formatAction(ReleaseAction.split)} from ${fromPreviousNames}`);
             actions.push(ReleaseAction.split);    
          }
 
@@ -416,8 +462,9 @@ export class TaxonReleaseHistory {
                descriptions.push(`${this.formatAction(ReleaseAction.renamed)}`);
 
             } else {
+
                // Add a description
-               descriptions.push(`${this.formatAction(ReleaseAction.renamed)}${fromPreviousNames}`);
+               descriptions.push(`${this.formatAction(ReleaseAction.renamed)} of ${fromPreviousNames}`);
             }
             
             // Update the list of actions.
@@ -443,8 +490,16 @@ export class TaxonReleaseHistory {
 
          if (index_ === 0) {
 
-            // The summary will begin with "was" for all actions other than "lineage updated". 
-            if (actions[0] != ReleaseAction.lineageUpdated) { summary += "was "; }
+            if (actions[0] === ReleaseAction.new) {
+
+               // New is prefaced by "is".
+               summary += "is ";
+
+            } else if (actions[0] !== ReleaseAction.lineageUpdated && actions[0] !== ReleaseAction.renamed) { 
+
+               // The summary will begin with "was" for all actions other than "lineage updated" and "renamed".
+               summary += "was "; 
+            }
          }
 
          // Precede each non-first description with a comma, and preface the final description with "and".
@@ -551,63 +606,11 @@ export class TaxonReleaseHistory {
       </div>`;
    }
 
-   // Create HTML for a taxon.
-   createTaxonHTML(taxon_: ITaxon, type_: TaxonType) {
-
-      let formattedLineage = "";
-      let title = "";
-
-      // Convert the numeric tree ID to a release year.
-      const releaseYear = Utils.convertTreeIdToYear(taxon_.treeID);
-
-      // Determine the title text.
-      if (taxon_.isDeleted) {
-
-         title = type_ === TaxonType.current 
-            ? `Abolished in ${releaseYear} Release (MSL #${taxon_.mslReleaseNumber})`
-            : `Your selection: Abolished in ${releaseYear} Release (MSL #${taxon_.mslReleaseNumber})`;
-         
-      } else {
-
-         title = type_ === TaxonType.current 
-            ? `Current release (${releaseYear} Release, MSL #${taxon_.mslReleaseNumber})`
-            : `Your selection (${releaseYear} Release, MSL #${taxon_.mslReleaseNumber})`;
-      }
-
-      // Lineage ranks
-      let lineageRanks = taxon_.lineageRanks;
-      if (lineageRanks.endsWith(";")) { lineageRanks = lineageRanks.substring(0, lineageRanks.length - 1); }
-
-      // Display the full lineage of the taxa.
-      if (taxon_.lineage && taxon_.lineageIDs && lineageRanks) {
-
-         // Format the lineage as HTML.
-         formattedLineage = this.formatLineage(taxon_.lineage, taxon_.lineageIDs, lineageRanks);
-      }
-
-      // Get the taxons' rank name.
-      const rankName = this.getRankName(taxon_.lineageRanks);
-
-      let html = 
-         `<div class="taxon ${type_} visible">
-            <div class="taxon-title selected">${title}</div>
-            <div class="info-row">
-               <div class="taxon-rank">${rankName}</div>: <div class="taxon-name">${taxon_.name}</div>
-            </div>
-            <div class="lineage selected">${formattedLineage}</div>
-         </div>`;
-
-      return html;
-   }
-
+   // Display an HTML message in the message panel.
    displayMessage(message_: string) {
-
-      // Hide the container
-      this.elements.container.setAttribute("data-is-visible", "false");
 
       // Populate and show the message panel.
       this.elements.messagePanel.innerHTML = message_;
-      this.elements.messagePanel.setAttribute("data-is-visible", "true");
 
       return false;
    }
@@ -673,6 +676,7 @@ export class TaxonReleaseHistory {
       return `<span class=\"change ${action_} has-tooltip\">${label}<span class="tooltip">${definition}</span></span>`;
    }
 
+   // Format the lineage as HTML, adding "taxon details" links to each taxon name.
    formatLineage(lineage_: string, lineageIDs_: string, lineageRanks_: string): string {
 
       let html = "";
@@ -717,7 +721,7 @@ export class TaxonReleaseHistory {
 
             // Add the rank and linked name.
             html += `<div class="lineage-row" style="margin-left: ${leftOffset}rem">
-                  <div class="rank-name">${rankName}</div>: 
+                  <div class="rank-name">${rankName}</div> 
                   <div class="taxon-name">${linkedName}</div>
                </div>`;
          }
@@ -737,7 +741,7 @@ export class TaxonReleaseHistory {
       names_ = names_.trim();
       if (names_.endsWith(";")) { names_ = names_.substring(0, names_.length - 1); }
 
-      if (!!rankNames_) { rankNames_ = rankNames_.trim(); }
+      if (rankNames_) { rankNames_ = rankNames_.trim(); }
       if (rankNames_.endsWith(";")) { rankNames_ = rankNames_.substring(0, rankNames_.length - 1); }
 
       // Initialize the delimiter and final result.
@@ -777,7 +781,7 @@ export class TaxonReleaseHistory {
 
             // Only include the rank names that were provided.
             rankNamesArray.forEach((rankName_: string) => {
-               if (!!rankName_) { result += `${rankName_.trim()}${delimiter}`; }
+               if (rankName_) { result += `${rankName_.trim()}${delimiter}`; }
             })
          }
 
@@ -798,11 +802,11 @@ export class TaxonReleaseHistory {
 
             if (rankNamesArray.length >= (rankIndex + 1)) {
                includedRankName = rankNamesArray[rankIndex];
-               if (!!includedRankName) { includedRankName = includedRankName.toLowerCase(); }
+               if (includedRankName) { includedRankName = includedRankName.toLowerCase(); }
             }
 
             // Is there a valid "included" rank name that matches the rank name from "all" rank names?
-            if (!!includedRankName && rankName_ === includedRankName) {
+            if (includedRankName && rankName_ === includedRankName) {
 
                // Since the "included" rank exists, there should also be a name at this index.
                let name = "";
@@ -832,42 +836,6 @@ export class TaxonReleaseHistory {
       }
 
       return result;
-   }
-
-   // Get the taxon's parent from the previous release.
-   formatPreviousLineage(previousLineage_: string) {
-
-      previousLineage_ = Utils.safeTrim(previousLineage_);
-      if (previousLineage_.length < 1) { return ""; }
-
-      let parent = "";
-      
-      // Remove a trailing semicolon.
-      if (previousLineage_.endsWith(";")) { previousLineage_ = previousLineage_.substring(0, previousLineage_.length - 1); }
-
-      // Split the delimited taxa into an array.
-      const previousTaxa = previousLineage_.split(";");
-
-      console.log("previousTaxa = ", previousTaxa)
-
-      // Get the last taxon.
-      if (previousTaxa.length === 0) { 
-         return ""; 
-      } else if (previousTaxa.length === 1) {
-         parent = Utils.safeTrim(previousTaxa[0]);
-      } else {
-         parent = Utils.safeTrim(previousTaxa[previousTaxa.length - 2]);
-      }
-      
-      if (parent.length < 1) { return ""; }
-
-      // Split into rank name and name.
-      const names = parent.split(":");
-
-      console.log("prev lineage names = ", names)
-
-      // Return the formatted rank and taxon names.
-      return ` from <span class="subtle-rank-name">${names[0]}</span> <span class="subtle-taxon-name">${names[1]}</span>`;
    }
 
    // Format the comma-delimited list of previous names so that each name is italicized and the 
@@ -902,7 +870,13 @@ export class TaxonReleaseHistory {
       
       if (formattedNames.length < 1) { return ""; }
 
-      return ` from ${formattedNames}`; 
+      return `${formattedNames}`; 
+   }
+
+   // Return the formatted rank and taxon name of the taxon's previous parent.
+   formatPreviousParent(taxon_: ITaxon) {
+      if (!taxon_.previousParent || !taxon_.previousParent.name || !taxon_.previousParent.rank) { return ""; }
+      return ` from <span class="subtle-rank-name">${taxon_.previousParent.rank}</span> <span class="subtle-taxon-name">${taxon_.previousParent.name}</span>`;
    }
 
    // Get the history of taxa with this ictv_id over all releases.
@@ -1001,6 +975,38 @@ export class TaxonReleaseHistory {
       }
    }
 
+   // Get the taxon's previous parent (rank and name).
+   getPreviousParent(previousLineage_: string): string[] {
+
+      previousLineage_ = Utils.safeTrim(previousLineage_);
+      if (previousLineage_.length < 1) { return null; }
+
+      let parent = "";
+      
+      // Remove a trailing semicolon.
+      if (previousLineage_.endsWith(";")) { previousLineage_ = previousLineage_.substring(0, previousLineage_.length - 1); }
+
+      // Split the delimited taxa into an array.
+      const previousTaxa = previousLineage_.split(";");
+
+      // Get the last taxon.
+      if (previousTaxa.length === 0) { 
+         return null; 
+      } else if (previousTaxa.length === 1) {
+         parent = Utils.safeTrim(previousTaxa[0]);
+      } else {
+         parent = Utils.safeTrim(previousTaxa[previousTaxa.length - 2]);
+      }
+      
+      if (parent.length < 1) { return null; }
+
+      // Split into rank name and name.
+      //const names = parent.split(":");
+      return parent.split(":");
+   }
+
+   // Get a taxon's rank from a previous release. Note that previousLineage_ is expected to be 
+   // a list of "<rank name>:<taxon name>" delimited by a semicolon.
    getPreviousRank(previousLineage_: string) {
 
       previousLineage_ = Utils.safeTrim(previousLineage_);
@@ -1024,16 +1030,18 @@ export class TaxonReleaseHistory {
       let rankName = names[0];
       if (rankName.length < 1) { return ""; }
 
-      return ` from <span class="subtle-rank-name">${rankName}</span>`;
+      return rankName;
    }
 
-   // Get the last rank name from a taxon's lineage ranks.
+   // Get the last rank name from a taxon's lineage ranks. Note that lineageRanks_ is a list of rank names 
+   // delimited by a semicolon.
    getRankName(lineageRanks_: string): string {
 
       if (!lineageRanks_) { return ""; }
 
       let rankNames = lineageRanks_;
       rankNames = rankNames.substring(0, rankNames.lastIndexOf(";"));
+
       const rankNameArray = rankNames.split(";");
       return Utils.safeTrim(rankNameArray[rankNameArray.length - 1]);
    }
@@ -1046,17 +1054,37 @@ export class TaxonReleaseHistory {
       return `<div class="spinner-ctrl"><i class="${this.icons.spinner}"></i>${spinnerText}</div>`;
    }
 
+   // Highlight all changed taxa with this ICTV ID as a data attribute.
+   highlightSelectedLineage(selectedIctvID_: number) {
+
+      // Only highlight changed taxa if there are enough distinct ICTV IDs.
+      if (this.distinctIctvIDs < this.MIN_ICTV_IDS_FOR_HIGHLIGHT) { return; }
+
+      // Lowlight (?) any currently highlighted changed-taxa.
+      const highlightedTaxaEls = this.elements.releases.querySelectorAll(`.changed-taxon.highlighted`);
+      if (highlightedTaxaEls) { highlightedTaxaEls.forEach(el_ => el_.classList.remove("highlighted")); }
+
+      const selectedTaxaEls = this.elements.releases.querySelectorAll(`.changed-taxon[data-ictv-id="${selectedIctvID_}"]`);
+      if (selectedTaxaEls) { selectedTaxaEls.forEach(el_ => el_.classList.add("highlighted")); }
+
+      return;
+   }
+
    async initialize() {
 
       // Look for export settings in web storage.
       let settings = localStorage.getItem(WebStorageKey.lineageExportSettings);
-      if (!!settings && settings.length > 0) { this.exportSettings = JSON.parse(settings); }
+      if (settings && settings.length > 0) { this.exportSettings = JSON.parse(settings); }
 
       // Generate the component's HTML.
       let html: string =
-         `<div class="message-panel" data-is-visible="true"></div>
-         <div class="data-container" data-is-visible="false">
+         `<div class="message-panel visible"></div>
+         <div class="data-container">
             <div class="selected-taxon"></div>
+            <div class="instructions">
+               (The history of <span class="selected-name"></span> is <span class="highlighted">highlighted in yellow</span>.
+               Click on a taxon to select it and highlight its history.)
+            </div>
             <div class="releases"></div>
             ${this.createSettingsDialogHTML()}
          </div>`;
@@ -1070,6 +1098,9 @@ export class TaxonReleaseHistory {
 
       this.elements.messagePanel = this.elements.container.querySelector(".message-panel");
       if (!this.elements.messagePanel) { throw new Error("Invalid message panel element"); }
+
+      this.elements.instructions = this.elements.container.querySelector(".instructions");
+      if (!this.elements.instructions) { throw new Error("Invalid instructions panel element"); }
 
       this.elements.releases = this.elements.container.querySelector(".releases");
       if (!this.elements.releases) { throw new Error("Invalid releases element"); }
@@ -1117,7 +1148,7 @@ export class TaxonReleaseHistory {
          // Get the history by VMR (isolate) ID.
          return await this.getByVmrID();
 
-      } else if (!!this.identifiers.taxonName) {
+      } else if (this.identifiers.taxonName) {
 
          // Get the history by taxon name.
          return await this.getByTaxonName();
@@ -1141,12 +1172,12 @@ export class TaxonReleaseHistory {
       // Validate the taxa
       if (!this.taxonHistory.taxa || this.taxonHistory.taxa.length < 1) { return this.displayMessage("No history is available: No modified taxa available"); }
 
-      // Validate the selected taxon
-      if (!this.taxonHistory.selectedTaxon) { return this.displayMessage("No history is available: Invalid selected taxon"); }
-
-      // Show the container and hide the message panel.
-      this.elements.container.setAttribute("data-is-visible", "true");
-      this.elements.messagePanel.setAttribute("data-is-visible", "false");
+      // Set and validate the selected taxon
+      this.selectedTaxon = this.taxonHistory.selectedTaxon;
+      if (!this.selectedTaxon) { return this.displayMessage("Invalid selected taxon"); }
+      
+      // Add metadata to the taxon (for convenience).
+      this.selectedTaxon = this.processTaxon(this.selectedTaxon);
 
       // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
@@ -1172,7 +1203,7 @@ export class TaxonReleaseHistory {
             foundSelectedRelease = true;
 
             // Add the selected taxon to the page.
-            this.addSelectedTaxon(release_, this.taxonHistory.selectedTaxon);
+            this.addSelectedTaxon(release_, this.selectedTaxon);
          }
 
          // Add the release's MSL release number to the ordered list
@@ -1196,14 +1227,25 @@ export class TaxonReleaseHistory {
          this.releaseLookup.set(release_.releaseNumber, release_);
       })
 
+      // We will use this list to keep track of distinct ICTV IDs.
+      let ictvIDs = [];
+
+      let lastTaxonString: string = null;
+
       // Iterate over all taxa from the taxon's history.
       this.taxonHistory.taxa.forEach((taxon_: ITaxon) => {
 
-         const releaseNumber = taxon_.mslReleaseNumber;
+         // If this taxon is the same as the one we previously encountered, skip it to avoid duplicates.
+         const taxonString = JSON.stringify(taxon_);
+         if (lastTaxonString && lastTaxonString === taxonString) { return; }
+         lastTaxonString = taxonString;
 
          // Get the MSL release associated with the taxon.
-         const release = this.releaseLookup.get(releaseNumber);
+         const release = this.releaseLookup.get(taxon_.mslReleaseNumber);
          if (!release) { console.log("invalid release for taxon ", taxon_); return; }
+
+         // Add metadata to the taxon.
+         taxon_ = this.processTaxon(taxon_);
 
          const taxonIndex = release.taxa.length;
 
@@ -1211,13 +1253,50 @@ export class TaxonReleaseHistory {
          release.taxa.push(taxon_);
 
          // Add the release back to the lookup.
-         this.releaseLookup.set(releaseNumber, release);
+         this.releaseLookup.set(taxon_.mslReleaseNumber, release);
 
-         this.addTaxonChanges(release.taxaElement, taxon_, taxonIndex);
+         // Add the taxon, a summary of its changes, and its lineage to the associated release.
+         this.addTaxonChanges(taxonIndex, release.taxaElement, taxon_);
+
+         // Should we update the list of distinct ICTV IDs?
+         if (!ictvIDs.includes(taxon_.ictvID)) { ictvIDs.push(taxon_.ictvID); }
+
+         // Update the taxa lookup.
+         this.taxaLookup.set(taxon_.taxnodeID, taxon_);
       })
 
       // Add event handlers to all controls.
       this.addEventHandlers();
+
+      // Get the number of distinct ICTV IDs from taxa displayed on the page.
+      this.distinctIctvIDs = ictvIDs.length;
+
+      // Should we display the instructions panel?
+      if (this.distinctIctvIDs > this.MIN_ICTV_IDS_FOR_HIGHLIGHT) {
+         this.elements.instructions.classList.add("visible");
+      }
+      
+      // Highlight all changed taxa with this ICTV ID as a data attribute.
+      this.highlightSelectedLineage(this.selectedTaxon.ictvID);
+   }
+
+   // Add metadata to the taxon (for convenience).
+   processTaxon(taxon_: ITaxon): ITaxon {
+
+      // Set the rank name and previous rank name.
+      taxon_.rankName = this.getRankName(taxon_.lineageRanks);
+      taxon_.previousRank = this.getPreviousRank(taxon_.lineageRanks);
+
+      // Get the previous parent's rank and name.
+      const previousParent = this.getPreviousParent(taxon_.previousLineage);
+      if (previousParent && previousParent.length === 2) {
+         taxon_.previousParent = {
+            name: previousParent[1],
+            rank: previousParent[0]
+         }
+      }
+
+      return taxon_;
    }
 
    saveExportSettings() {
@@ -1248,4 +1327,16 @@ export class TaxonReleaseHistory {
       return;
    }
 
+   // Update the selected taxon.
+   updateSelectedTaxon(taxNodeID_: number) {
+
+      this.selectedTaxon = this.taxaLookup.get(taxNodeID_);
+      if (!this.selectedTaxon) { console.log("Invalid taxon in updateSelectedTaxon"); return; }
+
+      const release = this.releaseLookup.get(this.selectedTaxon.mslReleaseNumber);
+      if (!release) { console.log("Invalid release in updateSelectedTaxon"); return; }
+
+      // Repopulate the selected taxon panel.
+      return this.addSelectedTaxon(release, this.selectedTaxon);
+   }
 }
