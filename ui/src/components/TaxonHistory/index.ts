@@ -1,5 +1,5 @@
 
 export { AppSettings } from "../../global/AppSettings";
-export { TaxonReleaseHistory } from "./TaxonReleaseHistory";
+export { TaxonHistory } from "./TaxonHistory";
 
 export * from "../../global/Types";

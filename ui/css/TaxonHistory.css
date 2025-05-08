@@ -3,8 +3,15 @@
    Taxon release history
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+/* CSS variables used in this component. */
+#taxon_history_container {
+   --abolished-color: #cf2222; /* #f22727; */
+   --darker-highlight-color: #ffe770;
+   --highlight-color: #fff6c4;
+}
+
 /* The message panel */
-#taxon_history_container .message-panel {
+#taxon_history_container .message-panel.visible {
    margin-top: 2.0rem;
    width: 100%;
 }
@@ -17,10 +24,9 @@
    flex-flow: row wrap;
    font-size: 1.3rem;
    justify-content: flex-start;
-   margin-bottom: 2.5rem;
+   margin-bottom: 1.0rem;
 }
 #taxon_history_container .selected-taxon .taxon-rank {
-   font-weight: 700;
    margin-left: 0.25rem;
    text-transform: capitalize;
 }
@@ -29,6 +35,21 @@
    margin: 0 0.25rem;
 }
 
+/* The instructions */
+#taxon_history_container .instructions {
+   display: none;
+}
+#taxon_history_container .instructions.visible {
+   display: block;
+   font-size: 1.0rem;
+   margin-bottom: 1.0rem;
+}
+#taxon_history_container .instructions .selected-name {
+   font-style: italic;
+}
+#taxon_history_container .instructions .highlighted {
+   background-color: var(--highlight-color);
+}
 
 /* The title above a taxon */
 #taxon_history_container .taxon-title {
@@ -47,12 +68,12 @@
 }
 
 #taxon_history_container .taxon .taxon-rank {
-   font-weight: 700;
    text-transform: capitalize;
 }
 
 #taxon_history_container .taxon .taxon-name {
    font-style: italic;
+   font-weight: 700;
    margin-left: 0.25rem;
 }
 
@@ -80,7 +101,6 @@
    font-size: 1.0rem;
    font-weight: normal;
    margin: 0 0.25rem;
-   /* color: #aaa; */ 
 }
 
 /* A vertically-oriented taxon row 
@@ -136,7 +156,7 @@
 }
 
 #taxon_history_container .release .release-header .is-current {
-   color: #ffe770; /* #ffc90e; */
+   color: var(--darker-highlight-color);
    display: block;
    flex-grow: 1;
    margin-right: 2.0rem;
@@ -153,15 +173,24 @@
    border-radius: 0 0 10px 10px;
    border-style: solid;
    border-width: 0 1px 1px 1px;
-   padding: 1.0rem;
 }
 
 #taxon_history_container .release .release-body hr {
    background-color: #fff;
    border-color: #555; 
-   margin: 1.5rem 0 1.0rem 0;
+   margin: 0;
+}
+#taxon_history_container .release .release-body .changed-taxon {
+   padding: 1.0rem;
+}
+#taxon_history_container .release .release-body .changed-taxon.highlighted {
+   background-color: var(--highlight-color);
 }
 
+/* The taxon rank and name are displayed in red for abolished taxa. */
+#taxon_history_container .release .release-body .changed-taxon.abolished .taxon-rank-and-name {
+   color: var(--abolished-color);
+}
 
 #taxon_history_container .release .taxon-rank-and-name {
    align-items: flex-start;
@@ -171,11 +200,11 @@
    justify-content: flex-start;
 }
 #taxon_history_container .release .taxon-rank-and-name .rank-name {
-   font-weight: 700;
    margin-right: 0.25rem;
 }
 #taxon_history_container .release .taxon-rank-and-name .taxon-name {
    font-style: italic;
+   font-weight: 700;
    white-space: nowrap;
    
 }
@@ -276,18 +305,12 @@
    padding: .2rem .5rem;
    text-align: center;
 }
-
 #taxon_history_container .release .lineage-export-row button i {
    color: #555;
    font-weight: normal;
    margin-right: 0.25rem;
    pointer-events: none;
 }
-
-/*
-#taxon_history_container .release .settings-button {
-   
-} */
 
 #taxon_history_container .release .lineage-export-row .copy-status i {
    color: rgb(40, 167, 69);
@@ -314,12 +337,12 @@
    color: #fff;
    left: 125%;
    opacity: 0;
-   padding: 0.5em 0.25rem 0.5rem 0.75rem;
+   padding: 0.5em 0.5rem 0.5rem 0.75rem;
    position: absolute;
    text-align: left;
    top: -5px;
    visibility: hidden;
-   width: 180px; /* 300px; */
+   width: 180px;
 }
 #taxon_history_container .has-tooltip .tooltip::after {
    border-color: transparent #555 transparent transparent;
@@ -358,9 +381,6 @@
    font-size: 1.0rem;
    margin: 0.1rem 0.4rem 0 0;
 }
-/*#taxon_history_container .release .taxon-proposal .proposal-links {
-
-}*/
 
 #taxon_history_container .release .taxon-proposal i {
    color: #888;
@@ -477,21 +497,3 @@
 #taxon_history_container .modal-footer .save-button {
    margin-right: 0.5rem;
 }
-
-
-/* Swiper 
-#taxon_history_container .swiper .swiper-pagination-bullet {
-   width: 20px;
-   height: 20px;
-   text-align: center;
-   line-height: 20px;
-   font-size: 12px;
-   color: #000;
-   opacity: 1;
-   background: rgba(0, 0, 0, 0.2);
-}
-
-#taxon_history_container .swiper .swiper-pagination-bullet-active {
-   color: #fff;
-   background: #007aff;
-}*/

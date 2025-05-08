@@ -6,12 +6,11 @@ module.exports = {
    mode: "production",
    target: "web",
    entry: {
-      "ICTV_TaxonReleaseHistory": [
+      "ICTV_TaxonHistory": [
          path.resolve(__dirname, "./") + "/index.ts"
       ]
    },
    externals: {
-      datatables: "datatables.net-dt",
       jquery: 'jQuery'
    },
    module: {

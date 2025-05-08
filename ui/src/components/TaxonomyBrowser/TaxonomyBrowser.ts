@@ -771,6 +771,7 @@ export class TaxonomyBrowser {
    }
 
 
+   /*
    async getUnassignedChildTaxaByName() {
 
       // Clear the taxonomy control
@@ -781,7 +782,7 @@ export class TaxonomyBrowser {
       this.processTaxaByName(response.parentID, response.taxa, response.taxNodeID);
 
       return;
-   }
+   }*/
 
 
    // Handle a change to the "hide above" rank control.
@@ -798,19 +799,14 @@ export class TaxonomyBrowser {
          this.elements.hideAboveRankControl.removeEventListener("change", async () => {
             return await this.handleHideAboveChange();
          })
-         //jQuery(this.selectors.hideAboveRankControl).off("change");
-
+         
          // Update the "hide above" control.
          this.elements.hideAboveRankControl.value = hideAboveRank;
-         //jQuery(this.selectors.hideAboveRankControl).val(hideAboveRank);
-
+         
          // Re-add the change handler.
          this.elements.hideAboveRankControl.addEventListener("change", async () => {
             return await this.handleHideAboveChange();
          })
-         /*jQuery(this.selectors.hideAboveRankControl).change(() => {
-             this.handleHideAboveChange(jQuery(this));
-         });*/
       }
 
       // Update local data.
@@ -837,19 +833,14 @@ export class TaxonomyBrowser {
          this.elements.preExpandToRankControl.removeEventListener("change", async () => {
             return await this.handlePreExpandChange();
          })
-         //jQuery(this.selectors.preExpandToRankControl).off("change");
 
          // Update the "pre-expand to" control.
          this.elements.preExpandToRankControl.value = this.localData.preExpandToRank;
-         //jQuery(this.selectors.preExpandToRankControl).val(this.localData.preExpandToRank);
-
+         
          // Re-add the change handler.
          this.elements.preExpandToRankControl.addEventListener("change", async () => {
             return await this.handlePreExpandChange();
          })
-         /*jQuery(this.selectors.preExpandToRankControl).change(() => {
-             this.handlePreExpandChange(jQuery(this));
-         });*/
       }
 
       // Save the changes.
@@ -1127,40 +1118,16 @@ export class TaxonomyBrowser {
             await this.getReleaseHistory();
             break;
 
-         case TaxonomyDisplayType.display_unassigned_child_taxa:
+         /*case TaxonomyDisplayType.display_unassigned_child_taxa:
             await this.getRelease(this.initialData.releaseNumber);
             await this.getUnassignedChildTaxaByName();
-            break;
+            break;*/
 
          default:
             await this.getRelease(this.initialData.releaseNumber);
             await this.getTaxaByName();
       }
 
-      /*
-      // Populate the control using the initial data.
-      if (this.initialData.displayType === TaxonomyDisplayType.display_all) {
-
-          await this.getRelease(this.initialData.releaseNumber);
-
-          await this.getReleaseTaxa();
-
-      } else if (this.initialData.displayType === TaxonomyDisplayType.display_release_history) {
-
-          await this.getReleaseHistory();
-
-      } else if (this.initialData.displayType === TaxonomyDisplayType.display_unassigned_child_taxa) {
-
-          await this.getRelease(this.initialData.releaseNumber);
-
-          await this.getUnassignedChildTaxaByName();
-
-      } else {
-          await this.getRelease(this.initialData.releaseNumber);
-
-          await this.getTaxaByName();
-      }
-      */
       return;
    }
 
