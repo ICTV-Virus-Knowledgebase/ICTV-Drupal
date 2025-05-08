@@ -16,30 +16,30 @@
             initialized = true;
             
             //----------------------------------------------------------------------------------------
-            // Initialize the ICTV_TaxonReleaseHistory AppSettings using drupalSettings
+            // Initialize the ICTV_TaxonHistory AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
             // The website's base URL.
-            window.ICTV_TaxonReleaseHistory.AppSettings.applicationURL = settings_.applicationURL;
+            window.ICTV_TaxonHistory.AppSettings.applicationURL = settings_.applicationURL;
 
             // Set the base URL for web services.
-            window.ICTV_TaxonReleaseHistory.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
+            window.ICTV_TaxonHistory.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
 
             // The current MSL release number.
-            window.ICTV_TaxonReleaseHistory.AppSettings.currentMslRelease = settings_.currentMslRelease;
+            window.ICTV_TaxonHistory.AppSettings.currentMslRelease = settings_.currentMslRelease;
 
             // The location of release proposal files. 
-            window.ICTV_TaxonReleaseHistory.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
+            window.ICTV_TaxonHistory.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
 
             // The taxon history page name.
-            window.ICTV_TaxonReleaseHistory.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
+            window.ICTV_TaxonHistory.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
             
             
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#taxon_history_container";
 
             // Create a new TaxonReleaseHistory instance.
-            const taxonHistory = new window.ICTV_TaxonReleaseHistory.TaxonReleaseHistory(containerSelector, settings_.currentMslRelease);
+            const taxonHistory = new window.ICTV_TaxonHistory.TaxonHistory(containerSelector, settings_.currentMslRelease);
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();
