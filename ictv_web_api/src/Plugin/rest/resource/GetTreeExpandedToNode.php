@@ -137,7 +137,6 @@ class GetTreeExpandedToNode extends ResourceBase {
 
     //    Format that sub-tree => subTreeHTML
     //    i.e. replicate C# formatSubTreeContainingNode(...).
-    //    You presumably have it in TaxonomyHelper as well:
     $subTreeHTML = TaxonomyHelper::formatSubTreeContainingNode(
       $displayChildCount,
       $displayHistoryCtrls,

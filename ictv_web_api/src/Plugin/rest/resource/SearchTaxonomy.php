@@ -102,10 +102,19 @@ class SearchTaxonomy extends ResourceBase {
       // The current MSL release
       $currentRelease = $request->get("current_release");
       if (Utils::isNullOrEmpty($currentRelease)) { throw new BadRequestHttpException("Invalid MSL release (did you provide a year?)"); }
+      // \Drupal::logger('ictv_web_api')->debug('currentRelease inside get function: @currentRelease', ['@currentRelease' => print_r($currentRelease, TRUE)]);
 
       // Include all MSL releases?
-      $includeAllReleases = $request->get("include_all_releases");
-      if (Utils::isNullOrEmpty($includeAllReleases)) { $includeAllReleases = 0; }
+      $includeAllReleasesBool = filter_var($request->get('include_all_releases'),
+         FILTER_VALIDATE_BOOLEAN,
+         FILTER_NULL_ON_FAILURE           // returns null if param missing
+       );
+
+      // Default to FALSE when not supplied.
+      $includeAllReleasesBool = $includeAllReleasesBool ?? false;
+
+      // Convert to 1 or 0 for calling SP.
+      $includeAllReleases = $includeAllReleasesBool ? 1 : 0;
 
       // The selected MSL release (optional)
       $selectedRelease = $request->get("selected_release");
@@ -117,7 +126,6 @@ class SearchTaxonomy extends ResourceBase {
 
       // Search the taxonomy
       $data = $this->search($currentRelease, $includeAllReleases, $searchText, $selectedRelease);
-      //['message' => "currentRelease = ".$currentRelease.", includeAllReleases = ".$includeAllReleases.", searchText = ".$searchText];
 
       $build = array(
          '#cache' => array(
@@ -155,7 +163,8 @@ class SearchTaxonomy extends ResourceBase {
    public function search(int $currentRelease, bool $includeAllReleases, string $searchText, int $selectedRelease) {
 
       // Populate the stored procedure's parameters.
-      $parameters = [":currentRelease" => $currentRelease, ":includeAllReleases" => $includeAllReleases, ":searchText" => $searchText, ":selectedRelease" => $selectedRelease];
+      // Convert includeAllReleases to an int since it is being passed either a 0 or 1. It will complain if it stays a bool.
+      $parameters = [":currentRelease" => $currentRelease, ":includeAllReleases" => (int) $includeAllReleases, ":searchText" => $searchText, ":selectedRelease" => $selectedRelease];
 
       // Generate SQL to call the "SearchTaxonomy" stored procedure to search the ICTV taxonomy.
       $sql = "CALL searchTaxonomy(:currentRelease, :includeAllReleases, :searchText, :selectedRelease);";
@@ -165,8 +174,6 @@ class SearchTaxonomy extends ResourceBase {
          // Run the stored procedure.
          // fetchAll directly gets db rows as an array, so there is no need to convert in the loop.
          $queryResults = $this->connection->query($sql, $parameters)->fetchAll(\PDO::FETCH_ASSOC);
-         // $queryResults = $this->connection->query($sql, $parameters);
-         // \Drupal::logger('ictv_web_api')->notice(print_r($queryResults, true));
       } 
       
       catch (\Exception $e) {
@@ -181,14 +188,10 @@ class SearchTaxonomy extends ResourceBase {
       foreach($queryResults as $row) {
          
          // Create a taxon search result instance from the row of data.
-         // $searchResult = TaxonSearchResult::fromArray((array) $row);
          $searchResult = TaxonSearchResult::fromArray($row);
 
          // Set lineageHTML and name.
          $searchResult->process();
-
-         // Normalize the search result object and add it to the results.
-         // array_push($searchResults, $searchResult->normalize());
 
          // AI says that $array[] is slightly faster than array_push since 1
          // element is being added each iteration instead of multiple at once.
