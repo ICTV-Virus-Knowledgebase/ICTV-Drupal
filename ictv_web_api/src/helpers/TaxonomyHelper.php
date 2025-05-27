@@ -87,6 +87,7 @@ class TaxonomyHelper {
 
     // Provide defaults:
     if (empty($topLevelRank)) { $topLevelRank = 'tree'; }
+
     // LOWEST_TAXONOMY_RANK = 'species'
     if (empty($preExpandToRank)) { $preExpandToRank = Common::LOWEST_TAXONOMY_RANK; }
 
@@ -143,7 +144,6 @@ class TaxonomyHelper {
     // Results for taxonomyHTML in GetTreeExpandedToNode.php.
     foreach ($rows1 as $row) {
 
-      // $taxa[] = Taxon::fromArray($row); // if you have special fields for parent_level_id, is_expanded, etc. handle them
       $taxon = Taxon::fromArray($row);
       $taxon->process();
 
@@ -186,7 +186,7 @@ class TaxonomyHelper {
     // The final “SELECT top_level_id = @topLevelID, pre_expand_to_level_id = @preExpandToLevelID”
     // Actually, we already have them in $topLevelID and $preExpandToLevelID from earlier. 
     // If you want them in the return structure:
-    $finalTopLevelID      = $topLevelID;       // in T-SQL, you might store them
+    $finalTopLevelID      = $topLevelID;
     $finalPreExpandToID   = $preExpandToLevelID; 
 
     return [

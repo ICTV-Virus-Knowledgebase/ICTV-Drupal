@@ -165,6 +165,7 @@ class SearchTaxonomy extends ResourceBase {
       // Populate the stored procedure's parameters.
       // Convert includeAllReleases to an int since it is being passed either a 0 or 1. It will complain if it stays a bool.
       $parameters = [":currentRelease" => $currentRelease, ":includeAllReleases" => (int) $includeAllReleases, ":searchText" => $searchText, ":selectedRelease" => $selectedRelease];
+      // \Drupal::logger('ictv_web_api')->debug('parameters inside search function: @parameters', ['@parameters' => print_r($parameters, TRUE)]);
 
       // Generate SQL to call the "SearchTaxonomy" stored procedure to search the ICTV taxonomy.
       $sql = "CALL searchTaxonomy(:currentRelease, :includeAllReleases, :searchText, :selectedRelease);";
