@@ -70,3 +70,10 @@ services:
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }
+
+  #--- NEW: subscriber that disables page-cache for that route ---
+  ictv_web_api.no_page_cache_subscriber:
+    class: 'Drupal\ictv_web_api\EventSubscriber\NoPageCacheSubscriber'
+    arguments: ['@page_cache_kill_switch']
+    tags:
+      - { name: event_subscriber }
