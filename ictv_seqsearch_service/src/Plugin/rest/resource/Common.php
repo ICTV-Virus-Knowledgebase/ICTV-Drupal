@@ -36,6 +36,8 @@ class Common {
       // Make sure the file path ends with a slash.
       if (!str_ends_with($filePath, "/")) { $filePath = $filePath."/"; }
 
+      $compressed = null;
+      
       try {
          // Open the file and retrieve its contents (without base64 encoding).
          $contents = Common::getFileContents(false, $filename, $filePath);
@@ -80,7 +82,7 @@ class Common {
       $filePathAndName = $filePath.$filename;
 
       try {
-         // Get a file handle and read its contents.
+         // Open the file and read its contents.
          $handle = fopen($filePathAndName, "r");
          $fileData = fread($handle, filesize($filePathAndName));
    

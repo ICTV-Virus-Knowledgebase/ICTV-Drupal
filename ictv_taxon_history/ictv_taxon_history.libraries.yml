@@ -5,7 +5,6 @@ taxonHistory:
       assets/css/fa-regular.css: {}
       assets/css/fa-solid.css: {}
       assets/css/fontawesome.css: {}
-      assets/css/jquery.dataTables.min.css: {}
       assets/css/TaxonHistory.css: {} 
       assets/css/tippy.css: {} 
       assets/css/light-border.css: {}
@@ -21,7 +20,7 @@ taxonHistory:
     assets/css/fonts/fa-solid-900.woff: {}
     assets/css/fonts/fa-solid-900.woff2: {}
   js:
-    assets/js/ICTV_TaxonReleaseHistory.js: { preprocess: false }
+    assets/js/ICTV_TaxonHistory.js: { preprocess: false }
     assets/js/taxonHistory.js: { preprocess: false }
   dependencies:
     - core/jquery
