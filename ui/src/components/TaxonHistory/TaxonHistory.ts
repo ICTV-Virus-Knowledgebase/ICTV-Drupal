@@ -1058,7 +1058,15 @@ export class TaxonHistory {
    highlightSelectedLineage(selectedIctvID_: number) {
 
       // Only highlight changed taxa if there are enough distinct ICTV IDs.
-      if (this.distinctIctvIDs < this.MIN_ICTV_IDS_FOR_HIGHLIGHT) { return; }
+      if (this.distinctIctvIDs < this.MIN_ICTV_IDS_FOR_HIGHLIGHT) { 
+
+         // Hide the instructions (about highlighting).
+         this.elements.instructions.classList.remove("visible");
+         return; 
+      }
+
+      // Display the instructions (about highlighting).
+      this.elements.instructions.classList.add("visible");
 
       // Lowlight (?) any currently highlighted changed-taxa.
       const highlightedTaxaEls = this.elements.releases.querySelectorAll(`.changed-taxon.highlighted`);
@@ -1271,11 +1279,6 @@ export class TaxonHistory {
       // Get the number of distinct ICTV IDs from taxa displayed on the page.
       this.distinctIctvIDs = ictvIDs.length;
 
-      // Should we display the instructions panel?
-      if (this.distinctIctvIDs > this.MIN_ICTV_IDS_FOR_HIGHLIGHT) {
-         this.elements.instructions.classList.add("visible");
-      }
-      
       // Highlight all changed taxa with this ICTV ID as a data attribute.
       this.highlightSelectedLineage(this.selectedTaxon.ictvID);
    }
