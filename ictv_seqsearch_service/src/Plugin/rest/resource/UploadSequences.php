@@ -59,6 +59,9 @@ class UploadSequences extends ResourceBase {
    // The name of the JSON result file.
    protected ?string $jsonResultsFilename;
 
+   // The maximum number of sequences that can be submitted (across all FASTA files that are uploaded).
+   public int $MAX_SEQUENCE_COUNT = 64; // ???
+
    // The directory where output files are stored.
    protected ?string $outputDirectory;
 
@@ -263,9 +266,7 @@ class UploadSequences extends ResourceBase {
       $taxResultJSON = null;
 
       try {
-         //-------------------------------------------------------------------------------------------------------
          // Create a job record and get its ID and UID.
-         //-------------------------------------------------------------------------------------------------------
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_search, $jobUID, $userEmail, $userUID);
          
          // Create the job directory and subdirectories and return the full path of the job directory.
@@ -300,6 +301,10 @@ class UploadSequences extends ResourceBase {
             // TODO: Consider gzipping the binary data in the browser and using gzuncompress() here.
             // Decode the file contents from base64.
             $binaryData = base64_decode($base64Data);
+
+            // TODO: Is this really binary data? Can we parse it as text?
+            // TODO: This would be a good place to validate the sequence data to make sure the number of sequences 
+            // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
 
             // Create the sequence file in the job directory using the data provided.
             $fileID = $this->jobService->createInputFile($binaryData, $filename, $jobPath);
@@ -337,7 +342,7 @@ class UploadSequences extends ResourceBase {
 
             } else {
 
-               // Convert the version that will be stored in the database to hexadecimal.
+               // Create a copy of the JSON encoded as hexadecimal.
                $jsonForSQL = bin2hex($taxResultJSON);
             }
          }
@@ -379,5 +384,16 @@ class UploadSequences extends ResourceBase {
    }
 
    
+   /**
+    * Validate the number of sequences that were sent in the request.
+    */
+   public function validateSequences($files): Boolean {
+
+
+
+      // TODO
+      return True;
+   }
+
 }
 
