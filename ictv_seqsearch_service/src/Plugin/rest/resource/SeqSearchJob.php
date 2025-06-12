@@ -63,7 +63,7 @@ class SeqSearchJob {
    // Create compressed versions of the job's result files, add them to the job object, and return the job.
    public static function createCompressedResultFiles(array $job, string $outputPath) {
 
-      // Are there any results?
+      // If the job has no results, return it unmodified.
       if ($job == null || $job["data"] == null || $job["data"]["results"] == null) { return $job; }
 
       // How many results are available?
@@ -73,7 +73,7 @@ class SeqSearchJob {
       // Make sure the file path ends with a slash.
       if (!str_ends_with($outputPath, '/')) { $outputPath = $outputPath.'/'; }
 
-      // Iterate over all results.
+      // Iterate over all search results.
       for ($r=0; $r<$resultCount; $r++) {
 
          // Get the next result and validate it.
@@ -95,7 +95,7 @@ class SeqSearchJob {
                $encodedData = base64_encode($compressedData);
             }
             
-            // Populate the "csv_file" attribute.
+            // Create the "csv_file" attribute and populate it with the encoded data.
             if (!Utils::isNullOrEmpty($encodedData)) { $job["data"]["results"][$r]["csv_file"] = $encodedData; }
          }
 
@@ -114,7 +114,7 @@ class SeqSearchJob {
                $encodedData = base64_encode($compressedData);
             }
             
-            // Populate the "csv_file" attribute.
+            // Create the "html_file" attribute and populate it with the encoded data.
             if (!Utils::isNullOrEmpty($encodedData)) { $job["data"]["results"][$r]["html_file"] = $encodedData; }
          }
       }
@@ -199,7 +199,9 @@ class SeqSearchJob {
    }
 
 
-   // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays).
+   // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays). Note that job.data is initially a  
+   // serialized (and encoded) JSON string that the fromArray method deserializes as nested arrays. Job.data is then
+   // replaced by these nested arrays.
    public static function getJob(Connection $connection, string $jobUID, string $userEmail, string $userUID) {
 
       // Validate input parameters
