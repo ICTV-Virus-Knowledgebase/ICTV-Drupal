@@ -1,9 +1,8 @@
 <?php
 namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
 
-class TaxonAndRelease {
+class HistoricalTaxon {
    
-   // Taxon
    public ?int $ictvID;
    public int $isDeleted;
    public int $isDemoted;
@@ -27,17 +26,11 @@ class TaxonAndRelease {
    public ?string $prevProposal;
    public int $taxnodeID;
 
-   // Release
-   public ?string $releaseRankNames;
-   public ?string $releaseTitle;
-   public ?string $releaseYear;
-
  
    public static function fromArray(array $d): self {
 
       $o = new self();
 
-      // Taxon
       $o->ictvID         = isset($d['ictv_id']) ? (int)$d['ictv_id'] : null;
       $o->isDeleted      = isset($d['is_deleted']) ? (int)$d['is_deleted'] : 0;
       $o->isDemoted      = isset($d['is_demoted']) ? (int)$d['is_demoted'] : 0;
@@ -61,18 +54,11 @@ class TaxonAndRelease {
       $o->prevProposal   = $d['prev_proposal'] ?? null;
       $o->taxnodeID      = isset($d['taxnode_id']) ? (int)$d['taxnode_id'] : 0;
 
-      // Release
-      $o->releaseRankNames = $d['release_rank_names'] ?? null;
-      $o->releaseTitle     = $d['release_title'] ?? null;
-      $o->releaseYear      = $d['release_year'] ?? null;
-
       return $o;
    }
 
    public function normalize(): array {
       return [
-         
-         // Taxon
          'ictvID'         => $this->ictvID,
          'isDeleted'      => $this->isDeleted == 1,
          'isDemoted'      => $this->isDemoted == 1,
@@ -94,12 +80,7 @@ class TaxonAndRelease {
          'prevParentRank' => $this->prevParentRank,
          'prevParentName' => $this->prevParentName,
          'prevProposal'   => $this->prevProposal,
-         'taxnodeID'      => $this->taxnodeID,
-
-         // Release
-         'releaseRankNames' => $this->releaseRankNames,
-         'releaseTitle'     => $this->releaseTitle,
-         'releaseYear'      => $this->releaseYear,
+         'taxnodeID'      => $this->taxnodeID
       ];
    }
 }

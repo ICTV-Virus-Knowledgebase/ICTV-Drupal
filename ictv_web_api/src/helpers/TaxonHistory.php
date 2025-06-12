@@ -3,7 +3,8 @@
 namespace Drupal\ictv_web_api\helpers;
 
 use Drupal\Core\Database\Connection;
-use Drupal\ictv_web_api\Plugin\rest\resource\models\TaxonAndRelease;
+use Drupal\ictv_web_api\Plugin\rest\resource\models\HistoricalRelease;
+use Drupal\ictv_web_api\Plugin\rest\resource\models\HistoricalTaxon;
 
 
 class TaxonHistory {
@@ -39,7 +40,8 @@ class TaxonHistory {
    public static function fetch(Connection $connection, int $currentMSL, ?int $ictvID, ?int $MSL, ?int $taxNodeID, ?string $taxonName, ?int $vmrID): array {
 
       $messages = '';
-      $results = [];
+      $releases = [];
+      $taxa = [];
 
       // Call the stored procedure
       $sql = 'CALL GetTaxonHistory(:currentMSL, :ictvID, :MSL, :taxNodeID, :taxonName, :vmrID)';
@@ -58,17 +60,29 @@ class TaxonHistory {
       catch (\Exception $e) {
          return [
             "messages" => $e->getMessage(),
-            "results" => []
+            "releases" => [],
+            "taxa"     => []
          ];
       }
 
+      $previousYear = NULL;
+
       foreach ($rows as $r) {
-         $results.push(TaxonAndRelease::fromArray($r)->normalize());
+
+         // Add the taxon to the taxa array.
+         $taxa.push(HistoricalTaxon::fromArray($r)->normalize());
+
+         // If this is a release we haven't encountered, add it to the release array.
+         if ($r['release_year'] != $previousYear) {
+            $releases.push(HistoricalRelease::fromArray($r)->normalize());
+            $previousYear = $r['release_year'];
+         }
       }
 
       return [
          "messages" => $messages,
-         "results" => $results
+         "releases" => $releases,
+         "taxa" => $taxa
       ];
    }
 }
