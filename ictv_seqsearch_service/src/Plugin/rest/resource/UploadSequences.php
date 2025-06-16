@@ -292,6 +292,7 @@ class UploadSequences extends ResourceBase {
             $contents = $file["contents"];
             if (Utils::isNullOrEmpty($contents)) { throw new BadRequestHttpException("Invalid file contents"); }
 
+            /*
             $fileStartIndex = stripos($contents, ",");
             if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in sequence file"); }
 
@@ -301,13 +302,14 @@ class UploadSequences extends ResourceBase {
             // TODO: Consider gzipping the binary data in the browser and using gzuncompress() here.
             // Decode the file contents from base64.
             $binaryData = base64_decode($base64Data);
+            */
 
             // TODO: Is this really binary data? Can we parse it as text?
             // TODO: This would be a good place to validate the sequence data to make sure the number of sequences 
             // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
 
             // Create the sequence file in the job directory using the data provided.
-            $fileID = $this->jobService->createInputFile($binaryData, $filename, $jobPath);
+            $fileID = $this->jobService->createInputFile($contents, $filename, $jobPath);
 
             // Create a job file record.
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);

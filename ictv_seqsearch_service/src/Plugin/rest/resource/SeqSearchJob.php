@@ -32,6 +32,9 @@ class SeqSearchJob {
          $csvFilename = $result["blast_csv"];
          if (!Utils::isNullOrEmpty($csvFilename)) { 
             
+            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+            if (str_starts_with($csvFilename, "tax_out/")) { $csvFilename = substr($csvFilename, strlen("tax_out/"));  }
+
             // Open the compressed version of the CSV file.
             $csvFilename = $csvFilename.".gz";
 
@@ -45,6 +48,9 @@ class SeqSearchJob {
          $htmlFilename = $result["blast_html"];
          if (!Utils::isNullOrEmpty($htmlFilename)) { 
             
+            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+            if (str_starts_with($htmlFilename, "tax_out/")) { $htmlFilename = substr($htmlFilename, strlen("tax_out/"));  }
+
             // Open the compressed version of the CSV file.
             $htmlFilename = $htmlFilename.".gz";
 
@@ -84,6 +90,9 @@ class SeqSearchJob {
          $csvFilename = $result["blast_csv"];
          if (!Utils::isNullOrEmpty($csvFilename)) {
 
+            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+            if (str_starts_with($csvFilename, "tax_out/")) { $csvFilename = substr($csvFilename, strlen("tax_out/"));  }
+
             $encodedData = null;
 
             // Compress the CSV file, create a new compressed file, and return the compressed data.
@@ -104,6 +113,9 @@ class SeqSearchJob {
          if (!Utils::isNullOrEmpty($htmlFilename)) { 
 
             $encodedData = null;
+
+            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+            if (str_starts_with($htmlFilename, "tax_out/")) { $htmlFilename = substr($htmlFilename, strlen("tax_out/"));  }
 
             // Compress the HTML file, create a new compressed file, and return the compressed data.
             $compressedData = Common::createCompressedFile($htmlFilename, $outputPath); 
