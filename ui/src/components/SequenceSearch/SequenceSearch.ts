@@ -1,25 +1,18 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
+import { BlastPanel } from "./BlastPanel";
+import { ButtonClass, Constants, Icon, PanelKey } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
-import { IFileData } from "../../models/IFileData";
-import { ISearchResult } from "./ISearchResult";
+import { ISeqSearchPanel } from "./ISeqSearchPanel";
+import { JobPanel } from "./JobPanel";
 import { LookupTaxonomyRank, WebStorageKey } from "../../global/Types";
-import * as pako from "pako";
+
 import { SequenceSearchService } from "../../services/SequenceSearchService";
 import tippy from "tippy.js";
+import { UploadPanel } from "./UploadPanel";
 import { Utils } from "../../helpers/Utils";
-import { AppSettings } from "../CuratedNameManager";
 
-
-// CSS class names for buttons.
-enum ButtonClass {
-   cancel = "cancel-button",
-   copyURL = "copy-url-button",
-   downloadCSV = "download-csv-button",
-   upload = "upload-button",
-   viewHTML = "view-html-button"
-}
 
 
 export class SequenceSearch {
@@ -31,43 +24,15 @@ export class SequenceSearch {
       contactEmail: null
    }
 
-   constants = {
-      NO_EMAIL: "NO_EMAIL"
-   }
-
    // The CSS selector for the container element where the Sequence Search UI will be rendered.
    containerSelector: string = null;
 
    // DOM elements
    elements: {
-      cancelButton: HTMLButtonElement,
+      blastContainer: HTMLElement,
       container: HTMLElement,
-      copyIdButton: HTMLButtonElement,
-      fileControl: HTMLElement,
-      fileInput: HTMLInputElement,
-      fileSelection: HTMLElement,
-      fileSubmission: HTMLElement,
-      fileUploadDetails: HTMLElement,
-      jobName: HTMLInputElement,
-      jobNameLabel: HTMLElement,
-      results: HTMLElement,
-      resultsContainer: HTMLElement,
-      uploadButton: HTMLButtonElement
-   }
-
-   // Icons used on the page.
-   icons: {
-      browse: string,
-      cancel: string,
-      chevronDown: string,
-      chevronRight: string,
-      close: string,
-      copy: string,
-      csv: string,
-      download: string,
-      html: string,
-      lineageDelimiter: string,
-      upload: string
+      jobContainer: HTMLElement,
+      uploadContainer: HTMLElement
    }
 
    job: ISeqSearchJob = null;
@@ -75,11 +40,16 @@ export class SequenceSearch {
    // The current job UID (optional)
    jobUID: string = null;
    
-   // The URL that can be used to return and view the job data.
-   jobURL: string = null;
+   // Which panel is currently displayed?
+   panelKey: PanelKey = null;
 
-   // The maximum number of sequences that can be uploaded.
-   MAX_SEQUENCE_COUNT = 64;
+   panels: Map<PanelKey, ISeqSearchPanel>;
+
+   // The previous panel key
+   previousPanelKey: PanelKey = null;
+
+   // The current result index (optional)
+   resultIndex: number = null;
 
    // User information
    user: {
@@ -97,7 +67,7 @@ export class SequenceSearch {
       if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in SequenceSearch"); }
       if (!contactEmail_) { throw new Error("Invalid contact email"); }
       if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in SequenceSearch"); }
-      if (!email_ || email_.length < 1) { email_ = this.constants.NO_EMAIL; }
+      if (!email_ || email_.length < 1) { email_ = Constants.NO_EMAIL; }
       if (!name_ || name_.length < 1) { name_ = "Anonymous user"; }
       userUID_ = Utils.safeTrim(userUID_);
 
@@ -113,57 +83,27 @@ export class SequenceSearch {
       }
 
       this.elements = {
-         cancelButton: null,
          container: null,
-         copyIdButton: null,
-         fileControl: null,
-         fileInput: null,
-         fileSelection: null,
-         fileSubmission: null,
-         fileUploadDetails: null,
-         jobName: null,
-         jobNameLabel: null,
-         results: null,
-         resultsContainer: null,
-         uploadButton: null
+         jobContainer: null,
+         blastContainer: null,
+         uploadContainer: null
       }
 
-      this.icons = {
-         browse: `<i class=\"fa fa-file\"></i>`,
-         cancel: `<i class="fa-solid fa-xmark"></i>`,
-         chevronDown: `<i class=\"fa fa-chevron-circle-down expanded\"></i>`,
-         chevronRight: `<i class=\"fa fa-chevron-circle-right collapsed\"></i>`,
-         close: `<i class=\"fa fa-xmark\"></i>`,
-         copy: `<i class=\"fa-regular fa-clipboard\"></i>`,
-         csv: `<i class="fa-regular fa-file-csv"></i>`,
-         download: `<i class=\"fa fa-download\"></i>`,
-         html: `<i class="fa-regular fa-file-lines"></i>`,
-         lineageDelimiter: `<i class="fa-solid fa-chevron-right"></i>`,
-         upload: `<i class=\"fa fa-upload\"></i>`
-      }
+      this.panels = new Map<PanelKey, ISeqSearchPanel>();
    }
 
    
-   async copyJobURL() {
-
-      // Copy the URL to the clipboard.
-      await navigator.clipboard.writeText(this.jobURL);
-
-      // Display a success message.
-      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
-   }
-
-
-   async displayJob() {
+   /*async displayJob() {
 
       if (!this.job || !this.job.data || !this.job.data.results) {
-         this.elements.resultsContainer.innerHTML = "No results";
+         this.elements.blastContainer.innerHTML = "No results";
          return;
       }
 
       // Clear any existing content in the results container.
-      this.elements.resultsContainer.innerHTML = "";
+      this.elements.blastContainer.innerHTML = "";
 
+      
       //----------------------------------------------------------------------------------------------------------------
       // Create the URL that can be used to view the job data.
       //----------------------------------------------------------------------------------------------------------------
@@ -178,6 +118,7 @@ export class SequenceSearch {
 
       this.jobURL += `?job=${this.job.uid}`;
 
+      
       //----------------------------------------------------------------------------------------------------------------
       // Generate the HTML for the job results.
       //----------------------------------------------------------------------------------------------------------------
@@ -196,7 +137,7 @@ export class SequenceSearch {
          let isFirstRank = true;
          let lineage = "";
          
-         /*
+         
          // Populate the lineage to be displayed.
          if (!result_.sseqid_lineage) {
             lineage = "No lineage";
@@ -277,9 +218,9 @@ export class SequenceSearch {
                      data-tippy-content="Click to download the results as a CSV file (${result_.blast_csv})"
                   >${this.icons.csv} Download CSV results</button>
                </div>  
-            </div>`; */
+            </div>`; 
 
-         resultsHTML += resultHTML;
+         //resultsHTML += resultHTML;
       })
    
       
@@ -307,15 +248,11 @@ export class SequenceSearch {
                   </div>
                   <div class="job-row">
                      <label>Program and version:</label>
-                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.program_version})</div>
+                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.version})</div>
                   </div>
                   <div class="job-row">
                      <label>Database:</label>
                      <div class="job-value">${this.job.data.database_title}</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Database size:</label>
-                     <div class="job-value">${this.job.data.database_size}</div>
                   </div>
                   <div class="job-row">
                      <label>Input file${filesS}:</label>
@@ -346,40 +283,9 @@ export class SequenceSearch {
 
       // Initialize tippy tooltips for the buttons
       tippy(".has-tooltip");
-
+      
       return;
-   }
-
-
-   // Download the BLAST CSV data for a specific result.
-   async downloadCSV(index_: number) {
-
-      // Get the result with the specified index.
-      const result = this.job.data.results[index_];
-      if (!result || !result.csv_file || !result.blast_csv) {
-         await AlertBuilder.displayError("No CSV file is available for download.");
-         return;
-      }
-
-      // Decode the base64-encoded CSV file and decompress it.
-      const arrayBuffer: ArrayBuffer = pako.inflate(decode(result.csv_file));
-      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-         await AlertBuilder.displayError("The CSV file is invalid: It may be empty or corrupted.");
-         return;
-      }
-
-      // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(new Blob(
-         [ arrayBuffer ],
-         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-      ))
-      link.download = result.blast_csv;
-      link.click();
-
-      return;
-   }
-
+   }*/
 
    // Generate a universally unique identifier (UUID).
    generateUUID() {
@@ -397,45 +303,17 @@ export class SequenceSearch {
       ).join('');
    }
 
-
    // Retrieve the job with this UID.
    async getJob() {
 
-      if (!this.jobUID) { return; }
+      if (!this.jobUID) {
+         await AlertBuilder.displayError("No job UID provided");
+         return; 
+      }
 
       this.job = await SequenceSearchService.getSearchResult(this.authToken, this.jobUID, this.user.email, this.user.uid);
       return;
    }
-
-
-   async handleResultsClick(event_) {
-
-      if (event_.target.tagName !== 'BUTTON') { return; }
-
-      const button = event_.target as HTMLButtonElement;
-
-      // Get and validate the button's data index attribute.
-      let strDataIndex = button.getAttribute("data-index");
-      const dataIndex = parseInt(strDataIndex);
-      if (dataIndex < 0 || dataIndex > this.job.data.results.length) {
-         await AlertBuilder.displayError(`Invalid result index: ${dataIndex}`);
-         return;
-      }
-
-      // The button's class determines which action to take.
-      if (button.classList.contains(ButtonClass.copyURL)) {
-         await this.copyJobURL();
-
-      } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-         await this.downloadCSV(dataIndex);
-
-      } else if (button.classList.contains(ButtonClass.viewHTML)) {
-         await this.viewHTML(dataIndex);
-      }
-     
-      return;
-   }
-
 
    // Initialize the Sequence Search component.
    async initialize() {
@@ -447,142 +325,120 @@ export class SequenceSearch {
       this.elements.container = <HTMLElement>document.querySelector(this.containerSelector);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
 
-      // Format the accepted file types.
-      let fileFormats = this.config.acceptedFileTypes.join(",");
-
-      // Create HTML for the container Element.
+      // Create HTML for the container elements.
       const html = 
-         `<div class=\"upload-panel\">
-            <div class="file-selection active">
-               <div class="upload-message">Upload your FASTA sequence(s)</div>
-               <button class=\"btn file-control\">${this.icons.browse} Select file(s)</button>
-               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
-            </div>
-            <div class="file-submission">
-               <div class=\"job-name-label\">Job name</div>
-               <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
-               <button class=\"btn ${ButtonClass.upload}\">Submit file(s)</button>
-               <button class=\"btn ${ButtonClass.cancel}\">${this.icons.cancel} Cancel</button>
-            </div>
-         </div>
-         <div class=\"results-container\"></div>`;
+         `<div class=\"blast-container container\"></div>
+         <div class=\"job-container container\"></div>
+         <div class=\"upload-container container active\"></div>`;
 
       this.elements.container.innerHTML = html;
 
-      // Get and validate the file selection panel.
-      this.elements.fileSelection = <HTMLElement>this.elements.container.querySelector(".file-selection");
-      if (!this.elements.fileSelection) { throw new Error("Invalid file selection Element"); }
+      // The BLAST container
+      this.elements.blastContainer = this.elements.container.querySelector(".blast-container") as HTMLElement;
+      if (!this.elements.blastContainer) { throw new Error("Invalid BLAST container Element"); }
 
-      // Get and validate the file submission panel.
-      this.elements.fileSubmission = <HTMLElement>this.elements.container.querySelector(".file-submission");
-      if (!this.elements.fileSubmission) { throw new Error("Invalid file submission Element"); }  
+      // The job container
+      this.elements.jobContainer = this.elements.container.querySelector(".job-container") as HTMLElement;
+      if (!this.elements.jobContainer) { throw new Error("Invalid job container Element"); }
 
-      // Get and validate the upload button.
-      this.elements.uploadButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.upload}`);
-      if (!this.elements.uploadButton) { throw new Error("Invalid upload button Element"); }
+      // The upload container
+      this.elements.uploadContainer = this.elements.container.querySelector(".upload-container") as HTMLElement;
+      if (!this.elements.uploadContainer) { throw new Error("Invalid upload container Element"); }
 
-      this.elements.uploadButton.addEventListener("click", () => { this.uploadSequences(); })
 
-      // Get and validate the file input Element.
-      this.elements.fileInput = <HTMLInputElement>this.elements.container.querySelector("#file_input");
-      if (!this.elements.fileInput) { throw new Error("Invalid file input Element"); }
+      // Create the panel instances.
+      this.panels.set(PanelKey.blastPanel, new BlastPanel(this));
+      this.panels.set(PanelKey.jobPanel, new JobPanel(this));
+      this.panels.set(PanelKey.uploadPanel, new UploadPanel(this));
 
-      // Handle a file selection change.
-      this.elements.fileInput.addEventListener("change", async (event_: MouseEvent) => {
-      
-         if (!this.elements.fileInput.files || this.elements.fileInput.files.length < 1) {
-               
-            // Hide the file submission panel.
-            this.elements.fileSubmission.classList.remove("active");
-            return;
-         }
-         
-         // Begin populating the upload button text.
-         let buttonText = `${this.icons.upload} Submit`;
-         
-         if (this.elements.fileInput.files.length === 1) {
-            buttonText += " file";
-         } else {
-            buttonText += ` ${this.elements.fileInput.files.length} files`;
-         }
+      // Process the query string parameters.
+      this.processParameters();
 
-         // Hide the file selection panel.
-         this.elements.fileSelection.classList.remove("active");
+      // Unload the previous panel.
+      if (this.previousPanelKey) {
+         // TODO
+      }
 
-         // Display the file submission panel.
-         this.elements.fileSubmission.classList.add("active");
+      let panel: ISeqSearchPanel = null;
 
-         // Update the upload button text.
-         this.elements.uploadButton.innerHTML = buttonText;
-      })
+      switch (this.panelKey) {
 
-      this.elements.fileControl = <HTMLElement>this.elements.container.querySelector(".file-control");
-      if (!this.elements.fileControl) { throw new Error("Invalid file control Element"); }
+         case PanelKey.blastPanel:
+            // TODO
+            console.log("Displaying BLAST panel");
+            await this.getJob();
+            break;
 
-      // Clicking on the file button will trigger a click on the file input element.
-      this.elements.fileControl.addEventListener("click", async (event_: MouseEvent) => {
-         this.elements.fileInput.click();
-      })
+         case PanelKey.jobPanel:
+            
+            console.log("Displaying job panel");
+            await this.getJob();
 
-      // The job name control and its label.
-      this.elements.jobNameLabel = <HTMLElement>this.elements.container.querySelector(".job-name-label");
-      if (!this.elements.jobNameLabel) { throw new Error("Invalid job name label Element"); }
+            // Get and validate the job panel.
+            panel = this.panels.get(PanelKey.jobPanel);
+            if (!panel) { throw new Error("Invalid job panel"); }
 
-      this.elements.jobName = <HTMLInputElement>this.elements.container.querySelector(".job-name");
-      if (!this.elements.jobName) { throw new Error("Invalid job name Element"); }
+            panel.display();
+            break;
 
-      // The cancel (submission) button
-      this.elements.cancelButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.cancel}`);
-      if (!this.elements.cancelButton) { throw new Error("Invalid cancel button Element"); }
+         case PanelKey.uploadPanel:
+            
+            console.log("Displaying upload panel");
 
-      // Handle the cancel button click event.
-      this.elements.cancelButton.addEventListener("click", (event_: MouseEvent) => {
+            // Get and validate the upload panel.
+            panel = this.panels.get(PanelKey.uploadPanel);
+            console.debug("upload panel = ", panel);
+            
+            if (!panel) { throw new Error("Invalid upload panel"); }
+            
+            panel.display();
+            break;
 
-         // Display the file selection panel again.
-         this.elements.fileSelection.classList.add("active");
+         default:
+            return await AlertBuilder.displayError(`Unhandled panel key: ${this.panelKey}`);
+      }
 
-         // Hide the file submission panel.
-         this.elements.fileSubmission.classList.remove("active");
-
-         // Clear the file input
-         this.elements.fileInput.value = ""; 
-
-         // Clear the job name input
-         this.elements.jobName.value = ""; 
-      })
-
-      // The job panel and results body.
-      this.elements.resultsContainer = <HTMLElement>this.elements.container.querySelector(".results-container");
-      if (!this.elements.resultsContainer) { throw new Error("Invalid results container Element"); }
-
-      // Was a job UID parameter provided?
-      const urlParams = new URLSearchParams(window.location.search);
-      this.jobUID = urlParams.get("job");
-
+      /*
       // If a job UID was provided as a query string parameter, retrieve the corresponding job and display it.
       if (this.jobUID !== null) { 
          await this.getJob();
          await this.displayJob();
-      }
+      }*/
 
       return;
    }
 
+   // Look for query string parameters and use them to determine which panel to display.
+   processParameters() {
 
-   // Read the contents of a file asynchronously and return it as a base64-encoded string.
-   async readFileAsync(file_): Promise<string> {
+      // Was a job UID parameter provided?
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Set default values
+      this.jobUID = null;
+      this.panelKey = PanelKey.uploadPanel;
+      this.resultIndex = null;
 
-      return new Promise((resolve, reject) => {
-         const reader = new FileReader();
-         reader.onload = () => {
-            resolve(<string>reader.result);
-         };
-         reader.onerror = reject;
-         reader.readAsText(file_);
-         //reader.readAsDataURL(file_);
-      })
+      // Was a job UID provided in the query string?
+      this.jobUID = urlParams.get("job");
+      if (this.jobUID) {
+
+         // Was a result index provided in the query string?
+         let strResult = Utils.safeTrim(urlParams.get("result"));
+         if (strResult) {
+            this.resultIndex = parseInt(strResult, 10);
+            if (isNaN(this.resultIndex)) { 
+               this.resultIndex = null; 
+            } else {
+               // If a result index was provided, display the BLAST panel.
+               this.panelKey = PanelKey.blastPanel;
+            }
+         } else {
+            // If no result index was provided, display the job panel.
+            this.panelKey = PanelKey.jobPanel;
+         }
+      }  
    }
-
 
    // If the user UID is empty, look for one in web storage or generate a new one.
    async setDefaultUserUID() {
@@ -607,133 +463,6 @@ export class SequenceSearch {
             localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid);
          }
       }
-
-      return;
-   }
-
-
-   // This dialog lets the user know that their files are being processed and what to expect.
-   async showInfoDialog(fileCount_: number, filenames_: string) {
-
-      let content: string;
-      let title: string;
-
-      // The message content depends on the number of files.
-      if (fileCount_ === 1) {
-         title = "Processing your sequence file";
-         content = "Your sequence file has been uploaded. Depending on the size of the file, the processing may take several minutes to copmlete.";
-
-      } else {
-         title = "Processing your sequence files";
-         content = "Your sequence files have been uploaded. Depending on the number of files and their size, the processing may take several minutes to copmlete.";
-      }
-
-      // Display a "success" dialog.
-      return await AlertBuilder.displaySuccess(content, title);
-   }
-
-
-   // Upload the selected files to the web service for processing.
-   async uploadSequences() {
-
-      if (!this.elements.fileInput) { throw new Error("Invalid file control"); }
-      if (!this.elements.fileInput.files || !this.elements.fileInput.files[0]) { throw new Error("Invalid upload file"); }
-      
-      // Get the (optional) job name.
-      let jobName = this.elements.jobName.value;
-      if (!jobName) { jobName = null; }
-
-      try {
-         let filenames = "";
-         let files: IFileData[] = [];
-         let sequenceCount = 0;
-
-         // Iterate over all files
-         for (let f=0; f < this.elements.fileInput.files.length; f++) {
-
-            const file = this.elements.fileInput.files.item(f);
-            if (!file) { continue; }
-
-            // Get the file's contents
-            const contents = await this.readFileAsync(file);
-            if (!contents) { continue; }
-
-            // Update the sequence count with the number of FASTA headers in this file.
-            sequenceCount += (contents.match(/>/g) || []).length;
-
-            if (filenames.length > 0) { filenames += ", "; }
-            filenames += file.name;
-
-            // Add file data to the array.
-            files.push({
-               name: file.name,
-               contents: contents
-            })
-         }
-         
-         if (files.length < 1) { 
-            return await AlertBuilder.displayError("Unable to upload: no valid files were found");
-         }
-
-         if (sequenceCount >= this.MAX_SEQUENCE_COUNT) {    
-            return await AlertBuilder.displayError(`Unable to upload: The maximum number of sequences ` +
-               `that can be loaded is ${this.MAX_SEQUENCE_COUNT} (you tried to submit ${sequenceCount} sequences)`);
-         }
-
-         await Promise.allSettled([
-
-            // Upload the sequence file(s) to the web service for processing.
-            SequenceSearchService.uploadSequences(this.authToken, files, jobName, this.user.email, this.user.uid)
-               .then(job_ => { this.job = job_; }), 
-            
-            // Show a modal dialog with information about the uploaded files.
-            this.showInfoDialog(files.length, filenames)
-         ])
-         .then((results_) => {
-            if (results_[0].status === "rejected") { throw new Error(results_[0].reason); }
-         });
-         
-      } catch (error_) {
-         await AlertBuilder.displayError(error_);
-      }
-
-      // Re-initialize the upload controls.
-      this.elements.fileInput.files = null;
-
-      // Update the upload button.
-      this.elements.uploadButton.innerHTML = `Nothing to submit`;
-
-      // Clear the job name control.
-      this.elements.jobName.value = "";
-
-      // Display the file selection panel.
-      this.elements.fileSelection.classList.add("active");
-
-      // Hide the file submission panel.
-      this.elements.fileSubmission.classList.remove("active");
-
-      // If a job was returned, display it.
-      if (this.job !== null) { await this.displayJob(); }
-
-      return;
-   }
-
-
-   // Display the BLAST HTML data for a specific result.
-   async viewHTML(index_: number) {
-
-      // Get the result with the specified index.
-      const result = this.job.data.results[index_];
-
-      // Open a new tab/window and populate it with the contents of the BLAST HTML file.
-      const blastWindow = window.open("", "_blank");
-
-      // Decode the base64-encoded HTML file and decompress it.
-      const html = pako.inflate(decode(result.html_file), { to: 'string' });
-      blastWindow.document.writeln(html);
-
-      // Remove the extension from the file name and use it as the window's title.
-      blastWindow.document.title = result.blast_html.replace(".html", "");
 
       return;
    }

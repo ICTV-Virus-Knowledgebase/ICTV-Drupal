@@ -10,19 +10,19 @@ export interface IBlastHit {
    sseqid_accession: string;
    sseqid_lineage: {
       realm: string;
-      family: string;
-      subfamily: string;
-      phylum: string;
-      class: string;
-      order: string;
-      genus: string;
-      species: string;
+      subrealm: string;
       kingdom: string;
       subkingdom: string;
+      phylum: string;
       subphylum: string;
-      subrealm: string;
+      class: string;
       subclass: string;
+      order: string;
       suborder: string;
+      family: string;
+      subfamily: string;
+      genus: string;
       subgenus: string;
+      species: string;
    }
 }
