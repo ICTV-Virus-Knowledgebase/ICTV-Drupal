@@ -3,7 +3,7 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { IFileData } from "../../models/IFileData";
-import { ISequenceResult } from "./ISequenceResult";
+import { ISearchResult } from "./ISearchResult";
 import { LookupTaxonomyRank, WebStorageKey } from "../../global/Types";
 import * as pako from "pako";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
@@ -77,6 +77,9 @@ export class SequenceSearch {
    
    // The URL that can be used to return and view the job data.
    jobURL: string = null;
+
+   // The maximum number of sequences that can be uploaded.
+   MAX_SEQUENCE_COUNT = 64;
 
    // User information
    user: {
@@ -181,19 +184,19 @@ export class SequenceSearch {
       let resultsHTML = "";
 
       let inputFiles = [];
-      //let inputSequences = [];
 
-      this.job.data.results.forEach((result_: ISequenceResult, index_: number) => {
+      this.job.data.results.forEach((result_: ISearchResult, index_: number) => {
 
          // One-based instead of zero-based.
          const displayIndex = index_ + 1;
 
          // Get the result's taxon name.
-         let taxonName = result_.sseqid_lineage.species || "Unknown";
+         //let taxonName = result_.sseqid_lineage.species || "Unknown";
 
          let isFirstRank = true;
          let lineage = "";
          
+         /*
          // Populate the lineage to be displayed.
          if (!result_.sseqid_lineage) {
             lineage = "No lineage";
@@ -274,7 +277,7 @@ export class SequenceSearch {
                      data-tippy-content="Click to download the results as a CSV file (${result_.blast_csv})"
                   >${this.icons.csv} Download CSV results</button>
                </div>  
-            </div>`;
+            </div>`; */
 
          resultsHTML += resultHTML;
       })
@@ -575,7 +578,8 @@ export class SequenceSearch {
             resolve(<string>reader.result);
          };
          reader.onerror = reject;
-         reader.readAsDataURL(file_);
+         reader.readAsText(file_);
+         //reader.readAsDataURL(file_);
       })
    }
 
@@ -642,6 +646,7 @@ export class SequenceSearch {
       try {
          let filenames = "";
          let files: IFileData[] = [];
+         let sequenceCount = 0;
 
          // Iterate over all files
          for (let f=0; f < this.elements.fileInput.files.length; f++) {
@@ -652,6 +657,9 @@ export class SequenceSearch {
             // Get the file's contents
             const contents = await this.readFileAsync(file);
             if (!contents) { continue; }
+
+            // Update the sequence count with the number of FASTA headers in this file.
+            sequenceCount += (contents.match(/>/g) || []).length;
 
             if (filenames.length > 0) { filenames += ", "; }
             filenames += file.name;
@@ -664,8 +672,12 @@ export class SequenceSearch {
          }
          
          if (files.length < 1) { 
-            await AlertBuilder.displayError("Unable to upload: no valid files were found");
-            return;
+            return await AlertBuilder.displayError("Unable to upload: no valid files were found");
+         }
+
+         if (sequenceCount >= this.MAX_SEQUENCE_COUNT) {    
+            return await AlertBuilder.displayError(`Unable to upload: The maximum number of sequences ` +
+               `that can be loaded is ${this.MAX_SEQUENCE_COUNT} (you tried to submit ${sequenceCount} sequences)`);
          }
 
          await Promise.allSettled([

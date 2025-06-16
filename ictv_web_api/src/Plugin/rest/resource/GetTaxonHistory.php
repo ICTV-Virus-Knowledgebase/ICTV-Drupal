@@ -58,33 +58,35 @@ class GetTaxonHistory extends ResourceBase {
 
   public function get(Request $request): ResourceResponse {
     
-    // msl_release?
-    $msl = $request->get('msl_release');
-    $currentMSL = (is_numeric($msl) && (int)$msl > 0) ? (int)$msl : NULL;
+      // Get and validate the input parameters.
+      $testInt = $request->get("currentMSL");
+      $currentMSL = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
-    // taxnode_id required
-    $tid = $request->get('taxnode_id');
-    if (!is_numeric($tid)) {
-      throw new BadRequestHttpException("Invalid or missing taxnode_id");
-    }
-    $tid = (int)$tid;
+      $testInt = $request->get("ictvID");
+      $ictvID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
-    // delegate to helper
-    $result = TaxonReleaseHistory::fetch(
-      $this->connection,
-      $currentMSL,
-      $tid
-    );
+      $testInt = $request->get("MSL");
+      $MSL = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
-    $response = new ResourceResponse($result);
-    $response->headers->set('Access-Control-Allow-Origin', '*');
-    $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
-    return $response;
+      $testInt = $request->get("taxNodeID");
+      $taxNodeID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
-    // return (new ResourceResponse($result))
-    //   ->addCacheableDependency(['#cache' => ['max-age' => 0]])
-    //   ->headers->set('Access-Control-Allow-Origin','*');
-  }
+      $taxonName = $request->get("taxonName");
+
+      $testInt = $request->get("vmrID");
+      $vmrID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
+
+      // DEBUGGING
+      \Drupal::logger('ictv_web_api')->notice("currentMSL = ".$currentMSL.", taxNodeID = ".$taxNodeID);
+
+      // Get the taxa and releases associated with the input parameters.
+      $result = TaxonHistory::fetch($this->connection, $currentMSL, $ictvID, $MSL, $taxNodeID, $taxonName, $vmrID);
+
+      $response = new ResourceResponse($result);
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+      $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
+      return $response;
+   }
 
   /**
   * {@inheritdoc}
