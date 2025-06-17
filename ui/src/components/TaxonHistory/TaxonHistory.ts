@@ -400,7 +400,7 @@ export class TaxonHistory {
       }
 
       // Moved (don't include if the lineage has been updated, as well)
-      if (taxon_.isMoved && !taxon_.isLineageUpdated) {
+      if (taxon_.isMoved /*&& !taxon_.isLineageUpdated*/) {
 
          let formattedPrevParent = "";
          
@@ -536,19 +536,24 @@ export class TaxonHistory {
 
          let displayLabel = filename_;
 
-         const periodIndex = displayLabel.lastIndexOf(".");
-         if (periodIndex > 0) { displayLabel = filename_.substring(0, periodIndex); }
-
-         // Get an icon class specific to the file type.
-         const iconClass = this.getFileIconClass(filename_);
-
          // Separate multiple links with a line break.
          if (proposalLinks.length > 0) { proposalLinks += "<br/>"; }
 
-         // Add a link to the release proposal file(s).
-         proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
-            <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
-            class="release-proposal-link">${displayLabel}</a>`;   
+         const periodIndex = displayLabel.lastIndexOf(".");
+         if (periodIndex > 0) { 
+
+            displayLabel = filename_.substring(0, periodIndex); 
+         
+            // Get an icon class specific to the file type.
+            const iconClass = this.getFileIconClass(filename_);
+
+            // Add a link to the release proposal file(s).
+            proposalLinks += `<i class="${iconClass}" aria-hidden="true"></i>
+               <a href="${AppSettings.releaseProposalsURL}${filename_}" target="_blank" rel="noopener noreferrer" 
+               class="release-proposal-link">${displayLabel}</a>`;
+         } else {
+            proposalLinks += displayLabel;
+         }
       })
    
       if (proposalLinks.length < 1) { return ""; }

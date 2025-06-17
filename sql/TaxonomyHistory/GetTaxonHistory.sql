@@ -16,7 +16,7 @@ CREATE PROCEDURE GetTaxonHistory(
    IN `MSL` INT,
 
    -- The taxnode ID of the taxon to query.
-   IN `taxNodeID` INT,
+   OUT `taxNodeID` INT,
 
    -- The taxon name to query.
    IN `taxonName` VARCHAR(300),

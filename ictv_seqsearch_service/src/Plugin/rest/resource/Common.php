@@ -21,6 +21,9 @@ class Common {
          return null;
       }
 
+      // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
+
       // Has the file already been compressed?
       if (str_ends_with($filename, ".gz")) {
          \Drupal::logger(Common::$MODULE_NAME)->error("File ".$filePath.$filename." is already compressed.");
@@ -76,6 +79,9 @@ class Common {
       $handle = null;
       $fileData = null;
    
+      // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
+      
       if (!str_ends_with($filePath, '/')) { $filePath = $filePath.'/'; }
 
       // Concatenate the path and filename.
@@ -84,6 +90,10 @@ class Common {
       try {
          // Open the file and read its contents.
          $handle = fopen($filePathAndName, "r");
+         if ($handle === false) {
+            \Drupal::logger(Common::$MODULE_NAME)->error("Unable to open file ".$filePathAndName);
+            return null;
+         }
          $fileData = fread($handle, filesize($filePathAndName));
    
       } catch (\Exception $e) {
