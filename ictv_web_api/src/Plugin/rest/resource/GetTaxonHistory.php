@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
-use Drupal\ictv_web_api\helpers\TaxonReleaseHistory;
+use Drupal\ictv_web_api\helpers\TaxonHistory;
 
  /**
   * @RestResource(
@@ -59,7 +59,7 @@ class GetTaxonHistory extends ResourceBase {
   public function get(Request $request): ResourceResponse {
     
       // Get and validate the input parameters.
-      $testInt = $request->get("currentMSL");
+      $testInt = $request->get("current_release");
       $currentMSL = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
       $testInt = $request->get("ictvID");
@@ -68,7 +68,7 @@ class GetTaxonHistory extends ResourceBase {
       $testInt = $request->get("MSL");
       $MSL = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
-      $testInt = $request->get("taxNodeID");
+      $testInt = $request->get("taxnode_id");
       $taxNodeID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
       $taxonName = $request->get("taxonName");
@@ -77,7 +77,7 @@ class GetTaxonHistory extends ResourceBase {
       $vmrID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
 
       // DEBUGGING
-      \Drupal::logger('ictv_web_api')->notice("currentMSL = ".$currentMSL.", taxNodeID = ".$taxNodeID);
+      \Drupal::logger('ictv_web_api')->notice("current_release = ".$currentMSL.", taxnode_id = ".$taxNodeID);
 
       // Get the taxa and releases associated with the input parameters.
       $result = TaxonHistory::fetch($this->connection, $currentMSL, $ictvID, $MSL, $taxNodeID, $taxonName, $vmrID);

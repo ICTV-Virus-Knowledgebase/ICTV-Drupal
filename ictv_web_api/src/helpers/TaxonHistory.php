@@ -67,14 +67,25 @@ class TaxonHistory {
 
       $previousYear = NULL;
 
+      // selectedTaxon is the taxNodeID that the SP got
+      $selectedTaxon = NULL;
+
       foreach ($rows as $r) {
 
          // Add the taxon to the taxa array.
-         $taxa.push(HistoricalTaxon::fromArray($r)->normalize());
+         // array_push($taxa, HistoricalTaxon::fromArray($r)->normalize());
+         $normalizedTaxon = HistoricalTaxon::fromArray($r)->normalize();
+         $taxa[] = $normalizedTaxon;
+
+         // Grab the selected_taxon column from SP
+         if (!empty($r['selected_taxon'])) {
+            $selectedTaxon = $normalizedTaxon;
+            break;
+}
 
          // If this is a release we haven't encountered, add it to the release array.
          if ($r['release_year'] != $previousYear) {
-            $releases.push(HistoricalRelease::fromArray($r)->normalize());
+            array_push($releases, HistoricalRelease::fromArray($r)->normalize());
             $previousYear = $r['release_year'];
          }
       }
@@ -82,6 +93,7 @@ class TaxonHistory {
       return [
          "messages" => $messages,
          "releases" => $releases,
+         "selectedTaxon" => $selectedTaxon,
          "taxa" => $taxa
       ];
    }
