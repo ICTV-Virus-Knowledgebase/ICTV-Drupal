@@ -288,7 +288,7 @@ export class TaxonHistory {
       let changeSummary = this.createChangeSummary(taxon_);
 
       // Format the lineage as HTML, adding "taxon details" links to each taxon name.
-      const formattedLineage = this.formatLineage(taxon_.lineage, taxon_.lineageIDs, taxon_.lineageRanks);
+      const formattedLineage = this.formatLineage(taxon_.lineageNames, taxon_.lineageIDs, taxon_.lineageRanks);
 
       // If there are associated proposals, create a panel to display them.
       let proposalPanel = this.createProposalPanel(taxon_.prevProposal);
@@ -307,7 +307,7 @@ export class TaxonHistory {
             <div class="label">Export lineage:</div>
             <button class="btn btn-default lineage-copy-control"
                data-action="${ExportAction.copyToClipboard}"
-               data-lineage="${taxon_.lineage}" 
+               data-lineage="${taxon_.lineageNames}" 
                data-msl="${taxon_.mslReleaseNumber}"
                data-ranks="${taxon_.lineageRanks}"
                data-taxnode-id="${taxon_.taxnodeID}">
@@ -316,7 +316,7 @@ export class TaxonHistory {
             <button class="btn btn-default lineage-download-control"
                data-action="${ExportAction.download}"
                data-ictv-id="${taxon_.ictvID}"
-               data-lineage="${taxon_.lineage}" 
+               data-lineage="${taxon_.lineageNames}" 
                data-msl="${taxon_.mslReleaseNumber}"
                data-name="${taxon_.name}"
                data-ranks="${taxon_.lineageRanks}"
@@ -371,30 +371,22 @@ export class TaxonHistory {
 
       // New
       if (taxon_.isNew) {
-
-         // Add a description and update the list of actions.
          descriptions.push(this.formatAction(ReleaseAction.new)); 
          actions.push(ReleaseAction.new);
       }
 
       // Abolished (deleted)
-      if (taxon_.isDeleted) { 
-         
-         // Add a description and update the list of actions.
+      if (taxon_.isDeleted) {
          descriptions.push(this.formatAction(ReleaseAction.abolished)); 
          actions.push(ReleaseAction.abolished);
       }
 
       // Promoted or demoted
       if (taxon_.isPromoted) { 
-         
-         // Add a description and update the list of actions.
          descriptions.push(`${this.formatAction(ReleaseAction.promoted)}${taxon_.previousRank}`);
          actions.push(ReleaseAction.promoted);
 
-      } else if (taxon_.isDemoted) { 
-         
-         // Add a description and update the list of actions.
+      } else if (taxon_.isDemoted) {
          descriptions.push(`${this.formatAction(ReleaseAction.demoted)}${taxon_.previousRank}`);
          actions.push(ReleaseAction.demoted);
       }
@@ -409,8 +401,7 @@ export class TaxonHistory {
             let prevParentName = taxon_.previousParent.name;
 
             // Make sure the taxon doesn't still have the "moved from" taxon in its current lineage.
-            let lineage = Utils.safeTrim(taxon_.lineage);
-            if (lineage.endsWith(";")) { lineage = lineage.substring(0, lineage.length - 1); }
+            let lineage = Utils.safeTrim(taxon_.lineageNames);
             
             const lineageArray = lineage.split(";")
             if (!lineageArray.includes(prevParentName) && prevParentName !== taxon_.name) { 
@@ -426,9 +417,7 @@ export class TaxonHistory {
       }
 
       // Lineage updated
-      if (taxon_.isLineageUpdated) { 
-
-         // Add a description and update the list of actions.
+      if (taxon_.isLineageUpdated) {
          descriptions.push(`had its ${this.formatAction(ReleaseAction.lineageUpdated)}`);
          actions.push(ReleaseAction.lineageUpdated);
       }
@@ -437,18 +426,14 @@ export class TaxonHistory {
       if (taxon_.isMerged || taxon_.isSplit || taxon_.isRenamed) {
 
          // Format the list of delimited previous names.
-         const fromPreviousNames = this.formatPreviousNames(taxon_.previousNames);
+         const fromPreviousNames = this.formatPreviousNames(taxon_.prevNames);
 
          // Merged or split
-         if (taxon_.isMerged) { 
-
-            // Add a description and update the list of actions.
+         if (taxon_.isMerged) {
             descriptions.push(`${this.formatAction(ReleaseAction.merged)} from ${fromPreviousNames}`);
             actions.push(ReleaseAction.merged);
    
          } else if (taxon_.isSplit) {
-
-            // Add a description and update the list of actions.
             descriptions.push(`${this.formatAction(ReleaseAction.split)} from ${fromPreviousNames}`);
             actions.push(ReleaseAction.split);    
          }
@@ -456,14 +441,10 @@ export class TaxonHistory {
          // Renamed
          if (taxon_.isRenamed) { 
 
+            // Add descriptions for renamed taxa.
             if (taxon_.isMerged || taxon_.isSplit) {
-               
-               // Add a description
                descriptions.push(`${this.formatAction(ReleaseAction.renamed)}`);
-
             } else {
-
-               // Add a description
                descriptions.push(`${this.formatAction(ReleaseAction.renamed)} of ${fromPreviousNames}`);
             }
             
@@ -518,9 +499,6 @@ export class TaxonHistory {
       if (prevProposal_.length < 1) { return ""; }
 
       let proposalLinks = "";
-
-      // Remove a trailing semicolon.
-      if (prevProposal_.endsWith(";")) { prevProposal_ = prevProposal_.substring(0, prevProposal_.length - 1); }
 
       // If there are multiple proposal files, they will be delimited by semicolons.
       const filenames = prevProposal_.split(";");
@@ -682,31 +660,27 @@ export class TaxonHistory {
    }
 
    // Format the lineage as HTML, adding "taxon details" links to each taxon name.
-   formatLineage(lineage_: string, lineageIDs_: string, lineageRanks_: string): string {
+   formatLineage(lineageIDs_: string, lineageNames_: string, lineageRanks_: string): string {
 
       let html = "";
 
-      if (lineage_.endsWith(";")) { lineage_ = lineage_.substring(0, lineage_.length - 1); }
-      if (lineageIDs_.endsWith(";")) { lineageIDs_ = lineageIDs_.substring(0, lineageIDs_.length - 1); }
-      if (lineageRanks_.endsWith(";")) { lineageRanks_ = lineageRanks_.substring(0, lineageRanks_.length - 1); }
-
       // Create arrays from the delimited strings.
-      const lineageArray = lineage_.split(";");
-      const lineageIdArray = lineageIDs_.split(";");
+      const idArray = lineageIDs_.split(";");
+      const nameArray = lineageNames_.split(";");
       const rankArray = lineageRanks_.split(";");
 
       // Validate the array lengths.
-      if (lineageArray.length !== rankArray.length) { throw new Error("The number of taxa and ranks don't match"); }
-      if (lineageIdArray.length !== lineageArray.length) { throw new Error("The number of lineage IDs and taxa don't match"); }
+      if (nameArray.length !== rankArray.length) { throw new Error("The number of lineage names and ranks don't match"); }
+      if (idArray.length !== nameArray.length) { throw new Error("The number of lineage IDs and names don't match"); }
 
       let leftOffset = 0;
 
-      lineageArray.forEach((taxonName_: string, index_: number) => {
+      nameArray.forEach((taxonName_: string, index_: number) => {
 
          const formattedName = Utils.italicizeTaxonName(taxonName_);
 
          // Lookup the taxon's taxnode ID (lineage ID) and rank name.
-         let lineageID = lineageIdArray[index_];
+         let lineageID = idArray[index_];
          let rankName = rankArray[index_];
 
          const lineageURL = `${AppSettings.applicationURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${lineageID}&taxon_name=${taxonName_}"`;
@@ -726,9 +700,9 @@ export class TaxonHistory {
 
             // Add the rank and linked name.
             html += `<div class="lineage-row" style="margin-left: ${leftOffset}rem">
-                  <div class="rank-name">${rankName}</div> 
-                  <div class="taxon-name">${linkedName}</div>
-               </div>`;
+               <div class="rank-name">${rankName}</div> 
+               <div class="taxon-name">${linkedName}</div>
+            </div>`;
          }
 
          leftOffset += this.lineageLeftOffset;
@@ -744,10 +718,7 @@ export class TaxonHistory {
       if (!names_) { throw new Error("Invalid names parameter"); }
 
       names_ = names_.trim();
-      if (names_.endsWith(";")) { names_ = names_.substring(0, names_.length - 1); }
-
       if (rankNames_) { rankNames_ = rankNames_.trim(); }
-      if (rankNames_.endsWith(";")) { rankNames_ = rankNames_.substring(0, rankNames_.length - 1); }
 
       // Initialize the delimiter and final result.
       let delimiter = "";
@@ -988,9 +959,6 @@ export class TaxonHistory {
 
       let parent = "";
       
-      // Remove a trailing semicolon.
-      if (previousLineage_.endsWith(";")) { previousLineage_ = previousLineage_.substring(0, previousLineage_.length - 1); }
-
       // Split the delimited taxa into an array.
       const previousTaxa = previousLineage_.split(";");
 
@@ -1017,9 +985,6 @@ export class TaxonHistory {
       previousLineage_ = Utils.safeTrim(previousLineage_);
       if (previousLineage_.length < 1) { return ""; }
 
-      // Remove a trailing semicolon.
-      if (previousLineage_.endsWith(";")) { previousLineage_ = previousLineage_.substring(0, previousLineage_.length - 1); }
-      
       // Split the delimited taxa into an array.
       const previousTaxa = previousLineage_.split(";");
 
@@ -1291,9 +1256,30 @@ export class TaxonHistory {
    // Add metadata to the taxon (for convenience).
    processTaxon(taxon_: ITaxon): ITaxon {
 
-      // Set the rank name and previous rank name.
-      taxon_.rankName = this.getRankName(taxon_.lineageRanks);
+      // Set the previous rank name (???)
       taxon_.previousRank = this.getPreviousRank(taxon_.lineageRanks);
+
+      // Remove trailing semicolons.
+      taxon_.lineageIDs = this.removeTrailingSemicolon(taxon_.lineageIDs);
+      taxon_.lineageNames = this.removeTrailingSemicolon(taxon_.lineageNames);
+      taxon_.lineageRanks = this.removeTrailingSemicolon(taxon_.lineageRanks);
+      taxon_.prevLineageNames = this.removeTrailingSemicolon(taxon_.prevLineageNames);
+      taxon_.prevLineageRanks = this.removeTrailingSemicolon(taxon_.prevLineageRanks); 
+      taxon_.prevNames = this.removeTrailingSemicolon(taxon_.prevNames);
+      taxon_.prevProposal = this.removeTrailingSemicolon(taxon_.prevProposal);
+
+      // Convert the semicolon-delimited lineage strings into arrays for easier processing.
+      taxon_.lineageIDArray = !!taxon_.lineageIDs ? taxon_.lineageIDs.split(";") : null;
+      taxon_.lineageNameArray = !!taxon_.lineageNames ? taxon_.lineageNames.split(";") : null;
+      taxon_.lineageRankArray = !!taxon_.lineageRanks ? taxon_.lineageRanks.split(";") : null;
+      taxon_.prevLineageNameArray = !!taxon_.prevLineageNames ? taxon_.prevLineageNames.split(";") : null;
+      taxon_.prevLineageRankArray = !!taxon_.prevLineageRanks ? taxon_.prevLineageRanks.split(";") : null;
+
+      // Convert the comma-delimited previous names into an array for easier processing.
+      taxon_.prevNameArray = taxon_.prevNames.split(",");
+
+      /*
+      TODO: refactor this!!!
 
       // Get the previous parent's rank and name.
       const previousParent = this.getPreviousParent(taxon_.previousLineage);
@@ -1302,9 +1288,16 @@ export class TaxonHistory {
             name: previousParent[1],
             rank: previousParent[0]
          }
-      }
+      }*/
 
       return taxon_;
+   }
+
+   // Remove a trailing semicolon from a delimited list.
+   removeTrailingSemicolon(value_: string) {
+      value_ = Utils.safeTrim(value_);
+      if (value_.endsWith(";")) { value_ = value_.substring(0, value_.length - 1); }
+      return value_;
    }
 
    saveExportSettings() {
