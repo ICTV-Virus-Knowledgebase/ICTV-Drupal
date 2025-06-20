@@ -13,6 +13,6 @@ export interface IRelease {
    year: string;
 
    // The following properties are added after the JSON is returned by the web service.
+   bodyElement?: HTMLElement;
    taxa?: ITaxon[];
-   taxaElement?: HTMLElement;
 }
