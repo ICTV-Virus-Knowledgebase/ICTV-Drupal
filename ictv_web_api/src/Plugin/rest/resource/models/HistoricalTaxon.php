@@ -26,6 +26,7 @@ class HistoricalTaxon {
    public ?string $prevProposal;
    public ?string $rankName;
    public int $taxnodeID;
+   public int $treeID;
 
  
    public static function fromArray(array $d): self {
@@ -55,6 +56,7 @@ class HistoricalTaxon {
       $o->prevProposal     = $d["prev_proposal"] ?? null;
       $o->rankName         = $d["rank_name"] ?? null;
       $o->taxnodeID        = isset($d["taxnode_id"]) ? (int)$d["taxnode_id"] : 0;
+      $o->treeID           = isset($d["tree_id"]) ? (int)$d["tree_id"] : 0;
 
       return $o;
    }
@@ -83,7 +85,8 @@ class HistoricalTaxon {
          "prevNotes"        => $this->prevNotes,
          "prevProposal"     => $this->prevProposal,
          "rankName"         => $this->rankName,
-         "taxnodeID"        => $this->taxnodeID
+         "taxnodeID"        => $this->taxnodeID,
+         "treeID"           => $this->treeID,
       ];
    }
 }
