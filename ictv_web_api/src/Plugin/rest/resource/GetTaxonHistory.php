@@ -23,7 +23,8 @@ use Drupal\ictv_web_api\helpers\TaxonHistory;
   *   id = "get_taxon_history",
   *   label = @Translation("Get Taxon History"),
   *   uri_paths = {
-  *     "canonical" = "/api/get-taxon-history"
+  *     "canonical" = "/api/get-taxon-history-test",
+  *     "create" = "/api/get-taxon-history-test"
   *   }
   * )
   */

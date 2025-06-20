@@ -3,41 +3,42 @@
 namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
 
 class HistoricalRelease {
+   
+   public ?int    $isAbolished;
+   public ?int    $isCurrent;
+   public ?int    $isSelected;
+   public ?int    $mods;
+   public ?string $rankNames;
+   public ?int    $releaseNumber;
+   public ?string $title;
+   public ?string $year;
 
-  /* ---- properties that the JS bundle expects ---- */
-  public ?int    $treeID        = null;
-  public ?int    $releaseNumber = null;
-  public ?string $rankNames     = null;
-  public ?string $title         = null;
-  public ?string $year          = null;
+   public static function fromArray(array $d): self {
+      
+      $o = new self();
 
-  /**
-   * Map database row → object.
-   * Make sure the SQL result set has *these* aliases:
-   *   release_number, rank_names, title, year
-   */
+      $o->isAbolished   = isset($d['release_is_abolished']) ? (int) $d['release_is_abolished'] : 0;
+      $o->isCurrent     = isset($d['release_is_current'])    ? (int) $d['release_is_current']    : 0;
+      $o->isSelected    = isset($d['release_is_selected'])   ? (int) $d['release_is_selected']   : 0;
+      $o->mods          = isset($d['release_mods'])          ? (int) $d['release_mods']          : 0;
+      $o->rankNames     = $d['release_rank_names']   ?? null;
+      $o->releaseNumber = isset($d['msl_release_number']) ? (int) $d['msl_release_number'] : null;
+      $o->title         = $d['release_title']        ?? null;
+      $o->year          = $d['release_year']         ?? null;
 
-  public static function fromArray(array $d): self {
+      return $o;
+   }
 
-    $o = new self();
-
-    $o->treeID        = isset($d['tree_id']) ? (int) $d['tree_id'] : null;
-    $o->releaseNumber = isset($d['msl_release_num']) ? (int) $d['msl_release_num'] : null;
-    $o->rankNames     = $d['release_rank_names']   ?? null;
-    $o->title         = $d['release_title']        ?? null;
-    $o->year          = $d['release_year']         ?? null;
-
-    return $o;
-  }
-
-  /** Return the shape the front-end needs */
-  public function normalize(): array {
-    return [
-      'rankNames'     => $this->rankNames,
-      'releaseNumber' => $this->releaseNumber,
-      'title'         => $this->title,
-      'treeID'        => $this->treeID,
-      'year'          => $this->year
-    ];
-  }
+   public function normalize(): array {
+      return [
+         'isAbolished'   => $this->isAbolished === 1,
+         'isCurrent'     => $this->isCurrent   === 1,
+         'isSelected'    => $this->isSelected  === 1,
+         'mods'          => $this->mods,
+         'rankNames'     => $this->rankNames,
+         'releaseNumber' => $this->releaseNumber,
+         'title'         => $this->title,
+         'year'          => $this->year,
+      ];
+   }
 }

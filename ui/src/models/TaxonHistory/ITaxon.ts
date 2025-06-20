@@ -1,6 +1,7 @@
 
 
 export interface ITaxon {
+   
    ictvID: number;
    isDeleted: boolean;
    isDemoted: boolean;
@@ -10,23 +11,36 @@ export interface ITaxon {
    isNew: boolean;
    isPromoted: boolean;
    isRenamed: boolean;
+   isSelected: boolean;
    isSplit: boolean;
-   lineage: string;
    lineageIDs: string;
+   lineageNames: string;
    lineageRanks: string;
    mslReleaseNumber: number;
    name: string;
-   previousLineage: string;
-   previousNames: string;
+   prevLineageNames: string;
+   prevLineageRanks: string;
+   prevNames: string;
    prevNotes: string;
    prevProposal: string;
-   rankName?: string;
+   rankName: string;
    taxnodeID: number;
    treeID: number;
    year?: string;
 
+   //------------------------------------------------------------------------------------------------------
    // The following properties are added after the JSON is returned by the web service.
+   //------------------------------------------------------------------------------------------------------
    formattedLineage?: string;
+
+   // Split the semicolon-delimited strings into arrays for easier processing.
+   lineageIDArray?: string[];
+   lineageNameArray?: string[];
+   lineageRankArray?: string[];
+   prevLineageNameArray?: string[];
+   prevLineageRankArray?: string[];
+   prevNameArray?: string[];
+
    previousParent?: {
       name: string;
       rank: string;
