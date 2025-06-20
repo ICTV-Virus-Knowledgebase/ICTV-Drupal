@@ -41,7 +41,6 @@ class TaxonHistory {
 
       $messages = '';
       $releases = [];
-      $selectedTaxon = NULL;
       $taxa = [];
 
       // Call the stored procedure
@@ -73,9 +72,6 @@ class TaxonHistory {
          // Add the taxon to the taxa array.
          $taxon = HistoricalTaxon::fromArray($r)->normalize();
          
-         // Is this the selected taxon?
-         if (isset($r['is_selected']) && (int)$r['is_selected'] == 1) { $selectedTaxon = $taxon; }
-
          $taxa.push($taxon);
 
          // If this is a release we haven't encountered, add it to the release array.
@@ -88,7 +84,6 @@ class TaxonHistory {
       return [
          "messages"        => $messages,
          "releases"        => $releases,
-         "selectedTaxon"   => $selectedTaxon,
          "taxa"            => $taxa
       ];
    }
