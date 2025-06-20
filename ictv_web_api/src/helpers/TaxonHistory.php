@@ -41,6 +41,7 @@ class TaxonHistory {
 
       $messages = '';
       $releases = [];
+      $selectedTaxon = NULL;
       $taxa = [];
 
       // Call the stored procedure
@@ -73,15 +74,13 @@ class TaxonHistory {
       foreach ($rows as $r) {
 
          // Add the taxon to the taxa array.
-         // array_push($taxa, HistoricalTaxon::fromArray($r)->normalize());
-         $normalizedTaxon = HistoricalTaxon::fromArray($r)->normalize();
-         $taxa[] = $normalizedTaxon;
+         $taxon = HistoricalTaxon::fromArray($r)->normalize();
+         
+         // Is this the selected taxon?
+         if (isset($r['is_selected']) && (int)$r['is_selected'] == 1) { $selectedTaxon = $taxon; }
 
-         // Grab the selected_taxon column from SP
-         if (!empty($r['selected_taxon'])) {
-            $selectedTaxon = $normalizedTaxon;
-            break;
-}
+         // $taxa.push($taxon);
+         array_push($taxa($taxon));
 
          // If this is a release we haven't encountered, add it to the release array.
          if ($r['release_year'] != $previousYear) {
@@ -91,10 +90,10 @@ class TaxonHistory {
       }
 
       return [
-         "messages" => $messages,
-         "releases" => $releases,
-         "selectedTaxon" => $selectedTaxon,
-         "taxa" => $taxa
+         "messages"        => $messages,
+         "releases"        => $releases,
+         "selectedTaxon"   => $selectedTaxon,
+         "taxa"            => $taxa
       ];
    }
 }

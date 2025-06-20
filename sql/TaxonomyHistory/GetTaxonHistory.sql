@@ -26,9 +26,6 @@ CREATE PROCEDURE GetTaxonHistory(
 )
 BEGIN
 
-   DECLARE selectedMSL INT;
-
-
    -- Pre-process the input parameters to arrive at a taxnode_id.
    SET taxonName = TRIM(taxonName);
 
@@ -73,9 +70,6 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Unable to determine taxnode_id';
    END IF;
 
-   -- Get the MSL of the selected taxon.
-   SET selectedMSL = (SELECT tn.msl_release_num FROM taxonomy_node tn WHERE tn.taxnode_id = taxNodeID LIMIT 1);
-
    WITH taxaChanges AS (
       SELECT
          ictv_id,
@@ -89,17 +83,21 @@ BEGIN
          MAX(is_renamed) AS is_renamed,
          MAX(is_split) AS is_split,
          left_idx,
-         lineage,
+         level_id,
          lineage_ids,
+         lineage_names,
+         lineage_ranks,
          IFNULL(modifications,0) AS modifications,
          CASE
-            WHEN MAX(is_deleted) = 1 THEN msl_release_num + 1
-            ELSE msl_release_num
+            WHEN MAX(is_deleted) = 1 THEN taxaAndPrevs.msl_release_num + 1
+            ELSE taxaAndPrevs.msl_release_num
          END AS msl_release_num,
          name,
          MAX(prev_notes) AS prev_notes,
          MAX(prev_proposal) AS prev_proposal,
-         taxnode_id
+         taxnode_id,
+         tree_id 
+
       FROM (
          SELECT 
             node.ictv_id,
@@ -113,7 +111,7 @@ BEGIN
             prev_delta.is_renamed,
             prev_delta.is_split,
             node.left_idx,
-            node.lineage,
+            node.level_id,
             CONCAT(
                CASE WHEN node.realm_id IS NOT NULL THEN CONCAT(CAST(node.realm_id AS CHAR(12)), ';') ELSE '' END, 
                CASE WHEN node.subrealm_id IS NOT NULL THEN CONCAT(CAST(node.subrealm_id AS CHAR(12)), ';') ELSE '' END, 
@@ -131,21 +129,7 @@ BEGIN
                CASE WHEN node.subgenus_id IS NOT NULL THEN CONCAT(CAST(node.subgenus_id AS CHAR(12)), ';') ELSE '' END, 
                CASE WHEN node.species_id IS NOT NULL THEN CONCAT(CAST(node.species_id AS CHAR(12)), ';') ELSE '' END	
             ) AS lineage_ids,
-            ( 
-               prev_delta.is_deleted |
-               prev_delta.is_demoted |
-               prev_delta.is_lineage_updated |
-               prev_delta.is_merged |
-               prev_delta.is_moved |
-               prev_delta.is_new |
-               prev_delta.is_promoted |   
-               prev_delta.is_renamed |   
-               prev_delta.is_split
-            ) AS modifications,
-            node.msl_release_num,
-            node.name,
-            prev_delta.notes AS prev_notes, 
-            prev_delta.proposal AS prev_proposal,
+            node.lineage AS lineage_names,
             CONCAT(
                CASE WHEN node.realm_id IS NOT NULL THEN 'Realm;' ELSE '' END, 
                CASE WHEN node.subrealm_id IS NOT NULL THEN 'Subrealm;' ELSE '' END, 
@@ -162,7 +146,22 @@ BEGIN
                CASE WHEN node.genus_id IS NOT NULL THEN 'Genus;' ELSE '' END, 
                CASE WHEN node.subgenus_id IS NOT NULL THEN 'Subgenus;' ELSE '' END, 
                CASE WHEN node.species_id IS NOT NULL THEN 'Species;' ELSE '' END 
-            ) AS rank_names,
+            ) AS lineage_ranks,
+            ( 
+               prev_delta.is_deleted |
+               prev_delta.is_demoted |
+               prev_delta.is_lineage_updated |
+               prev_delta.is_merged |
+               prev_delta.is_moved |
+               prev_delta.is_new |
+               prev_delta.is_promoted |   
+               prev_delta.is_renamed |   
+               prev_delta.is_split
+            ) AS modifications,
+            node.msl_release_num,
+            node.name,
+            prev_delta.notes AS prev_notes, 
+            prev_delta.proposal AS prev_proposal,  
             node.taxnode_id AS taxnode_id,  
             node.tree_id AS tree_id
 
@@ -174,6 +173,7 @@ BEGIN
 
          UNION ALL
 
+         -- Any taxon in this subquery has been abolished (see the constraints below).
          SELECT 
             node.ictv_id,
             prev_delta.is_deleted,
@@ -186,7 +186,7 @@ BEGIN
             prev_delta.is_renamed,
             prev_delta.is_split,
             node.left_idx,
-            node.lineage,
+            node.level_id,
             CONCAT(
                CASE WHEN node.realm_id IS NOT NULL THEN CONCAT(CAST(node.realm_id AS CHAR(12)), ';') ELSE '' END, 
                CASE WHEN node.subrealm_id IS NOT NULL THEN CONCAT(CAST(node.subrealm_id AS CHAR(12)), ';') ELSE '' END, 
@@ -204,21 +204,7 @@ BEGIN
                CASE WHEN node.subgenus_id IS NOT NULL THEN CONCAT(CAST(node.subgenus_id AS CHAR(12)), ';') ELSE '' END, 
                CASE WHEN node.species_id IS NOT NULL THEN CONCAT(CAST(node.species_id AS CHAR(12)), ';') ELSE '' END	
             ) AS lineage_ids,
-            ( 
-               prev_delta.is_deleted |
-               prev_delta.is_demoted |
-               prev_delta.is_lineage_updated |
-               prev_delta.is_merged |
-               prev_delta.is_moved |
-               prev_delta.is_new |
-               prev_delta.is_promoted |   
-               prev_delta.is_renamed |   
-               prev_delta.is_split
-            ) AS modifications,
-            node.msl_release_num,
-            node.name,
-            prev_delta.notes AS prev_notes, 
-            prev_delta.proposal AS prev_proposal,
+            node.lineage AS lineage_names,
             CONCAT(
                CASE WHEN node.realm_id IS NOT NULL THEN 'Realm;' ELSE '' END, 
                CASE WHEN node.subrealm_id IS NOT NULL THEN 'Subrealm;' ELSE '' END, 
@@ -235,14 +221,21 @@ BEGIN
                CASE WHEN node.genus_id IS NOT NULL THEN 'Genus;' ELSE '' END, 
                CASE WHEN node.subgenus_id IS NOT NULL THEN 'Subgenus;' ELSE '' END, 
                CASE WHEN node.species_id IS NOT NULL THEN 'Species;' ELSE '' END 
-            ) AS rank_names,
+            ) AS lineage_ranks,
+            prev_delta.is_deleted AS modifications,
+            node.msl_release_num + 1 AS msl_release_num,
+            node.name,
+            prev_delta.notes AS prev_notes, 
+            prev_delta.proposal AS prev_proposal,
             node.taxnode_id AS taxnode_id,  
-            node.tree_id AS tree_id
+            toc.tree_id
+
          FROM taxonomy_node_x AS node  
          JOIN taxonomy_node_delta AS prev_delta ON (
             prev_delta.is_deleted = 1 
-            AND prev_delta.prev_taxid = node.target_taxnode_id
+            AND prev_delta.prev_taxid = node.taxnode_id
          )
+         JOIN taxonomy_toc toc ON toc.msl_release_num = node.msl_release_num + 1
          WHERE node.tree_id >= 19000000
          AND node.msl_release_num <= currentMSL 
          AND node.target_taxnode_id = taxNodeID
@@ -251,19 +244,54 @@ BEGIN
       GROUP BY taxaAndPrevs.msl_release_num, taxaAndPrevs.taxnode_id, taxaAndPrevs.tree_id, taxaAndPrevs.name, taxaAndPrevs.ictv_id, 
          taxaAndPrevs.is_deleted, taxaAndPrevs.is_demoted, taxaAndPrevs.is_lineage_updated, taxaAndPrevs.is_merged, 
          taxaAndPrevs.is_moved, taxaAndPrevs.is_new, taxaAndPrevs.is_promoted, taxaAndPrevs.is_renamed, taxaAndPrevs.is_split,
-         taxaAndPrevs.left_idx, taxaAndPrevs.lineage, taxaAndPrevs.lineage_ids, taxaAndPrevs.modifications, taxaAndPrevs.msl_release_num, 
+         taxaAndPrevs.left_idx, taxaAndPrevs.lineage_ids, taxaAndPrevs.lineage_names, taxaAndPrevs.modifications, taxaAndPrevs.msl_release_num, 
          taxaAndPrevs.name, taxaAndPrevs.prev_notes, taxaAndPrevs.prev_proposal
    )
 
-   SELECT limitedTaxa.*, 
+   SELECT
+      filteredTaxa.ictv_id,
+      filteredTaxa.is_deleted,
+      filteredTaxa.is_demoted,
+      filteredTaxa.is_lineage_updated,
+      filteredTaxa.is_merged,
+      filteredTaxa.is_moved,
+      filteredTaxa.is_new,
+      filteredTaxa.is_promoted,
+      filteredTaxa.is_renamed,
+      CASE
+         WHEN filteredTaxa.taxnode_id = taxNodeID THEN 1 ELSE 0
+      END AS is_selected,
+      filteredTaxa.is_split,
+      filteredTaxa.left_idx,
+      filteredTaxa.lineage_ids,
+      filteredTaxa.lineage_names,
+      filteredTaxa.lineage_ranks,
+      filteredTaxa.msl_release_num,
+      filteredTaxa.name,
       
-      -- The parent of the previous version of the taxon.
-      prev_parent_rank.name AS prev_parent_rank,
-      prev_parent_name.name AS prev_parent_name,
+      -- The lineage of the previous version of the taxon.
+      prev_tn.lineage AS prev_lineage_names,
+      CONCAT(
+         CASE WHEN prev_tn.realm_id IS NOT NULL THEN 'Realm;' ELSE '' END, 
+         CASE WHEN prev_tn.subrealm_id IS NOT NULL THEN 'Subrealm;' ELSE '' END, 
+         CASE WHEN prev_tn.kingdom_id IS NOT NULL THEN 'Kingdom;' ELSE '' END, 
+         CASE WHEN prev_tn.subkingdom_id IS NOT NULL THEN 'Subkingdom;' ELSE '' END, 
+         CASE WHEN prev_tn.phylum_id IS NOT NULL THEN 'Phylum;' ELSE '' END, 
+         CASE WHEN prev_tn.subphylum_id IS NOT NULL THEN 'Subphylum;' ELSE '' END, 
+         CASE WHEN prev_tn.class_id IS NOT NULL THEN 'Class;' ELSE '' END, 
+         CASE WHEN prev_tn.subclass_id IS NOT NULL THEN 'Subclass;' ELSE '' END, 
+         CASE WHEN prev_tn.order_id IS NOT NULL THEN 'Order;' ELSE '' END, 
+         CASE WHEN prev_tn.suborder_id IS NOT NULL THEN 'Suborder;' ELSE '' END, 
+         CASE WHEN prev_tn.family_id IS NOT NULL THEN 'Family;' ELSE '' END, 
+         CASE WHEN prev_tn.subfamily_id IS NOT NULL THEN 'Subfamily;' ELSE '' END, 
+         CASE WHEN prev_tn.genus_id IS NOT NULL THEN 'Genus;' ELSE '' END, 
+         CASE WHEN prev_tn.subgenus_id IS NOT NULL THEN 'Subgenus;' ELSE '' END, 
+         CASE WHEN prev_tn.species_id IS NOT NULL THEN 'Species;' ELSE '' END 
+      ) AS prev_lineage_ranks,
       
       -- Names of this taxon's antecedents from the previous release.
       CASE
-         WHEN limitedTaxa.is_deleted = 0 AND (limitedTaxa.is_merged = 1 OR limitedTaxa.is_renamed = 1 OR limitedTaxa.is_split = 1) THEN
+         WHEN filteredTaxa.is_deleted = 0 AND (filteredTaxa.is_merged = 1 OR filteredTaxa.is_renamed = 1 OR filteredTaxa.is_split = 1) THEN
 
             -- Format the previous names as a comma-delimited list.
             (SELECT GROUP_CONCAT(tn_previous.name ORDER BY tn_previous.left_idx SEPARATOR ', ')
@@ -274,12 +302,22 @@ BEGIN
                delta_previous.new_taxid = tn_changed.taxnode_id
                AND delta_previous.prev_taxid = tn_previous.taxnode_id
             )
-            WHERE tn_changed.taxnode_id = limitedTaxa.taxnode_id
-            AND tn_previous.msl_release_num = (limitedTaxa.msl_release_num - 1)
-            -- ORDER BY tn_previous.left_idx
+            WHERE tn_changed.taxnode_id = filteredTaxa.taxnode_id
+            AND tn_previous.msl_release_num = (filteredTaxa.msl_release_num - 1)
             )
          ELSE NULL
-      END AS previous_names,
+      END AS prev_names,
+      filteredTaxa.prev_notes,
+      filteredTaxa.prev_proposal,
+      tl.name AS rank_name,
+      filteredTaxa.taxnode_id,
+      filteredTaxa.tree_id,
+
+      -- Release columns
+      filteredTaxa.release_is_abolished,
+      filteredTaxa.release_is_current,
+      filteredTaxa.release_is_selected,
+      filteredTaxa.release_mods,
       CONCAT(
          CASE WHEN realms > 0 THEN 'realm,' ELSE '' END,  
          CASE WHEN subrealms > 0 THEN 'subrealm,' ELSE '' END,  
@@ -301,66 +339,80 @@ BEGIN
       msl.year AS release_year
 
    FROM (
-      SELECT *
+      SELECT
+         ictv_id,
+         is_deleted,
+         is_demoted,
+         is_lineage_updated,
+         is_merged,
+         is_moved,
+         is_new,
+         is_promoted,
+         is_renamed,
+         is_split,
+         left_idx,
+         level_id,
+         lineage_ids,
+         lineage_names,
+         lineage_ranks,
+         tc1.msl_release_num,
+         name,
+         prev_notes,
+         prev_proposal,
+         taxnode_id,
+         tree_id,
+
+         -- Release columns
+         releases.mods AS release_mods,
+         releases.is_abolished AS release_is_abolished,
+         releases.is_current AS release_is_current,
+         releases.is_selected AS release_is_selected
+
       FROM taxaChanges tc1
-      WHERE tc1.msl_release_num IN (
-         SELECT msl_release_num
-         FROM (
-            -- Releases with at least one modification.
-            SELECT tc2.msl_release_num, SUM(tc2.modifications) AS mods 
-            FROM taxaChanges tc2
-            GROUP BY tc2.msl_release_num
 
-            -- Include the current release if there are taxa associated with it. 
-            UNION ALL
-
-            SELECT CASE
-               WHEN EXISTS (
-                  SELECT 1
-                  FROM taxaChanges currentTaxa
-                  WHERE currentTaxa.msl_release_num = currentMSL
-               ) THEN currentMSL
-               ELSE NULL
-            END AS msl_release_num, 
-            1 AS mods
-         ) releases
-         WHERE mods > 0
-         AND msl_release_num IS NOT NULL
+      -- Releases that are current, associated with the selected taxon, or have at least one modification.
+      JOIN (
+         SELECT
+            tc2.msl_release_num,
+            SUM(tc2.modifications) AS mods,
+            CASE WHEN tc2.msl_release_num = currentMSL THEN 1 ELSE 0 END AS is_current,
+	         CASE WHEN tc2.is_deleted = 1 THEN 1 ELSE 0 END AS is_abolished,
+            MAX(CASE WHEN tc2.taxnode_id = taxNodeID THEN 1 ELSE 0 END) AS is_selected
+         FROM taxaChanges tc2
+         GROUP BY tc2.msl_release_num
+      ) releases ON (
+     	   releases.msl_release_num = tc1.msl_release_num
+     	   AND (releases.is_current = 1 
+            OR releases.mods > 0 
+            OR (releases.is_selected = 1 AND tc1.taxnode_id = taxNodeID)
+     	   )
       )
-   ) limitedTaxa
+   ) filteredTaxa
 
-   -- Include the previous version for demoted, moved, and promoted taxa.
+   -- The taxon's rank
+   JOIN taxonomy_level tl ON tl.id = filteredTaxa.level_id
+
+   -- Include the previous version for demoted, lineage updated, moved, and promoted taxa.
    LEFT JOIN taxonomy_node prev_tn ON (
       (is_demoted = 1 OR is_lineage_updated = 1 OR is_moved = 1 OR is_promoted = 1)
-      AND prev_tn.ictv_id = limitedTaxa.ictv_id
-      AND prev_tn.msl_release_num = limitedTaxa.msl_release_num - 1
-   )
-
-   -- The parent of the previous version of the taxon.
-   LEFT JOIN taxonomy_node prev_parent_name ON (
-      (is_lineage_updated = 1 OR is_moved = 1)
-      AND prev_tn.taxnode_id IS NOT NULL
-      AND prev_parent_name.taxnode_id = prev_tn.parent_id
-   )
-   LEFT JOIN taxonomy_level prev_parent_rank ON (
-      prev_parent_name.taxnode_id IS NOT NULL
-      AND prev_parent_rank.id = prev_parent_name.level_id
+      AND prev_tn.ictv_id = filteredTaxa.ictv_id
+      AND prev_tn.msl_release_num = filteredTaxa.msl_release_num - 1
    )
 
    -- MSL releases
-   JOIN view_taxa_level_counts_by_release msl ON msl.msl_release_num = limitedTaxa.msl_release_num
+   JOIN view_taxa_level_counts_by_release msl ON msl.msl_release_num = filteredTaxa.msl_release_num
 
    ORDER BY 
 
       -- Sort by release
-      limitedTaxa.msl_release_num DESC,
+      filteredTaxa.msl_release_num DESC,
 
       -- Sort the name alphabetically
-      limitedTaxa.left_idx ASC,
+      filteredTaxa.left_idx ASC,
 
       -- The order of changes is New, Abolished, Promoted, Demoted, Merged, Split, Moved, Lineage updated, Renamed, and Unchanged.
       is_new DESC,
-      limitedTaxa.is_deleted DESC,
+      filteredTaxa.is_deleted DESC,
       is_promoted DESC,
       is_demoted DESC,
       is_merged DESC,
