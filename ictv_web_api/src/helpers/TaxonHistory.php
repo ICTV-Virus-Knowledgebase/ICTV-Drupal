@@ -10,7 +10,7 @@ use Drupal\ictv_web_api\Plugin\rest\resource\models\HistoricalTaxon;
 class TaxonHistory {
 
   /**
-   * Call the (single‐result) stored procedure `GetTaxonHistory`
+   * Call the (single result set) stored procedure `GetTaxonHistory`
    *
    * @param Connection $connection
    * 
@@ -34,7 +34,8 @@ class TaxonHistory {
    *
    * @return array{
    *   messages: string,
-   *   results: array
+   *   releases: array<HistoricalRelease>,
+   *   taxa: array<HistoricalTaxon>
    * }
    */
    public static function fetch(Connection $connection, int $currentMSL, ?int $ictvID, ?int $MSL, ?int $taxNodeID, ?string $taxonName, ?int $vmrID): array {
@@ -70,13 +71,11 @@ class TaxonHistory {
       foreach ($rows as $r) {
 
          // Add the taxon to the taxa array.
-         $taxon = HistoricalTaxon::fromArray($r)->normalize();
-         
-         $taxa.push($taxon);
+         array_push($taxa, HistoricalTaxon::fromArray($r)->normalize());
 
          // If this is a release we haven't encountered, add it to the release array.
          if ($r['release_year'] != $previousYear) {
-            $releases.push(HistoricalRelease::fromArray($r)->normalize());
+            array_push($releases, HistoricalRelease::fromArray($r)->normalize());
             $previousYear = $r['release_year'];
          }
       }
@@ -88,10 +87,3 @@ class TaxonHistory {
       ];
    }
 }
-
-
-
-
-
-
-

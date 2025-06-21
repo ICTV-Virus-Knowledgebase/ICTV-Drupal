@@ -30,15 +30,14 @@ enum LineageDisplayFormat {
 
 export class TaxonHistory {
 
+   // All possible rank names in the latest release, excluding "tree".
    allRankNamesArray: string[] = null;
 
    // The DOM selector for the container element.
    containerSelector: string = null;
 
-   currentMslRelease: number;
-
-   // The number of distinct ICTV IDs from all displayed taxa.
-   distinctIctvIDs = 0;
+   // The taxon history data provided by the web service.
+   data: ITaxonHistoryResult;
 
    // Important DOM elements used by this component.
    elements: {
@@ -76,14 +75,6 @@ export class TaxonHistory {
    // Identifiers provided as query string parameters.
    identifiers: Identifiers;
 
-   // Should lineages be displayed horizontally or vertically?
-   lineageDisplayFormat: LineageDisplayFormat = LineageDisplayFormat.horizontal;
-
-   // Each lineage rank will be indented by this amount when displayed vertically.
-   lineageLeftOffset = 0.75;
-
-   // The time it will take to fade out a status message (for now this is only used by copyToClipboard).
-   messageFadeTime: number = 5000;
 
    messages = {
 
@@ -94,20 +85,37 @@ export class TaxonHistory {
       noData: "No history is available"
    }
 
-   // The minimum number of distinct ICTV IDs to enable highlighting.
-   MIN_ICTV_IDS_FOR_HIGHLIGHT = 2;
-
    // A lookup from MSL release number to the corresponding release object.
    releaseLookup: Map<number, IRelease>;
 
    // The taxon specified by the identifier parameter(s).
    selectedTaxon: ITaxon = null;
 
+   settings = {
+
+      // The current MSL release number.
+      currentReleaseNum: NaN,
+
+      // The number of distinct ICTV IDs from all displayed taxa.
+      distinctIctvIDs: 0,
+
+      // Should lineages be displayed horizontally or vertically?
+      lineageDisplayFormat: LineageDisplayFormat.horizontal,
+
+      // Each lineage rank will be indented by this amount when displayed vertically.
+      lineageLeftOffset: 0.75,
+
+      // The time it will take to fade out a status message (for now this is only used by copyToClipboard).
+      messageFadeTime: 5000,
+
+      // The minimum number of distinct ICTV IDs to enable highlighting.
+      minIctvIDsForHighlight: 2
+   }
+
+   // A lookup from taxnode ID to taxon object.
    taxaLookup: Map<number, ITaxon>;
 
-   // The taxon history data provided by the web service.
-   taxonHistory: ITaxonHistoryResult;
-
+   
 
    // C-tor
    constructor(containerSelector_: string, currentMslRelease_: number) {
@@ -116,7 +124,7 @@ export class TaxonHistory {
       this.containerSelector = containerSelector_;
 
       if (!currentMslRelease_) { throw new Error("Invalid current MSL release"); }
-      this.currentMslRelease = currentMslRelease_;
+      this.settings.currentReleaseNum = currentMslRelease_;
 
       this.elements = {
          container: null,
@@ -196,9 +204,6 @@ export class TaxonHistory {
    // Append a release panel under the "releases" container Element.
    addReleasePanel(release_: IRelease) {
 
-      // Should the selected taxon's release be included in the history?
-      if (release_.isSelected && !release_.isCurrent && !release_.isAbolished && release_.mods < 1) { return; }
-
       // Replace the semicolons with line breaks.
       const formattedTitle = release_.title.replace(/;/g, "<br/>");
 
@@ -217,7 +222,7 @@ export class TaxonHistory {
       // Create the release panel and populate it with HTML.
       const releaseEl = document.createElement("div");
       releaseEl.className = "release";
-      releaseEl.setAttribute("data-msl", release_.releaseNumber.toString());
+      releaseEl.setAttribute("data-msl", `${release_.releaseNumber}`);
       releaseEl.innerHTML = html;
 
       this.elements.releases.appendChild(releaseEl);
@@ -233,7 +238,7 @@ export class TaxonHistory {
          <a href="#release_${release_.releaseNumber}"><span class="taxon-name">${taxon_.name}</span></a>`;
 
       // Populate the title text.
-      if (taxon_.mslReleaseNum === this.currentMslRelease) {
+      if (taxon_.mslReleaseNum === this.settings.currentReleaseNum) {
 
          // They selected the current release.
          title = `You selected the ${release_.year} (current) release of ${linkedName} (MSL ${release_.releaseNumber})`;
@@ -321,8 +326,8 @@ export class TaxonHistory {
 
       if (taxon_.isDeleted) { taxonChangesEl.classList.add("abolished"); }
 
-      taxonChangesEl.setAttribute("data-ictv-id", taxon_.ictvID.toString());
-      taxonChangesEl.setAttribute("data-taxnode-id", taxon_.taxNodeID.toString())
+      taxonChangesEl.setAttribute("data-ictv-id", `${taxon_.ictvID}`);
+      taxonChangesEl.setAttribute("data-taxnode-id", `${taxon_.taxNodeID}`);
       taxonChangesEl.innerHTML = html;
       
       parentEl_.append(taxonChangesEl);
@@ -337,7 +342,7 @@ export class TaxonHistory {
          // Populate and display the success message, then fade out and revert to the initial state.
          jQuery(`${this.containerSelector} .copy-status[data-taxnode-id="${taxNodeID_}"]`)
             .show()
-            .fadeOut(this.messageFadeTime, () => {
+            .fadeOut(this.settings.messageFadeTime, () => {
                jQuery(this).hide();
             });
 
@@ -430,7 +435,7 @@ export class TaxonHistory {
 
       // If no descriptions have been added, this taxon is unchanged or current (if this is the current release).
       if (descriptions.length < 1) {
-         if (taxon_.mslReleaseNum === this.currentMslRelease) {
+         if (taxon_.mslReleaseNum === this.settings.currentReleaseNum) {
             return `is ${this.formatAction(ReleaseAction.current)}`;
          } else {
             return `is ${this.formatAction(ReleaseAction.unchanged)}`;
@@ -655,7 +660,7 @@ export class TaxonHistory {
          // The taxon name as a link.
          const linkedName = `<a href="${lineageURL}" target="_blank">${formattedName}</a>`;
 
-         if (this.lineageDisplayFormat === LineageDisplayFormat.horizontal) {
+         if (this.settings.lineageDisplayFormat === LineageDisplayFormat.horizontal) {
 
             // Add an icon to delimit the lineage entries.
             if (index_ > 0) { html += `<span class="lineage-chevron" aria-hidden="true"><i class="${this.icons.lineage}"></i></span>`; }
@@ -672,7 +677,7 @@ export class TaxonHistory {
             </div>`;
          }
 
-         leftOffset += this.lineageLeftOffset;
+         leftOffset += this.settings.lineageLeftOffset;
       })
 
       return html;
@@ -834,8 +839,8 @@ export class TaxonHistory {
       const spinner: string = this.getSpinnerHTML(this.messages.loading);
       this.displayMessage(spinner);
 
-      this.taxonHistory = await TaxonomyHistoryService.getByIctvID(this.currentMslRelease, this.identifiers.ictvID, this.identifiers.msl);
-      if (!this.taxonHistory) { return this.displayMessage(this.messages.noData); }
+      this.data = await TaxonomyHistoryService.getByIctvID(this.settings.currentReleaseNum, this.identifiers.ictvID, this.identifiers.msl);
+      if (!this.data) { return this.displayMessage(this.messages.noData); }
 
       // Hide the spinner icon.
       this.displayMessage("");
@@ -853,8 +858,8 @@ export class TaxonHistory {
       const spinner: string = this.getSpinnerHTML(this.messages.loading);
       this.displayMessage(spinner);
 
-      this.taxonHistory = await TaxonomyHistoryService.getByTaxNodeID(this.currentMslRelease, this.identifiers.taxNodeID);
-      if (!this.taxonHistory) { return this.displayMessage(this.messages.noData); }
+      this.data = await TaxonomyHistoryService.getByTaxNodeID(this.settings.currentReleaseNum, this.identifiers.taxNodeID);
+      if (!this.data) { return this.displayMessage(this.messages.noData); }
 
       // Hide the spinner icon.
       this.displayMessage("");
@@ -872,8 +877,8 @@ export class TaxonHistory {
       const spinner: string = this.getSpinnerHTML(this.messages.loading);
       this.displayMessage(spinner);
 
-      this.taxonHistory = await TaxonomyHistoryService.getByName(this.currentMslRelease, this.identifiers.taxonName);
-      if (!this.taxonHistory) { return this.displayMessage(this.messages.noData); }
+      this.data = await TaxonomyHistoryService.getByName(this.settings.currentReleaseNum, this.identifiers.taxonName);
+      if (!this.data) { return this.displayMessage(this.messages.noData); }
 
       // Hide the spinner icon.
       this.displayMessage("");
@@ -891,8 +896,8 @@ export class TaxonHistory {
       const spinner: string = this.getSpinnerHTML(this.messages.loading);
       this.displayMessage(spinner);
 
-      this.taxonHistory = await TaxonomyHistoryService.getByVmrID(this.currentMslRelease, this.identifiers.vmrID);
-      if (!this.taxonHistory) { return this.displayMessage(this.messages.noData); }
+      this.data = await TaxonomyHistoryService.getByVmrID(this.settings.currentReleaseNum, this.identifiers.vmrID);
+      if (!this.data) { return this.displayMessage(this.messages.noData); }
 
       // Hide the spinner icon.
       this.displayMessage("");
@@ -941,7 +946,7 @@ export class TaxonHistory {
    highlightSelectedLineage(selectedIctvID_: number) {
 
       // Only highlight changed taxa if there are enough distinct ICTV IDs.
-      if (this.distinctIctvIDs < this.MIN_ICTV_IDS_FOR_HIGHLIGHT) { 
+      if (this.settings.distinctIctvIDs < this.settings.minIctvIDsForHighlight) { 
 
          // Hide the instructions (about highlighting).
          this.elements.instructions.classList.remove("visible");
@@ -1058,37 +1063,37 @@ export class TaxonHistory {
    processHistory() {
 
       // Validate the releases
-      if (!this.taxonHistory.releases || this.taxonHistory.releases.length < 1) { return this.displayMessage("No history is available: Invalid MSL Release(s)"); }
+      if (!this.data.releases || this.data.releases.length < 1) { return this.displayMessage("No history is available: Invalid MSL Release(s)"); }
 
       // Validate the taxa
-      if (!this.taxonHistory.taxa || this.taxonHistory.taxa.length < 1) { return this.displayMessage("No history is available: No modified taxa available"); }
+      if (!this.data.taxa || this.data.taxa.length < 1) { return this.displayMessage("No history is available: No modified taxa available"); }
 
       // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
 
-      // Iterate over all releases where this taxon has been updated.
-      this.taxonHistory.releases.forEach((release_: IRelease) => {
-
-         // Initialize the release's array of modified taxa.
-         release_.taxa = [];
+      // Iterate over all releases where taxa have been updated.
+      this.data.releases.forEach((release_: IRelease) => {
 
          // Trim the list of available rank names and remove a trailing comma.
          let rankNames = Utils.safeTrim(release_.rankNames);
          if (rankNames.endsWith(";")) { rankNames = rankNames.substring(0, rankNames.length - 2); }
          release_.rankNames = rankNames;
+         
+         // Initialize the release's array of modified taxa.
+         release_.taxa = [];
 
-         // Add the release body element to release object.
-         release_.bodyElement = document.querySelector(`.releases .release[data-msl="${release_.releaseNumber}"] .release-body`);
-         if (!release_.bodyElement) { throw new Error(`Invalid release panel for MSL release number ${release_.releaseNumber}`); }
+         if (release_.isVisible) {
+
+            // Create HTML for the release and add it to the page.
+            this.addReleasePanel(release_);
+
+            // Add the release body element to release object.
+            release_.bodyElement = document.querySelector(`.releases .release[data-msl="${release_.releaseNumber}"] .release-body`);
+            if (!release_.bodyElement) { throw new Error(`Invalid release panel for MSL release number ${release_.releaseNumber}`); }
+         }
 
          // Add the release to the lookup.
          this.releaseLookup.set(release_.releaseNumber, release_);
-
-         // Don't display the release of the selected taxon if it shouldn't be included in the history.
-         if (release_.isSelected && !release_.isCurrent && !release_.isAbolished && release_.mods < 1) { return; }
-
-         // Create HTML for the release and add it to the page.
-         this.addReleasePanel(release_);
       })
 
       // We will use this list to keep track of distinct ICTV IDs.
@@ -1097,7 +1102,7 @@ export class TaxonHistory {
       let previousTaxNodeID = null;
 
       // Iterate over all taxa from the taxon history.
-      this.taxonHistory.taxa.forEach((taxon_: ITaxon) => {
+      this.data.taxa.forEach((taxon_: ITaxon) => {
 
          // If this taxon is the same as the one we previously encountered, skip it to avoid duplicates.
          if (previousTaxNodeID && taxon_.taxNodeID === previousTaxNodeID) { return; }
@@ -1131,22 +1136,22 @@ export class TaxonHistory {
 
             // Display the selected taxon.
             this.addSelectedTaxon(release, taxon_);
-
-            // Should the selected taxon be included in the history?
-            if (release.isSelected && !release.isCurrent && !release.isAbolished && release.mods < 1) { return; }
          } 
 
-         const taxonIndex = release.taxa.length;
+         if (release.isVisible) {
 
-         // Add the taxon, a summary of its changes, and its lineage to the associated release.
-         this.addTaxonChanges(taxonIndex, release.bodyElement, taxon_);
+            const taxonIndex = release.taxa.length;
+
+            // Create an HTML summary of the taxon's changes and add it to the page.
+            this.addTaxonChanges(taxonIndex, release.bodyElement, taxon_);
+         }  
       })
 
       // Add event handlers to all controls.
       this.addEventHandlers();
 
       // Get the number of distinct ICTV IDs from taxa displayed on the page.
-      this.distinctIctvIDs = ictvIDs.length;
+      this.settings.distinctIctvIDs = ictvIDs.length;
 
       // Highlight all changed taxa with this ICTV ID as a data attribute.
       this.highlightSelectedLineage(this.selectedTaxon.ictvID);
