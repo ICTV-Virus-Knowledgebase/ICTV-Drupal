@@ -8,6 +8,7 @@
 
 namespace Drupal\ictv_web_api\Plugin\rest\resource;
 
+use Drupal\ictv_web_api\helpers\Common;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Drupal\Core\Database\Connection;
@@ -16,15 +17,15 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
-use Drupal\ictv_web_api\helpers\TaxonReleaseHistory;
+use Drupal\ictv_web_api\helpers\TaxonHistory;
 
  /**
   * @RestResource(
   *   id = "get_taxon_history",
   *   label = @Translation("Get Taxon History"),
   *   uri_paths = {
-  *     "canonical" = "/api/get-taxon-history-test",
-  *     "create" = "/api/get-taxon-history-test"
+  *     "canonical" = "/api/get-taxon-history",
+  *     "create" = "/api/get-taxon-history"
   *   }
   * )
   */
@@ -60,22 +61,12 @@ class GetTaxonHistory extends ResourceBase {
   public function get(Request $request): ResourceResponse {
     
       // Get and validate the input parameters.
-      $testInt = $request->get("currentMSL");
-      $currentMSL = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
-
-      $testInt = $request->get("ictvID");
-      $ictvID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
-
-      $testInt = $request->get("MSL");
-      $MSL = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
-
-      $testInt = $request->get("taxNodeID");
-      $taxNodeID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
-
+      $currentMSL = Common::getIntAttribute($request, "currentMSL", true);
+      $ictvID = Common::getIntAttribute($request, "ictvID");
+      $MSL = Common::getIntAttribute($request, "MSL");
+      $taxNodeID = Common::getIntAttribute($request, "taxNodeID");
       $taxonName = $request->get("taxonName");
-
-      $testInt = $request->get("vmrID");
-      $vmrID = (is_numeric($testInt) && (int)$testInt > 0) ? (int)$testInt : NULL;
+      $vmrID = Common::getIntAttribute($request, "vmrID");
 
       // DEBUGGING
       \Drupal::logger('ictv_web_api')->notice("currentMSL = ".$currentMSL.", taxNodeID = ".$taxNodeID);
