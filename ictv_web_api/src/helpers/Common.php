@@ -114,16 +114,31 @@ class Common {
 
 
    /**
-    * Get an integer attribute from the request (optional or required).
+    * Get an integer attribute from an array or Request object (optional or required).
     */
-   public static function getIntAttribute(Request $request, string $name, bool $isRequired = false) {
+   public static function getIntParameter($collection, string $name, bool $isRequired = false) {
       
-      $value = $request->get($name);
-      $value = ($value !== null && is_numeric($value)) ? intval($value) : null;
-      
-      if ($isRequired && $value === null) {
-         throw new BadRequestHttpException("Invalid or missing '{$name}' parameter.");
+      if ($collection === null) {
+         if ($isRequired) { throw new BadRequestHttpException("Invalid or missing '{$name}' parameter."); }
+         return null;
       }
+
+      $value = null;
+
+      if ($collection instanceof Request) {
+         $value = $collection->get($name);
+         
+      } else if (is_array($collection) && array_key_exists($name, $collection)) {
+         $value = $collection[$name];
+
+      } else {
+         $value = $collection[$name] ?? null;
+      }
+
+      if (!is_null($value) && is_numeric($value)) { $value = intval($value); }
+
+      if ($isRequired && is_null($value)) { throw new BadRequestHttpException("Invalid or missing '{$name}' parameter."); }
+
       return $value;
    }
 

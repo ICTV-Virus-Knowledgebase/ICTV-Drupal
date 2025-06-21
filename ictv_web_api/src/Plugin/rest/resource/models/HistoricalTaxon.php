@@ -1,5 +1,9 @@
 <?php
+
 namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
+
+use Drupal\ictv_web_api\helpers\Common;
+
 
 class HistoricalTaxon {
    
@@ -33,21 +37,21 @@ class HistoricalTaxon {
 
       $o = new self();
 
-      $o->ictvID           = isset($d["ictv_id"]) ? (int)$d["ictv_id"] : null;
-      $o->isDeleted        = isset($d["is_deleted"]) ? (int)$d["is_deleted"] : 0;
-      $o->isDemoted        = isset($d["is_demoted"]) ? (int)$d["is_demoted"] : 0;
-      $o->isLineageUpdated = isset($d["is_lineage_updated"]) ? (int)$d["is_lineage_updated"] : 0;
-      $o->isMerged         = isset($d["is_merged"]) ? (int)$d["is_merged"] : 0;
-      $o->isMoved          = isset($d["is_moved"]) ? (int)$d["is_moved"] : 0;
-      $o->isNew            = isset($d["is_new"]) ? (int)$d["is_new"] : 0;
-      $o->isPromoted       = isset($d["is_promoted"]) ? (int)$d["is_promoted"] : 0;
-      $o->isRenamed        = isset($d["is_renamed"]) ? (int)$d["is_renamed"] : 0;
-      $o->isSelected       = isset($d["is_selected"]) ? (int)$d["is_selected"] : 0;
-      $o->isSplit          = isset($d["is_split"]) ? (int)$d["is_split"] : 0;
+      $o->ictvID           = Common::getIntParameter($d, "ictv_id") ?? null;
+      $o->isDeleted        = Common::getIntParameter($d, "is_deleted") ?? 0;
+      $o->isDemoted        = Common::getIntParameter($d, "is_demoted") ?? 0;
+      $o->isLineageUpdated = Common::getIntParameter($d, "is_lineage_updated") ?? 0;
+      $o->isMerged         = Common::getIntParameter($d, "is_merged") ?? 0;
+      $o->isMoved          = Common::getIntParameter($d, "is_moved") ?? 0;
+      $o->isNew            = Common::getIntParameter($d, "is_new") ?? 0;
+      $o->isPromoted       = Common::getIntParameter($d, "is_promoted") ?? 0;
+      $o->isRenamed        = Common::getIntParameter($d, "is_renamed") ?? 0;
+      $o->isSelected       = Common::getIntParameter($d, "is_selected") ?? 0;
+      $o->isSplit          = Common::getIntParameter($d, "is_split") ?? 0;
       $o->lineageIDs       = $d["lineage_ids"] ?? null;
       $o->lineageNames     = $d["lineage_names"] ?? null;
       $o->lineageRanks     = $d["lineage_ranks"] ?? null;
-      $o->mslReleaseNum    = isset($d["msl_release_num"]) ? (int)$d["msl_release_num"] : 0;
+      $o->mslReleaseNum    = Common::getIntParameter($d, "msl_release_num") ?? 0;
       $o->name             = $d["name"] ?? null;
       $o->prevLineageNames = $d["prev_lineage_names"] ?? null;
       $o->prevLineageRanks = $d["prev_lineage_ranks"] ?? null;
@@ -55,8 +59,8 @@ class HistoricalTaxon {
       $o->prevNotes        = $d["prev_notes"] ?? null;
       $o->prevProposal     = $d["prev_proposal"] ?? null;
       $o->rankName         = $d["rank_name"] ?? null;
-      $o->taxnodeID        = isset($d["taxnode_id"]) ? (int)$d["taxnode_id"] : 0;
-      $o->treeID           = isset($d["tree_id"]) ? (int)$d["tree_id"] : 0;
+      $o->taxnodeID        = Common::getIntParameter($d, "taxnode_id", true);
+      $o->treeID           = Common::getIntParameter($d, "tree_id", true);
 
       return $o;
    }

@@ -61,15 +61,12 @@ class GetTaxonHistory extends ResourceBase {
   public function get(Request $request): ResourceResponse {
     
       // Get and validate the input parameters.
-      $currentMSL = Common::getIntAttribute($request, "currentMSL", true);
-      $ictvID = Common::getIntAttribute($request, "ictvID");
-      $MSL = Common::getIntAttribute($request, "MSL");
-      $taxNodeID = Common::getIntAttribute($request, "taxNodeID");
-      $taxonName = $request->get("taxonName");
-      $vmrID = Common::getIntAttribute($request, "vmrID");
-
-      // DEBUGGING
-      \Drupal::logger('ictv_web_api')->notice("currentMSL = ".$currentMSL.", taxNodeID = ".$taxNodeID);
+      $currentMSL = Common::getIntParameter($request, "currentMSL", true);
+      $ictvID = Common::getIntParameter($request, "ictvID");
+      $MSL = Common::getIntParameter($request, "MSL");
+      $taxNodeID = Common::getIntParameter($request, "taxNodeID");
+      $taxonName = $request->get("taxonName") ?? null;
+      $vmrID = Common::getIntParameter($request, "vmrID");
 
       // Get the taxa and releases associated with the input parameters.
       $result = TaxonHistory::fetch($this->connection, $currentMSL, $ictvID, $MSL, $taxNodeID, $taxonName, $vmrID);

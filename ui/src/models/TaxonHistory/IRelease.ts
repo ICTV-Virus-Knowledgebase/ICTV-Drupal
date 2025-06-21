@@ -2,11 +2,8 @@
 import { ITaxon } from "./ITaxon";
 
 export interface IRelease {
-
-   isAbolished: boolean;
    isCurrent: boolean;
-   isSelected: boolean;
-   mods: number;
+   isVisible: boolean;
    rankNames: string;
    releaseNumber: number;
    title: string;
