@@ -5,7 +5,7 @@ import { IRelease } from "../../models/TaxonHistory/IRelease";
 import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { ITaxonHistoryResult } from "../../models/TaxonHistory/ITaxonHistoryResult";
 import { Identifiers } from "../../models/Identifiers";
-import { LookupReleaseAction, LookupReleaseActionDefinition, ReleaseAction, TaxaLevel, WebStorageKey } from "../../global/Types";
+import { LookupReleaseAction, LookupReleaseActionDefinition, LookupTaxonomyRank, ReleaseAction, TaxaLevel, WebStorageKey } from "../../global/Types";
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 import { Utils } from "../../helpers/Utils";
 
@@ -229,42 +229,42 @@ export class TaxonHistory {
    }
 
    // Add the selected taxon to the page.
-   addSelectedTaxon(release_: IRelease, taxon_: ITaxon) {
+   addSelectedTaxon(mostRecentMSL_: number, mostRecentYear_: string, taxon_: ITaxon) {
 
       let title = "";
 
       // Create HTML for the rank and linked taxon name.
       let linkedName = `<span class="taxon-rank">${taxon_.rankName}</span>  
-         <a href="#release_${release_.releaseNumber}"><span class="taxon-name">${taxon_.name}</span></a>`;
+         <a href="#release_${mostRecentMSL_}"><span class="taxon-name">${taxon_.name}</span></a>`;
 
       // Populate the title text.
       if (taxon_.mslReleaseNum === this.settings.currentReleaseNum) {
 
          // They selected the current release.
-         title = `You selected the ${release_.year} (current) release of ${linkedName} (MSL ${release_.releaseNumber})`;
+         title = `You selected the ${mostRecentYear_} (current) release of ${linkedName} (MSL ${mostRecentMSL_})`;
          
-      } else if (taxon_.mslReleaseNum === release_.releaseNumber) {
+      } else if (taxon_.mslReleaseNum === mostRecentMSL_) {
 
          // They selected a release that's displayed on the page.
-         title = `You selected the ${release_.year} release of ${linkedName} (MSL ${release_.releaseNumber})`;
+         title = `You selected the ${mostRecentYear_} release of ${linkedName} (MSL ${mostRecentMSL_})`;
          
-      } else if (taxon_.mslReleaseNum > release_.releaseNumber) {
+      } else if (taxon_.mslReleaseNum > mostRecentMSL_) {
 
          // Convert the numeric tree ID to a release year.
          const selectedYear = Utils.convertTreeIdToYear(taxon_.treeID);
 
          // They selected a release that's not displayed on the page.
-         title = `You selected the ${selectedYear} release of ${linkedName} (MSL ${taxon_.mslReleaseNum}) which is the same as the ${release_.year} release (MSL ${release_.releaseNumber})`;
+         title = `You selected the ${selectedYear} release of ${linkedName} (MSL ${taxon_.mslReleaseNum}) which is the same as the ${mostRecentYear_} release (MSL ${mostRecentMSL_})`;
 
       } else if (taxon_.isDeleted) {
 
          // They selected an abolished release.
-         title = `You selected ${linkedName} which was abolished in the ${release_.year} release (MSL ${release_.releaseNumber})`;
+         title = `You selected ${linkedName} which was abolished in the ${mostRecentYear_} release (MSL ${mostRecentMSL_})`;
 
       } else {
          
          // NOTE: We probably shouldn't have gotten here!
-         title = `You selected the ${release_.year} release of ${linkedName} (MSL ${release_.releaseNumber})`;
+         title = `You selected the ${mostRecentYear_} release of ${linkedName} (MSL ${mostRecentMSL_})`;
       }
 
       // Populate the selected taxon panel.
@@ -292,6 +292,8 @@ export class TaxonHistory {
       // If there are associated proposals, create a panel to display them.
       let proposalPanel = this.createProposalPanel(taxon_.prevProposal);
    
+      console.log(`in add taxon changes taxon = `, taxon_)
+
       html +=
          `<div class="taxon-rank-and-name">
             <div class="rank-name">${taxon_.rankName}</div>
@@ -306,16 +308,16 @@ export class TaxonHistory {
             <div class="label">Export lineage:</div>
             <button class="btn btn-default lineage-copy-control"
                data-action="${ExportAction.copyToClipboard}"
-               data-taxnode-id="${taxon_.taxNodeID}">
+               data-taxnode-id="${taxon_.taxnodeID}">
                <i class="${this.icons.copy}"></i> Copy to the clipboard
             </button>
             <button class="btn btn-default lineage-download-control"
                data-action="${ExportAction.download}"
-               data-taxnode-id="${taxon_.taxNodeID}">
+               data-taxnode-id="${taxon_.taxnodeID}">
                <i class="${this.icons.download}"></i> Download
             </button>
             <button class="btn btn-default settings-button"><i class="${this.icons.settings}"></i> Settings</button>
-            <div class="copy-status" data-taxnode-id="${taxon_.taxNodeID}" style="display: none">
+            <div class="copy-status" data-taxnode-id="${taxon_.taxnodeID}" style="display: none">
                <i class="${this.icons.success}"></i> Copied successfully
             </div>
          </div>
@@ -327,7 +329,7 @@ export class TaxonHistory {
       if (taxon_.isDeleted) { taxonChangesEl.classList.add("abolished"); }
 
       taxonChangesEl.setAttribute("data-ictv-id", `${taxon_.ictvID}`);
-      taxonChangesEl.setAttribute("data-taxnode-id", `${taxon_.taxNodeID}`);
+      taxonChangesEl.setAttribute("data-taxnode-id", `${taxon_.taxnodeID}`);
       taxonChangesEl.innerHTML = html;
       
       parentEl_.append(taxonChangesEl);
@@ -604,7 +606,7 @@ export class TaxonHistory {
 
          case ExportAction.copyToClipboard:
 
-            this.copyToClipboard(formattedLineage, `${taxon_.taxNodeID}`);
+            this.copyToClipboard(formattedLineage, `${taxon_.taxnodeID}`);
             break;
 
          case ExportAction.download:
@@ -1099,16 +1101,18 @@ export class TaxonHistory {
       // We will use this list to keep track of distinct ICTV IDs.
       let ictvIDs = [];
 
+      let mostRecentMSL: number = NaN;
+      let mostRecentYear: string = null;
       let previousTaxNodeID = null;
 
       // Iterate over all taxa from the taxon history.
       this.data.taxa.forEach((taxon_: ITaxon) => {
 
          // If this taxon is the same as the one we previously encountered, skip it to avoid duplicates.
-         if (previousTaxNodeID && taxon_.taxNodeID === previousTaxNodeID) { return; }
+         if (previousTaxNodeID && taxon_.taxnodeID === previousTaxNodeID) { return; }
 
          // This taxon will be considered the "previous" taxon in the next iteration.
-         previousTaxNodeID = taxon_.taxNodeID;
+         previousTaxNodeID = taxon_.taxnodeID;
          
          // Get the MSL release associated with the taxon.
          const release = this.releaseLookup.get(taxon_.mslReleaseNum);
@@ -1127,7 +1131,19 @@ export class TaxonHistory {
          if (!ictvIDs.includes(taxon_.ictvID)) { ictvIDs.push(taxon_.ictvID); }
 
          // Update the taxa lookup.
-         this.taxaLookup.set(taxon_.taxNodeID, taxon_);
+         this.taxaLookup.set(taxon_.taxnodeID, taxon_);
+
+         if (release.isVisible) {
+
+            // Update the most recent MSL release number and year.
+            mostRecentMSL = release.releaseNumber;
+            mostRecentYear = release.year;
+
+            const taxonIndex = release.taxa.length;
+
+            // Create an HTML summary of the taxon's changes and add it to the page.
+            this.addTaxonChanges(taxonIndex, release.bodyElement, taxon_);
+         }
 
          if (taxon_.isSelected) {
 
@@ -1135,15 +1151,7 @@ export class TaxonHistory {
             this.selectedTaxon = taxon_;
 
             // Display the selected taxon.
-            this.addSelectedTaxon(release, taxon_);
-         } 
-
-         if (release.isVisible) {
-
-            const taxonIndex = release.taxa.length;
-
-            // Create an HTML summary of the taxon's changes and add it to the page.
-            this.addTaxonChanges(taxonIndex, release.bodyElement, taxon_);
+            this.addSelectedTaxon(mostRecentMSL, mostRecentYear, taxon_);
          }  
       })
 
@@ -1183,7 +1191,10 @@ export class TaxonHistory {
       taxon_.formattedLineage = this.formatLineage(taxon_) || "";
 
       // Set the previous rank name.
-      taxon_.previousRank = this.getPreviousRank(taxon_);
+      taxon_.previousRank = LookupTaxonomyRank(this.getPreviousRank(taxon_));
+
+      // Lookup the formatted version of the taxon's rank name.
+      taxon_.rankName = LookupTaxonomyRank(taxon_.rankName);
 
       return taxon_;
    }
@@ -1235,6 +1246,6 @@ export class TaxonHistory {
       if (!release) { console.error("Invalid release in updateSelectedTaxon"); return; }
 
       // Repopulate the selected taxon panel.
-      return this.addSelectedTaxon(release, this.selectedTaxon);
+      return this.addSelectedTaxon(release.releaseNumber, release.year, this.selectedTaxon);
    }
 }

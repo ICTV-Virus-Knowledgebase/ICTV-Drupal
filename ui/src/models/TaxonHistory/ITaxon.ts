@@ -24,7 +24,7 @@ export interface ITaxon {
    prevNotes: string;
    prevProposal: string;
    rankName: string;
-   taxNodeID: number;
+   taxnodeID: number;
    treeID: number;
 
    //------------------------------------------------------------------------------------------------------
