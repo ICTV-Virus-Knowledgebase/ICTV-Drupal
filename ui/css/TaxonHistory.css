@@ -19,11 +19,7 @@
 
 /* The selected taxon */
 #taxon_history_container .selected-taxon {
-   align-items: center;
-   display: flex;
-   flex-flow: row wrap;
    font-size: 1.3rem;
-   justify-content: flex-start;
    margin-bottom: 1.0rem;
 }
 #taxon_history_container .selected-taxon .taxon-rank {
@@ -287,6 +283,7 @@
    flex-flow: row;
    justify-content: flex-start;
    margin: 0.75rem 0 0.5rem 0;
+   white-space: nowrap;
 }
 
 #taxon_history_container .release .lineage-export-row .label {
