@@ -292,8 +292,6 @@ export class TaxonHistory {
       // If there are associated proposals, create a panel to display them.
       let proposalPanel = this.createProposalPanel(taxon_.prevProposal);
    
-      console.log(`in add taxon changes taxon = `, taxon_)
-
       html +=
          `<div class="taxon-rank-and-name">
             <div class="rank-name">${taxon_.rankName}</div>
@@ -1073,7 +1071,8 @@ export class TaxonHistory {
       // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
 
-      // Iterate over all releases where taxa have been updated.
+      // Iterate over all releases where taxa have been updated. Note that they should already be sorted
+      // from most recent to least recent.
       this.data.releases.forEach((release_: IRelease) => {
 
          // Trim the list of available rank names and remove a trailing comma.
