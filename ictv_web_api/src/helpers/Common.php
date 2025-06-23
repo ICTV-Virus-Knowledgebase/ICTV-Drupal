@@ -2,7 +2,9 @@
 
 namespace Drupal\ictv_web_api\helpers;
 
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Exception;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * A direct translation of the C# "Common.cs" into PHP static methods.
@@ -59,56 +61,86 @@ class Common {
    * Instead of ref string terminalName_, return it by reference param.
    * If tokens is empty => return null (like in C#).
    */
-  public static function formatLineage(
-    string $lineageText,
-    string $resultDelimiter,
-    ?string $searchText,
-    string $sourceDelimiter,
-    ?string &$terminalName
-  ): ?string {
-  
-    // 1) Trim & check if empty
-    $lineageText = trim($lineageText);
-    if ($lineageText === '') {
-      return $lineageText;
-    }
-  
-    // 2) Split into tokens
-    $tokens = self::convertDelimitedStringToList($lineageText, $sourceDelimiter);
-    if (empty($tokens)) {
-      return null;
-    }
-  
-    // 3) The last token is the terminal name (like "Potyvirus plumpoxi").
-    $terminalName = end($tokens);
-    if (trim($terminalName) === '') {
-      throw new \Exception("terminal name was empty");
-    }
-  
-    // 4) Build up the HTML
-    $results = '';
-    foreach ($tokens as $i => $token) {
-      $tokenTrim = trim($token);
-      if ($tokenTrim === '') continue;
-  
-      // highlight
-      $formattedTaxon = self::highlightSearchTextInName("search-term-result", $searchText, $tokenTrim);
-  
-      // italicize
-      if (self::italicizeTaxaName($tokenTrim)) {
-        $formattedTaxon = "<i>$formattedTaxon</i>";
+   public static function formatLineage(
+      string $lineageText,
+      string $resultDelimiter,
+      ?string $searchText,
+      string $sourceDelimiter,
+      ?string &$terminalName
+   ): ?string {
+   
+      // 1) Trim & check if empty
+      $lineageText = trim($lineageText);
+      if ($lineageText === '') {
+         return $lineageText;
       }
-  
-      // only append delimiter if not the first token
-      if ($results !== '') {
-        $results .= $resultDelimiter;
+   
+      // 2) Split into tokens
+      $tokens = self::convertDelimitedStringToList($lineageText, $sourceDelimiter);
+      if (empty($tokens)) {
+         return null;
       }
-  
-      $results .= $formattedTaxon;
-    }
-  
-    return $results;
-  }  
+   
+      // 3) The last token is the terminal name (like "Potyvirus plumpoxi").
+      $terminalName = end($tokens);
+      if (trim($terminalName) === '') {
+         throw new \Exception("terminal name was empty");
+      }
+   
+      // 4) Build up the HTML
+      $results = '';
+      foreach ($tokens as $i => $token) {
+         $tokenTrim = trim($token);
+         if ($tokenTrim === '') continue;
+   
+         // highlight
+         $formattedTaxon = self::highlightSearchTextInName("search-term-result", $searchText, $tokenTrim);
+   
+         // italicize
+         if (self::italicizeTaxaName($tokenTrim)) {
+         $formattedTaxon = "<i>$formattedTaxon</i>";
+         }
+   
+         // only append delimiter if not the first token
+         if ($results !== '') {
+         $results .= $resultDelimiter;
+         }
+   
+         $results .= $formattedTaxon;
+      }
+   
+      return $results;
+   }  
+
+
+   /**
+    * Get an integer attribute from an array or Request object (optional or required).
+    */
+   public static function getIntParameter($collection, string $name, bool $isRequired = false) {
+      
+      if ($collection === null) {
+         if ($isRequired) { throw new BadRequestHttpException("Invalid or missing '{$name}' parameter."); }
+         return null;
+      }
+
+      $value = null;
+
+      if ($collection instanceof Request) {
+         $value = $collection->get($name);
+         
+      } else if (is_array($collection) && array_key_exists($name, $collection)) {
+         $value = $collection[$name];
+
+      } else {
+         $value = $collection[$name] ?? null;
+      }
+
+      if (!is_null($value) && is_numeric($value)) { $value = intval($value); }
+
+      if ($isRequired && is_null($value)) { throw new BadRequestHttpException("Invalid or missing '{$name}' parameter."); }
+
+      return $value;
+   }
 
 
   /**

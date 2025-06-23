@@ -16,7 +16,7 @@ export interface ITaxon {
    lineageIDs: string;
    lineageNames: string;
    lineageRanks: string;
-   mslReleaseNumber: number;
+   mslReleaseNum: number;
    name: string;
    prevLineageNames: string;
    prevLineageRanks: string;
@@ -26,7 +26,6 @@ export interface ITaxon {
    rankName: string;
    taxnodeID: number;
    treeID: number;
-   year?: string;
 
    //------------------------------------------------------------------------------------------------------
    // The following properties are added after the JSON is returned by the web service.
