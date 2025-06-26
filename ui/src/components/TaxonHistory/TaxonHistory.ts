@@ -1068,6 +1068,9 @@ export class TaxonHistory {
       // Validate the taxa
       if (!this.data.taxa || this.data.taxa.length < 1) { return this.displayMessage("No history is available: No modified taxa available"); }
 
+      // Reverse the taxa array so that oldest changes come first.
+      this.data.taxa = this.data.taxa.reverse();
+      
       // A lookup from MSL release number to the corresponding release object.
       this.releaseLookup = new Map<number, IRelease>();
 

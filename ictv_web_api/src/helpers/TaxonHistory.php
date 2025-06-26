@@ -80,10 +80,6 @@ class TaxonHistory {
          }
       }
 
-      // Reverse the sort order of the taxa so that earlier releases are at the top. The releases
-      // are still sorted in descending order.
-      $taxa = array_reverse($taxa);
-
       return [
          "messages"        => $messages,
          "releases"        => $releases,
