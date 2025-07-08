@@ -59,9 +59,8 @@ export class _AppSettings {
       getReleaseTaxa: "get-release-taxa",
 
       // TaxonHistory
-      taxonomyHistory: "taxonomyHistory.ashx",
-      getTaxonHistory: "get-taxon-history",
-      // taxonomyHistory: "api/get-taxon-history", // dmd 062025 previously "taxonomyHistory.ashx"
+      // getTaxonHistory: "get-taxon-history",
+      taxonomyHistory: "get-taxon-history", // dmd 062025 previously "taxonomyHistory.ashx"
       
       // Member species table
       // virusIsolate: "virusIsolate.ashx",
