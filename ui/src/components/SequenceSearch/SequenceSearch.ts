@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastPanel } from "./BlastPanel";
-import { ButtonClass, Constants, Icon, PanelKey } from "./Common";
+import { ButtonClass, Constants, Icon, PanelAction, PanelKey } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
@@ -37,19 +37,16 @@ export class SequenceSearch {
 
    job: ISeqSearchJob = null;
 
-   // The current job UID (optional)
-   jobUID: string = null;
-   
-   // Which panel is currently displayed?
-   panelKey: PanelKey = null;
-
    panels: Map<PanelKey, ISeqSearchPanel>;
 
-   // The previous panel key
-   previousPanelKey: PanelKey = null;
+   state: {
 
-   // The current result index (optional)
-   resultIndex: number = null;
+      // The current job UID (optional)
+      jobUID: string,
+
+      // The current result index (optional)
+      resultIndex: number
+   }
 
    // User information
    user: {
@@ -90,6 +87,11 @@ export class SequenceSearch {
       }
 
       this.panels = new Map<PanelKey, ISeqSearchPanel>();
+
+      this.state = {
+         jobUID: null,
+         resultIndex: NaN
+      }
    }
 
    
@@ -306,13 +308,79 @@ export class SequenceSearch {
    // Retrieve the job with this UID.
    async getJob() {
 
-      if (!this.jobUID) {
+      if (!this.state.jobUID) {
          await AlertBuilder.displayError("No job UID provided");
          return; 
       }
 
-      this.job = await SequenceSearchService.getSearchResult(this.authToken, this.jobUID, this.user.email, this.user.uid);
+      this.job = await SequenceSearchService.getSearchResult(this.authToken, this.state.jobUID, this.user.email, this.user.uid);
       return;
+   }
+
+   
+   async handleAction(action_: PanelAction, fromPanelKey_: PanelKey) {
+
+      if (!action_) { throw new Error("Invalid action parameter"); }
+      
+      let toPanelKey = null;
+
+      switch (action_) {
+
+         case PanelAction.backToJob:
+
+            // Set the next panel key.
+            toPanelKey = PanelKey.jobPanel;
+
+            this.state.resultIndex = NaN;
+            break;
+
+         case PanelAction.backToUpload:
+
+            // Set the next panel key.
+            toPanelKey = PanelKey.uploadPanel;
+
+            // Clear the job and state.
+            this.job = null;
+            this.state.jobUID = null;
+            this.state.resultIndex = NaN;
+            break;
+
+         case PanelAction.displayBLAST:
+
+            // Set the next panel key.
+            toPanelKey = PanelKey.blastPanel;
+
+            // Load the associated job, if necessary.
+            if (!this.job) { await this.getJob(); }
+            break;
+
+         case PanelAction.displayJob:
+
+            // Set the next panel key.
+            toPanelKey = PanelKey.jobPanel;
+
+            // Load the associated job, if necessary.
+            if (!this.job) { await this.getJob(); }
+            break;
+
+         case PanelAction.displayUpload:
+
+            // Set the next panel key.
+            toPanelKey = PanelKey.uploadPanel;
+
+            // Clear the job and state.
+            this.job = null;
+            this.state.jobUID = null;
+            this.state.resultIndex = NaN;
+            
+            break;
+
+         default:
+            return await AlertBuilder.displayError(`Unhandled panel action: ${action_}`);
+      }
+
+      // Load the next panel.
+      return this.loadPanel(toPanelKey, fromPanelKey_);
    }
 
    // Initialize the Sequence Search component.
@@ -351,93 +419,55 @@ export class SequenceSearch {
       this.panels.set(PanelKey.jobPanel, new JobPanel(this));
       this.panels.set(PanelKey.uploadPanel, new UploadPanel(this));
 
-      // Process the query string parameters.
-      this.processParameters();
+      //--------------------------------------------------------------------------------------------------------------
+      // Look for query string parameters and use them to determine which panel to display.
+      //--------------------------------------------------------------------------------------------------------------
 
-      // Unload the previous panel.
-      if (this.previousPanelKey) {
-         // TODO
-      }
-
-      let panel: ISeqSearchPanel = null;
-
-      switch (this.panelKey) {
-
-         case PanelKey.blastPanel:
-            // TODO
-            console.log("Displaying BLAST panel");
-            await this.getJob();
-            break;
-
-         case PanelKey.jobPanel:
-            
-            console.log("Displaying job panel");
-            await this.getJob();
-
-            // Get and validate the job panel.
-            panel = this.panels.get(PanelKey.jobPanel);
-            if (!panel) { throw new Error("Invalid job panel"); }
-
-            panel.display();
-            break;
-
-         case PanelKey.uploadPanel:
-            
-            console.log("Displaying upload panel");
-
-            // Get and validate the upload panel.
-            panel = this.panels.get(PanelKey.uploadPanel);
-            console.debug("upload panel = ", panel);
-            
-            if (!panel) { throw new Error("Invalid upload panel"); }
-            
-            panel.display();
-            break;
-
-         default:
-            return await AlertBuilder.displayError(`Unhandled panel key: ${this.panelKey}`);
-      }
-
-      /*
-      // If a job UID was provided as a query string parameter, retrieve the corresponding job and display it.
-      if (this.jobUID !== null) { 
-         await this.getJob();
-         await this.displayJob();
-      }*/
-
-      return;
-   }
-
-   // Look for query string parameters and use them to determine which panel to display.
-   processParameters() {
+      // Set a default action.
+      let action = PanelAction.displayUpload;
 
       // Was a job UID parameter provided?
       const urlParams = new URLSearchParams(window.location.search);
       
-      // Set default values
-      this.jobUID = null;
-      this.panelKey = PanelKey.uploadPanel;
-      this.resultIndex = null;
-
       // Was a job UID provided in the query string?
-      this.jobUID = urlParams.get("job");
-      if (this.jobUID) {
+      this.state.jobUID = Utils.safeTrim(urlParams.get("job"));
+
+      if (this.state.jobUID && this.state.jobUID.length > 0) {
+
+         action = PanelAction.displayJob;
 
          // Was a result index provided in the query string?
          let strResult = Utils.safeTrim(urlParams.get("result"));
          if (strResult) {
-            this.resultIndex = parseInt(strResult, 10);
-            if (isNaN(this.resultIndex)) { 
-               this.resultIndex = null; 
+            this.state.resultIndex = parseInt(strResult, 10);
+            if (isNaN(this.state.resultIndex)) { 
+               this.state.resultIndex = NaN; 
             } else {
                // If a result index was provided, display the BLAST panel.
-               this.panelKey = PanelKey.blastPanel;
+               action = PanelAction.displayBLAST;
             }
-         } else {
-            // If no result index was provided, display the job panel.
-            this.panelKey = PanelKey.jobPanel;
          }
       }  
+
+      return await this.handleAction(action, null);
+   }
+
+   // Display/load the specified panel and hide/unload the previously active panel.
+   async loadPanel(panelKey_: PanelKey, previousPanelKey_: PanelKey|null) {
+
+      // Unload the previous panel.
+      if (previousPanelKey_) {
+         
+         const previousPanel = this.panels.get(previousPanelKey_);
+         if (previousPanel) { console.log(`about to unload ${previousPanelKey_}`); previousPanel.unload(); }
+      }
+
+      // Get the requested panel.
+      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
+      if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
+
+      panel.load();
+      return;
    }
 
    // If the user UID is empty, look for one in web storage or generate a new one.

@@ -6,6 +6,7 @@ export enum ButtonClass {
    copyURL = "copy-url-button",
    downloadCSV = "download-csv-button",
    upload = "upload-button",
+   viewHits = "view-hits",
    viewHTML = "view-html-button"
 }
 
@@ -25,10 +26,19 @@ export enum Icon {
    close = `<i class=\"fa fa-xmark\"></i>`,
    copy = `<i class=\"fa-regular fa-clipboard\"></i>`,
    csv = `<i class="fa-regular fa-file-csv"></i>`,
+   dna = `<i class="fa-solid fa-dna"></i>`,
    download = `<i class=\"fa fa-download\"></i>`,
    html = `<i class="fa-regular fa-file-lines"></i>`,
    lineageDelimiter = `<i class="fa-solid fa-chevron-right"></i>`,
    upload = `<i class=\"fa fa-upload\"></i>`
+}
+
+export enum PanelAction {
+   backToJob = "backToJob",
+   backToUpload = "backToUpload",
+   displayJob = "displayJob",
+   displayBLAST = "displayBLAST",
+   displayUpload = "displayUpload"
 }
 
 export enum PanelKey {

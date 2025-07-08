@@ -27,6 +27,16 @@
    color: #000;
 }
 
+#ictv_seqsearch_container .container {
+   display: none;
+   visibility: hidden;
+}
+#ictv_seqsearch_container .container.active {
+   display: block;
+   margin-left: 0;
+   padding-left: 0;
+   visibility: visible;
+}
 
 /* User row and upload panel */
 #ictv_seqsearch_container .user-row {
@@ -221,67 +231,137 @@
    min-width: 100px;
 }
 
-#ictv_seqsearch_container .results-container hr {
-   border-color: #555;
-   border-style: solid;
-   margin: 1.5rem 0 1.2rem 0;
-}
 
-/* Job details */
-#ictv_seqsearch_container .results .results-title {
-   font-size: 1.5rem;
-   font-weight: 700;
-   margin: 1.75rem 0 0.75rem 0;
-}
-
-#ictv_seqsearch_container .job-table {
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The job details table
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container table.job-details {
+   font-size: 1.0rem;
    margin-bottom: 1.5rem;
 }
-#ictv_seqsearch_container .job-row {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
-}
-#ictv_seqsearch_container .job-row label {
+#ictv_seqsearch_container table.job-details th {
    font-size: 1.0rem;
-   font-weight: 700;
-   margin-right: 0.4rem;
-   text-align: right;
-   width: 200px;
+   padding: 0.5rem;
+   width: 180px;
 }
-/*#ictv_seqsearch_container .job-row .job-value {
+#ictv_seqsearch_container table.job-details td {
+   font-size: 1.0rem;
+   padding: 0.5rem;
+}
 
-}*/
 
-#ictv_seqsearch_container .results .job-details .link-panel {
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The link panel
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .link-panel {
    display: flex;
    flex-flow: column nowrap;
    font-size: 1.0rem;
    justify-content: flex-start;
    margin-bottom: 2.0rem;
 }
-#ictv_seqsearch_container .results .job-details .link-panel .controls {
+#ictv_seqsearch_container .link-panel .controls {
    text-align: left;
 }
-
-#ictv_seqsearch_container .results button.copy-url-button {
+#ictv_seqsearch_container .link-panel button.copy-url-button {
    background-color: #198754;
    color: #fff;
    cursor: pointer;
    margin-left: 0.5rem;
 }
 
-#ictv_seqsearch_container .results .blast-hits-title {
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Search results
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .search-results-title {
+   font-size: 1.5rem;
+   font-weight: 700;
+   margin: 1.75rem 0 0.75rem 0;
+}
+#ictv_seqsearch_container table.search-results th,
+#ictv_seqsearch_container table.search-results td {
+   font-size: 1.0rem;
+   padding: 0.5rem;
+}
+
+#ictv_seqsearch_container table.search-results button {
+    background-color: #ddd;
+    border-color: #aaa;
+    border-radius: 5px;
+    border-style: solid;
+    border-width: 1px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    padding: .2rem .5rem;
+    text-align: center;
+}
+/*
+#ictv_seqsearch_container table.search-results button.view-hits {
+   background-color: #198754;
+   color: #fff;
+   cursor: pointer;
+}
+#ictv_seqsearch_container table.search-results button.view-html-button,
+#ictv_seqsearch_container table.search-results button.download-csv-button {
+   background-color: #0d6efd;
+   color: #fff;
+   cursor: pointer;
+}*/
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   BLAST hits
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#ictv_seqsearch_container .blast-hits-title {
    font-size: 1.5rem;
    font-weight: 700;
    margin: 0 0 0.75rem 0;
 }
 
-/*-------------------------------------------------------------------------------------------------------------------------------------------------
-   Sequence results
--------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_seqsearch_container .sequence-result {
+#ictv_seqsearch_container table.blast-hit {
+   /*background-color: rgba(50, 50, 50, 0.03);
+   border-color: #bbb;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   display: flex;
+   flex-flow: column nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;*/
+   margin-bottom: 1.0rem;
+   /*padding: 1.0rem;
+   width: 100%;*/
+}
+
+#ictv_seqsearch_container .blast-row {
+   border-color: transparent;
+}
+/*#ictv_seqsearch_container .blast-column {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+}
+#ictv_seqsearch_container .blast-column:not(:first-child) {
+   margin-left: 2.0rem;
+}*/
+#ictv_seqsearch_container .blast-column label {
+   font-weight: 700;
+}
+#ictv_seqsearch_container .blast-column label::after {
+   content: ":";
+}
+#ictv_seqsearch_container .blast-column .value {
+   display: inline-block;
+   margin-left: 0.25rem;
+}
+
+
+
+
+/*#ictv_seqsearch_container .sequence-result {
    background-color: rgba(50, 50, 50, 0.03);
    border-color: #bbb;
    border-radius: 5px;
@@ -337,7 +417,6 @@
 }
 #ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-name .taxon-name {
    font-style: italic;
-   /*margin-left: 0.25rem;*/
 }
 #ictv_seqsearch_container .sequence-result .info .lineage-and-result .result .result-info {
    align-items: center;
@@ -388,3 +467,5 @@
    cursor: pointer;
    text-decoration: none;
 }
+
+*/
