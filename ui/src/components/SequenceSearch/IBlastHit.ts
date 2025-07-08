@@ -2,8 +2,12 @@
 // A BLAST hit associated with an ISearchResult.
 export interface IBlastHit {
    bitscore: number;
+   end_loc: number;
    evalue: number;
+   exemplar_additional: string;
+   ICTV_ID: string;
    input_seq: string;
+   isolate_id: string;
    qseqid: string;
    segmentname: string;
    sseqid: string;
@@ -24,5 +28,7 @@ export interface IBlastHit {
       genus: string;
       subgenus: string;
       species: string;
-   }
+   };
+   start_loc: number;
+   virus_names: string;
 }

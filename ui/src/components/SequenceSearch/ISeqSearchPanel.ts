@@ -1,9 +1,9 @@
 
-import { SequenceSearch } from './SequenceSearch';
+//import { SequenceSearch } from './SequenceSearch';
 
 export interface ISeqSearchPanel {
 
-   display();
+   load();
 
    unload();
 }

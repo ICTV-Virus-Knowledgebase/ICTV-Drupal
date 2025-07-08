@@ -1,7 +1,7 @@
 
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { ButtonClass, Constants, Icon, PanelKey } from "./Common";
+import { ButtonClass, Constants, Icon, PanelAction, PanelKey } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { IFileData } from "../../models/IFileData";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
@@ -60,13 +60,16 @@ export class UploadPanel implements ISeqSearchPanel {
 
 
 
-   display() {
+   async load() {
 
+      console.log("in uploadPanel.load")
+      
       // Create a local copy of the parent's upload container Element.
       this.elements.container = this.parent.elements.uploadContainer;
 
-      console.log("container = ", this.elements.container) 
-      
+      // Make the container visible.
+      this.elements.container.classList.add("active");
+
       // Format the accepted file types.
       let fileFormats = this.config.acceptedFileTypes.join(",");
 
@@ -173,10 +176,9 @@ export class UploadPanel implements ISeqSearchPanel {
          this.elements.jobName.value = ""; 
       })
 
-
-      // TODO: Wire up event handlers.
+      // TODO: Wire up event handlers. (???)
+      return;
    }
-
 
    // Read the contents of a file asynchronously and return it as a base64-encoded string.
    async readFileAsync(file_): Promise<string> {
@@ -208,12 +210,21 @@ export class UploadPanel implements ISeqSearchPanel {
       }
 
       // Display a "success" dialog.
-      return await AlertBuilder.displaySuccess(content, title);
+      return await AlertBuilder.displaySuccess(content, title, async () => {
+         await this.parent.handleAction(PanelAction.displayJob, PanelKey.uploadPanel);
+      });
    }
 
+   // Unload and hide the panel.
    unload() {
 
+      console.log("unloading upload panel")
 
+      this.elements.container.classList.remove("active");
+      console.log("this.elements.container = ", this.elements.container)
+
+      // TODO: should we remove event listeners?
+      // TODO: anything else?
    }
 
    // Upload the selected files to the web service for processing.
@@ -263,18 +274,22 @@ export class UploadPanel implements ISeqSearchPanel {
                `that can be loaded is ${Constants.MAX_SEQUENCE_COUNT} (you tried to submit ${sequenceCount} sequences)`);
          }
 
-         await Promise.allSettled([
+         // Upload the sequence file(s) to the web service for processing.
+         const job = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
+         if (!!job) {
+            console.log("returned job = ", job)
+            this.parent.job = job; 
+            this.parent.state.jobUID = job.uid; 
+         }
+         
+         // Show a modal dialog with information about the uploaded files.
+         await this.showInfoDialog(files.length, filenames);
 
-            // Upload the sequence file(s) to the web service for processing.
-            SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid)
-               .then(job_ => { this.parent.job = job_; }), 
-            
-            // Show a modal dialog with information about the uploaded files.
-            this.showInfoDialog(files.length, filenames)
-         ])
-         .then((results_) => {
-            if (results_[0].status === "rejected") { throw new Error(results_[0].reason); }
-         });
+         console.debug("after awaiting show info dialog")
+         //])
+         //.then((results_) => {
+         //   if (results_[0].status === "rejected") { throw new Error(results_[0].reason); }
+         //});
          
       } catch (error_) {
          await AlertBuilder.displayError(error_);
