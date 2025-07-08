@@ -289,7 +289,7 @@ export enum WebServiceKey {
 
    // TaxonomyHistory
    taxonomyHistory = "taxonomyHistory",
-   getTaxonHistory = "getTaxonHistory",
+   // getTaxonHistory = "getTaxonHistory",
    
    // Member species table
    virusIsolate = "virusIsolate",
