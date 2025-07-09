@@ -19,6 +19,9 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       searchResults: HTMLElement
    }
 
+   // Is the panel currently active/displayed?
+   isActive: boolean;
+
    job: ISeqSearchJob = null;
 
    // The URL that can be used to return and view the job data.
@@ -30,13 +33,15 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
 
    // C-tor
-   constructor(parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+
+      if (!containerEl_) { throw new Error("Invalid container element"); }
 
       if (!parent_) { throw new Error("Invalid parent parameter"); }
       this.parent = parent_;
 
       this.elements = {
-         container: null,
+         container: containerEl_,
          searchResults: null
       }
 
@@ -104,7 +109,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       return;
    }
 
-   
+   // Handle a click event on a result row.
    async handleResultsClick(event_) {
 
       if (event_.target.tagName !== 'BUTTON') { return; }
@@ -124,7 +129,9 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
          this.parent.state.resultIndex = dataIndex;
          
-         await this.parent.handleAction(PanelAction.displayBlastHits, PanelKey.jobDetails);
+         await this.parent.updatePage();
+
+         //await this.parent.handleAction(PanelAction.displayBlastHits);
 
       } else if (button.classList.contains(ButtonClass.downloadCSV)) {
          await this.downloadCSV(dataIndex);
@@ -140,8 +147,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
       console.log("in searchResults.load")
       
-      // Create a local copy of the parent's job container Element.
-      this.elements.container = this.parent.elements.searchResultsPanel;
+      this.isActive = true;
 
       // Make the container visible.
       this.elements.container.classList.add("active");
@@ -192,6 +198,9 @@ export class SearchResultsPanel implements ISeqSearchPanel {
    unload() {
 
       console.log("unloading search results panel")
+      console.debug("this.elements.container = ", this.elements.container)
+
+      this.isActive = false;
 
       this.elements.container.classList.remove("active");
 

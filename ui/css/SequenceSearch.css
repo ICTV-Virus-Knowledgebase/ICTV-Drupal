@@ -337,8 +337,9 @@
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
-   padding: 1.0rem 1.5rem 1.0rem 0;
+   /*padding: 1.0rem 1.5rem 1.0rem 0;*/
    transition: all 0.25s ease-out;
+   width: 100%; /* dmd 070925 */
    will-change: background-color color;
 }
 
@@ -417,6 +418,30 @@
    font-size: 0.9rem;
 }
 
+#ictv_seqsearch_container .ictv-accordion-header .additional-info {
+   align-items: self-end;
+   border-style: none;
+   border-width: 0;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-end;
+   margin: 0;
+}
+#ictv_seqsearch_container .ictv-accordion-header .additional-info tr,
+#ictv_seqsearch_container .ictv-accordion-header .additional-info td {
+   border-style: none;
+   border-width: 0;
+}
+#ictv_seqsearch_container .ictv-accordion-header .additional-info td {
+   padding: 12px 0;
+   width: 200px;
+}
+#ictv_seqsearch_container .ictv-accordion-header .additional-info label {
+   display: inline-block;
+}
+
+
 /* The spinner panel */
 #ictv_seqsearch_container .spinner-panel {
    display: none;
@@ -430,21 +455,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ictv_seqsearch_container .blast-hits-title {
    font-size: 1.5rem;
    font-weight: 700;
@@ -452,33 +462,22 @@
 }
 
 #ictv_seqsearch_container table.blast-hit {
-   /*background-color: rgba(50, 50, 50, 0.03);
-   border-color: #bbb;
-   border-radius: 5px;
-   border-style: solid;
-   border-width: 1px;
-   display: flex;
-   flex-flow: column nowrap;
-   font-size: 1.0rem;
-   justify-content: flex-start;*/
+   border-style: none;
+   border-width: 0;
    margin-bottom: 1.0rem;
-   /*padding: 1.0rem;
-   width: 100%;*/
 }
 
 #ictv_seqsearch_container .blast-row {
    border-color: transparent;
 }
-/*#ictv_seqsearch_container .blast-column {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
+#ictv_seqsearch_container .blast-column {
+   padding: 0;
 }
-#ictv_seqsearch_container .blast-column:not(:first-child) {
+/*#ictv_seqsearch_container .blast-column:not(:first-child) {
    margin-left: 2.0rem;
 }*/
 #ictv_seqsearch_container .blast-column label {
+   display: inline-block;
    font-weight: 700;
 }
 #ictv_seqsearch_container .blast-column label::after {

@@ -17,6 +17,9 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       container: HTMLElement
    }
 
+   // Is the panel currently active/displayed?
+   isActive: boolean;
+
    // The parent page
    parent: SequenceSearch = null;
 
@@ -27,17 +30,16 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
 
    // C-tor
-   constructor(parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+
+      if (!containerEl_) { throw new Error("Invalid container element"); }
 
       if (!parent_) { throw new Error("Invalid parent parameter"); }
       this.parent = parent_;
 
       this.elements = {
-
          blastHits: null,
-
-         // Create a local copy of the parent's BLAST hits panel Element.
-         container: this.parent.elements.blastHitsPanel
+         container: containerEl_
       }
 
    }
@@ -48,12 +50,18 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Format the hit's lineage.
       const lineage = this.formatLineage(hit_);
 
+      // Create a taxon details URL for this virus.
       const hitURL = this.parent.createTaxonDetailsURL(hit_.ICTV_ID, hit_.sseqid_lineage.species);
 
+      // Create the link using the taxon details URL.
       const linkedHitName = `<a href="${hitURL}" target="_blank">${hit_.sseqid_lineage.species}</a>`;
 
+      // Create a GenBank link using the accession.
       let sseqAccessionLink = Utils.createGenBankAccessionLink(hit_.sseqid_accession);
       
+      // Is this an exemplar or an additional isolate?
+      let exemplarOrAdditional = hit_.exemplar_additional === "E" ? "Exemplar" : "Additional";
+
       let virusNames = Utils.safeTrim(hit_.virus_names);
       if (virusNames.length < 1) { virusNames = "unknown"; }
 
@@ -90,6 +98,23 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             </td>`;
       }
 
+
+      // TEST: creating additional info for the accordion header.
+      
+      let eValue = "0";
+
+      if (hit_.evalue > 0) {
+
+         // Format to exponential with 3 decimals
+         const exponential = hit_.evalue.toExponential(3); // "7.050e-140"
+
+         // Split into parts
+         const [coefficient, exponent] = exponential.split('e');
+
+         // Format the final HTML string
+         eValue = `${coefficient}×10<sup>${exponent}</sup>`;
+      }
+      
       let html =
          `<div class="ictv-accordion-item" data-id="${hitIndex_}">
             <div class="ictv-accordion-header">
@@ -101,11 +126,33 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                   <div class="lineage-and-result">
                      <div class="lineage">${lineage}</div>
                      <div class="result">
-                        <div class="result-name">Species: <i>${linkedHitName}</i></div>
-                        <div class="result-note">Exemplar virus: ${virusNames} (${sseqAccessionLink})</div>
+                        <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i></div>
+                        <div class="result-note">${exemplarOrAdditional} virus: ${virusNames} (${sseqAccessionLink})</div>
                      </div>
                   </div>
                </div>
+               <table class="additional-info">
+                  <tr>
+                     <td>
+                        <label>E-value:</label>
+                        <span class="value">${eValue}</span>
+                     </td>
+                     <td>
+                        <label>Bitscore:</label>
+                        <span class="value">${hit_.bitscore}</span>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>
+                        <label>Start:</label>
+                        <span class="value">${hit_.start_loc || "unspecified"}</span>
+                     </td>
+                     <td>
+                        <label>End:</label>
+                        <span class="value">${hit_.end_loc || "unspecified"}</span>
+                     </td>
+                  </tr>
+               </table>
             </div>
             <div class="ictv-accordion-body" data-id="${hitIndex_}">
                <div class="ictv-accordion-content">
@@ -123,20 +170,12 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                      <tr class="blast-row">
                         <td class="blast-column">
                            <label>E-value</label>
-                           <span class="value">${hit_.evalue}</span>
+                           <span class="value">${eValue}</span>
                         </td>
                         <td class="blast-column" colspan="2">
                            <label>Bitscore</label>
                            <span class="value">${hit_.bitscore}</span>
                         </td>
-                     </tr>
-
-                     <tr class="blast-row">
-                        <td class="blast-column">
-                           <label>ICTV ID</label>
-                           <span class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></span>
-                        </td>
-                        ${vmrID}
                      </tr>
 
                      ${startAndEnd}
@@ -156,6 +195,14 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                         </td>
                      </tr>
                   
+                     <tr class="blast-row">
+                        <td class="blast-column">
+                           <label>ICTV ID</label>
+                           <span class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></span>
+                        </td>
+                        ${vmrID}
+                     </tr>
+
                   </table>
 
                </div>
@@ -273,6 +320,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       console.log("in blastPanel.load")
             
+      this.isActive = true;
+
       // Make the container visible.
       this.elements.container.classList.add("active");
 
@@ -296,25 +345,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       
       const inputSequenceName = this.result.hits[0].input_seq;
 
-      /*
-      //----------------------------------------------------------------------------------------------------------------
-      // Create the URL that can be used to view this job result.
-      //----------------------------------------------------------------------------------------------------------------
-      this.jobResultURL = window.location.href;
-
-      // TODO: Get rid of this line soon!!!
-      this.jobResultURL = this.jobResultURL.replace("://ictv.global", "://test.ictv.global");
-
-      // Remove any existing query string parameters.
-      let qIndex = this.jobResultURL.indexOf("?");
-      if (qIndex > -1) { this.jobResultURL = this.jobResultURL.substring(0, qIndex); }
-
-      this.jobResultURL += `?job=${this.job.uid}&result=${this.parent.state.resultIndex}`;
-
-      console.debug(`this.jobResultURL = ${this.jobResultURL}`)
-      */
-
-      
+      let hitsCount = this.result.hits.length;
       let hitsHTML = "";
 
       // Generate HTML for the hits.
@@ -323,7 +354,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       })
 
       this.elements.container.innerHTML = 
-         `<div class="blast-hits-title">BLAST hits for ${inputSequenceName}</div>
+         `<div class="blast-hits-title">BLAST hits for ${inputSequenceName} (${hitsCount})</div>
          <div class="blast-hits">${hitsHTML}</div>`;
 
       this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
@@ -397,7 +428,9 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    unload() {
 
       console.log("unloading BLAST hits panel")
+      console.debug("this.elements.container = ", this.elements.container)
 
+      this.isActive = false;
       this.elements.container.classList.remove("active");
    }
 

@@ -7,7 +7,6 @@ import { ISearchResult } from "./ISearchResult";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "./SequenceSearch";
-import { SequenceSearchService } from "../../services/SequenceSearchService";
 import { Utils } from "../../helpers/Utils";
 import * as pako from "pako";
 
@@ -29,6 +28,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       searchResults: HTMLElement
    }
 
+   // Is the panel currently active/displayed?
+   isActive: boolean;
+
    job: ISeqSearchJob = null;
 
    // The URL that can be used to return and view the job data.
@@ -40,13 +42,15 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
 
    // C-tor
-   constructor(parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+
+      if (!containerEl_) { throw new Error("Invalid container element"); }
 
       if (!parent_) { throw new Error("Invalid parent parameter"); }
       this.parent = parent_;
 
       this.elements = {
-         container: null,
+         container: containerEl_,
          copyUrlButton: null,
          jobName: null,
          jobNameLabel: null,
@@ -153,7 +157,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
          this.parent.state.resultIndex = dataIndex;
          
-         await this.parent.handleAction(PanelAction.displayBlastHits, PanelKey.jobDetails);
+         await this.parent.updatePage();
+   
+         //await this.parent.handleAction(PanelAction.displayBlastHits);
 
       } else if (button.classList.contains(ButtonClass.downloadCSV)) {
          await this.downloadCSV(dataIndex);
@@ -169,8 +175,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
       console.log("in jobPanel.load")
       
-      // Create a local copy of the parent's job container Element.
-      this.elements.container = this.parent.elements.jobDetailsPanel;
+      this.isActive = true;
 
       // Make the container visible.
       this.elements.container.classList.add("active");
@@ -179,7 +184,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       this.job = this.parent.job;
 
       if (!this.job || !this.job.data) {
-         this.elements.container.innerHTML = `<div class="no-results">No results</div>`;
+         this.elements.container.innerHTML = `<div class="no-results">Invalid job</div>`;
          return;
       }
 
@@ -189,7 +194,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       //----------------------------------------------------------------------------------------------------------------
       // Create the URL that can be used to view the job data.
       //----------------------------------------------------------------------------------------------------------------
-      this.jobURL = window.location.href;
+      this.jobURL = this.parent.createUrlUsingState();
+
+      /*window.location.href;
 
       // TODO: Get rid of this line soon!!!
       this.jobURL = this.jobURL.replace("://ictv.global", "://test.ictv.global");
@@ -199,36 +206,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       if (qIndex > -1) { this.jobURL = this.jobURL.substring(0, qIndex); }
 
       this.jobURL += `?job=${this.job.uid}`;
-
-      //----------------------------------------------------------------------------------------------------------------
-      // Generate HTML for the search results.
-      //----------------------------------------------------------------------------------------------------------------
-      let resultsHTML = "";
-
-      if (Array.isArray(this.parent.job.data.results) && this.parent.job.data.results.length > 0) {
-
-         this.job.data.results.forEach((result_: ISearchResult, resultIndex_: number) => {
-            resultsHTML += this.createSearchResult(result_, resultIndex_);
-         })
-
-         if (resultsHTML.length > 0) {
-            resultsHTML = 
-               `<table class="search-results">
-                  <thead>
-                     <tr class="header-row">
-                        <th>#</th>
-                        <th>Input file</th>
-                        <th>Hits</th>
-                        <th>Status</th>
-                        <th></th>
-                     </tr>
-                  </thead>
-                  <tbody>${resultsHTML}</tbody>
-               </table>`;
-         }  
-      } else {
-         resultsHTML = `<div class="no-results">No results</div>`;
-      }
+      */
 
       // Format the created on and ended on date/times.
       let createdOn = this.formatDate(this.job.createdOn);
@@ -273,59 +251,15 @@ export class JobDetailsPanel implements ISeqSearchPanel {
                <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> 
                <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
             </div>
-         </div>
-
-         <div class="search-results-title">Search results</div>
-         ${resultsHTML}`;
-         
-         /*
-         let html = 
-         `<div class="results">
-            <div class="job-details">
-               <div class="job-table">
-                  <div class="job-row">
-                     <label>Job name:</label>
-                     <div class="job-value">${this.job.name || "(none)"}</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Job status:</label>
-                     <div class="job-value">${this.job.status}</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Program and version:</label>
-                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.version})</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Database:</label>
-                     <div class="job-value">${this.job.data.database_name}</div>
-                  </div>
-               </div>
-               <div class="link-panel">
-                  <div class="instructions">You can view these results again using the following URL:</div>
-                  <div class="controls">
-                     <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> 
-                     <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
-                  </div>
-               </div>
-            </div>
-            <hr />
-            <div class="blast-hits-title">Results</div>
-            <div class="search-results">${resultsHTML}</div>
          </div>`;
-         */
-
+         
       this.elements.container.innerHTML = html;
-
-      // Get references to DOM elements.
-      this.elements.searchResults = this.elements.container.querySelector(`.search-results`);
-      if (!this.elements.searchResults) { throw new Error("Invalid search results element"); }
 
       this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
       if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
 
       // Add event listeners.
       this.elements.copyUrlButton.addEventListener("click", () => this.copyJobURL());
-      this.elements.searchResults.addEventListener("click", (event_) => this.handleResultsClick(event_));
       return;
    }
 
@@ -333,9 +267,11 @@ export class JobDetailsPanel implements ISeqSearchPanel {
    unload() {
 
       console.log("unloading upload panel")
+      console.debug("this.elements.container = ", this.elements.container)
+
+      this.isActive = false;
 
       this.elements.container.classList.remove("active");
-      console.log("this.elements.container = ", this.elements.container)
 
       // TODO: should we remove event listeners?
       // TODO: anything else?

@@ -33,19 +33,24 @@ export class UploadPanel implements ISeqSearchPanel {
       uploadButton: HTMLButtonElement
    }
 
+   // Is the panel currently active/displayed?
+   isActive: boolean;
+
    // The parent page
    parent: SequenceSearch = null;
 
 
    // C-tor
-   constructor(parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+
+      if (!containerEl_) { throw new Error("Invalid container element"); }
 
       if (!parent_) { throw new Error("Invalid parent parameter"); }
       this.parent = parent_;
 
       this.elements = {
          cancelButton: null,
-         container: null,
+         container: containerEl_,
          fileControl: null,
          fileInput: null,
          fileSelection: null,
@@ -55,17 +60,16 @@ export class UploadPanel implements ISeqSearchPanel {
          jobNameLabel: null,
          uploadButton: null
       }
-
    }
-
 
 
    async load() {
 
       console.log("in uploadPanel.load")
       
-      // Create a local copy of the parent's upload panel Element.
-      this.elements.container = this.parent.elements.uploadPanel;
+      this.isActive = true;
+
+      console.debug("this.parent.elements = ", this.parent.elements)
 
       // Make the container visible.
       this.elements.container.classList.add("active");
@@ -75,18 +79,16 @@ export class UploadPanel implements ISeqSearchPanel {
 
       // Create HTML for the container Element.
       const html = 
-         `<div class=\"upload-panel\">
-            <div class="file-selection active">
-               <div class="upload-message">Upload your FASTA sequence(s)</div>
-               <button class=\"btn file-control\">${Icon.browse} Select file(s)</button>
-               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
-            </div>
-            <div class="file-submission">
-               <div class=\"job-name-label\">Job name</div>
-               <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
-               <button class=\"btn ${ButtonClass.upload}\">Submit file(s)</button>
-               <button class=\"btn ${ButtonClass.cancel}\">${Icon.cancel} Cancel</button>
-            </div>
+         `<div class="file-selection active">
+            <div class="upload-message">Upload your FASTA sequence(s)</div>
+            <button class=\"btn file-control\">${Icon.browse} Select file(s)</button>
+            <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
+         </div>
+         <div class="file-submission">
+            <div class=\"job-name-label\">Job name</div>
+            <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
+            <button class=\"btn ${ButtonClass.upload}\">Submit file(s)</button>
+            <button class=\"btn ${ButtonClass.cancel}\">${Icon.cancel} Cancel</button>
          </div>`;
 
       this.elements.container.innerHTML = html;
@@ -211,7 +213,8 @@ export class UploadPanel implements ISeqSearchPanel {
 
       // Display a "success" dialog.
       return await AlertBuilder.displaySuccess(content, title, async () => {
-         await this.parent.handleAction(PanelAction.displayJob, PanelKey.upload);
+         await this.parent.updatePage();
+         //await this.parent.handleAction(PanelAction.displayJob);
       });
    }
 
@@ -219,9 +222,12 @@ export class UploadPanel implements ISeqSearchPanel {
    unload() {
 
       console.log("unloading upload panel")
+      console.debug("this.elements.container = ", this.elements.container)
 
-      this.elements.container.classList.remove("active");
-      console.log("this.elements.container = ", this.elements.container)
+      this.isActive = false;
+
+      //this.elements.container.classList.remove("active");
+      
 
       // TODO: should we remove event listeners?
       // TODO: anything else?
