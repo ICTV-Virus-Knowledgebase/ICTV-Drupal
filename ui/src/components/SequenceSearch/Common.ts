@@ -34,12 +34,9 @@ export enum Icon {
 }
 
 export enum PanelAction {
-   backToJob = "backToJob",
-   backToSearchResults = "backToSearchResults",
-   backToUpload = "backToUpload",
    displayJob = "displayJob",
    displayBlastHits = "displayBlastHits",
-   displaySearchResults = "displaySearchResults",
+   //displaySearchResults = "displaySearchResults",
    displayUpload = "displayUpload"
 }
 
@@ -50,3 +47,7 @@ export enum PanelKey {
    upload = "upload"
 }
 
+export enum ParameterKey {
+   job = "job",
+   result = "result"
+}

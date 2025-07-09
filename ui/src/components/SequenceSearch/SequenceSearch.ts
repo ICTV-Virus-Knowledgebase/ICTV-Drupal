@@ -2,7 +2,7 @@
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
 import { BlastHitsPanel } from "./BlastHitsPanel";
-import { ButtonClass, Constants, Icon, PanelAction, PanelKey } from "./Common";
+import { ButtonClass, Constants, Icon, PanelAction, PanelKey, ParameterKey } from "./Common";
 import { DateTime, Interval } from "luxon";
 import { decode } from "base64-arraybuffer";
 import { IBlastHit } from "./IBlastHit";
@@ -110,6 +110,28 @@ export class SequenceSearch {
    createTaxonDetailsURL(ictvID_: string, name_: string) {
       const url = AppSettings.taxonHistoryPage;
       return `${url}?ictv_id=${ictvID_}&taxon_name=${name_}`;
+   }
+
+   // Create a SeqSearch URL using the current state. 
+   createUrlUsingState(): string {
+      
+      let url = window.location.href;
+
+      // Remove any existing query string parameters.
+      let qIndex = url.indexOf("?");
+      if (qIndex > -1) { url = url.substring(0, qIndex); }
+
+      // Do we have a valid job UID?
+      if (this.state.jobUID !== null && this.state.jobUID.length > 0) {
+         url += `?${ParameterKey.job}=${this.state.jobUID}`;
+
+         // Do we have a valid result index?
+         if (this.state.resultIndex !== null && !isNaN(this.state.resultIndex)) { 
+            url += `&${ParameterKey.result}=${this.state.resultIndex}`;
+         }
+      }
+      
+      return url;
    }
 
    /*async displayJob() {
@@ -306,10 +328,11 @@ export class SequenceSearch {
       return;
    }*/
 
+   // Format a date string using the date format.
    formatDate(date_: string) {
 
       date_ = Utils.safeTrim(date_);
-      if (date_.length < 1) { return "(invalid date)"; }
+      if (date_.length < 1) { return ""; }
 
       const dateObject = DateTime.fromFormat(date_, this.dateFormat.from);
       
@@ -347,61 +370,61 @@ export class SequenceSearch {
       return;
    }
 
-   
-   async handleAction(action_: PanelAction, fromPanelKey_: PanelKey) {
+   // Handle the panel action that was provided.
+   async handleAction(action_: PanelAction) {
 
       if (!action_) { throw new Error("Invalid action parameter"); }
       
-      let toPanelKey = null;
+      let loadBlastHits = false;
+      let loadJobDetails = false;
+      let loadSearchResults = false;
+      let loadUpload = false;
+
+      // All panels besides the upload panel need to load the job specified in the state.
+      if (action_ != PanelAction.displayUpload && (!this.job || this.job.uid !== this.state.jobUID)) { await this.getJob(); }
 
       switch (action_) {
 
          case PanelAction.displayBlastHits:
 
-            // Set the next panel key.
-            toPanelKey = PanelKey.blastHits;
-
-            // Load the associated job, if necessary.
-            if (!this.job) { await this.getJob(); }
+            // Which panels will be loaded?
+            loadBlastHits = true;
+            loadJobDetails = true;
             break;
 
          case PanelAction.displayJob:
 
-            // Set the next panel key.
-            toPanelKey = PanelKey.jobDetails;
-
+            // Reset the BLAST hit result index.
             this.state.resultIndex = NaN;
 
-            // Load the associated job, if necessary.
-            if (!this.job) { await this.getJob(); }
-            break;
-
-         case PanelAction.displaySearchResults:
-
-            // Set the next panel key.
-            toPanelKey = PanelKey.searchResults;
-
-            // Load the associated job, if necessary.
-            if (!this.job) { await this.getJob(); }
+            // Which panels will be loaded?
+            loadJobDetails = true;
+            loadSearchResults = true;
             break;
 
          case PanelAction.displayUpload:
-
-            // Set the next panel key.
-            toPanelKey = PanelKey.upload;
 
             // Clear the job and state.
             this.job = null;
             this.state.jobUID = null;
             this.state.resultIndex = NaN; 
+
+            // Which panels will be loaded?
+            loadUpload = true;
+
             break;
 
          default:
             return await AlertBuilder.displayError(`Unhandled panel action: ${action_}`);
       }
 
-      // Load the next panel.
-      return this.loadPanel(toPanelKey, fromPanelKey_);
+      // Load or unload panels as determined above.
+      await this.updatePanel(PanelKey.blastHits, loadBlastHits);
+      await this.updatePanel(PanelKey.jobDetails, loadJobDetails);
+      await this.updatePanel(PanelKey.searchResults, loadSearchResults);
+      await this.updatePanel(PanelKey.upload, loadUpload);
+
+      return;
    }
 
    // Initialize the Sequence Search component.
@@ -416,10 +439,10 @@ export class SequenceSearch {
 
       // Create HTML for the container elements.
       const html = 
-         `<div class=\"blast-hits-panel container\"></div>
+         `<div class=\"upload-panel container active\"></div>
          <div class=\"job-details-panel container\"></div>
          <div class=\"search-results-panel container\"></div>
-         <div class=\"upload-panel container active\"></div>`;
+         <div class=\"blast-hits-panel container\"></div>`;
 
       this.elements.container.innerHTML = html;
 
@@ -441,10 +464,10 @@ export class SequenceSearch {
 
 
       // Create the panel instances.
-      this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this));
-      this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this));
-      this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this));
-      this.panels.set(PanelKey.upload, new UploadPanel(this));
+      this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this.elements.blastHitsPanel, this));
+      this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
+      this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this.elements.searchResultsPanel, this));
+      this.panels.set(PanelKey.upload, new UploadPanel(this.elements.uploadPanel, this));
 
       //--------------------------------------------------------------------------------------------------------------
       // Look for query string parameters and use them to determine which panel to display.
@@ -457,44 +480,25 @@ export class SequenceSearch {
       const urlParams = new URLSearchParams(window.location.search);
       
       // Was a job UID provided in the query string?
-      this.state.jobUID = Utils.safeTrim(urlParams.get("job"));
+      this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
 
       if (this.state.jobUID && this.state.jobUID.length > 0) {
 
          action = PanelAction.displayJob;
 
+         this.state.resultIndex = NaN; 
+
          // Was a result index provided in the query string?
-         let strResult = Utils.safeTrim(urlParams.get("result"));
+         let strResult = Utils.safeTrim(urlParams.get(ParameterKey.result));
          if (strResult) {
             this.state.resultIndex = parseInt(strResult, 10);
-            if (isNaN(this.state.resultIndex)) { 
-               this.state.resultIndex = NaN; 
-            } else {
-               // If a result index was provided, display the BLAST panel.
-               action = PanelAction.displayBlastHits;
-            }
+
+            // If a result index was provided, display the BLAST hits panel.
+            if (!isNaN(this.state.resultIndex)) { action = PanelAction.displayBlastHits; }
          }
       }  
 
-      return await this.handleAction(action, null);
-   }
-
-   // Display/load the specified panel and hide/unload the previously active panel.
-   async loadPanel(panelKey_: PanelKey, previousPanelKey_: PanelKey|null) {
-
-      // Unload the previous panel.
-      if (previousPanelKey_) {
-         
-         const previousPanel = this.panels.get(previousPanelKey_);
-         if (previousPanel) { console.log(`about to unload ${previousPanelKey_}`); previousPanel.unload(); }
-      }
-
-      // Get the requested panel.
-      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
-      if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
-
-      panel.load();
-      return;
+      return await this.handleAction(action);
    }
 
    // If the user UID is empty, look for one in web storage or generate a new one.
@@ -524,4 +528,26 @@ export class SequenceSearch {
       return;
    }
 
+   async updatePage() {
+
+      const url = this.createUrlUsingState();
+      window.location.assign(url);
+      return;
+   }
+
+   // Unload/hide the specified panel.
+   async updatePanel(panelKey_: PanelKey, load_: boolean) {
+
+      // Get the requested panel.
+      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
+      if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
+
+      if (load_) {
+         await panel.load();
+      } else {
+         await panel.unload();
+      }
+      
+      return;
+   }
 }
