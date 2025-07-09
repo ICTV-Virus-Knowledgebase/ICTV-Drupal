@@ -12,7 +12,7 @@ import { Utils } from "../../helpers/Utils";
 import * as pako from "pako";
 
 
-export class JobPanel implements ISeqSearchPanel {
+export class JobDetailsPanel implements ISeqSearchPanel {
    
    dateFormat = {
       from: "yyyy-MM-dd HH:mm:ss",
@@ -153,7 +153,7 @@ export class JobPanel implements ISeqSearchPanel {
 
          this.parent.state.resultIndex = dataIndex;
          
-         await this.parent.handleAction(PanelAction.displayBLAST, PanelKey.jobPanel);
+         await this.parent.handleAction(PanelAction.displayBlastHits, PanelKey.jobDetails);
 
       } else if (button.classList.contains(ButtonClass.downloadCSV)) {
          await this.downloadCSV(dataIndex);
@@ -170,7 +170,7 @@ export class JobPanel implements ISeqSearchPanel {
       console.log("in jobPanel.load")
       
       // Create a local copy of the parent's job container Element.
-      this.elements.container = this.parent.elements.jobContainer;
+      this.elements.container = this.parent.elements.jobDetailsPanel;
 
       // Make the container visible.
       this.elements.container.classList.add("active");

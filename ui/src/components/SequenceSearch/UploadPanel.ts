@@ -64,8 +64,8 @@ export class UploadPanel implements ISeqSearchPanel {
 
       console.log("in uploadPanel.load")
       
-      // Create a local copy of the parent's upload container Element.
-      this.elements.container = this.parent.elements.uploadContainer;
+      // Create a local copy of the parent's upload panel Element.
+      this.elements.container = this.parent.elements.uploadPanel;
 
       // Make the container visible.
       this.elements.container.classList.add("active");
@@ -211,7 +211,7 @@ export class UploadPanel implements ISeqSearchPanel {
 
       // Display a "success" dialog.
       return await AlertBuilder.displaySuccess(content, title, async () => {
-         await this.parent.handleAction(PanelAction.displayJob, PanelKey.uploadPanel);
+         await this.parent.handleAction(PanelAction.displayJob, PanelKey.upload);
       });
    }
 

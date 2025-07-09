@@ -1,13 +1,16 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { BlastPanel } from "./BlastPanel";
+import { AppSettings } from "../../global/AppSettings";
+import { BlastHitsPanel } from "./BlastHitsPanel";
 import { ButtonClass, Constants, Icon, PanelAction, PanelKey } from "./Common";
+import { DateTime, Interval } from "luxon";
 import { decode } from "base64-arraybuffer";
+import { IBlastHit } from "./IBlastHit";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
-import { JobPanel } from "./JobPanel";
+import { JobDetailsPanel } from "./JobDetailsPanel";
 import { LookupTaxonomyRank, WebStorageKey } from "../../global/Types";
-
+import { SearchResultsPanel } from "./SearchResultsPanel";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
 import tippy from "tippy.js";
 import { UploadPanel } from "./UploadPanel";
@@ -27,12 +30,19 @@ export class SequenceSearch {
    // The CSS selector for the container element where the Sequence Search UI will be rendered.
    containerSelector: string = null;
 
+   dateFormat = {
+      from: "yyyy-MM-dd HH:mm:ss",
+      toDate: "cccc, LLLL d, y",
+      toTime: "h:mm:ss a"
+   }
+
    // DOM elements
    elements: {
-      blastContainer: HTMLElement,
+      blastHitsPanel: HTMLElement,
       container: HTMLElement,
-      jobContainer: HTMLElement,
-      uploadContainer: HTMLElement
+      jobDetailsPanel: HTMLElement,
+      searchResultsPanel: HTMLElement,
+      uploadPanel: HTMLElement
    }
 
    job: ISeqSearchJob = null;
@@ -80,10 +90,11 @@ export class SequenceSearch {
       }
 
       this.elements = {
+         blastHitsPanel: null,
          container: null,
-         jobContainer: null,
-         blastContainer: null,
-         uploadContainer: null
+         jobDetailsPanel: null,
+         searchResultsPanel: null,
+         uploadPanel: null
       }
 
       this.panels = new Map<PanelKey, ISeqSearchPanel>();
@@ -95,6 +106,12 @@ export class SequenceSearch {
    }
 
    
+   // Create a URL for the ICTV taxon details page.
+   createTaxonDetailsURL(ictvID_: string, name_: string) {
+      const url = AppSettings.taxonHistoryPage;
+      return `${url}?ictv_id=${ictvID_}&taxon_name=${name_}`;
+   }
+
    /*async displayJob() {
 
       if (!this.job || !this.job.data || !this.job.data.results) {
@@ -289,6 +306,19 @@ export class SequenceSearch {
       return;
    }*/
 
+   formatDate(date_: string) {
+
+      date_ = Utils.safeTrim(date_);
+      if (date_.length < 1) { return "(invalid date)"; }
+
+      const dateObject = DateTime.fromFormat(date_, this.dateFormat.from);
+      
+      const datePart = Utils.safeTrim(dateObject.toFormat(this.dateFormat.toDate));
+      const timePart = Utils.safeTrim(dateObject.toFormat(this.dateFormat.toTime));
+
+      return `${datePart} at ${timePart}`;
+   }
+
    // Generate a universally unique identifier (UUID).
    generateUUID() {
 
@@ -326,29 +356,10 @@ export class SequenceSearch {
 
       switch (action_) {
 
-         case PanelAction.backToJob:
+         case PanelAction.displayBlastHits:
 
             // Set the next panel key.
-            toPanelKey = PanelKey.jobPanel;
-
-            this.state.resultIndex = NaN;
-            break;
-
-         case PanelAction.backToUpload:
-
-            // Set the next panel key.
-            toPanelKey = PanelKey.uploadPanel;
-
-            // Clear the job and state.
-            this.job = null;
-            this.state.jobUID = null;
-            this.state.resultIndex = NaN;
-            break;
-
-         case PanelAction.displayBLAST:
-
-            // Set the next panel key.
-            toPanelKey = PanelKey.blastPanel;
+            toPanelKey = PanelKey.blastHits;
 
             // Load the associated job, if necessary.
             if (!this.job) { await this.getJob(); }
@@ -357,7 +368,18 @@ export class SequenceSearch {
          case PanelAction.displayJob:
 
             // Set the next panel key.
-            toPanelKey = PanelKey.jobPanel;
+            toPanelKey = PanelKey.jobDetails;
+
+            this.state.resultIndex = NaN;
+
+            // Load the associated job, if necessary.
+            if (!this.job) { await this.getJob(); }
+            break;
+
+         case PanelAction.displaySearchResults:
+
+            // Set the next panel key.
+            toPanelKey = PanelKey.searchResults;
 
             // Load the associated job, if necessary.
             if (!this.job) { await this.getJob(); }
@@ -366,13 +388,12 @@ export class SequenceSearch {
          case PanelAction.displayUpload:
 
             // Set the next panel key.
-            toPanelKey = PanelKey.uploadPanel;
+            toPanelKey = PanelKey.upload;
 
             // Clear the job and state.
             this.job = null;
             this.state.jobUID = null;
-            this.state.resultIndex = NaN;
-            
+            this.state.resultIndex = NaN; 
             break;
 
          default:
@@ -395,29 +416,35 @@ export class SequenceSearch {
 
       // Create HTML for the container elements.
       const html = 
-         `<div class=\"blast-container container\"></div>
-         <div class=\"job-container container\"></div>
-         <div class=\"upload-container container active\"></div>`;
+         `<div class=\"blast-hits-panel container\"></div>
+         <div class=\"job-details-panel container\"></div>
+         <div class=\"search-results-panel container\"></div>
+         <div class=\"upload-panel container active\"></div>`;
 
       this.elements.container.innerHTML = html;
 
-      // The BLAST container
-      this.elements.blastContainer = this.elements.container.querySelector(".blast-container") as HTMLElement;
-      if (!this.elements.blastContainer) { throw new Error("Invalid BLAST container Element"); }
+      // The BLAST hits panel
+      this.elements.blastHitsPanel = this.elements.container.querySelector(".blast-hits-panel") as HTMLElement;
+      if (!this.elements.blastHitsPanel) { throw new Error("Invalid BLAST hits panel Element"); }
 
-      // The job container
-      this.elements.jobContainer = this.elements.container.querySelector(".job-container") as HTMLElement;
-      if (!this.elements.jobContainer) { throw new Error("Invalid job container Element"); }
+      // The job details panel
+      this.elements.jobDetailsPanel = this.elements.container.querySelector(".job-details-panel") as HTMLElement;
+      if (!this.elements.jobDetailsPanel) { throw new Error("Invalid job details panel Element"); }
 
-      // The upload container
-      this.elements.uploadContainer = this.elements.container.querySelector(".upload-container") as HTMLElement;
-      if (!this.elements.uploadContainer) { throw new Error("Invalid upload container Element"); }
+      // The search results panel
+      this.elements.searchResultsPanel = this.elements.container.querySelector(".search-results-panel") as HTMLElement;
+      if (!this.elements.searchResultsPanel) { throw new Error("Invalid search results panel Element"); }
+
+      // The upload panel
+      this.elements.uploadPanel = this.elements.container.querySelector(".upload-panel") as HTMLElement;
+      if (!this.elements.uploadPanel) { throw new Error("Invalid upload panel Element"); }
 
 
       // Create the panel instances.
-      this.panels.set(PanelKey.blastPanel, new BlastPanel(this));
-      this.panels.set(PanelKey.jobPanel, new JobPanel(this));
-      this.panels.set(PanelKey.uploadPanel, new UploadPanel(this));
+      this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this));
+      this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this));
+      this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this));
+      this.panels.set(PanelKey.upload, new UploadPanel(this));
 
       //--------------------------------------------------------------------------------------------------------------
       // Look for query string parameters and use them to determine which panel to display.
@@ -444,7 +471,7 @@ export class SequenceSearch {
                this.state.resultIndex = NaN; 
             } else {
                // If a result index was provided, display the BLAST panel.
-               action = PanelAction.displayBLAST;
+               action = PanelAction.displayBlastHits;
             }
          }
       }  

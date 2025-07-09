@@ -35,15 +35,18 @@ export enum Icon {
 
 export enum PanelAction {
    backToJob = "backToJob",
+   backToSearchResults = "backToSearchResults",
    backToUpload = "backToUpload",
    displayJob = "displayJob",
-   displayBLAST = "displayBLAST",
+   displayBlastHits = "displayBlastHits",
+   displaySearchResults = "displaySearchResults",
    displayUpload = "displayUpload"
 }
 
 export enum PanelKey {
-   blastPanel = "blastPanel",
-   jobPanel = "jobPanel",
-   uploadPanel = "uploadPanel"
+   blastHits = "blastHits",
+   jobDetails = "jobDetails",
+   searchResults = "searchResults",
+   upload = "upload"
 }
 

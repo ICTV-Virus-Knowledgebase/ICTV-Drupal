@@ -238,6 +238,7 @@
 #ictv_seqsearch_container table.job-details {
    font-size: 1.0rem;
    margin-bottom: 1.5rem;
+   width: 50%;
 }
 #ictv_seqsearch_container table.job-details th {
    font-size: 1.0rem;
@@ -313,6 +314,136 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    BLAST hits
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Accordion 
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .ictv-accordion-item {
+   border-color: #999;
+   border-style: solid;
+   border-right-width: 1px;
+   border-bottom-width: 1px;
+   border-left-width: 1px;
+   border-top-width: 0;
+   width: 100%;
+}
+#ictv_seqsearch_container .ictv-accordion-item:first-of-type {
+   border-top-width: 1px;
+}
+#ictv_seqsearch_container .ictv-accordion-header {
+   align-items: center;
+   background-color: #e9e9e9;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   padding: 1.0rem 1.5rem 1.0rem 0;
+   transition: all 0.25s ease-out;
+   will-change: background-color color;
+}
+
+#ictv_seqsearch_container .ictv-accordion-control {
+   color: #777;
+   font-weight: 400;
+   padding: 1.0rem;
+   transition: ease .3s transform;
+}
+
+#ictv_seqsearch_container .ictv-accordion-body {
+   max-height: 0;
+   opacity: 0;
+   overflow: hidden;
+   transition: all 0.25s ease-out;
+   visibility: hidden;
+   will-change: max-height;
+}
+#ictv_seqsearch_container .ictv-accordion-item.active .ictv-accordion-body {
+   border-width: 1px 0 0 0;
+   border-color: #999;
+   border-style: solid;
+   max-height: 100%;
+   opacity: 1;
+   visibility: visible;
+}
+#ictv_seqsearch_container .ictv-accordion-item.active .ictv-accordion-control {
+   transform: rotate(-180deg);
+}
+
+#ictv_seqsearch_container .ictv-accordion-item .ictv-accordion-content {
+   margin: 1.0rem;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Result info inside the accordion label.
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .ictv-accordion-label {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   width: 100%;
+}
+
+#ictv_seqsearch_container .ictv-accordion-label .result-index {
+   font-size: 0.9rem; 
+   margin-right: 1.0rem;
+}
+#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+   /*width: 100%;*/
+}
+#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage {
+   font-size: 0.9rem;
+   font-weight: 400;
+   margin-bottom: 0.25rem;
+}
+#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage i.fa-chevron-right {
+   font-size: 0.7rem;
+   margin: 0 0.25rem;
+}
+#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: center;
+   /*width: 100%;*/
+   z-index: 1000;
+}
+#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .result .result-note {
+   font-size: 0.9rem;
+}
+
+/* The spinner panel */
+#ictv_seqsearch_container .spinner-panel {
+   display: none;
+}
+#ictv_seqsearch_container .spinner-panel.active {
+   display: block;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ictv_seqsearch_container .blast-hits-title {
    font-size: 1.5rem;
