@@ -34,37 +34,52 @@ class TaxonomyHelper {
   // This function is used inside GetChildTaxa.php in the getByParentTaxon function.
   public static function generatePartialQuery(): string {
     return "
-      tn.taxa_desc_cts AS childTaxaCount,
+      tn.taxa_desc_cts  AS childTaxaCount,
       tn.filename,
-      tn.taxa_kid_cts AS immediateChildTaxaCount,
-      tn.is_ref AS is_reference,
-      tl.name AS level_name,
-      tl.id AS level_id,
+      tn.taxa_kid_cts   AS immediateChildTaxaCount,
+      tn.is_ref         AS is_reference,
+      tl.name           AS level_name,
+      tl.id             AS level_id,
       tn.lineage,
-      (SELECT COUNT(*) 
-       FROM taxonomy_node_delta
-       WHERE prev_taxid = tn.taxnode_id
-       AND (tag_csv IS NOT NULL AND tag_csv <> '')
-      ) AS next_delta_count,
+
+      COALESCE(nd_next.next_delta_count, 0) AS next_delta_count,
+
       tn.node_depth,
-      tn._numKids AS num_children,
+      tn._numKids      AS num_children,
       tn.parent_id,
-      (SELECT COUNT(*) 
-       FROM taxonomy_node_delta
-       WHERE new_taxid = tn.taxnode_id
-       AND (tag_csv IS NOT NULL AND tag_csv <> '')
-      ) AS prev_delta_count,
-      tn.cleaned_name AS taxon_name,
+
+      COALESCE(nd_prev.prev_delta_count, 0) AS prev_delta_count,
+
+      tn.cleaned_name   AS taxon_name,
       tn.taxnode_id,
       tn.tree_id,
       tn.left_idx,
       tn.right_idx,
       tn.is_hidden,
       tn.is_deleted
-      
+
       FROM taxonomy_node tn
       JOIN taxonomy_level tl ON tl.id = tn.level_id
-    ";
+
+      /* aggregated delta counts: replaces per-row scalar subqueries */
+      LEFT JOIN (
+        SELECT
+          prev_taxid AS taxnode_id,
+          COUNT(*)   AS next_delta_count
+        FROM taxonomy_node_delta
+        WHERE tag_csv IS NOT NULL AND tag_csv <> ''
+        GROUP BY prev_taxid
+      ) nd_next ON nd_next.taxnode_id = tn.taxnode_id
+
+      LEFT JOIN (
+        SELECT
+          new_taxid  AS taxnode_id,
+          COUNT(*)   AS prev_delta_count
+        FROM taxonomy_node_delta
+        WHERE tag_csv IS NOT NULL AND tag_csv <> ''
+        GROUP BY new_taxid
+      ) nd_prev ON nd_prev.taxnode_id = tn.taxnode_id
+  ";
   }
 
   /**
