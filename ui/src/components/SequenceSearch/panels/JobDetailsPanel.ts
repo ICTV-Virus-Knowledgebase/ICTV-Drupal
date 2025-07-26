@@ -1,21 +1,23 @@
 
-import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { ButtonClass, Constants, Icon, PanelAction, PanelKey } from "./Common";
+import { AlertBuilder } from "../../../helpers/AlertBuilder";
+import { ButtonClass, Constants, FormatDate, Icon, PanelAction, PanelKey } from "../Common";
 import { decode } from "base64-arraybuffer";
-import { ISearchResult } from "./ISearchResult";
-import { ISeqSearchJob } from "./ISeqSearchJob";
+import { ISearchResult } from "../ISearchResult";
+import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
-import { SequenceSearch } from "./SequenceSearch";
-import { SequenceSearchService } from "../../services/SequenceSearchService";
-import { Utils } from "../../helpers/Utils";
+import { SequenceSearch } from "../SequenceSearch";
+import { Utils } from "../../../helpers/Utils";
 import * as pako from "pako";
 
 
-export class SearchResultsPanel implements ISeqSearchPanel {
+export class JobDetailsPanel implements ISeqSearchPanel {
    
    // DOM elements
    elements: {
       container: HTMLElement,
+      copyUrlButton: HTMLButtonElement,
+      jobName: HTMLInputElement,
+      jobNameLabel: HTMLElement,
       searchResults: HTMLElement
    }
 
@@ -42,9 +44,20 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
       this.elements = {
          container: containerEl_,
+         copyUrlButton: null,
+         jobName: null,
+         jobNameLabel: null,
          searchResults: null
       }
+   }
 
+   async copyJobURL() {
+
+      // Copy the URL to the clipboard.
+      await navigator.clipboard.writeText(this.jobURL);
+
+      // Display a success message.
+      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
    }
 
    // Create HTML for a search result row.
@@ -75,11 +88,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       return html;
    }
 
-   displayErrorMessage(message_: string) {
-      this.elements.container.innerHTML = `<div class="error-message">${message_}</div>`;
-      return;
-   }
-
+   /*
    // Download the BLAST CSV data for a specific result.
    async downloadCSV(index_: number) {
 
@@ -107,9 +116,10 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       link.click();
 
       return;
-   }
+   }*/
 
-   // Handle a click event on a result row.
+   
+   /*
    async handleResultsClick(event_) {
 
       if (event_.target.tagName !== 'BUTTON') { return; }
@@ -130,7 +140,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          this.parent.state.resultIndex = dataIndex;
          
          await this.parent.updatePage();
-
+   
          //await this.parent.handleAction(PanelAction.displayBlastHits);
 
       } else if (button.classList.contains(ButtonClass.downloadCSV)) {
@@ -141,11 +151,12 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       }
      
       return;
-   }
+   }*/
 
+   // Make the panel visible and populate it with data.
    async load() {
 
-      console.log("in searchResults.load")
+      console.log("in jobDetailsPanel.load")
       
       this.isActive = true;
 
@@ -156,48 +167,89 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       this.job = this.parent.job;
 
       if (!this.job || !this.job.data) {
-         return this.displayErrorMessage("The specified job is invalid");
-
-      } else if (!Array.isArray(this.job.data.results) || this.job.data.results.length < 1) {
-         return this.displayErrorMessage("No results are available for this job");
+         this.elements.container.innerHTML = `<div class="no-results">Invalid job</div>`;
+         return;
       }
 
-      let rowsHTML = "";
+      // Clear any existing content in the container.
+      this.elements.container.innerHTML = "";
 
-      // Generate HTML for the search results.
-      this.job.data.results.forEach((result_: ISearchResult, resultIndex_: number) => {
-         rowsHTML += this.createSearchResult(result_, resultIndex_);
-      })
-      
-      // Populate the container
-      this.elements.container.innerHTML = 
-         `<div class="search-results-title">Search results</div>
-         <table class="search-results">
-            <thead>
-               <tr class="header-row">
-                  <th>#</th>
-                  <th>Input file</th>
-                  <th>Hits</th>
-                  <th>Status</th>
-                  <th></th>
+      //----------------------------------------------------------------------------------------------------------------
+      // Create the URL that can be used to view the job data.
+      //----------------------------------------------------------------------------------------------------------------
+      this.jobURL = this.parent.createUrlUsingState();
+
+      /*window.location.href;
+
+      // TODO: Get rid of this line soon!!!
+      this.jobURL = this.jobURL.replace("://ictv.global", "://test.ictv.global");
+
+      // Remove any existing query string parameters.
+      let qIndex = this.jobURL.indexOf("?");
+      if (qIndex > -1) { this.jobURL = this.jobURL.substring(0, qIndex); }
+
+      this.jobURL += `?job=${this.job.uid}`;
+      */
+
+      // Format the created on and ended on date/times.
+      let createdOn = FormatDate(this.job.createdOn);
+      let endedOn = FormatDate(this.job.endedOn);
+
+      //----------------------------------------------------------------------------------------------------------------
+      // Generate the HTML for the job
+      //----------------------------------------------------------------------------------------------------------------
+      let html = 
+         `<table class="job-details">
+            <tbody>
+               <tr>
+                  <th>Job name</th>
+                  <td>${this.job.name || "(none)"}</td>
                </tr>
-            </thead>
-            <tbody>${rowsHTML}</tbody>
-         </table>`;
+               <tr>
+                  <th>Started</th>
+                  <td>${createdOn || "(unknown)"}</td>
+               </tr>
+               <tr>
+                  <th>Ended</th>
+                  <td>${endedOn || "(unknown)"}</td>
+               </tr>
+               <tr>
+                  <th>Status</th>
+                  <td>${this.job.status}</td>
+               </tr>
+               <tr>
+                  <th>Program and version</th>
+                  <td>${this.job.data.program_name} (version ${this.job.data.version})</td>
+               </tr>
+               <tr>
+                  <th>Database</th>
+                  <td>${this.job.data.database_title}</td>
+               </tr>
+            </tbody>
+         </table>
 
-      // Get references to DOM elements.
-      this.elements.searchResults = this.elements.container.querySelector(`.search-results`);
-      if (!this.elements.searchResults) { throw new Error("Invalid search results element"); }
+         <div class="link-panel">
+            <div class="instructions">You can view these search results again using the following URL:</div>
+            <div class="controls">
+               <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> 
+               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
+            </div>
+         </div>`;
+         
+      this.elements.container.innerHTML = html;
+
+      this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
+      if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
 
       // Add event listeners.
-      this.elements.searchResults.addEventListener("click", (event_) => this.handleResultsClick(event_));
+      this.elements.copyUrlButton.addEventListener("click", () => this.copyJobURL());
       return;
    }
 
 
    unload() {
 
-      console.log("unloading search results panel")
+      console.log("unloading job details panel")
       console.debug("this.elements.container = ", this.elements.container)
 
       this.isActive = false;
@@ -208,6 +260,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       // TODO: anything else?
    }
 
+   /*
    // Display the BLAST HTML data for a specific result.
    async viewHTML(index_: number) {
 
@@ -215,15 +268,14 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       const result = this.job.data.results[index_];
 
       // Open a new tab/window and populate it with the contents of the BLAST HTML file.
-      const blastWindow = window.open("", "_blank");
+      const htmlWindow = window.open("", "_blank");
 
       // Decode the base64-encoded HTML file and decompress it.
       const html = pako.inflate(decode(result.html_file), { to: 'string' });
-      blastWindow.document.writeln(html);
+      htmlWindow.document.writeln(html);
 
       // Remove the extension from the file name and use it as the window's title.
-      blastWindow.document.title = result.blast_html.replace(".html", "");
-
+      htmlWindow.document.title = result.blast_html.replace(".html", "");
       return;
-   }
+   }*/
 }

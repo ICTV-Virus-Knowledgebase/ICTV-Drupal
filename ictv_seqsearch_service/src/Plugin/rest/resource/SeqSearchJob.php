@@ -12,7 +12,7 @@ use Drupal\ictv_common\Utils;
 
 class SeqSearchJob {
 
-
+   /*
    // Open files referenced in the job results and add them to the job object (nested array).
    public static function addResultFiles(string $filePath, array $job) {
 
@@ -63,35 +63,35 @@ class SeqSearchJob {
       }
 
       return $job;
-   }
+   }*/
 
 
    // Create compressed versions of the job's result files, add them to the job object, and return the job.
    public static function createCompressedResultFiles(array $job, string $outputPath) {
 
-      // If the job has no results, return it unmodified.
-      if ($job == null || $job["data"] == null || $job["data"]["results"] == null) { return $job; }
+      // If the job has no files, return it unmodified.
+      if ($job == null || $job["data"] == null || $job["data"]["files"] == null) { return $job; }
 
-      // How many results are available?
-      $resultCount = count($job["data"]["results"]);
-      if ($resultCount < 1) { return $job;}
+      // How many files are available?
+      $fileCount = count($job["data"]["files"]);
+      if ($fileCount < 1) { return $job;}
 
       // Make sure the file path ends with a slash.
       if (!str_ends_with($outputPath, '/')) { $outputPath = $outputPath.'/'; }
 
-      // Iterate over all search results.
-      for ($r=0; $r<$resultCount; $r++) {
+      // Iterate over all files.
+      for ($f=0; $f<$fileCount; $f++) {
 
-         // Get the next result and validate it.
-         $result = $job["data"]["results"][$r];
-         if ($result == null) { continue; }
+         // Get the next file and validate it.
+         $file = $job["data"]["files"][$f];
+         if ($file == null) { continue; }
 
          // Get the CSV filename.
          $csvFilename = $result["blast_csv"];
          if (!Utils::isNullOrEmpty($csvFilename)) {
 
             // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-            if (str_starts_with($csvFilename, "tax_out/")) { $csvFilename = substr($csvFilename, strlen("tax_out/"));  }
+            if (str_starts_with($csvFilename, "tax_out/")) { $csvFilename = substr($csvFilename, strlen("tax_out/")); }
 
             $encodedData = null;
 

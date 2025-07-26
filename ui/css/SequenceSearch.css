@@ -48,7 +48,7 @@
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
-   margin-bottom: 1.0rem;
+   margin-bottom: 3.0rem;
 }
 
 /* The upload panel's file selection section. */
@@ -243,6 +243,7 @@
 #ictv_seqsearch_container table.job-details th {
    font-size: 1.0rem;
    padding: 0.5rem;
+   vertical-align: top;
    width: 180px;
 }
 #ictv_seqsearch_container table.job-details td {
@@ -370,6 +371,10 @@
    transform: rotate(-180deg);
 }
 
+#ictv_seqsearch_container .ictv-accordion-control i {
+   pointer-events: none;
+}
+
 #ictv_seqsearch_container .ictv-accordion-item .ictv-accordion-content {
    margin: 1.0rem;
 }
@@ -386,59 +391,58 @@
    width: 100%;
 }
 
-#ictv_seqsearch_container .ictv-accordion-label .result-index {
-   font-size: 0.9rem; 
-   margin-right: 1.0rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: column nowrap;
-   justify-content: flex-start;
-   /*width: 100%;*/
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage {
-   font-size: 0.9rem;
-   font-weight: 400;
-   margin-bottom: 0.25rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage i.fa-chevron-right {
-   font-size: 0.7rem;
-   margin: 0 0.25rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .result {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: column nowrap;
-   justify-content: center;
-   /*width: 100%;*/
-   z-index: 1000;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .result .result-note {
-   font-size: 0.9rem;
+#ictv_seqsearch_container .ictv-accordion-label .filename {
+   margin-right: 0.5rem;
 }
 
-#ictv_seqsearch_container .ictv-accordion-header .additional-info {
-   align-items: self-end;
-   border-style: none;
-   border-width: 0;
-   display: flex;
-   flex-flow: row nowrap;
-   font-size: 1.0rem;
-   justify-content: flex-end;
-   margin: 0;
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The sequences table
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container table.sequences-table {
+   min-width: 800px;
+   overflow: visible !important;
+   width: 100%;
 }
-#ictv_seqsearch_container .ictv-accordion-header .additional-info tr,
-#ictv_seqsearch_container .ictv-accordion-header .additional-info td {
-   border-style: none;
-   border-width: 0;
+#ictv_seqsearch_container table.sequences-table .header-row {
+   background-color: #757575 !important;
 }
-#ictv_seqsearch_container .ictv-accordion-header .additional-info td {
-   padding: 12px 0;
-   width: 200px;
+#ictv_seqsearch_container table.sequences-table th,
+#ictv_seqsearch_container table.sequences-table td {
+   font-size: 1.0rem !important;
 }
-#ictv_seqsearch_container .ictv-accordion-header .additional-info label {
-   display: inline-block;
+#ictv_seqsearch_container table.sequences-table th {
+   background-color: #757575 !important;
+   color: #fff !important;
+   font-weight: 400 !important;
+}
+#ictv_seqsearch_container table.sequences-table .even-bg {
+   background-color: #eee;
+}
+#ictv_seqsearch_container table.sequences-table .odd-bg {
+   background-color: #fff;
+}
+#ictv_seqsearch_container table.sequences-table thead + tbody tr:first-child th, 
+#ictv_seqsearch_container table.sequences-table thead + tbody tr:first-child td {
+   padding-top: 0.75rem;
+}
+
+
+#ictv_seqsearch_container table.sequences-table .header-row .index {
+   width: 50px;
+}
+#ictv_seqsearch_container table.sequences-table .header-row .qseqid {
+   width: 150px;
+}
+#ictv_seqsearch_container table.sequences-table .header-row .hits {
+   width: 100px;
+}
+
+#ictv_seqsearch_container table.sequences-table th, 
+#ictv_seqsearch_container table.sequences-table td {
+   padding: 0.5rem;
+   /*text-align: center;*/
 }
 
 

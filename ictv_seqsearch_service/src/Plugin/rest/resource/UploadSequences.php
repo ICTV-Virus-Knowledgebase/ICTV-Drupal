@@ -16,7 +16,7 @@ use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
-use Drupal\rest\ModifiedResourceResponse;
+//use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
@@ -60,7 +60,7 @@ class UploadSequences extends ResourceBase {
    protected ?string $jsonResultsFilename;
 
    // The maximum number of sequences that can be submitted (across all FASTA files that are uploaded).
-   public int $MAX_SEQUENCE_COUNT = 64; // ???
+   public int $MAX_SEQUENCE_COUNT = 100;
 
    // The directory where output files are stored.
    protected ?string $outputDirectory;
@@ -257,7 +257,7 @@ class UploadSequences extends ResourceBase {
       $files = $requestJSON["files"];
       if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
-      // Declare variables used below.
+      // Declare and initialize variables used below.
       $jobID = 0;
       $jobStatus;
       $jobUID = "";
@@ -304,7 +304,6 @@ class UploadSequences extends ResourceBase {
             $binaryData = base64_decode($base64Data);
             */
 
-            // TODO: Is this really binary data? Can we parse it as text?
             // TODO: This would be a good place to validate the sequence data to make sure the number of sequences 
             // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
 
@@ -341,11 +340,27 @@ class UploadSequences extends ResourceBase {
             if (!$taxResultJSON) { 
                $jobStatus = JobStatus::error;
                throw new \Exception("Error reading the JSON results file: ".$this->jsonResultsFilename);
+            } 
+            
+            // Create a copy of the JSON encoded as hexadecimal.
+            $jsonForSQL = bin2hex($taxResultJSON);
 
-            } else {
+            // Gzip all CSV and HTML result files.
+            $outputDirectory = new \DirectoryIterator($outputPath);
+            foreach ($outputDirectory as $fileInfo) {
+               if ($fileInfo->isFile()) {
+                  $ext = strtolower($fileInfo->getExtension());
+                  if ($ext === "csv" || $ext === "html") {
 
-               // Create a copy of the JSON encoded as hexadecimal.
-               $jsonForSQL = bin2hex($taxResultJSON);
+                     // Get the filename 
+                     $filename = $fileInfo->getFilename();
+
+                     // If the compressed file does not already exist, create it.
+                     if (!file_exists($outputPath.'/'.$filename.".gz")) {
+                        Common::createCompressedFile($filename, $outputPath);
+                     }
+                  }
+               }
             }
          }
 
@@ -378,11 +393,11 @@ class UploadSequences extends ResourceBase {
          return SeqSearchJob::createInvalidJob($jobName, $message, $jobStatus, $jobUID);
       }
 
-      // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays).
-      $job = SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
+      // Retrieve a job and return it as a SeqSearch Job object (nested arrays, actually).
+      return SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
 
       // Create compressed versions of the job's result files, add them to the job, and return the job.
-      return SeqSearchJob::createCompressedResultFiles($job, $outputPath);
+      // return SeqSearchJob::createCompressedResultFiles($job, $outputPath);
    }
 
    
