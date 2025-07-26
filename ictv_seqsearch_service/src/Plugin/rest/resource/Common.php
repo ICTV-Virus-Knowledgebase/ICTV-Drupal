@@ -62,7 +62,6 @@ class Common {
          $newFile = fopen($filePathAndName, "w") or die("Unable to create file ".$filePathAndName);
          fwrite($newFile, $compressed);
          fclose($newFile);
-
       } 
       catch (Exception $e) {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());

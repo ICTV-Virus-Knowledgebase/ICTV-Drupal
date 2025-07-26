@@ -1,12 +1,12 @@
 
-import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { AppSettings } from "../../global/AppSettings";
-import { Icon } from "./Common";
-import { IBlastHit } from "./IBlastHit";
-import { ISearchResult } from "./ISearchResult";
+import { AlertBuilder } from "../../../helpers/AlertBuilder";
+import { AppSettings } from "../../../global/AppSettings";
+import { CreateTaxonDetailsURL, Icon } from "../Common";
+import { IBlastHit } from "../IBlastHit";
+import { ISearchResult } from "../ISearchResult";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
-import { SequenceSearch } from "./SequenceSearch";
-import { Utils } from "../../helpers/Utils";
+import { SequenceSearch } from "../SequenceSearch";
+import { Utils } from "../../../helpers/Utils";
 
 
 export class BlastHitsPanel implements ISeqSearchPanel {
@@ -51,7 +51,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const lineage = this.formatLineage(hit_);
 
       // Create a taxon details URL for this virus.
-      const hitURL = this.parent.createTaxonDetailsURL(hit_.ICTV_ID, hit_.sseqid_lineage.species);
+      const hitURL = CreateTaxonDetailsURL(hit_.ICTV_ID, hit_.sseqid_lineage.species);
 
       // Create the link using the taxon details URL.
       const linkedHitName = `<a href="${hitURL}" target="_blank">${hit_.sseqid_lineage.species}</a>`;
@@ -325,6 +325,9 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Make the container visible.
       this.elements.container.classList.add("active");
 
+      this.elements.container.innerHTML = "TODO!";
+
+      /*
       // Validate the job and the selected result.
       if (!this.parent.job || !this.parent.job.data || !Array.isArray(this.parent.job.data.results)) {
          return this.displayErrorMessage("The specified job is invalid");
@@ -393,12 +396,16 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
          return;
       })
+         */
    }
 
    async handleResultsClick(event_) {
 
+      console.log("in blast hits panel handleResultsClick")
+
       if (event_.target.tagName !== "BUTTON") { return; }
 
+      /*
       const button = event_.target as HTMLButtonElement;
 
       // Get and validate the button's data index attribute.
@@ -410,7 +417,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       }
 
       console.debug(button)
-
+      */
       // The button's class determines which action to take.
       /*if (button.classList.contains(ButtonClass.copyURL)) {
          await this.copyJobURL();
