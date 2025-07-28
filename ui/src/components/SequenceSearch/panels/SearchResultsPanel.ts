@@ -46,7 +46,6 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          container: containerEl_,
          resultFiles: null
       }
-
    }
 
 
@@ -62,34 +61,35 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
             const button = targetEl as HTMLButtonElement;
             
-            // Get and validate the button's filename attribute.
-            const filename = Utils.safeTrim(button.getAttribute("data-filename"));
-            if (filename.length < 1) {
-               await AlertBuilder.displayError("The filename attribute is invalid");
-               return;
-            }
+            // Get and validate button attributes.
+            let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
+            const fileIndex = parseInt(strFileIndex);
+            if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
       
-            // Get and validate the button's sequence index attribute.
+            const filename = Utils.safeTrim(button.getAttribute("data-filename"));
+            if (filename.length < 1) { return await AlertBuilder.displayError("The filename attribute is invalid"); }
+
             let strSeqIndex = button.getAttribute("data-seq-index");
             const seqIndex = parseInt(strSeqIndex);
-            if (seqIndex < 0) { // || seqIndex > this.job.data.files.length) {
-               await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`);
-               return;
-            }
+            if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
 
             // The button's class determines which action to take.
             if (button.classList.contains(ButtonClass.viewHits)) {
 
-               this.parent.state.resultIndex = seqIndex;
+               this.parent.state.fileIndex = fileIndex;
+               this.parent.state.sequenceIndex = seqIndex;
                
+               // Update the page
                await this.parent.updatePage();
 
             } else if (button.classList.contains(ButtonClass.downloadCSV)) {
                
+               // Download the CSV file.
                await this.downloadCSV(filename, seqIndex);
 
             } else if (button.classList.contains(ButtonClass.viewHTML)) {
                
+               // Display the HTML file in a new browser tab.
                await this.viewHTML(filename, seqIndex);
             }
 
@@ -142,14 +142,14 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          let sequenceRows = "";
 
          file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
-            sequenceRows += this.createSequenceRow(file_.name, sequence_, sequenceIndex_);
+            sequenceRows += this.createSequenceRow(fileIndex_, file_.name, sequence_, sequenceIndex_);
          })
 
          sequencesHTML = 
             `<table class="${fileID}_table sequences-table" data-count="${sequenceCount}">
                <thead>
                   <tr class="header-row">
-                     <th class="qseqid">qseqID</th>
+                     <th class="qseqid">Query ID</th>
                      <th class="hits">Hits</th>
                      <th class="controls"></th>
                   </tr>
@@ -181,7 +181,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       return html;
    }
 
-   createSequenceRow(filename_: string, sequence_: ISequence, seqIndex_: number): string {
+   createSequenceRow(fileIndex_: number, filename_: string, sequence_: ISequence, seqIndex_: number): string {
 
       const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length : 0;
 
@@ -190,16 +190,19 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          <td>${hitsCount}</td>
          <td>
             <button class="btn ${ButtonClass.viewHits} has-tooltip"
+               data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
                data-tippy-content="Click to view the BLAST hits"
             >${Icon.dna} View BLAST hits</button>
             <button class="btn ${ButtonClass.viewHTML} has-tooltip" 
+               data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
                data-tippy-content="Click to view the HTML results (${sequence_.blast_html})"
             >${Icon.html} View HTML results</button>
             <button class="btn ${ButtonClass.downloadCSV} has-tooltip" 
+               data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
                data-tippy-content="Click to download the results as a CSV file (${sequence_.blast_csv})"

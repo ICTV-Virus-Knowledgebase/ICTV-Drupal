@@ -36,15 +36,17 @@ export class SequenceSearch {
 
    panels: Map<PanelKey, ISeqSearchPanel>;
 
-   //sequenceResults: Map<string, ISequence>;
-
    state: {
+
+      // The currently-selected input file associated with the job.
+      fileIndex: number,
+      //filename: string,
 
       // The current job UID (optional)
       jobUID: string,
 
-      // The current result index (optional)
-      resultIndex: number
+      // The currently-selected sequence index associated with the input filename.
+      sequenceIndex: number
    }
 
    // User information
@@ -66,7 +68,6 @@ export class SequenceSearch {
       if (!name_ || name_.length < 1) { name_ = "Anonymous user"; }
       userUID_ = Utils.safeTrim(userUID_);
 
-
       this.authToken = authToken_;
       this.containerSelector = containerSelector_;
 
@@ -87,8 +88,10 @@ export class SequenceSearch {
       this.panels = new Map<PanelKey, ISeqSearchPanel>();
 
       this.state = {
+         fileIndex: NaN,
+         //filename: null,
          jobUID: null,
-         resultIndex: NaN
+         sequenceIndex: NaN
       }
    }
 
@@ -141,9 +144,14 @@ export class SequenceSearch {
       if (this.state.jobUID !== null && this.state.jobUID.length > 0) {
          url += `?${ParameterKey.job}=${this.state.jobUID}`;
 
-         // Do we have a valid result index?
-         if (this.state.resultIndex !== null && !isNaN(this.state.resultIndex)) { 
-            url += `&${ParameterKey.result}=${this.state.resultIndex}`;
+         // Do we have a valid file index?
+         if (!isNaN(this.state.fileIndex)) { 
+            url += `&${ParameterKey.file}=${this.state.fileIndex}`;
+
+            // Do we have a valid sequence index?
+            if (this.state.sequenceIndex !== null && !isNaN(this.state.sequenceIndex)) {
+               url += `&${ParameterKey.sequence}=${this.state.sequenceIndex}`;
+            }
          }
       }
       
@@ -347,16 +355,10 @@ export class SequenceSearch {
    // Retrieve the job with this UID.
    async getJob() {
 
-      if (!this.state.jobUID) {
-         await AlertBuilder.displayError("No job UID provided");
-         return; 
-      }
+      if (!this.state.jobUID) { return await AlertBuilder.displayError("No job UID provided"); }
 
       // Get the job data from the server.
       this.job = await SequenceSearchService.getSearchResults(this.authToken, this.state.jobUID, this.user.email, this.user.uid);
-
-      // Populate sequence results from the job data.
-      //this.populateSequenceResults();
 
       return;
    }
@@ -409,8 +411,8 @@ export class SequenceSearch {
 
          case PanelAction.displayJob:
 
-            // Reset the BLAST hit result index.
-            this.state.resultIndex = NaN;
+            this.state.fileIndex = NaN;
+            this.state.sequenceIndex = NaN;
 
             // Which panels will be loaded?
             loadJobDetails = true;
@@ -422,8 +424,9 @@ export class SequenceSearch {
 
             // Clear the job and state.
             this.job = null;
+            this.state.fileIndex = NaN;
             this.state.jobUID = null;
-            this.state.resultIndex = NaN; 
+            this.state.sequenceIndex = NaN;
 
             // Which panels will be loaded?
             loadUpload = true;
@@ -495,22 +498,27 @@ export class SequenceSearch {
       // Was a job UID parameter provided?
       const urlParams = new URLSearchParams(window.location.search);
       
+      // Set default state values
+      this.state.fileIndex = NaN;
+      this.state.sequenceIndex = NaN;
+
       // Was a job UID provided in the query string?
       this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
-
       if (this.state.jobUID && this.state.jobUID.length > 0) {
 
          action = PanelAction.displayJob;
 
-         this.state.resultIndex = NaN; 
+         // Were file index and sequence index parameters provided?
+         let strFileIndex = Utils.safeTrim(urlParams.get(ParameterKey.file));
+         let strSeqIndex = Utils.safeTrim(urlParams.get(ParameterKey.sequence));
 
-         // Was a result index provided in the query string?
-         let strResult = Utils.safeTrim(urlParams.get(ParameterKey.result));
-         if (strResult) {
-            this.state.resultIndex = parseInt(strResult, 10);
+         if (strFileIndex && strSeqIndex) {
+            this.state.fileIndex = parseInt(strFileIndex);
+            this.state.sequenceIndex = parseInt(strSeqIndex);
 
-            // If a result index was provided, display the BLAST hits panel.
-            if (!isNaN(this.state.resultIndex)) { action = PanelAction.displayBlastHits; }
+            if (!isNaN(this.state.fileIndex) && !isNaN(this.state.sequenceIndex)) {
+               action = PanelAction.displayBlastHits; 
+            }
          }
       }  
 
@@ -521,24 +529,14 @@ export class SequenceSearch {
    async setDefaultUserUID() {
 
       // Is there already a user UID in web storage?
-      if (typeof(Storage) !== "undefined") {
-         this.user.uid = localStorage.getItem(WebStorageKey.sequenceSearchUserUID);
-
-         console.log("userUID from web storage = ", this.user.uid)
-      }
-
+      if (typeof(Storage) !== "undefined") { this.user.uid = localStorage.getItem(WebStorageKey.sequenceSearchUserUID); }
       if (!this.user.uid) { 
 
          // Generate a new user UID.
          this.user.uid = GenerateUUID(); 
-      
-         console.log("just generated this userUID: ", this.user.uid)
-
-         if (typeof(Storage) !== "undefined") {
-
-            // Save it in web storage
-            localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid);
-         }
+   
+         // If web storage is available, save the user UID in local storage.
+         if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid); }
       }
 
       return;
