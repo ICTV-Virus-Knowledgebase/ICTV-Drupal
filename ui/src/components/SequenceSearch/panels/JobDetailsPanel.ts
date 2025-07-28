@@ -174,22 +174,12 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Clear any existing content in the container.
       this.elements.container.innerHTML = "";
 
-      //----------------------------------------------------------------------------------------------------------------
       // Create the URL that can be used to view the job data.
-      //----------------------------------------------------------------------------------------------------------------
       this.jobURL = this.parent.createUrlUsingState();
 
-      /*window.location.href;
-
-      // TODO: Get rid of this line soon!!!
-      this.jobURL = this.jobURL.replace("://ictv.global", "://test.ictv.global");
-
-      // Remove any existing query string parameters.
-      let qIndex = this.jobURL.indexOf("?");
-      if (qIndex > -1) { this.jobURL = this.jobURL.substring(0, qIndex); }
-
-      this.jobURL += `?job=${this.job.uid}`;
-      */
+      // Format the job name
+      let jobName = Utils.safeTrim(this.job.name);
+      jobName = jobName.length < 1 ? "(none)" : `<b>${jobName}</b>`;
 
       // Format the created on and ended on date/times.
       let createdOn = FormatDate(this.job.createdOn);
@@ -203,7 +193,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
             <tbody>
                <tr>
                   <th>Job name</th>
-                  <td>${this.job.name || "(none)"}</td>
+                  <td class="job-name">${jobName}</td>
                </tr>
                <tr>
                   <th>Started</th>

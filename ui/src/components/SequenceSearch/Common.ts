@@ -51,8 +51,10 @@ export enum PanelKey {
 }
 
 export enum ParameterKey {
+   file = "file",
+   filename = "filename",
    job = "job",
-   result = "result"
+   sequence = "sequence"
 }
 
 export enum ResultFileType {

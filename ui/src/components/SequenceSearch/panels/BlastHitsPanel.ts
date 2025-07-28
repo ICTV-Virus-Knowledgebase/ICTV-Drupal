@@ -23,11 +23,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    // The parent page
    parent: SequenceSearch = null;
 
-   // The job's tax_result object
-   result: ISearchResult = null;
-
-   resultIndex: number = NaN;
-
 
    // C-tor
    constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
@@ -41,7 +36,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          blastHits: null,
          container: containerEl_
       }
-
    }
 
 
@@ -66,41 +60,29 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       if (virusNames.length < 1) { virusNames = "unknown"; }
 
       let segment = Utils.safeTrim(hit_.segmentname);
-      if (segment.length > 0) {
-         segment = 
-            `<td class="blast-column">
-               <label>Segment</label>
-               <span class="value">${segment}</span>
-            </td>`;
-      }
+      if (segment.length > 0) { segment = `<span class="segment-name"> segment ${segment}</span>`; }
 
       let startAndEnd = "";
       if (hit_.start_loc !== null && !isNaN(hit_.start_loc) && hit_.end_loc !== null && !isNaN(hit_.end_loc)) { 
-         startAndEnd = 
-            `<tr class="blast-row">
-               <td class="blast-column">
-                  <label>Start location</label>
-                  <span class="value">${hit_.start_loc}</span>
-               </td>
-               <td class="blast-column" colspan="2">
-                  <label>End location</label>
-                  <span class="value">${hit_.end_loc}</span>
-               </td>
-            </tr>`;
+         startAndEnd = `<tr class="blast-row">
+            <th>Start location</th>
+            <td class="value">${hit_.start_loc}</td>
+         </tr>
+         <tr class="blast-row">
+            <th>End location</th>
+            <td class="value">${hit_.end_loc}</td>
+         </tr>`;
       }
 
-      let vmrID = Utils.safeTrim(hit_.isolate_id);
-      if (vmrID.length > 0) {
-         vmrID = 
-            `<td class="blast-column" colspan="2">
-               <label>Isolate ID</label>
-               <span class="value"><a href="${AppSettings.taxonHistoryPage}?vmr_id=${hit_.isolate_id}" target="_blank">${hit_.isolate_id}</a></span>
-            </td>`;
+      let isolateHTML = "";
+      let isolateID = Utils.safeTrim(hit_.isolate_id);
+      if (isolateID.length > 0) {
+         isolateHTML = `<tr class="blast-row">
+            <th>Isolate ID</th>
+            <td class="value"><a href="${AppSettings.taxonHistoryPage}?vmr_id=${hit_.isolate_id}" target="_blank">${hit_.isolate_id}</a></td>
+         </tr>`;
       }
 
-
-      // TEST: creating additional info for the accordion header.
-      
       let eValue = "0";
 
       if (hit_.evalue > 0) {
@@ -126,44 +108,67 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                   <div class="lineage-and-result">
                      <div class="lineage">${lineage}</div>
                      <div class="result">
-                        <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i></div>
+                        <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i>${segment}</div>
                         <div class="result-note">${exemplarOrAdditional} virus: ${virusNames} (${sseqAccessionLink})</div>
                      </div>
                   </div>
                </div>
-               <table class="additional-info">
-                  <tr>
-                     <td>
-                        <label>E-value:</label>
-                        <span class="value">${eValue}</span>
-                     </td>
-                     <td>
-                        <label>Bitscore:</label>
-                        <span class="value">${hit_.bitscore}</span>
-                     </td>
-                  </tr>
-                  <tr>
-                     <td>
-                        <label>Start:</label>
-                        <span class="value">${hit_.start_loc || "unspecified"}</span>
-                     </td>
-                     <td>
-                        <label>End:</label>
-                        <span class="value">${hit_.end_loc || "unspecified"}</span>
-                     </td>
-                  </tr>
-               </table>
             </div>
             <div class="ictv-accordion-body" data-id="${hitIndex_}">
                <div class="ictv-accordion-content">
-                  
                   <table class="blast-hit">
+                     <tr class="blast-row">
+                        <th>Query ID</th>
+                        <td class="value">${hit_.qseqid}</td>
+                     </tr>
+                     <tr class="blast-row">
+                        <th>Subject ID</th>
+                        <td class="value">${hit_.sseqid}</td>
+                     </tr>
+                     <tr class="blast-row">
+                        <th>Subject accession</th>
+                        <td class="value">${sseqAccessionLink}</td>
+                     </tr>
+                     <tr class="blast-row">
+                        <th>E-value</th>
+                        <td class="value">${eValue}</td>
+                     </tr>
+                     <tr class="blast-row">
+                        <th>Bitscore</th>
+                        <td class="value">${hit_.bitscore}</td>
+                     </tr>
+                     ${startAndEnd}
+                     <tr class="blast-row">
+                        <th>ICTV ID</label>
+                        <td class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></td>
+                     </tr>
+                     ${isolateHTML}
+                  </table>
+               </div>
+            </div>
+         </div>`;
+
+      /*
+         <table class="blast-hit">
       
                      <tr class="blast-row">
-                        ${segment}
-                        <td class="blast-column">
-                           <label>Exemplar/additional</label>
-                           <span class="value">${hit_.exemplar_additional}</span>
+                        <td class="blast-column" colspan="4">
+                           <label>Query ID</label>
+                           <span class="value">${hit_.qseqid}</span>
+                        </td>
+                     </tr>
+
+                     <tr class="blast-row">
+                        <td class="blast-column" colspan="4">
+                           <label>Subject ID</label>
+                           <span class="value">${hit_.sseqid}</span>
+                        </td>
+                     </tr>
+
+                     <tr class="blast-row">
+                        <td class="blast-column" colspan="4">
+                           <label>Subject accession</label>
+                           <span class="value">${sseqAccessionLink}</span>
                         </td>
                      </tr>
 
@@ -172,42 +177,23 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                            <label>E-value</label>
                            <span class="value">${eValue}</span>
                         </td>
-                        <td class="blast-column" colspan="2">
+                        <td class="blast-column">
                            <label>Bitscore</label>
                            <span class="value">${hit_.bitscore}</span>
                         </td>
+                        ${startAndEnd}
                      </tr>
 
-                     ${startAndEnd}
-
-                     <tr class="blast-row">
-                        <td class="blast-column">
-                           <label>qseqid</label>
-                           <span class="value">${hit_.qseqid}</span>
-                        </td>
-                        <td class="blast-column">
-                           <label>sseqid</label>
-                           <span class="value">${hit_.sseqid}</span>
-                        </td>
-                        <td class="blast-column">
-                           <label>sseqid accession</label>
-                           <span class="value">${sseqAccessionLink}</span>
-                        </td>
-                     </tr>
-                  
                      <tr class="blast-row">
                         <td class="blast-column">
                            <label>ICTV ID</label>
                            <span class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></span>
                         </td>
-                        ${vmrID}
+                        <td class="blast-column" colspan="3">${isolateHTML}</td>
                      </tr>
 
                   </table>
-
-               </div>
-            </div>
-         </div>`;
+      */
 
       /*
       let html = `<table class="blast-hit">
@@ -325,44 +311,44 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Make the container visible.
       this.elements.container.classList.add("active");
 
-      this.elements.container.innerHTML = "TODO!";
+      // Validate the state
+      if (isNaN(this.parent.state.fileIndex) || isNaN(this.parent.state.sequenceIndex)) { return this.displayErrorMessage("The panel state is invalid"); }
+      
+      // Validate the job and ensure that it has files.
+      if (!this.parent.job || !this.parent.job.data || 
+         !Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
+         this.parent.job.data.files.length < this.parent.state.fileIndex + 1) {
 
-      /*
-      // Validate the job and the selected result.
-      if (!this.parent.job || !this.parent.job.data || !Array.isArray(this.parent.job.data.results)) {
          return this.displayErrorMessage("The specified job is invalid");
       }
-      if (isNaN(this.parent.state.resultIndex) || this.parent.job.data.results.length < this.parent.state.resultIndex) {
-            return this.displayErrorMessage("The specified search result is invalid");
-      }
-      
-      this.resultIndex = this.parent.state.resultIndex;
 
-      // Get and validate the specified search result.
-      this.result = this.parent.job.data.results[this.resultIndex];
-      if (!this.result || !Array.isArray(this.result.hits) || this.result.hits.length < 1) { 
-         return this.displayErrorMessage("No BLAST hits are available for the specified search result"); 
+      // Get the specified file.
+      const file = this.parent.job.data.files[this.parent.state.fileIndex];
+      if (!file) { return this.displayErrorMessage("The specified input file is invalid"); }
+
+      // Validate the specified sequence.
+      if (!Array.isArray(file.sequences) || file.sequences.length < 1 || file.sequences.length < this.parent.state.sequenceIndex + 1) { 
+         return this.displayErrorMessage("The specified sequence is invalid"); 
       }
 
-      console.debug("result = ", this.result)
-      
-      const inputSequenceName = this.result.hits[0].input_seq;
+      // Get the sequence.
+      const sequence = file.sequences[this.parent.state.sequenceIndex];
+      if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
-      let hitsCount = this.result.hits.length;
+      let hitsCount = sequence.hits.length;
       let hitsHTML = "";
 
       // Generate HTML for the hits.
-      this.result.hits.forEach((hit_: IBlastHit, hitIndex_: number) => {
+      sequence.hits.forEach((hit_: IBlastHit, hitIndex_: number) => {
          hitsHTML += this.createHitHTML(hit_, hitIndex_);
       })
 
       this.elements.container.innerHTML = 
-         `<div class="blast-hits-title">BLAST hits for ${inputSequenceName} (${hitsCount})</div>
+         `<div class="blast-hits-title">BLAST hits for ${sequence.qseqid}</div>
          <div class="blast-hits">${hitsHTML}</div>`;
 
       this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
       if (!this.elements.blastHits) { throw new Error("Invalid blast hits DOM element"); }
-
 
       this.elements.blastHits.addEventListener("click", (event_) => {
 
@@ -396,7 +382,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
          return;
       })
-         */
    }
 
    async handleResultsClick(event_) {
