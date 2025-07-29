@@ -13,9 +13,13 @@ BEGIN
 	DECLARE statusTID INT;
 	
 	-- Validate the filename
+   SET filename = TRIM(filename);
 	IF filename IS NULL OR LENGTH(filename) < 1 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid filename parameter';
 	END IF;
+
+   -- Replace double quotes in the filename.
+   SET filename = TRIM(REPLACE(filename, '"', ''));
 	
 	-- Validate the job ID
 	IF jobID IS NULL THEN

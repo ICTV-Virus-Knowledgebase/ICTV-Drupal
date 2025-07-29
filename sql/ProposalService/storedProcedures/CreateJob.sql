@@ -62,23 +62,29 @@ BEGIN
 	SET jobUID = REPLACE(CAST(UUID() AS VARCHAR(100)),'-','');
   	
 
-    -- Provide a default job name if nothing was provided.
-    IF jobName IS NULL OR LENGTH(jobName) < 1 THEN
+   -- Trim the job name
+   SET jobName = TRIM(jobName);
 
-        SET today := CURDATE();
+   -- Provide a default job name if nothing was provided.
+   IF jobName IS NULL OR LENGTH(jobName) < 1 THEN
 
-        -- Add one to the number of jobs created today.
-        SET jobCount := (
-            SELECT COUNT(*)
-            FROM job 
-            WHERE user_uid = userUID
-            AND type_tid = typeTID
-            AND CAST(created_on AS DATE) = today
-        ) + 1;
+      SET today := CURDATE();
 
-        -- Create a default job name.
-        SET jobName := CONCAT(CAST(DATE_FORMAT(today,'%m/%d/%Y') AS VARCHAR(10)), ' #', CAST(jobCount AS VARCHAR(4)));
-    END IF;
+      -- Add one to the number of jobs created today.
+      SET jobCount := (
+         SELECT COUNT(*)
+         FROM job 
+         WHERE user_uid = userUID
+         AND type_tid = typeTID
+         AND CAST(created_on AS DATE) = today
+      ) + 1;
+
+      -- Create a default job name.
+      SET jobName := CONCAT(CAST(DATE_FORMAT(today,'%m/%d/%Y') AS VARCHAR(10)), ' #', CAST(jobCount AS VARCHAR(4)));
+
+   ELSE 
+      SET jobName = REPLACE(jobName, '"', '');
+   END IF;
 
     
   	-- Create the new job record.
