@@ -11,8 +11,6 @@ use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
 use Drupal\ictv_common\Jobs\JobService;
-//use Drupal\ictv_common\Types\JobStatus;
-//use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
@@ -262,11 +260,21 @@ class GetResultFiles extends ResourceBase {
          // Add a file extension determined by the file type.
          $resultFilename = $inputFilename.'.'.$resultFileType->value;
 
+         $isCompressed = false;
+
+         // If the file type is CSV or HTML, we will retrieve the gzipped version of the file.
+         if ($resultFileType === ResultFileType::csv || $resultFileType === ResultFileType::html) {
+            $resultFilename = $resultFilename.".gz";
+            $isCompressed = true;
+         }
+
          // Open a file and return its contents.
-         $fileContents = Common::getFileContents(false, $resultFilename, $outputPath);
+         $fileContents = Common::getFileContents(true, $resultFilename, $outputPath);
 
          $fileData = [
             "contents" => $fileContents,
+            "filename" => $resultFilename,
+            "isCompressed" => $isCompressed,
             "type" => $resultFileType->value
          ];
 

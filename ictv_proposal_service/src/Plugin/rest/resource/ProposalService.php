@@ -269,7 +269,7 @@ class ProposalService extends ResourceBase {
             $binaryData = base64_decode($base64Data);
 
             // Create the proposal file in the job directory using the data provided.
-            $fileID = $this->jobService->createInputFile($binaryData, $filename, $jobPath);
+            $this->jobService->createInputFile($binaryData, $filename, $jobPath);
 
             // Create a job file
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);

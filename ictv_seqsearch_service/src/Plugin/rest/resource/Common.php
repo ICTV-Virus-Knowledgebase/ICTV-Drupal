@@ -21,8 +21,11 @@ class Common {
          return null;
       }
 
-      // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
+      // Validate the file path.
+      if (Utils::isNullOrEmpty($filePath)) {
+         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid file path: ".$filePath);
+         return null;
+      }
 
       // Has the file already been compressed?
       if (str_ends_with($filename, ".gz")) {
@@ -30,45 +33,37 @@ class Common {
          return null;
       }
 
-      // Validate the file path.
-      if (Utils::isNullOrEmpty($filePath)) {
-         \Drupal::logger(Common::$MODULE_NAME)->error("Invalid file path: ".$filePath);
-         return null;
-      }
+      // TODO: This will be unnecessary when the output folder is removed from the JSON values.
+      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
 
       // Make sure the file path ends with a slash.
       if (!str_ends_with($filePath, "/")) { $filePath = $filePath."/"; }
 
-      $compressed = null;
-      
       try {
          // Open the file and retrieve its contents (without base64 encoding).
          $contents = Common::getFileContents(false, $filename, $filePath);
                
-         $compressedFilename = $filename.".gz";
+         // The name of the compressed file we are about to create.
+         $gzFilename = $filename.".gz";
          
-         // Compress using gzip encoding.
-         $compressed = zlib_encode($contents, ZLIB_ENCODING_GZIP);
+         $gzFullPath = $filePath.$gzFilename;
 
-         if ($compressed === FALSE) {
-            \Drupal::logger(Common::$MODULE_NAME)->error("Compression failed for file ".$filePath.$compressedFilename);
+         // Compress using gzip encoding.
+         $gzContents = zlib_encode($contents, ZLIB_ENCODING_GZIP);
+         if ($gzContents === FALSE) {
+            \Drupal::logger(Common::$MODULE_NAME)->error("Compression failed for file ".$gzFullPath);
             return null;
          }
 
-         // Concatenate the path and filename.
-         $filePathAndName = $filePath.$compressedFilename;
-
          // Create and save the new compressed file.
-         $newFile = fopen($filePathAndName, "w") or die("Unable to create file ".$filePathAndName);
-         fwrite($newFile, $compressed);
+         $newFile = fopen($gzFullPath, "w") or die("Unable to create file ".$gzFullPath);
+         fwrite($newFile, $gzContents);
          fclose($newFile);
       } 
       catch (Exception $e) {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return null;
       }
-
-      return $compressed; 
    }
 
 

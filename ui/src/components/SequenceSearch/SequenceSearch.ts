@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { Constants, GenerateUUID, Icon, PanelAction, PanelKey, ParameterKey, ResultFileType, testJob } from "./Common";
+import { Constants, GenerateUUID, PanelAction, PanelKey, ParameterKey, ResultFileType, testJob } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { IResultFiles } from "./IResultFiles";
 import { ISeqSearchJob } from "./ISeqSearchJob";
@@ -11,7 +11,7 @@ import { WebStorageKey } from "../../global/Types";
 import * as pako from "pako";
 import { SearchResultsPanel } from "./panels/SearchResultsPanel";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
-import { UploadPanel } from "./UploadPanel";
+import { UploadPanel } from "./panels/UploadPanel";
 import { Utils } from "../../helpers/Utils";
 
 
@@ -125,6 +125,7 @@ export class SequenceSearch {
    // Download the BLAST CSV data for a specific result.
    async downloadCSV(filename_: string, seqIndex_: number) {
 
+      // Specify the file type to retrieve.
       const fileTypes = ResultFileType.csv;
 
       const resultFiles = await SequenceSearchService.getResultFiles(this.authToken, fileTypes, filename_, this.state.jobUID, seqIndex_, this.user.email, this.user.uid);
@@ -134,13 +135,12 @@ export class SequenceSearch {
          return await AlertBuilder.displayError("No CSV files are available for download");
       }
 
+      // Get the CSV file contents.
       const csv = Utils.safeTrim(this.getResultFileContents(resultFiles, ResultFileType.csv));
-      if (!csv || csv.length < 1) {
-         return await AlertBuilder.displayError("The CSV file is empty or invalid");
-      }
+      if (!csv || csv.length < 1) { return await AlertBuilder.displayError("The CSV file is empty or invalid"); }
 
       // Decode the base64-encoded CSV file and decompress it.
-      const arrayBuffer: ArrayBuffer = pako.inflate(decode(csv));
+      const arrayBuffer: ArrayBuffer = decode(csv); // pako.inflate(decode(csv));
       if (!arrayBuffer || arrayBuffer.byteLength === 0) {
          await AlertBuilder.displayError("The CSV file is invalid: It may be empty or corrupted.");
          return;
@@ -177,7 +177,12 @@ export class SequenceSearch {
       for (let i = 0; i < files_.files.length; i++) {
          const file = files_.files[i];
          if (file.type === type_) { 
-            contents = file.contents; 
+            contents = file.contents;
+            if (file.isCompressed) {
+               // Decompress the file contents.
+               contents = pako.ungzip(decode(contents), { to: 'string' });
+               //pako.inflate(decode(contents), { to: 'string' });
+            }
             break; 
          }
       }
@@ -204,8 +209,8 @@ export class SequenceSearch {
 
             // Which panels will be loaded?
             loadBlastHits = true;
-            loadJobDetails = true;
-            loadUpload = true;
+            loadJobDetails = false;
+            loadUpload = false;
             break;
 
          case PanelAction.displayJob:
@@ -341,6 +346,7 @@ export class SequenceSearch {
       return;
    }
 
+   
    async updatePage() {
 
       const url = this.createUrlUsingState();
@@ -365,15 +371,13 @@ export class SequenceSearch {
    }
 
    // Display the BLAST HTML data for a specific result.
-   async viewHTML(filename_: string, seqIndex_: number) {
+   async viewHTML(fileIndex_: number, filename_: string, seqIndex_: number) {
 
-      console.log("viewing HTML")
-
+      // Specify the file type to retrieve.
       const fileTypes = ResultFileType.html;
 
+      // Get the HTML result file.
       const resultFiles = await SequenceSearchService.getResultFiles(this.authToken, fileTypes, filename_, this.state.jobUID, seqIndex_, this.user.email, this.user.uid);
-      console.log("resultFiles = ", resultFiles)
-      
       if (!resultFiles || !resultFiles.files || resultFiles.files.length < 1) {
          return await AlertBuilder.displayError("No HTML files are available for download");
       }
@@ -390,8 +394,8 @@ export class SequenceSearch {
       const html = htmlContent; //pako.inflate(decode(htmlContent), { to: 'string' });
       blastWindow.document.writeln(html);
 
-      // Remove the extension from the file name and use it as the window's title.
-      blastWindow.document.title = "TODO"; //result.blast_html.replace(".html", "");
+      // Use the input filename as the window's title.
+      blastWindow.document.title = this.job.data.files[fileIndex_].name;
 
       return;
    }
