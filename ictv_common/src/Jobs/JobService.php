@@ -101,7 +101,36 @@ class JobService {
       return $jobPath;
    }
 
-   
+
+   /**
+    * Creates an input file under the specified path (job directory).
+    * Returns the new input file's UID.
+    */
+    public function createInputFile(string $data, string $filename, string $jobPath) {
+
+        $fileNameAndPath = $jobPath."/".$this->inputDirName."/".$filename;
+
+        // The file identifier to return.
+        $fileID = null;
+
+        try {
+            // Create the file
+            $fileID = $this->fileSystem->saveData($data, $fileNameAndPath, FileSystemInterface::EXISTS_REPLACE);
+
+            // Update the permissions
+            if (!$this->fileSystem->chmod($fileNameAndPath, 0644)) {
+                \Drupal::logger($this->parentModule)->error("Unable to change permissions on file ".$filename);
+                return null;
+            }
+        }
+        catch (\FileException $e) {
+            \Drupal::logger($this->parentModule)->error($e->getMessage());
+        }
+
+        return $fileID;
+    }
+
+
    /**
     * Creates a job record in the database.
     * Returns the new job's ID and UID.
@@ -153,36 +182,8 @@ class JobService {
       return $jobFileUID;
    }
 
-   /**
-    * Creates an input file under the specified path (job directory).
-    * Returns the new input file's UID.
-    */
-    public function createInputFile(string $data, string $filename, string $jobPath) {
-
-        $fileNameAndPath = $jobPath."/".$this->inputDirName."/".$filename;
-
-        // The file identifier to return.
-        $fileID = null;
-
-        try {
-            // Create the file
-            $fileID = $this->fileSystem->saveData($data, $fileNameAndPath, FileSystemInterface::EXISTS_REPLACE);
-
-            // Update the permissions
-            if (!$this->fileSystem->chmod($fileNameAndPath, 0644)) {
-                \Drupal::logger($this->parentModule)->error("Unable to change permissions on file ".$filename);
-                return null;
-            }
-        }
-        catch (\FileException $e) {
-            \Drupal::logger($this->parentModule)->error($e->getMessage());
-        }
-
-        return $fileID;
-    }
-
-
-    // Use the job path to generate the path of the input subdirectory.
+   
+   // Use the job path to generate the path of the input subdirectory.
    public function getInputPath(string $jobPath) {
       $inputPath = $jobPath."/".$this->inputDirName;
       return $inputPath;

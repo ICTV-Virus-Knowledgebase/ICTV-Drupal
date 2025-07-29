@@ -308,7 +308,7 @@ class UploadSequences extends ResourceBase {
             // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
 
             // Create the sequence file in the job directory using the data provided.
-            $fileID = $this->jobService->createInputFile($contents, $filename, $jobPath);
+            $this->jobService->createInputFile($contents, $filename, $jobPath);
 
             // Create a job file record.
             $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
@@ -345,21 +345,22 @@ class UploadSequences extends ResourceBase {
             // Create a copy of the JSON encoded as hexadecimal.
             $jsonForSQL = bin2hex($taxResultJSON);
 
-            // Gzip all CSV and HTML result files.
+            // Gzip all CSV and HTML result files in the output directory.
             $outputDirectory = new \DirectoryIterator($outputPath);
             foreach ($outputDirectory as $fileInfo) {
-               if ($fileInfo->isFile()) {
-                  $ext = strtolower($fileInfo->getExtension());
-                  if ($ext === "csv" || $ext === "html") {
 
-                     // Get the filename 
-                     $filename = $fileInfo->getFilename();
+               if (!$fileInfo->isFile()) { continue; }
 
-                     // If the compressed file does not already exist, create it.
-                     if (!file_exists($outputPath.'/'.$filename.".gz")) {
-                        Common::createCompressedFile($filename, $outputPath);
-                     }
-                  }
+               // We're only interested in CSV and HTML files.
+               $ext = strtolower($fileInfo->getExtension());
+               if ($ext !== "csv" && $ext !== "html") { continue; }
+
+               // Get the filename 
+               $filename = $fileInfo->getFilename();
+
+               // If the compressed file does not already exist, create it.
+               if (!file_exists($outputPath.'/'.$filename.".gz")) { 
+                  Common::createCompressedFile($filename, $outputPath); 
                }
             }
          }
@@ -395,9 +396,6 @@ class UploadSequences extends ResourceBase {
 
       // Retrieve a job and return it as a SeqSearch Job object (nested arrays, actually).
       return SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
-
-      // Create compressed versions of the job's result files, add them to the job, and return the job.
-      // return SeqSearchJob::createCompressedResultFiles($job, $outputPath);
    }
 
    

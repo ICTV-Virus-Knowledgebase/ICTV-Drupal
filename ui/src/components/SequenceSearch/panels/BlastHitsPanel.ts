@@ -1,10 +1,11 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { AppSettings } from "../../../global/AppSettings";
-import { CreateTaxonDetailsURL, Icon } from "../Common";
+import { ButtonClass, CreateTaxonDetailsURL, Icon, ToggleAccordion } from "../Common";
 import { IBlastHit } from "../IBlastHit";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
+import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
 
@@ -13,7 +14,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    // DOM elements
    elements: {
       blastHits: HTMLElement,
-      container: HTMLElement
+      container: HTMLElement,
+      sequencePanel: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -33,7 +35,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       this.elements = {
          blastHits: null,
-         container: containerEl_
+         container: containerEl_,
+         sequencePanel: null
       }
    }
 
@@ -96,12 +99,11 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          eValue = `${coefficient}×10<sup>${exponent}</sup>`;
       }
       
+      // fa fa-chevron-down ictv-accordion-control-icon
       let html =
          `<div class="ictv-accordion-item" data-id="${hitIndex_}">
             <div class="ictv-accordion-header">
-               <div class="ictv-accordion-control" data-id="${hitIndex_}">
-                  <i class="fa fa-chevron-down ictv-accordion-control-icon"></i>
-               </div>
+               <div class="ictv-accordion-control" data-id="${hitIndex_}">${Icon.chevronDown}</div>
                <div class="ictv-accordion-label">
                   <div class="result-index">#${hitIndex_ + 1}</div>
                   <div class="lineage-and-result">
@@ -217,7 +219,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const sequence = file.sequences[this.parent.state.sequenceIndex];
       if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
-      let hitsCount = sequence.hits.length;
       let hitsHTML = "";
 
       // Generate HTML for the hits.
@@ -225,84 +226,121 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          hitsHTML += this.createHitHTML(hit_, hitIndex_);
       })
 
+      const sequenceURL = this.parent.createUrlUsingState();
+
       this.elements.container.innerHTML = 
-         `<div class="blast-hits-title">BLAST hits for ${sequence.qseqid}</div>
+         `<div class="sequence-panel">
+            <div class="label">Sequence:</div>
+            <div class="name">${sequence.qseqid}</div>
+            <div class="controls">
+               <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
+                  data-file-index="${this.parent.state.fileIndex}"
+                  data-filename="${file.name}"
+                  data-seq-index="${this.parent.state.sequenceIndex}" 
+                  data-tippy-content="Click to view the results as HTML"
+               >${Icon.html} View HTML results</button>
+               <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
+                  data-file-index="${this.parent.state.fileIndex}"
+                  data-filename="${file.name}"
+                  data-seq-index="${this.parent.state.sequenceIndex}" 
+                  data-tippy-content="Click to download the results as a CSV file"
+               >${Icon.csv} Download CSV results</button>
+            </div>
+         </div>
+         <div class="link-panel">
+            <div class="instructions">You can view this sequence's BLAST hits again using the following URL:</div>
+            <div class="controls">
+               <a href="${sequenceURL}" target="_blank">${sequenceURL}</a> 
+               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
+            </div>
+         </div>
+         <div class="blast-hits-title">BLAST Hits</div>
          <div class="blast-hits">${hitsHTML}</div>`;
 
+      // Initialize tippy tooltips for buttons.
+      tippy(".has-tooltip");
+
+      // Get a reference to the BLAST hits element.
       this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
       if (!this.elements.blastHits) { throw new Error("Invalid blast hits DOM element"); }
 
-      this.elements.blastHits.addEventListener("click", (event_) => {
+      // Add a click event handler.
+      this.elements.blastHits.addEventListener("click", async (event_) => {
+         await this.handleClickEvent(event_.target as HTMLElement);
+      });
 
-         let targetEl = event_.target as HTMLElement;
+      // Get a reference to the sequence panel element.
+      this.elements.sequencePanel = this.elements.container.querySelector(".sequence-panel");
+      if (!this.elements.sequencePanel) { throw new Error("Invalid sequence panel DOM element"); }
 
-         // If the chevron icon was clicked, use its parent Element.
-         if (targetEl.classList.contains("ictv-accordion-control-icon")) { targetEl = targetEl.parentElement; }
+      // Add a click event handler.
+      this.elements.sequencePanel.addEventListener("click", async (event_) => {
+         return await this.handleClickEvent(event_.target as HTMLElement);
+      });
+   }
 
-         if (targetEl.classList.contains("ictv-accordion-control")) {
+   // Handle a click event on a page element.
+   async handleClickEvent(targetEl_: HTMLElement) {
 
-            const itemID = targetEl.getAttribute("data-id");
-            if (!itemID) { return; }
+      // If an icon was clicked, use its parent Element.
+      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
+
+      // Was a button on a sequence row clicked?
+      if (targetEl_.tagName === "BUTTON") {
+
+         const button = targetEl_ as HTMLButtonElement;
+         
+         // Get and validate the file index attribute.
+         let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
+         const fileIndex = parseInt(strFileIndex);
+         if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
+   
+         // Get and validate the filename attribute.
+         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
+         if (filename.length < 1) { return await AlertBuilder.displayError("The filename attribute is invalid"); }
+
+         // Get and validate the sequence index attribute.
+         let strSeqIndex = button.getAttribute("data-seq-index");
+         const seqIndex = parseInt(strSeqIndex);
+         if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
+
+         // The button's class determines which action to take.
+         if (button.classList.contains(ButtonClass.viewHits)) {
+
+            this.parent.state.fileIndex = fileIndex;
+            this.parent.state.sequenceIndex = seqIndex;
             
-            event_.preventDefault();
-            event_.stopPropagation();
+            window.open(this.parent.createUrlUsingState(), "_blank");
 
-            const accordionItemEl = this.elements.blastHits.querySelector(`.ictv-accordion-item[data-id="${itemID}"]`);
-            if (!accordionItemEl) { return; }
+         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
+            
+            // Download the CSV file.
+            await this.parent.downloadCSV(filename, seqIndex);
 
-            const bodyEl = this.elements.blastHits.querySelector(`.ictv-accordion-body[data-id="${itemID}"]`) as HTMLElement;
-            if (!bodyEl) { return; }
-
-            if (accordionItemEl.classList.contains("active")) {
-               accordionItemEl.classList.remove("active");
-               bodyEl.style.maxHeight = "0";
-            } else {
-               accordionItemEl.classList.add("active");
-               bodyEl.style.maxHeight = bodyEl.scrollHeight + "px";
-            }
+         } else if (button.classList.contains(ButtonClass.viewHTML)) {
+            
+            // Display the HTML file in a new browser tab.
+            await this.parent.viewHTML(fileIndex, filename, seqIndex);
          }
 
          return;
-      })
-   }
-
-   async handleResultsClick(event_) {
-
-      console.log("in blast hits panel handleResultsClick")
-
-      if (event_.target.tagName !== "BUTTON") { return; }
-
-      /*
-      const button = event_.target as HTMLButtonElement;
-
-      // Get and validate the button's data index attribute.
-      let strDataIndex = button.getAttribute("data-index");
-      const dataIndex = parseInt(strDataIndex);
-      if (dataIndex < 0 || dataIndex > this.parent.job.data.results.length) {
-         await AlertBuilder.displayError(`Invalid result index: ${dataIndex}`);
-         return;
       }
 
-      console.debug(button)
-      */
-      // The button's class determines which action to take.
-      /*if (button.classList.contains(ButtonClass.copyURL)) {
-         await this.copyJobURL();
+      // Was an accordion control clicked?
+      if (targetEl_.classList.contains("ictv-accordion-control")) {
 
-      } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-         await this.downloadCSV(dataIndex);
+         const itemID = targetEl_.getAttribute("data-id");
+         if (!itemID) { return; }
 
-      } else if (button.classList.contains(ButtonClass.viewHTML)) {
-         await this.viewHTML(dataIndex);
-      } */
-     
+         ToggleAccordion(this.elements.container, itemID);
+      }
+      
       return;
    }
 
    unload() {
 
       console.log("unloading BLAST hits panel")
-      console.debug("this.elements.container = ", this.elements.container)
 
       this.isActive = false;
       this.elements.container.classList.remove("active");

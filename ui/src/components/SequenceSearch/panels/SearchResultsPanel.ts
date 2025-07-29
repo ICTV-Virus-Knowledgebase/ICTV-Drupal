@@ -1,15 +1,12 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
-import { ButtonClass, Constants, Icon, PanelAction, PanelKey, ResultFileType } from "../Common";
-import { decode } from "base64-arraybuffer";
-import { IResultFiles } from "../IResultFiles";
+import { ButtonClass, Constants, CreateKeyFromName, Icon, PanelAction, PanelKey, ResultFileType, ToggleAccordion } from "../Common";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { ISequence } from "../ISequence";
 import { ISequenceFile } from "../ISequenceFile";
 import { SequenceSearch } from "../SequenceSearch";
-import { SequenceSearchService } from "../../../services/SequenceSearchService";
-import * as pako from "pako";
+import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
 
@@ -48,91 +45,13 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       }
    }
 
-
-   // Initialize the accordion Elements.
-   async addEventHandlers() {
-
-      this.elements.resultFiles.addEventListener("click", async (event_) => {
-
-         let targetEl = event_.target as HTMLElement;
-
-         // Was a button on a sequence row clicked?
-         if (targetEl.tagName === "BUTTON") {
-
-            const button = targetEl as HTMLButtonElement;
-            
-            // Get and validate button attributes.
-            let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
-            const fileIndex = parseInt(strFileIndex);
-            if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
-      
-            const filename = Utils.safeTrim(button.getAttribute("data-filename"));
-            if (filename.length < 1) { return await AlertBuilder.displayError("The filename attribute is invalid"); }
-
-            let strSeqIndex = button.getAttribute("data-seq-index");
-            const seqIndex = parseInt(strSeqIndex);
-            if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
-
-            // The button's class determines which action to take.
-            if (button.classList.contains(ButtonClass.viewHits)) {
-
-               this.parent.state.fileIndex = fileIndex;
-               this.parent.state.sequenceIndex = seqIndex;
-               
-               // Update the page
-               await this.parent.updatePage();
-
-            } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-               
-               // Download the CSV file.
-               await this.parent.downloadCSV(filename, seqIndex);
-
-            } else if (button.classList.contains(ButtonClass.viewHTML)) {
-               
-               // Display the HTML file in a new browser tab.
-               await this.parent.viewHTML(filename, seqIndex);
-            }
-
-            return;
-         }
-
-         // If the chevron icon was clicked, use its parent Element.
-         if (targetEl.classList.contains("ictv-accordion-control-icon")) { targetEl = targetEl.parentElement; }
-
-         if (targetEl.classList.contains("ictv-accordion-control")) {
-
-            const itemID = targetEl.getAttribute("data-id");
-            if (!itemID) { return; }
-            
-            event_.preventDefault();
-            event_.stopPropagation();
-
-            const accordionItemEl = this.elements.resultFiles.querySelector(`.ictv-accordion-item[data-id="${itemID}"]`);
-            if (!accordionItemEl) { return; }
-
-            const bodyEl = this.elements.resultFiles.querySelector(`.ictv-accordion-body[data-id="${itemID}"]`) as HTMLElement;
-            if (!bodyEl) { return; }
-
-            if (accordionItemEl.classList.contains("active")) {
-               accordionItemEl.classList.remove("active");
-               bodyEl.style.maxHeight = "0";
-            } else {
-               accordionItemEl.classList.add("active");
-               bodyEl.style.maxHeight = bodyEl.scrollHeight + "px";
-            }
-         }
-         
-         return;
-      })
-
-      return;
-   }
-
    // Create HTML for a sequence file panel.
    createFileHTML(file_: ISequenceFile, fileIndex_: number): string {
 
-      const fileID = file_.name.toLowerCase().replace(/\W+/g, '_');
+      // Use the filename as the file ID (lowercase with no whitespace).
+      const fileKey = CreateKeyFromName(file_.name);
 
+      // The number of sequences associated with this file.
       const sequenceCount = Array.isArray(file_.sequences) ? file_.sequences.length : 0;
 
       let sequencesHTML = "";
@@ -141,12 +60,13 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
          let sequenceRows = "";
 
+         // Create a TR for every sequence.
          file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
             sequenceRows += this.createSequenceRow(fileIndex_, file_.name, sequence_, sequenceIndex_);
          })
 
          sequencesHTML = 
-            `<table class="${fileID}_table sequences-table" data-count="${sequenceCount}">
+            `<table class="${fileKey}_table sequences-table" data-count="${sequenceCount}">
                <thead>
                   <tr class="header-row">
                      <th class="qseqid">Query ID</th>
@@ -160,18 +80,20 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          sequencesHTML = `<div class="no-sequences">No sequences were found in this file.</div>`;
       }
 
+      const title = file_.sequences.length === 1 ? "Sequence" : "Sequences";
+
       let html =
-         `<div class="ictv-accordion-item" data-id="${fileID}">
+         `<div class="ictv-accordion-item" data-id="${fileKey}">
             <div class="ictv-accordion-header">
-               <div class="ictv-accordion-control" data-id="${fileID}">${Icon.chevronDown}</div>
+               <div class="ictv-accordion-control" data-id="${fileKey}">${Icon.chevronDown}</div>
                <div class="ictv-accordion-label">
                   <div class="filename">${file_.name}</div>
                   <div class="sequence-count">(${sequenceCount} sequence${sequenceCount === 1 ? '' : 's'})</div>
                </div>
             </div>
-            <div class="ictv-accordion-body" data-id="${fileID}">
+            <div class="ictv-accordion-body" data-id="${fileKey}">
                <div class="ictv-accordion-content">
-                  <div class="sequences-title">Sequences</div>
+                  <div class="sequences-title">${title}</div>
                   ${sequencesHTML}
                </div>
             </div>
@@ -189,23 +111,23 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          <td>${sequence_.qseqid}</td>
          <td>${hitsCount}</td>
          <td>
-            <button class="btn ${ButtonClass.viewHits} has-tooltip"
+            <button class="btn btn-default ${ButtonClass.viewHits} has-tooltip"
                data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
                data-tippy-content="Click to view the BLAST hits"
             >${Icon.dna} View BLAST hits</button>
-            <button class="btn ${ButtonClass.viewHTML} has-tooltip" 
+            <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
                data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
-               data-tippy-content="Click to view the HTML results (${sequence_.blast_html})"
+               data-tippy-content="Click to view the results as HTML"
             >${Icon.html} View HTML results</button>
-            <button class="btn ${ButtonClass.downloadCSV} has-tooltip" 
+            <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
                data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
-               data-tippy-content="Click to download the results as a CSV file (${sequence_.blast_csv})"
+               data-tippy-content="Click to download the results as a CSV file"
             >${Icon.csv} Download CSV results</button>
          </td>
       </tr>`;
@@ -215,6 +137,65 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
    displayErrorMessage(message_: string) {
       this.elements.container.innerHTML = `<div class="error-message">${message_}</div>`;
+      return;
+   }
+
+   // Handle a click event on a page element.
+   async handleClickEvent(targetEl_: HTMLElement) {
+
+      // If an icon was clicked, use its parent Element.
+      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
+
+      // Was a button on a sequence row clicked?
+      if (targetEl_.tagName === "BUTTON") {
+
+         const button = targetEl_ as HTMLButtonElement;
+         
+         // Get and validate the file index attribute.
+         let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
+         const fileIndex = parseInt(strFileIndex);
+         if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
+   
+         // Get and validate the filename attribute.
+         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
+         if (filename.length < 1) { return await AlertBuilder.displayError("The filename attribute is invalid"); }
+
+         // Get and validate the sequence index attribute.
+         let strSeqIndex = button.getAttribute("data-seq-index");
+         const seqIndex = parseInt(strSeqIndex);
+         if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
+
+         // The button's class determines which action to take.
+         if (button.classList.contains(ButtonClass.viewHits)) {
+
+            this.parent.state.fileIndex = fileIndex;
+            this.parent.state.sequenceIndex = seqIndex;
+            
+            window.open(this.parent.createUrlUsingState(), "_blank");
+
+         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
+            
+            // Download the CSV file.
+            await this.parent.downloadCSV(filename, seqIndex);
+
+         } else if (button.classList.contains(ButtonClass.viewHTML)) {
+            
+            // Display the HTML file in a new browser tab.
+            await this.parent.viewHTML(fileIndex, filename, seqIndex);
+         }
+
+         return;
+      }
+
+      // Was an accordion control clicked?
+      if (targetEl_.classList.contains("ictv-accordion-control")) {
+
+         const itemID = targetEl_.getAttribute("data-id");
+         if (!itemID) { return; }
+
+         ToggleAccordion(this.elements.container, itemID);
+      }
+      
       return;
    }
 
@@ -256,10 +237,23 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       this.elements.resultFiles = this.elements.container.querySelector(`.result-files`);
       if (!this.elements.resultFiles) { throw new Error("Invalid result files element"); }
 
-      // Initialize the accordion Elements.
-      return await this.addEventHandlers();
-   }
+      // Initialize tippy tooltips for buttons.
+      tippy(".has-tooltip");
 
+      // Add a click event handler.
+      this.elements.resultFiles.addEventListener("click", async (event_) => {
+         await this.handleClickEvent(event_.target as HTMLElement);
+      });
+      
+      // If there's only one file, go ahead and expand its accordion.
+      if (this.job.data.files.length === 1 && !!this.job.data.files[0]) {
+         const file = this.job.data.files[0];
+         const fileKey = CreateKeyFromName(file.name) 
+         ToggleAccordion(this.elements.container, fileKey);
+      }
+
+      return;
+   }
 
    unload() {
 

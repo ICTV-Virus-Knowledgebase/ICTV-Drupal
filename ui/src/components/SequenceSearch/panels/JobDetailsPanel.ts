@@ -1,13 +1,12 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
-import { ButtonClass, Constants, FormatDate, Icon, PanelAction, PanelKey } from "../Common";
-import { decode } from "base64-arraybuffer";
+import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelAction, PanelKey } from "../Common";
 import { ISearchResult } from "../ISearchResult";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
+import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
-import * as pako from "pako";
 
 
 export class JobDetailsPanel implements ISeqSearchPanel {
@@ -88,76 +87,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       return html;
    }
 
-   /*
-   // Download the BLAST CSV data for a specific result.
-   async downloadCSV(index_: number) {
-
-      // Get the result with the specified index.
-      const result = this.job.data.results[index_];
-      if (!result || !result.csv_file || !result.blast_csv) {
-         await AlertBuilder.displayError("No CSV file is available for download.");
-         return;
-      }
-
-      // Decode the base64-encoded CSV file and decompress it.
-      const arrayBuffer: ArrayBuffer = pako.inflate(decode(result.csv_file));
-      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-         await AlertBuilder.displayError("The CSV file is invalid: It may be empty or corrupted.");
-         return;
-      }
-
-      // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(new Blob(
-         [ arrayBuffer ],
-         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-      ))
-      link.download = result.blast_csv;
-      link.click();
-
-      return;
-   }*/
-
-   
-   /*
-   async handleResultsClick(event_) {
-
-      if (event_.target.tagName !== 'BUTTON') { return; }
-
-      const button = event_.target as HTMLButtonElement;
-
-      // Get and validate the button's data index attribute.
-      let strDataIndex = button.getAttribute("data-index");
-      const dataIndex = parseInt(strDataIndex);
-      if (dataIndex < 0 || dataIndex > this.job.data.results.length) {
-         await AlertBuilder.displayError(`Invalid result index: ${dataIndex}`);
-         return;
-      }
-
-      // The button's class determines which action to take.
-      if (button.classList.contains(ButtonClass.viewHits)) {
-
-         this.parent.state.resultIndex = dataIndex;
-         
-         await this.parent.updatePage();
-   
-         //await this.parent.handleAction(PanelAction.displayBlastHits);
-
-      } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-         await this.downloadCSV(dataIndex);
-
-      } else if (button.classList.contains(ButtonClass.viewHTML)) {
-         await this.viewHTML(dataIndex);
-      }
-     
-      return;
-   }*/
-
    // Make the panel visible and populate it with data.
    async load() {
 
-      console.log("in jobDetailsPanel.load")
-      
       this.isActive = true;
 
       // Make the container visible.
@@ -183,10 +115,13 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
       // Format the created on and ended on date/times.
       let createdOn = FormatDate(this.job.createdOn);
-      let endedOn = FormatDate(this.job.endedOn);
+      //let endedOn = FormatDate(this.job.endedOn);
+
+      // Format the duration between two date/times.
+      let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
 
       //----------------------------------------------------------------------------------------------------------------
-      // Generate the HTML for the job
+      // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
       let html = 
          `<table class="job-details">
@@ -200,8 +135,8 @@ export class JobDetailsPanel implements ISeqSearchPanel {
                   <td>${createdOn || "(unknown)"}</td>
                </tr>
                <tr>
-                  <th>Ended</th>
-                  <td>${endedOn || "(unknown)"}</td>
+                  <th>Duration</th>
+                  <td>${duration || "(unknown)"}</td>
                </tr>
                <tr>
                   <th>Status</th>
@@ -231,11 +166,13 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
       if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
 
+      // Initialize tippy tooltips for buttons.
+      tippy(".has-tooltip");
+
       // Add event listeners.
       this.elements.copyUrlButton.addEventListener("click", () => this.copyJobURL());
       return;
    }
-
 
    unload() {
 
@@ -250,22 +187,4 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // TODO: anything else?
    }
 
-   /*
-   // Display the BLAST HTML data for a specific result.
-   async viewHTML(index_: number) {
-
-      // Get the result with the specified index.
-      const result = this.job.data.results[index_];
-
-      // Open a new tab/window and populate it with the contents of the BLAST HTML file.
-      const htmlWindow = window.open("", "_blank");
-
-      // Decode the base64-encoded HTML file and decompress it.
-      const html = pako.inflate(decode(result.html_file), { to: 'string' });
-      htmlWindow.document.writeln(html);
-
-      // Remove the extension from the file name and use it as the window's title.
-      htmlWindow.document.title = result.blast_html.replace(".html", "");
-      return;
-   }*/
 }
