@@ -85,12 +85,12 @@ export class SearchResultsPanel implements ISeqSearchPanel {
             } else if (button.classList.contains(ButtonClass.downloadCSV)) {
                
                // Download the CSV file.
-               await this.downloadCSV(filename, seqIndex);
+               await this.parent.downloadCSV(filename, seqIndex);
 
             } else if (button.classList.contains(ButtonClass.viewHTML)) {
                
                // Display the HTML file in a new browser tab.
-               await this.viewHTML(filename, seqIndex);
+               await this.parent.viewHTML(filename, seqIndex);
             }
 
             return;
@@ -218,59 +218,6 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       return;
    }
 
-
-   // Download the BLAST CSV data for a specific result.
-   async downloadCSV(filename_: string, seqIndex_: number) {
-
-      const fileTypes = ResultFileType.csv;
-
-      const resultFiles = await SequenceSearchService.getResultFiles(this.parent.authToken, fileTypes, filename_, this.parent.state.jobUID, seqIndex_, this.parent.user.email, this.parent.user.uid)
-      console.log("resultFiles = ", resultFiles)
-      
-      if (!resultFiles || !resultFiles.files || resultFiles.files.length < 1) {
-         return await AlertBuilder.displayError("No CSV files are available for download");
-      }
-
-      const csv = Utils.safeTrim(this.getResultFileContents(resultFiles, ResultFileType.csv));
-      if (!csv || csv.length < 1) {
-         return await AlertBuilder.displayError("The CSV file is empty or invalid");
-      }
-
-      // Decode the base64-encoded CSV file and decompress it.
-      const arrayBuffer: ArrayBuffer = pako.inflate(decode(csv));
-      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-         await AlertBuilder.displayError("The CSV file is invalid: It may be empty or corrupted.");
-         return;
-      }
-
-      // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(new Blob(
-         [ arrayBuffer ],
-         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-      ))
-      link.download = csv;
-      link.click();
-
-      return;
-   }
-
-   // Get the specified file type's content from the result files.
-   getResultFileContents(files_: IResultFiles, type_: ResultFileType): string {
-
-      let contents = "";
-
-      for (let i = 0; i < files_.files.length; i++) {
-         const file = files_.files[i];
-         if (file.type === type_) { 
-            contents = file.contents; 
-            break; 
-         }
-      }
-
-      return contents;
-   }
-
    // Make the panel visible and populate it with data.
    async load() {
 
@@ -327,36 +274,4 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       // TODO: anything else?
    }
 
-   
-   // Display the BLAST HTML data for a specific result.
-   async viewHTML(filename_: string, seqIndex_: number) {
-
-      console.log("viewing HTML")
-
-      const fileTypes = ResultFileType.html;
-
-      const resultFiles = await SequenceSearchService.getResultFiles(this.parent.authToken, fileTypes, filename_, this.parent.state.jobUID, seqIndex_, this.parent.user.email, this.parent.user.uid)
-      console.log("resultFiles = ", resultFiles)
-      
-      if (!resultFiles || !resultFiles.files || resultFiles.files.length < 1) {
-         return await AlertBuilder.displayError("No HTML files are available for download");
-      }
-
-      const htmlContent = Utils.safeTrim(this.getResultFileContents(resultFiles, ResultFileType.html));
-      if (!htmlContent || htmlContent.length < 1) {
-         return await AlertBuilder.displayError("The HTML file is empty or invalid");
-      }
-
-      // Open a new tab/window and populate it with the contents of the BLAST HTML file.
-      const blastWindow = window.open("", "_blank");
-
-      // Decode the base64-encoded HTML file and decompress it.
-      const html = htmlContent; //pako.inflate(decode(htmlContent), { to: 'string' });
-      blastWindow.document.writeln(html);
-
-      // Remove the extension from the file name and use it as the window's title.
-      blastWindow.document.title = "TODO"; //result.blast_html.replace(".html", "");
-
-      return;
-   }
 }

@@ -3,7 +3,6 @@ import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { AppSettings } from "../../../global/AppSettings";
 import { CreateTaxonDetailsURL, Icon } from "../Common";
 import { IBlastHit } from "../IBlastHit";
-import { ISearchResult } from "../ISearchResult";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
 import { Utils } from "../../../helpers/Utils";
@@ -147,123 +146,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                </div>
             </div>
          </div>`;
-
-      /*
-         <table class="blast-hit">
-      
-                     <tr class="blast-row">
-                        <td class="blast-column" colspan="4">
-                           <label>Query ID</label>
-                           <span class="value">${hit_.qseqid}</span>
-                        </td>
-                     </tr>
-
-                     <tr class="blast-row">
-                        <td class="blast-column" colspan="4">
-                           <label>Subject ID</label>
-                           <span class="value">${hit_.sseqid}</span>
-                        </td>
-                     </tr>
-
-                     <tr class="blast-row">
-                        <td class="blast-column" colspan="4">
-                           <label>Subject accession</label>
-                           <span class="value">${sseqAccessionLink}</span>
-                        </td>
-                     </tr>
-
-                     <tr class="blast-row">
-                        <td class="blast-column">
-                           <label>E-value</label>
-                           <span class="value">${eValue}</span>
-                        </td>
-                        <td class="blast-column">
-                           <label>Bitscore</label>
-                           <span class="value">${hit_.bitscore}</span>
-                        </td>
-                        ${startAndEnd}
-                     </tr>
-
-                     <tr class="blast-row">
-                        <td class="blast-column">
-                           <label>ICTV ID</label>
-                           <span class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></span>
-                        </td>
-                        <td class="blast-column" colspan="3">${isolateHTML}</td>
-                     </tr>
-
-                  </table>
-      */
-
-      /*
-      let html = `<table class="blast-hit">
-      
-         <tr class="blast-row">
-            <td class="blast-column">
-               <label>Virus name(s)</label>
-               <span class="value">${hit_.virus_names}</span>
-            </td>
-            <td class="blast-column">
-               <label>Segment</label>
-               <span class="value">${hit_.segmentname}</span>
-            </td>
-            <td class="blast-column">
-               <label>Exemplar/additional</label>
-               <span class="value">${hit_.exemplar_additional}</span>
-            </td>
-         </tr>
-
-         <tr class="blast-row">
-            <td class="blast-column">
-               <label>E-value</label>
-               <span class="value">${hit_.evalue}</span>
-            </td>
-            <td class="blast-column" colspan="2">
-               <label>Bitscore</label>
-               <span class="value">${hit_.bitscore}</span>
-            </td>
-         </tr>
-
-         <tr class="blast-row">
-            <td class="blast-column">
-               <label>ICTV ID</label>
-               <span class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></span>
-            </td>
-            <td class="blast-column" colspan="2">
-               <label>Isolate ID</label>
-               <span class="value"><a href="${AppSettings.taxonHistoryPage}?vmr_id=${hit_.isolate_id}" target="_blank">${hit_.isolate_id}</a></span>
-            </td>
-         </tr>
-
-         <tr class="blast-row">
-            <td class="blast-column">
-               <label>Start location</label>
-               <span class="value">${hit_.start_loc}</span>
-            </td>
-            <td class="blast-column" colspan="2">
-               <label>End location</label>
-               <span class="value">${hit_.end_loc}</span>
-            </td>
-         </tr>
-
-         <tr class="blast-row">
-            <td class="blast-column">
-               <label>qseqid</label>
-               <span class="value">${hit_.qseqid}</span>
-            </td>
-            <td class="blast-column">
-               <label>sseqid</label>
-               <span class="value">${hit_.sseqid}</span>
-            </td>
-            <td class="blast-column">
-               <label>sseqid accession</label>
-               <span class="value">${sseqAccessionLink}</span>
-            </td>
-         </tr>
-      
-      </table>`;*/
-
-      
 
       return html;
    }
