@@ -260,16 +260,19 @@ class GetResultFiles extends ResourceBase {
          // Add a file extension determined by the file type.
          $resultFilename = $inputFilename.'.'.$resultFileType->value;
 
+         // The actual filename defaults to the result filename, but will include a ".gz" extension for compressed files.
+         $actualFilename = $resultFilename;
+
          $isCompressed = false;
 
          // If the file type is CSV or HTML, we will retrieve the gzipped version of the file.
          if ($resultFileType === ResultFileType::csv || $resultFileType === ResultFileType::html) {
-            $resultFilename = $resultFilename.".gz";
+            $actualFilename = $actualFilename.".gz";
             $isCompressed = true;
          }
 
          // Open a file and return its contents.
-         $fileContents = Common::getFileContents(true, $resultFilename, $outputPath);
+         $fileContents = Common::getFileContents(true, $actualFilename, $outputPath);
 
          $fileData = [
             "contents" => $fileContents,

@@ -115,13 +115,13 @@ export class SearchResultsPanel implements ISeqSearchPanel {
                data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
-               data-tippy-content="Click to view the BLAST hits"
+               data-tippy-content="Click to view the BLAST hits in a new tab"
             >${Icon.dna} View BLAST hits</button>
             <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
                data-file-index="${fileIndex_}"
                data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
-               data-tippy-content="Click to view the results as HTML"
+               data-tippy-content="Click to view the results as HTML in a new tab"
             >${Icon.html} View HTML results</button>
             <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
                data-file-index="${fileIndex_}"
@@ -181,7 +181,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          } else if (button.classList.contains(ButtonClass.viewHTML)) {
             
             // Display the HTML file in a new browser tab.
-            await this.parent.viewHTML(fileIndex, filename, seqIndex);
+            await this.parent.viewHTML(filename, seqIndex);
          }
 
          return;

@@ -320,7 +320,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          } else if (button.classList.contains(ButtonClass.viewHTML)) {
             
             // Display the HTML file in a new browser tab.
-            await this.parent.viewHTML(fileIndex, filename, seqIndex);
+            await this.parent.viewHTML(filename, seqIndex);
          }
 
          return;
