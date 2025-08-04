@@ -3,6 +3,7 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
 import { Constants, GenerateUUID, PanelAction, PanelKey, ParameterKey, ResultFileType, testJob } from "./Common";
 import { decode } from "base64-arraybuffer";
+import { IResultFile } from "./IResultFile";
 import { IResultFiles } from "./IResultFiles";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./panels/ISeqSearchPanel";
@@ -136,23 +137,21 @@ export class SequenceSearch {
       }
 
       // Get the CSV file contents.
-      const csv = Utils.safeTrim(this.getResultFileContents(resultFiles, ResultFileType.csv));
-      if (!csv || csv.length < 1) { return await AlertBuilder.displayError("The CSV file is empty or invalid"); }
+      const resultFile = this.getResultFile(resultFiles, ResultFileType.csv);
+      if (!resultFile || !resultFile.contents) { return await AlertBuilder.displayError("The CSV file is missing"); }
 
-      // Decode the base64-encoded CSV file and decompress it.
-      const arrayBuffer: ArrayBuffer = decode(csv); // pako.inflate(decode(csv));
-      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-         await AlertBuilder.displayError("The CSV file is invalid: It may be empty or corrupted.");
-         return;
-      }
+      // Decompress the CSV file, if necessary.
+      let csv = resultFile.contents;
+      if (resultFile.isCompressed) { csv = pako.ungzip(decode(resultFile.contents), { to: 'string' }); }
+      if (!csv || csv.length < 1) { return await AlertBuilder.displayError("The CSV file is empty or invalid"); }
 
       // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
       const link = document.createElement('a')
       link.href = URL.createObjectURL(new Blob(
-         [ arrayBuffer ],
+         [ csv ],
          { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
       ))
-      link.download = csv;
+      link.download = resultFile.filename;
       link.click();
 
       return;
@@ -169,25 +168,20 @@ export class SequenceSearch {
       return;
    }
 
-   // Get the specified file type's content from the result files.
-   getResultFileContents(files_: IResultFiles, type_: ResultFileType): string {
+   // Get the result file for the specified file type.
+   getResultFile(files_: IResultFiles, type_: ResultFileType): IResultFile {
 
-      let contents = "";
+      let resultFile: IResultFile = null;
 
       for (let i = 0; i < files_.files.length; i++) {
          const file = files_.files[i];
          if (file.type === type_) { 
-            contents = file.contents;
-            if (file.isCompressed) {
-               // Decompress the file contents.
-               contents = pako.ungzip(decode(contents), { to: 'string' });
-               //pako.inflate(decode(contents), { to: 'string' });
-            }
+            resultFile = file;
             break; 
          }
       }
 
-      return contents;
+      return resultFile;
    }
 
    // Handle the panel action that was provided.
@@ -371,31 +365,32 @@ export class SequenceSearch {
    }
 
    // Display the BLAST HTML data for a specific result.
-   async viewHTML(fileIndex_: number, filename_: string, seqIndex_: number) {
+   async viewHTML(filename_: string, seqIndex_: number) {
 
       // Specify the file type to retrieve.
       const fileTypes = ResultFileType.html;
 
-      // Get the HTML result file.
+      // Get and validate the array of result files.
       const resultFiles = await SequenceSearchService.getResultFiles(this.authToken, fileTypes, filename_, this.state.jobUID, seqIndex_, this.user.email, this.user.uid);
       if (!resultFiles || !resultFiles.files || resultFiles.files.length < 1) {
          return await AlertBuilder.displayError("No HTML files are available for download");
       }
 
-      const htmlContent = Utils.safeTrim(this.getResultFileContents(resultFiles, ResultFileType.html));
-      if (!htmlContent || htmlContent.length < 1) {
-         return await AlertBuilder.displayError("The HTML file is empty or invalid");
-      }
+      // Get the HTML file from the array.
+      const resultFile = this.getResultFile(resultFiles, ResultFileType.html);
+      if (!resultFile || !resultFile.contents) { return await AlertBuilder.displayError("The HTML file is missing"); }
+
+      // Get the file contents and decompress, if necessary.
+      let html = resultFile.contents;
+      if (resultFile.isCompressed) { html = pako.ungzip(decode(resultFile.contents), { to: 'string' }); }
+      if (!html || html.length < 1) { return await AlertBuilder.displayError("The HTML file is empty or invalid"); }
 
       // Open a new tab/window and populate it with the contents of the BLAST HTML file.
       const blastWindow = window.open("", "_blank");
-
-      // Decode the base64-encoded HTML file and decompress it.
-      const html = htmlContent; //pako.inflate(decode(htmlContent), { to: 'string' });
       blastWindow.document.writeln(html);
 
-      // Use the input filename as the window's title.
-      blastWindow.document.title = this.job.data.files[fileIndex_].name;
+      // Use the HTML filename as the window's title.
+      blastWindow.document.title = resultFile.filename;
 
       return;
    }
