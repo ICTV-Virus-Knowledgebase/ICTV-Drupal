@@ -47,7 +47,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const lineage = this.formatLineage(hit_);
 
       // Create a taxon details URL for this virus.
-      const hitURL = CreateTaxonDetailsURL(hit_.ICTV_ID, hit_.sseqid_lineage.species);
+      const hitURL = CreateTaxonDetailsURL(hit_.ictv_id, hit_.sseqid_lineage.species);
 
       // Create the link using the taxon details URL.
       const linkedHitName = `<a href="${hitURL}" target="_blank">${hit_.sseqid_lineage.species}</a>`;
@@ -76,6 +76,19 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          </tr>`;
       }
 
+      let ictvIdHTML = "";
+      let ictvID = Utils.safeTrim(hit_.ictv_id);
+      if (ictvID.length > 0) {
+
+         let taxonName = "";
+         if (hit_.sseqid_lineage && hit_.sseqid_lineage.species) { taxonName = `&taxon_name=${hit_.sseqid_lineage.species}`; }
+
+         ictvIdHTML = `<tr class="blast-row">
+            <th>ICTV ID</label>
+            <td class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${ictvID}${taxonName}" target="_blank">${ictvID}</a></td>
+         </tr>`
+      }
+
       let isolateHTML = "";
       let isolateID = Utils.safeTrim(hit_.isolate_id);
       if (isolateID.length > 0) {
@@ -99,7 +112,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          eValue = `${coefficient}×10<sup>${exponent}</sup>`;
       }
       
-      // fa fa-chevron-down ictv-accordion-control-icon
       let html =
          `<div class="ictv-accordion-item" data-id="${hitIndex_}">
             <div class="ictv-accordion-header">
@@ -139,10 +151,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                         <td class="value">${hit_.bitscore}</td>
                      </tr>
                      ${startAndEnd}
-                     <tr class="blast-row">
-                        <th>ICTV ID</label>
-                        <td class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${hit_.ICTV_ID}" target="_blank">${hit_.ICTV_ID}</a></td>
-                     </tr>
+                     ${ictvIdHTML}
                      ${isolateHTML}
                   </table>
                </div>
@@ -187,9 +196,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    }
 
    load() {
-
-      console.log("in blastPanel.load")
-            
+     
       this.isActive = true;
 
       // Make the container visible.
@@ -228,22 +235,23 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       const sequenceURL = this.parent.createUrlUsingState();
 
+      // Use this filename for the CSV file.
+      const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
+
       this.elements.container.innerHTML = 
          `<div class="sequence-panel">
             <div class="label">Sequence:</div>
             <div class="name">${sequence.qseqid}</div>
             <div class="controls">
-               <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
-                  data-file-index="${this.parent.state.fileIndex}"
-                  data-filename="${file.name}"
-                  data-seq-index="${this.parent.state.sequenceIndex}" 
-                  data-tippy-content="Click to view the results as HTML"
+               <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip"
+                  data-filename="${sequence.blast_html}"
+                  data-tippy-content="Click to view the results as HTML in a new tab"
+                  data-title="${sequence.qseqid}"
                >${Icon.html} View HTML results</button>
-               <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
-                  data-file-index="${this.parent.state.fileIndex}"
-                  data-filename="${file.name}"
-                  data-seq-index="${this.parent.state.sequenceIndex}" 
+               <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip"
+                  data-filename="${sequence.blast_csv}"
                   data-tippy-content="Click to download the results as a CSV file"
+                  data-title="${csvName}"
                >${Icon.csv} Download CSV results</button>
             </div>
          </div>
@@ -266,7 +274,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       // Add a click event handler.
       this.elements.blastHits.addEventListener("click", async (event_) => {
-         await this.handleClickEvent(event_.target as HTMLElement);
+         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
       });
 
       // Get a reference to the sequence panel element.
@@ -275,73 +283,11 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       // Add a click event handler.
       this.elements.sequencePanel.addEventListener("click", async (event_) => {
-         return await this.handleClickEvent(event_.target as HTMLElement);
+         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
       });
    }
 
-   // Handle a click event on a page element.
-   async handleClickEvent(targetEl_: HTMLElement) {
-
-      // If an icon was clicked, use its parent Element.
-      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
-
-      // Was a button on a sequence row clicked?
-      if (targetEl_.tagName === "BUTTON") {
-
-         const button = targetEl_ as HTMLButtonElement;
-         
-         // Get and validate the file index attribute.
-         let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
-         const fileIndex = parseInt(strFileIndex);
-         if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
-   
-         // Get and validate the filename attribute.
-         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
-         if (filename.length < 1) { return await AlertBuilder.displayError("The filename attribute is invalid"); }
-
-         // Get and validate the sequence index attribute.
-         let strSeqIndex = button.getAttribute("data-seq-index");
-         const seqIndex = parseInt(strSeqIndex);
-         if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
-
-         // The button's class determines which action to take.
-         if (button.classList.contains(ButtonClass.viewHits)) {
-
-            this.parent.state.fileIndex = fileIndex;
-            this.parent.state.sequenceIndex = seqIndex;
-            
-            window.open(this.parent.createUrlUsingState(), "_blank");
-
-         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-            
-            // Download the CSV file.
-            await this.parent.downloadCSV(filename, seqIndex);
-
-         } else if (button.classList.contains(ButtonClass.viewHTML)) {
-            
-            // Display the HTML file in a new browser tab.
-            await this.parent.viewHTML(filename, seqIndex);
-         }
-
-         return;
-      }
-
-      // Was an accordion control clicked?
-      if (targetEl_.classList.contains("ictv-accordion-control")) {
-
-         const itemID = targetEl_.getAttribute("data-id");
-         if (!itemID) { return; }
-
-         ToggleAccordion(this.elements.container, itemID);
-      }
-      
-      return;
-   }
-
    unload() {
-
-      console.log("unloading BLAST hits panel")
-
       this.isActive = false;
       this.elements.container.classList.remove("active");
    }

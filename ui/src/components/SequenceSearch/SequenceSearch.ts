@@ -1,10 +1,8 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { Constants, GenerateUUID, PanelAction, PanelKey, ParameterKey, ResultFileType, testJob } from "./Common";
+import { ButtonClass, Constants, GenerateUUID, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
-import { IResultFile } from "./IResultFile";
-import { IResultFiles } from "./IResultFiles";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./panels/ISeqSearchPanel";
 import { JobDetailsPanel } from "./panels/JobDetailsPanel";
@@ -124,25 +122,23 @@ export class SequenceSearch {
    }
 
    // Download the BLAST CSV data for a specific result.
-   async downloadCSV(filename_: string, seqIndex_: number) {
+   async downloadCSV(filename_: string, title_: string) {
 
-      // Specify the file type to retrieve.
-      const fileTypes = ResultFileType.csv;
+      filename_ = Utils.safeTrim(filename_);
+      if (filename_.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename"); }
 
-      const resultFiles = await SequenceSearchService.getResultFiles(this.authToken, fileTypes, filename_, this.state.jobUID, seqIndex_, this.user.email, this.user.uid);
-      console.log("resultFiles = ", resultFiles)
+      title_ = Utils.safeTrim(title_);
+      if (title_.length < 1) { title_ = filename_; }
+
+      // Get the output file and its metadata.
+      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, this.user.email, this.user.uid);
+      console.log("outputFile = ", outputFile)
       
-      if (!resultFiles || !resultFiles.files || resultFiles.files.length < 1) {
-         return await AlertBuilder.displayError("No CSV files are available for download");
-      }
-
-      // Get the CSV file contents.
-      const resultFile = this.getResultFile(resultFiles, ResultFileType.csv);
-      if (!resultFile || !resultFile.contents) { return await AlertBuilder.displayError("The CSV file is missing"); }
+      if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The CSV file is invalid"); }
 
       // Decompress the CSV file, if necessary.
-      let csv = resultFile.contents;
-      if (resultFile.isCompressed) { csv = pako.ungzip(decode(resultFile.contents), { to: 'string' }); }
+      let csv = outputFile.contents;
+      if (outputFile.isCompressed) { csv = pako.ungzip(decode(csv), { to: 'string' }); }
       if (!csv || csv.length < 1) { return await AlertBuilder.displayError("The CSV file is empty or invalid"); }
 
       // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
@@ -151,7 +147,7 @@ export class SequenceSearch {
          [ csv ],
          { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
       ))
-      link.download = resultFile.filename;
+      link.download = title_;
       link.click();
 
       return;
@@ -166,22 +162,6 @@ export class SequenceSearch {
       this.job = await SequenceSearchService.getSearchResults(this.authToken, this.state.jobUID, this.user.email, this.user.uid);
 
       return;
-   }
-
-   // Get the result file for the specified file type.
-   getResultFile(files_: IResultFiles, type_: ResultFileType): IResultFile {
-
-      let resultFile: IResultFile = null;
-
-      for (let i = 0; i < files_.files.length; i++) {
-         const file = files_.files[i];
-         if (file.type === type_) { 
-            resultFile = file;
-            break; 
-         }
-      }
-
-      return resultFile;
    }
 
    // Handle the panel action that was provided.
@@ -241,6 +221,74 @@ export class SequenceSearch {
       await this.updatePanel(PanelKey.searchResults, loadSearchResults);
       await this.updatePanel(PanelKey.upload, loadUpload);
 
+      return;
+   }
+
+   // Handle a click event on a button or accordion control.
+   async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
+
+      // If an icon was clicked, use its parent Element.
+      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
+
+      // Was a button on a sequence row clicked?
+      if (targetEl_.tagName === "BUTTON") {
+
+         const button = targetEl_ as HTMLButtonElement;
+         
+         // Get and validate the filename attribute.
+         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
+
+         // Get and validate the title attribute.
+         const title = Utils.safeTrim(button.getAttribute("data-title"));
+         
+         // The button's class determines which action to take.
+         if (button.classList.contains(ButtonClass.viewHits)) {
+
+            // Get and validate the file index attribute.
+            let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
+            const fileIndex = parseInt(strFileIndex);
+            if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
+      
+            // Get and validate the sequence index attribute.
+            let strSeqIndex = button.getAttribute("data-seq-index");
+            const seqIndex = parseInt(strSeqIndex);
+            if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
+
+            // Update the state.
+            this.state.fileIndex = fileIndex;
+            this.state.sequenceIndex = seqIndex;
+            
+            window.open(this.createUrlUsingState(), "_blank");
+
+         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
+            
+            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename button attribute"); }
+
+            // Download the CSV file.
+            await this.downloadCSV(filename, title);
+
+         } else if (button.classList.contains(ButtonClass.viewHTML)) {
+            
+            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid HTML filename button attribute"); }
+
+            // Display the HTML file in a new browser tab.
+            await this.viewHTML(filename, title);
+         }
+
+         return;
+      }
+
+      // Was an accordion control clicked?
+      if (targetEl_.classList.contains("ictv-accordion-control")) {
+
+         const itemID = targetEl_.getAttribute("data-id");
+         if (!itemID) { return; }
+
+         if (!containerEl_) { await AlertBuilder.displayError("Unable to toggle accordion: Invalid container element"); }
+
+         ToggleAccordion(this.elements.container, itemID);
+      }
+      
       return;
    }
 
@@ -364,25 +412,24 @@ export class SequenceSearch {
       return;
    }
 
-   // Display the BLAST HTML data for a specific result.
-   async viewHTML(filename_: string, seqIndex_: number) {
+   // Display the BLAST HTML data for a specific sequence.
+   async viewHTML(filename_: string, title_: string) {
 
-      // Specify the file type to retrieve.
-      const fileTypes = ResultFileType.html;
+      filename_ = Utils.safeTrim(filename_);
+      if (filename_.length < 1) { return await AlertBuilder.displayError("Invalid HTML filename"); }
 
-      // Get and validate the array of result files.
-      const resultFiles = await SequenceSearchService.getResultFiles(this.authToken, fileTypes, filename_, this.state.jobUID, seqIndex_, this.user.email, this.user.uid);
-      if (!resultFiles || !resultFiles.files || resultFiles.files.length < 1) {
-         return await AlertBuilder.displayError("No HTML files are available for download");
-      }
+      title_ = Utils.safeTrim(title_);
+      if (title_.length < 1) { title_ = filename_; }
 
-      // Get the HTML file from the array.
-      const resultFile = this.getResultFile(resultFiles, ResultFileType.html);
-      if (!resultFile || !resultFile.contents) { return await AlertBuilder.displayError("The HTML file is missing"); }
+      // Get the output file and its metadata.
+      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, this.user.email, this.user.uid);
+      console.log("outputFile = ", outputFile)
+      
+      if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The HTML file is invalid"); }
 
-      // Get the file contents and decompress, if necessary.
-      let html = resultFile.contents;
-      if (resultFile.isCompressed) { html = pako.ungzip(decode(resultFile.contents), { to: 'string' }); }
+      // Decompress the HTML file, if necessary.
+      let html = outputFile.contents;
+      if (outputFile.isCompressed) { html = pako.ungzip(decode(html), { to: 'string' }); }
       if (!html || html.length < 1) { return await AlertBuilder.displayError("The HTML file is empty or invalid"); }
 
       // Open a new tab/window and populate it with the contents of the BLAST HTML file.
@@ -390,7 +437,7 @@ export class SequenceSearch {
       blastWindow.document.writeln(html);
 
       // Use the HTML filename as the window's title.
-      blastWindow.document.title = resultFile.filename;
+      blastWindow.document.title = title_;
 
       return;
    }

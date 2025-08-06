@@ -1,7 +1,7 @@
 
 import { ISeqSearchJob } from "../components/SequenceSearch/ISeqSearchJob";
 import { IFileData } from "../models/IFileData";
-import { IResultFiles } from "../components/SequenceSearch/IResultFiles";
+import { IOutputFile } from "../components/SequenceSearch/IOutputFile";
 import { WebService } from "./WebService";
 import { WebServiceKey } from "../global/Types";
 
@@ -9,28 +9,23 @@ import { WebServiceKey } from "../global/Types";
 export class _SequenceSearchService {
 
 
-   // Get the result files for a a filename and sequence index in a sequence search job.
-   async getResultFiles(authToken_: string, fileTypes_: string, inputFilename_: string, jobUID_: string, sequenceIndex: number,
-      userEmail_: string, userUID_: string): Promise<IResultFiles> {
+   // Get an output file from a sequence search job.
+   async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userEmail_: string, userUID_: string): Promise<IOutputFile> {
 
-      if (!fileTypes_) { throw new Error("The file types parameter is invalid"); }
-      if (!inputFilename_) { throw new Error("The input filename parameter is invalid"); }
+      if (!filename_) { throw new Error("The filename parameter is invalid"); }
       if (!jobUID_) { throw new Error("Invalid job UID"); }
-      if (sequenceIndex < 0) { throw new Error("The sequence index parameter is invalid"); }
       if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
       if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
 
       const data = {
-         fileTypes: fileTypes_,
-         inputFilename: inputFilename_,
+         filename: filename_,
          jobUID: jobUID_,
-         sequenceIndex: sequenceIndex,
          userEmail: userEmail_,
          userUID: userUID_
       };
 
       // Get and return the result files.
-      return await WebService.drupalPost<IResultFiles>(WebServiceKey.getSeqSearchResultFiles, authToken_, data);
+      return await WebService.drupalPost<IOutputFile>(WebServiceKey.getSeqSearchOutputFile, authToken_, data);
    }
 
 

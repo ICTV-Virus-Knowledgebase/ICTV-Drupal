@@ -42,7 +42,7 @@ export class _AppSettings {
       proposal: "proposal-api",
 
       // Sequence search
-      getSeqSearchResultFiles: "get-seqsearch-result-files",
+      getSeqSearchOutputFile: "get-seqsearch-output-file",
       getSequenceSearchResult: "get-seqsearch-result",
       uploadSequences: "upload-sequences",
 

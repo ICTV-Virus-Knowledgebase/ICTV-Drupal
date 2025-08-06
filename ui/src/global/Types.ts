@@ -270,8 +270,8 @@ export enum WebServiceKey {
    // Proposal service
    proposal = "proposal",
 
-   // Sequence search
-   getSeqSearchResultFiles = "getSeqSearchResultFiles",
+   // SeqSearch
+   getSeqSearchOutputFile = "getSeqSearchOutputFile",
    getSequenceSearchResult = "getSequenceSearchResult",
    uploadSequences = "uploadSequences",
 

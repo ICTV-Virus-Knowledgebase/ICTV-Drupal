@@ -107,27 +107,26 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
       const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length : 0;
 
+      const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
+
       let html = `<tr>
          <td>${sequence_.qseqid}</td>
          <td>${hitsCount}</td>
          <td>
             <button class="btn btn-default ${ButtonClass.viewHits} has-tooltip"
                data-file-index="${fileIndex_}"
-               data-filename="${filename_}"
                data-seq-index="${seqIndex_}" 
                data-tippy-content="Click to view the BLAST hits in a new tab"
             >${Icon.dna} View BLAST hits</button>
             <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
-               data-file-index="${fileIndex_}"
-               data-filename="${filename_}"
-               data-seq-index="${seqIndex_}" 
+               data-filename="${sequence_.blast_html}"
                data-tippy-content="Click to view the results as HTML in a new tab"
+               data-title="${sequence_.qseqid}"
             >${Icon.html} View HTML results</button>
             <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
-               data-file-index="${fileIndex_}"
-               data-filename="${filename_}"
-               data-seq-index="${seqIndex_}" 
+               data-filename="${sequence_.blast_csv}"
                data-tippy-content="Click to download the results as a CSV file"
+               data-title="${csvTitle}"
             >${Icon.csv} Download CSV results</button>
          </td>
       </tr>`;
@@ -137,65 +136,6 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
    displayErrorMessage(message_: string) {
       this.elements.container.innerHTML = `<div class="error-message">${message_}</div>`;
-      return;
-   }
-
-   // Handle a click event on a page element.
-   async handleClickEvent(targetEl_: HTMLElement) {
-
-      // If an icon was clicked, use its parent Element.
-      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
-
-      // Was a button on a sequence row clicked?
-      if (targetEl_.tagName === "BUTTON") {
-
-         const button = targetEl_ as HTMLButtonElement;
-         
-         // Get and validate the file index attribute.
-         let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
-         const fileIndex = parseInt(strFileIndex);
-         if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
-   
-         // Get and validate the filename attribute.
-         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
-         if (filename.length < 1) { return await AlertBuilder.displayError("The filename attribute is invalid"); }
-
-         // Get and validate the sequence index attribute.
-         let strSeqIndex = button.getAttribute("data-seq-index");
-         const seqIndex = parseInt(strSeqIndex);
-         if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
-
-         // The button's class determines which action to take.
-         if (button.classList.contains(ButtonClass.viewHits)) {
-
-            this.parent.state.fileIndex = fileIndex;
-            this.parent.state.sequenceIndex = seqIndex;
-            
-            window.open(this.parent.createUrlUsingState(), "_blank");
-
-         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-            
-            // Download the CSV file.
-            await this.parent.downloadCSV(filename, seqIndex);
-
-         } else if (button.classList.contains(ButtonClass.viewHTML)) {
-            
-            // Display the HTML file in a new browser tab.
-            await this.parent.viewHTML(filename, seqIndex);
-         }
-
-         return;
-      }
-
-      // Was an accordion control clicked?
-      if (targetEl_.classList.contains("ictv-accordion-control")) {
-
-         const itemID = targetEl_.getAttribute("data-id");
-         if (!itemID) { return; }
-
-         ToggleAccordion(this.elements.container, itemID);
-      }
-      
       return;
    }
 
@@ -242,7 +182,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
       // Add a click event handler.
       this.elements.resultFiles.addEventListener("click", async (event_) => {
-         await this.handleClickEvent(event_.target as HTMLElement);
+         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
       });
       
       // If there's only one file, go ahead and expand its accordion.

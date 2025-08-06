@@ -74,7 +74,7 @@ class Common {
       $fileData = null;
    
       // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
+      // if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
       
       if (!str_ends_with($filePath, '/')) { $filePath = $filePath.'/'; }
 
