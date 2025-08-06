@@ -32,7 +32,7 @@ class SequenceSearch {
       );
       
       // Generate the command to be run.
-      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -v ";
+      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName;
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);

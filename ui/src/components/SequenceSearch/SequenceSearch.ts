@@ -132,8 +132,6 @@ export class SequenceSearch {
 
       // Get the output file and its metadata.
       const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, this.user.email, this.user.uid);
-      console.log("outputFile = ", outputFile)
-      
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The CSV file is invalid"); }
 
       // Decompress the CSV file, if necessary.
