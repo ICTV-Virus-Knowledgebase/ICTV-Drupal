@@ -7,7 +7,6 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
 use Drupal\ictv_common\Jobs\JobService;
@@ -17,32 +16,21 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\ResultFileType;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service for retrieving result files from a SeqSearch job.
+ * A web service for retrieving an output file from a SeqSearch job.
  * @RestResource(
- *   id = "get-seqsearch-result-files",
- *   label = @Translation("ICTV SeqSearch: Get result files"),
+ *   id = "get-seqsearch-output-file",
+ *   label = @Translation("ICTV SeqSearch: Get an output file"),
  *   uri_paths = {
- *      "canonical" = "/get-seqsearch-result-files",
- *      "create" = "/get-seqsearch-result-files"
+ *      "canonical" = "/get-seqsearch-output-file",
+ *      "create" = "/get-seqsearch-output-file"
  *   }
  * )
  */
-class GetResultFiles extends ResourceBase {
-
-   // The connection to the ictv_apps database.
-   protected Connection $connection;
-
-   // The name of the database used by this web service.
-   protected ?string $databaseName;
-
-   // The path of the Drupal installation.
-   protected string $drupalRoot;
+class GetOutputFile extends ResourceBase {
 
    // The directory where input sequences are uploaded.
    protected ?string $inputDirectory;
@@ -53,17 +41,9 @@ class GetResultFiles extends ResourceBase {
    // The JobService object.
    protected JobService $jobService;
    
-   // The name of the JSON result file.
-   protected ?string $jsonResultsFilename;
-
-   // The maximum number of sequences that can be submitted (across all FASTA files that are uploaded).
-   public int $MAX_SEQUENCE_COUNT = 100;
-
    // The directory where output files are stored.
    protected ?string $outputDirectory;
 
-   // The name of the sequence classifier script (run from within a Docker container).
-   protected ?string $scriptName;
 
    /**
     * A current user instance which is logged in the session.
@@ -110,10 +90,6 @@ class GetResultFiles extends ResourceBase {
 
       // Get configuration settings from the ictv_seqsearch_service.settings file.
       try {
-         // Get the database name.
-         $this->databaseName = $config->get("databaseName");
-         if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
-         
          // Get the input directory.
          $this->inputDirectory = $config->get("inputDirectory");
          if (Utils::isNullOrEmpty($this->inputDirectory)) { throw new \Exception("The inputDirectory setting is empty"); }
@@ -122,25 +98,14 @@ class GetResultFiles extends ResourceBase {
          $this->jobsPath = $config->get("jobsPath");
          if (Utils::isNullOrEmpty($this->jobsPath)) { throw new \Exception("The jobsPath setting is empty"); }
          
-         // Get the filename of the JSON results file.
-         $this->jsonResultsFilename = $config->get("jsonResultsFilename");
-         if (Utils::isNullOrEmpty($this->jsonResultsFilename)) { throw new \Exception("The jsonResultsFilename setting is empty"); }
-
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
-
-         // The name of the sequence classifier script (from within a Docker container).
-         $this->scriptName = $config->get("scriptName");
-         if (Utils::isNullOrEmpty($this->scriptName)) { throw new \Exception("The scriptName setting is empty"); }
       }
       catch (\Exception $e) {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return;
       }
-
-      // Get a database connection.
-      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
       $this->jobService = new JobService($this->jobsPath, $this->logger, Common::$MODULE_NAME, $this->inputDirectory, $this->outputDirectory);
@@ -171,8 +136,8 @@ class GetResultFiles extends ResourceBase {
     */
    public function get(Request $request) {
       
-      // Get the requested files
-      $data = $this->getFiles($request);
+      // Get the output file.
+      $data = $this->getFile($request);
 
       $build = array(
          '#cache' => array(
@@ -198,30 +163,26 @@ class GetResultFiles extends ResourceBase {
 
 
    /**
-    * Get the requested result files.
+    * Get the requested output file.
     */
-   public function getFiles(Request $request) {
+   public function getFile(Request $request) {
 
       // Get and validate the JSON in the request body.
       $requestJSON = Json::decode($request->getContent());
       if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
 
-      // Get and validate the input filename.
-      $inputFilename = $requestJSON["inputFilename"];
-      if (Utils::isNullOrEmpty($inputFilename)) { throw new BadRequestHttpException("Invalid input filename"); }
+      // Get and validate the filename.
+      $filename = $requestJSON["filename"];
+      if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
-      // Get and validate the result file types.
-      $fileTypes = $requestJSON["fileTypes"];
-      if (Utils::isNullOrEmpty($fileTypes)) { throw new BadRequestHttpException("Invalid file types"); }
-      // TODO: Validate that the file types in the comma-delimited list are valid ResultFileType values.
+      // Make sure the output directory isn't included in the filename.
+      if (str_starts_with($filename, $this->outputDirectory.'/')) {
+         $filename = substr($filename, strlen($this->outputDirectory) + 1);
+      }
 
       // Get and validate the job UID.
       $jobUID = $requestJSON["jobUID"];
       if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
-
-      // Get and validate the sequence index.
-      $sequenceIndex = $requestJSON["sequenceIndex"];
-      if (Utils::isNullOrEmpty($sequenceIndex)) { throw new BadRequestHttpException("Invalid sequence index"); }
 
       // Get and validate the user email.
       $userEmail = $requestJSON["userEmail"];
@@ -231,6 +192,11 @@ class GetResultFiles extends ResourceBase {
       $userUID = $requestJSON["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
+      $isCompressed = False;
+      if (str_ends_with($filename, ".csv") || str_ends_with($filename, ".html")) { 
+         $isCompressed = True;
+         $filename .= ".gz";
+      }
 
       // Determine the job path.
       $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
@@ -238,58 +204,24 @@ class GetResultFiles extends ResourceBase {
       // Use the job path to generate the path of the output subdirectory.
       $outputPath = $this->jobService->getOutputPath($jobPath);
 
-      // Determine the base filename for the output files.
-      $baseFilename = $outputPath.'/'.$inputFilename;
+      $errorMessage = "";
+      $fileContents = "";
 
-      $resultFiles = [];
-
-      $fileTypesArray = explode(',', $fileTypes);
-
-      // Iterate over all requested file types.
-      foreach ($fileTypesArray as $fileType) {
-
-         $fileType = trim($fileType);
-         if (Utils::isNullOrEmpty($fileType)) { continue; }
-
-         // Validate the file type.
-         $resultFileType = ResultFileType::tryFrom($fileType);
-         if ($resultFileType == null) {
-            throw new BadRequestHttpException("Invalid file type: " . $fileType);
-         }
-
-         // Add a file extension determined by the file type.
-         $resultFilename = $inputFilename.'.'.$resultFileType->value;
-
-         // The actual filename defaults to the result filename, but will include a ".gz" extension for compressed files.
-         $actualFilename = $resultFilename;
-
-         $isCompressed = false;
-
-         // If the file type is CSV or HTML, we will retrieve the gzipped version of the file.
-         if ($resultFileType === ResultFileType::csv || $resultFileType === ResultFileType::html) {
-            $actualFilename = $actualFilename.".gz";
-            $isCompressed = true;
-         }
-
-         // Open a file and return its contents.
-         $fileContents = Common::getFileContents(true, $actualFilename, $outputPath);
-
-         $fileData = [
-            "contents" => $fileContents,
-            "filename" => $resultFilename,
-            "isCompressed" => $isCompressed,
-            "type" => $resultFileType->value
-         ];
-
-         // Add the file data to the result files.
-         array_push($resultFiles, $fileData);
+      try {
+         // Get the file contents.
+         $fileContents = Common::getFileContents(true, $filename, $outputPath);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_seqsearch_service')->error($e);
+         $errorMessage = $e->getMessage();
       }
 
       return [
-         "filename" => $inputFilename,
-         "files" => $resultFiles,
-         "jobUID" => $jobUID,
-         "sequenceIndex" => $sequenceIndex
+         "contents" => $fileContents,
+         "error" => $errorMessage,
+         "filename" => $filename,
+         "isCompressed" => $isCompressed,
+         "jobUID" => $jobUID
       ];
    }
 
@@ -312,8 +244,8 @@ class GetResultFiles extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // Get the requested files
-      $data = $this->getFiles($request);
+      // Get the output file.
+      $data = $this->getFile($request);
 
       $build = array(
          '#cache' => array(

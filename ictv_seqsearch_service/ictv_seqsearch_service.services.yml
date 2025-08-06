@@ -1,6 +1,6 @@
 services:
-  ictv_seqsearch_service.GetResultFiles:
-    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetResultFiles'
+  ictv_seqsearch_service.GetOutputFile:
+    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetOutputFile'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }

@@ -5,7 +5,7 @@ export interface IBlastHit {
    end_loc: number;
    evalue: number;
    exemplar_additional: string;
-   ICTV_ID: string;
+   ictv_id: string;
    input_seq: string;
    isolate_id: string;
    qseqid: string;
