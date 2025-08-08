@@ -15,6 +15,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    elements: {
       blastHits: HTMLElement,
       container: HTMLElement,
+      copyUrlButton: HTMLButtonElement,
       sequencePanel: HTMLElement
    }
 
@@ -36,6 +37,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       this.elements = {
          blastHits: null,
          container: containerEl_,
+         copyUrlButton: null,
          sequencePanel: null
       }
    }
@@ -281,15 +283,26 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       this.elements.sequencePanel = this.elements.container.querySelector(".sequence-panel");
       if (!this.elements.sequencePanel) { throw new Error("Invalid sequence panel DOM element"); }
 
-      // Add a click event handler.
+      // Handle clicks in the sequence panel.
       this.elements.sequencePanel.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+      });
+
+      // Get the copy URL button
+      this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
+      if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
+
+      // Add a click handler to the copy URL button.
+      this.elements.copyUrlButton.addEventListener("click", async () => {
+         return await this.parent.copyJobURL();
       });
    }
 
    unload() {
       this.isActive = false;
       this.elements.container.classList.remove("active");
+
+      // TODO: should we remove event listeners?
    }
 
 

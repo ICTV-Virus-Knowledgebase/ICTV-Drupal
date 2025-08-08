@@ -1,13 +1,11 @@
 
-import { AlertBuilder } from "../../../helpers/AlertBuilder";
-import { ButtonClass, Constants, CreateKeyFromName, Icon, PanelAction, PanelKey, ResultFileType, ToggleAccordion } from "../Common";
+import { ButtonClass, CreateKeyFromName, Icon, ToggleAccordion } from "../Common";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { ISequence } from "../ISequence";
 import { ISequenceFile } from "../ISequenceFile";
 import { SequenceSearch } from "../SequenceSearch";
 import tippy from "tippy.js";
-import { Utils } from "../../../helpers/Utils";
 
 
 export class SearchResultsPanel implements ISeqSearchPanel {
@@ -142,8 +140,6 @@ export class SearchResultsPanel implements ISeqSearchPanel {
    // Make the panel visible and populate it with data.
    async load() {
 
-      console.log("in searchResults.load")
-      
       this.isActive = true;
 
       // Make the container visible.
@@ -196,16 +192,10 @@ export class SearchResultsPanel implements ISeqSearchPanel {
    }
 
    unload() {
-
-      console.log("unloading search results panel")
-      console.debug("this.elements.container = ", this.elements.container)
-
       this.isActive = false;
-
       this.elements.container.classList.remove("active");
 
       // TODO: should we remove event listeners?
-      // TODO: anything else?
    }
 
 }
