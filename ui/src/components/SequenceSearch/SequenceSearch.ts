@@ -94,6 +94,19 @@ export class SequenceSearch {
    }
 
 
+   // Copy the job/state URL to the clipboard.
+   async copyJobURL() {
+
+      // Create the URL that can be used to view the job data.
+      const jobURL = this.createUrlUsingState();
+
+      // Copy the URL to the clipboard.
+      await navigator.clipboard.writeText(jobURL);
+
+      // Display a success message.
+      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
+   }
+
    // Create a SeqSearch URL using the current state. 
    createUrlUsingState(): string {
       
@@ -387,8 +400,8 @@ export class SequenceSearch {
    }
 
    
+   // Update the window's location with a state-maintaining URL.
    async updatePage() {
-
       const url = this.createUrlUsingState();
       window.location.assign(url);
       return;
@@ -421,8 +434,6 @@ export class SequenceSearch {
 
       // Get the output file and its metadata.
       const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, this.user.email, this.user.uid);
-      console.log("outputFile = ", outputFile)
-      
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The HTML file is invalid"); }
 
       // Decompress the HTML file, if necessary.

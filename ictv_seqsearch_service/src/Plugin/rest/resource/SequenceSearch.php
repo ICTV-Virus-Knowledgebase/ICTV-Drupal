@@ -14,8 +14,8 @@ class SequenceSearch {
    public static string $stdOutFilename = "stdout.txt";
 
 
-   // Run the ictv_sequence_classifier from the docker image.
-   public static function runSearch(string $inputPath, string $jsonFilename, string $outputPath, 
+   // Run ictv_seqsearch from the Docker image.
+   public static function runSearch(string $inputPath, string $outputPath, 
       string $scriptName, string $workingDirectory): JobStatus {
 
       // Declare variables used below.
@@ -94,6 +94,9 @@ class SequenceSearch {
          fwrite($stdErrorFile, $stdError);
          fclose($stdErrorFile);
       }
+
+      // Add errors to the Drupal log.
+      if ($stdError) { \Drupal::logger(Common::$MODULE_NAME)->error($userUID."_".$jobUID.": ".$stdError); }
 
       return $jobStatus;
    }

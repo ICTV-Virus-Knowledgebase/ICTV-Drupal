@@ -1,7 +1,5 @@
 
-import { AlertBuilder } from "../../../helpers/AlertBuilder";
-import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelAction, PanelKey } from "../Common";
-import { ISearchResult } from "../ISearchResult";
+import { ButtonClass, FormatDate, FormatDuration, Icon } from "../Common";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
@@ -25,9 +23,6 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
    job: ISeqSearchJob = null;
 
-   // The URL that can be used to return and view the job data.
-   jobURL: string = null;
-
    // The parent page
    parent: SequenceSearch = null;
 
@@ -50,43 +45,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       }
    }
 
-   async copyJobURL() {
-
-      // Copy the URL to the clipboard.
-      await navigator.clipboard.writeText(this.jobURL);
-
-      // Display a success message.
-      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
-   }
-
-   // Create HTML for a search result row.
-   createSearchResult(result_: ISearchResult, index_: number): string {
-
-      let html = `<tr>
-         <td>${index_ + 1}</td>
-         <td>${result_.input_file}</td>
-         <td>${Array.isArray(result_.hits) ? result_.hits.length : 0}</td>            
-         <td>${result_.status.toLowerCase()}</td>
-         <td>
-            <button class="btn ${ButtonClass.viewHits} has-tooltip" 
-               data-index="${index_}" 
-               data-tippy-content="Click to view the BLAST hits"
-            >${Icon.dna} View BLAST hits</button>
-            <button class="btn ${ButtonClass.viewHTML} has-tooltip" 
-               data-index="${index_}" 
-               data-tippy-content="Click to view the HTML results (${result_.blast_html})"
-            >${Icon.html} View HTML results</button>
-            <button class="btn ${ButtonClass.downloadCSV} has-tooltip" 
-               data-index="${index_}"
-               data-tippy-content="Click to download the results as a CSV file (${result_.blast_csv})"
-            >${Icon.csv} Download CSV results</button>
-         </td>
-      </tr>`;
-      
-      // TODO: Where to display errors?
-      return html;
-   }
-
+   
    // Make the panel visible and populate it with data.
    async load() {
 
@@ -107,7 +66,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       this.elements.container.innerHTML = "";
 
       // Create the URL that can be used to view the job data.
-      this.jobURL = this.parent.createUrlUsingState();
+      const jobURL = this.parent.createUrlUsingState();
 
       // Format the job name
       let jobName = Utils.safeTrim(this.job.name);
@@ -156,7 +115,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
          <div class="link-panel">
             <div class="instructions">You can view these search results again using the following URL:</div>
             <div class="controls">
-               <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> 
+               <a href="${jobURL}" target="_blank">${jobURL}</a> 
                <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
             </div>
          </div>`;
@@ -169,22 +128,19 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
 
-      // Add event listeners.
-      this.elements.copyUrlButton.addEventListener("click", () => this.copyJobURL());
+      // Add a click handler to the copy URL button.
+      this.elements.copyUrlButton.addEventListener("click", async () => {
+         return await this.parent.copyJobURL();
+      });
+
       return;
    }
 
    unload() {
-
-      console.log("unloading job details panel")
-      console.debug("this.elements.container = ", this.elements.container)
-
       this.isActive = false;
-
       this.elements.container.classList.remove("active");
 
       // TODO: should we remove event listeners?
-      // TODO: anything else?
    }
 
 }

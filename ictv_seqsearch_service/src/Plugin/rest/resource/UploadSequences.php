@@ -330,7 +330,7 @@ class UploadSequences extends ResourceBase {
          $fullPath = $rootPath."/".$modulePath."/".$localPath;
       
          // Run the sequence search script. A job status should be returned.
-         $jobStatus = SequenceSearch::runSearch($inputPath, $this->jsonResultsFilename, $outputPath, $this->scriptName, $fullPath);
+         $jobStatus = SequenceSearch::runSearch($inputPath, $outputPath, $this->scriptName, $fullPath);
          
          if ($jobStatus == JobStatus::complete) {
 
