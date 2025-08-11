@@ -144,10 +144,10 @@ export class UploadPanel implements ISeqSearchPanel {
       // Create HTML for the container Element.
       const html = 
          `<div class="file-selection active">
-            <div class="upload-message">Upload your FASTA sequence(s)</div>
+            <div class="upload-message">Upload your <b>nucleotide-only</b> FASTA sequence(s)</div>
             <button 
                class=\"btn file-control\"
-               data-tippy-content="Click to select one or more FASTA files to upload"
+               data-tippy-content="Click to select one or more nucleotide-only FASTA files to upload. Up to 100 sequences can be submitted in one or multiple files."
             >${Icon.browse} Select file(s)</button>
             <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
          </div>

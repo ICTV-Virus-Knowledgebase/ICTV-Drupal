@@ -11,7 +11,7 @@ export interface ISequence {
    blast_html: string;
 
    // The (compressed) contents of the CSV file.
-   csv_file?: string;
+   //csv_file?: string;
 
    // Errors returned by BLAST (I think)
    errors: string;
@@ -20,7 +20,7 @@ export interface ISequence {
    hits: IBlastHit[];
 
    // The (compressed) contents of the HTML file.
-   html_file?: string;
+   //html_file?: string;
 
    // The name of the FASTA input file.
    //input_file: string;

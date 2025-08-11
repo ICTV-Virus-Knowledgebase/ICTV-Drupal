@@ -2,6 +2,7 @@
 
 namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
+use Drupal\Core\Database\Connection;
 use Drupal\ictv_common\Utils;
 
 
@@ -109,6 +110,25 @@ class Common {
       } else {
          return $fileData;
       }
+   }
+
+   /**
+    * Lookup the user UID associated with this job UID.
+    */
+   public static function lookupJobUserUID(Connection $dbConnection, string $jobUID) {
+
+      // TODO: validate the connection parameter.
+
+      if (Utils::isEmptyElseTrim($jobUID)) { throw new Exception("Invalid job UID parameter"); }
+
+      // Generate SQL to lookup the job's user UID.
+      $sql = "SELECT user_uid FROM job WHERE `uid` = '{$jobUID}' LIMIT 1;";
+
+      // Execute the query and process the results.
+      $result = $dbConnection->query($sql);
+      $userUID = $result->fetchField(0);
+
+      return $userUID;
    }
 
 }

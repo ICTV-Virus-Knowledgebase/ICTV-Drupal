@@ -119,6 +119,9 @@ try {
    $connection = \Drupal\Core\Database\Database::getConnection("default", $dbName);
    if (!$connection) { throw new \Exception("The database connection is invalid or null."); }
 
+   \Drupal::logger(Common::$MODULE_NAME)->info("Inside RunSeqSearch.php");
+
+   /*
    //-------------------------------------------------------------------------------------------------------
    // Run the sequence search script. A job status should be returned.
    //-------------------------------------------------------------------------------------------------------
@@ -178,6 +181,7 @@ try {
    // Update the job record in the database.
    //-------------------------------------------------------------------------------------------------------
    JobService::updateJob($connection, $errorMessage, $jobUID, $jobStatus, $userUID); 
+*/
 
    fwrite(STDOUT, "Processing is complete");
 
