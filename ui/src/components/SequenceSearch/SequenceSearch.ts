@@ -50,9 +50,12 @@ export class SequenceSearch {
 
    // User information
    user: {
-      email: string, 
+      email: string,
       name: string,
-      uid: string
+      uid: string,
+
+      // The user UID provided as a URL parameter (optional).
+      urlUID: string
    }
 
    
@@ -71,9 +74,10 @@ export class SequenceSearch {
       this.containerSelector = containerSelector_;
 
       this.user = {
-         email: email_, 
+         email: email_,
          name: name_,
-         uid: userUID_
+         uid: userUID_,
+         urlUID: null
       }
 
       this.elements = {
@@ -143,8 +147,11 @@ export class SequenceSearch {
       title_ = Utils.safeTrim(title_);
       if (title_.length < 1) { title_ = filename_; }
 
+      // Determine which user UID to use.
+      let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
+
       // Get the output file and its metadata.
-      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, this.user.email, this.user.uid);
+      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The CSV file is invalid"); }
 
       // Decompress the CSV file, if necessary.
@@ -170,7 +177,7 @@ export class SequenceSearch {
       if (!this.state.jobUID) { return await AlertBuilder.displayError("No job UID provided"); }
 
       // Get the job data from the server.
-      this.job = await SequenceSearchService.getSearchResults(this.authToken, this.state.jobUID, this.user.email, this.user.uid);
+      this.job = await SequenceSearchService.getJob(this.authToken, this.state.jobUID);
 
       return;
    }
@@ -377,7 +384,7 @@ export class SequenceSearch {
                action = PanelAction.displayBlastHits; 
             }
          }
-      }  
+      }
 
       return await this.handleAction(action);
    }
@@ -431,9 +438,12 @@ export class SequenceSearch {
 
       title_ = Utils.safeTrim(title_);
       if (title_.length < 1) { title_ = filename_; }
+      
+      // Determine which user UID to use.
+      let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
 
       // Get the output file and its metadata.
-      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, this.user.email, this.user.uid);
+      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The HTML file is invalid"); }
 
       // Decompress the HTML file, if necessary.

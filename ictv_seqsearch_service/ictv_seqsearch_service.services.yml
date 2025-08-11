@@ -5,8 +5,8 @@ services:
     tags:
       - { name: 'rest.resource' }
 
-  ictv_seqsearch_service.GetSeqSearchResult:
-    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetSeqSearchResult'
+  ictv_seqsearch_service.GetSeqSearchJob:
+    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetSeqSearchJob'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }

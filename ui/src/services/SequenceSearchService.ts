@@ -9,44 +9,39 @@ import { WebServiceKey } from "../global/Types";
 export class _SequenceSearchService {
 
 
-   // Get an output file from a sequence search job.
-   async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userEmail_: string, userUID_: string): Promise<IOutputFile> {
+   
+   // Get the specified job and result metadata.
+   async getJob(authToken_: string, jobUID_: string): Promise<ISeqSearchJob> {
+      
+      // Validate the parameters
+      if (!authToken_) { throw new Error("Invalid auth token"); }
+      if (!jobUID_) { throw new Error("Invalid job UID"); }
+
+      const data = {
+         authToken: authToken_,
+         jobUID: jobUID_
+      };
+
+      // Get and return the sequence search result.
+      return await WebService.drupalPost<ISeqSearchJob>(WebServiceKey.getSequenceSearchJob, authToken_, data);
+   }
+
+
+   // Get an output file from a SeqSearch job.
+   async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }
       if (!jobUID_) { throw new Error("Invalid job UID"); }
-      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
-      if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
+      if (!userUID_) { throw new Error("Invalid user UID"); }
 
       const data = {
          filename: filename_,
          jobUID: jobUID_,
-         userEmail: userEmail_,
          userUID: userUID_
       };
 
       // Get and return the result files.
       return await WebService.drupalPost<IOutputFile>(WebServiceKey.getSeqSearchOutputFile, authToken_, data);
-   }
-
-
-   // Get the search results for a specific job.
-   async getSearchResults(authToken_: string, jobUID_: string, userEmail_: string, userUID_: string): Promise<ISeqSearchJob> {
-      
-      // Validate the parameters
-      if (!authToken_) { throw new Error("Invalid auth token"); }
-      if (!jobUID_) { throw new Error("Invalid job UID"); }
-      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
-      if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
-
-      const data = {
-         authToken: authToken_,
-         jobUID: jobUID_,
-         userEmail: userEmail_,
-         userUID: userUID_
-      };
-
-      // Get and return the sequence search result.
-      return await WebService.drupalPost<ISeqSearchJob>(WebServiceKey.getSequenceSearchResult, authToken_, data);
    }
 
    

@@ -272,7 +272,7 @@ export enum WebServiceKey {
 
    // SeqSearch
    getSeqSearchOutputFile = "getSeqSearchOutputFile",
-   getSequenceSearchResult = "getSequenceSearchResult",
+   getSequenceSearchJob = "getSequenceSearchJob",
    uploadSequences = "uploadSequences",
 
    // Taxonomy

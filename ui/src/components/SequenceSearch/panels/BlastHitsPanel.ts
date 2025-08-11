@@ -247,12 +247,12 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             <div class="controls">
                <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip"
                   data-filename="${sequence.blast_html}"
-                  data-tippy-content="Click to view the results as HTML in a new tab"
+                  data-tippy-content="Click to view the alignement(s) in a new tab"
                   data-title="${sequence.qseqid}"
-               >${Icon.html} View HTML results</button>
+               >${Icon.html} View alignment(s)</button>
                <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip"
                   data-filename="${sequence.blast_csv}"
-                  data-tippy-content="Click to download the results as a CSV file"
+                  data-tippy-content="Click to download the BLAST results as a CSV file"
                   data-title="${csvName}"
                >${Icon.csv} Download CSV results</button>
             </div>

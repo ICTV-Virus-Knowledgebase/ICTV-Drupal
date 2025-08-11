@@ -7,6 +7,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
 use Drupal\ictv_common\Jobs\JobService;
@@ -31,6 +32,12 @@ use Drupal\ictv_common\Utils;
  * )
  */
 class GetOutputFile extends ResourceBase {
+
+   // The connection to the ictv_apps database.
+   protected Connection $connection;
+
+   // The name of the database used by this web service.
+   protected string $databaseName;
 
    // The directory where input sequences are uploaded.
    protected ?string $inputDirectory;
@@ -90,6 +97,13 @@ class GetOutputFile extends ResourceBase {
 
       // Get configuration settings from the ictv_seqsearch_service.settings file.
       try {
+         // Get the database name.
+         $this->databaseName = $config->get("databaseName");
+         if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
+         
+         // Get a database connection.
+         $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
+         
          // Get the input directory.
          $this->inputDirectory = $config->get("inputDirectory");
          if (Utils::isNullOrEmpty($this->inputDirectory)) { throw new \Exception("The inputDirectory setting is empty"); }
@@ -184,12 +198,8 @@ class GetOutputFile extends ResourceBase {
       $jobUID = $requestJSON["jobUID"];
       if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
 
-      // Get and validate the user email.
-      $userEmail = $requestJSON["userEmail"];
-      if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
-
-      // Get and validate the user UID.
-      $userUID = $requestJSON["userUID"];
+      // Lookup the job's user UID.
+      $userUID = Common::lookupJobUserUID($this->connection, $jobUID); //$requestJSON["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
       $isCompressed = False;

@@ -52,7 +52,8 @@ export enum ParameterKey {
    file = "file",
    filename = "filename",
    job = "job",
-   sequence = "sequence"
+   sequence = "sequence",
+   userUID = "userUID"
 }
 
 export enum ResultFileType {

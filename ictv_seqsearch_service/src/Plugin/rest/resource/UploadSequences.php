@@ -395,7 +395,7 @@ class UploadSequences extends ResourceBase {
       }
 
       // Retrieve a job and return it as a SeqSearch Job object (nested arrays, actually).
-      return SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
+      return SeqSearchJob::getJob($this->connection, $jobUID, $userUID);
    }
 
    

@@ -118,12 +118,12 @@ export class SearchResultsPanel implements ISeqSearchPanel {
             >${Icon.dna} View BLAST hits</button>
             <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
                data-filename="${sequence_.blast_html}"
-               data-tippy-content="Click to view the results as HTML in a new tab"
+               data-tippy-content="Click to view the alignement(s) in a new tab"
                data-title="${sequence_.qseqid}"
-            >${Icon.html} View HTML results</button>
+            >${Icon.html} View alignment(s)</button>
             <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
                data-filename="${sequence_.blast_csv}"
-               data-tippy-content="Click to download the results as a CSV file"
+               data-tippy-content="Click to download the BLAST results as a CSV file"
                data-title="${csvTitle}"
             >${Icon.csv} Download CSV results</button>
          </td>

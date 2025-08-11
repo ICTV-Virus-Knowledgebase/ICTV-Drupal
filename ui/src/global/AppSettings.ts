@@ -43,7 +43,7 @@ export class _AppSettings {
 
       // Sequence search
       getSeqSearchOutputFile: "get-seqsearch-output-file",
-      getSequenceSearchResult: "get-seqsearch-result",
+      getSequenceSearchJob: "get-seqsearch-job",
       uploadSequences: "upload-sequences",
 
       // Taxonomy
