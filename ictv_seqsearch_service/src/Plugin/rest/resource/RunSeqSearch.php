@@ -157,11 +157,14 @@ try {
          }
       }
 
-      if ($json->files !== null) { 
+      // Convert the JSON text into a Taxonomy result object.
+      $taxResult = json_decode($json);
+
+      if ($taxResult !== null && $taxResult->files !== null) { 
          
          try {
             // Update the job's job_file records.
-            foreach($json->files as $file) {
+            foreach($taxResult->files as $file) {
 
                $fileStatus = JobStatus::error;
 
@@ -194,8 +197,10 @@ try {
       }   
    }
 
+   $jobID = NULL;
+
    // Update the job's JSON and status.
-   SeqSearchJob::updateJobJSON(NULL, $jsonForSQL, $message, $jobStatus);
+   SeqSearchJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $message, $jobStatus);
 
    fwrite(STDOUT, "Processing is complete");
 
