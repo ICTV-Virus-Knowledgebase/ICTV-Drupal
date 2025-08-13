@@ -1,7 +1,8 @@
 
-import { ISeqSearchJob } from "../components/SequenceSearch/ISeqSearchJob";
 import { IFileData } from "../models/IFileData";
 import { IOutputFile } from "../components/SequenceSearch/IOutputFile";
+import { ISeqSearchJob } from "../components/SequenceSearch/ISeqSearchJob";
+import { IUploadResult } from "../components/SequenceSearch/IUploadResults";
 import { WebService } from "./WebService";
 import { WebServiceKey } from "../global/Types";
 
@@ -46,7 +47,7 @@ export class _SequenceSearchService {
    
    // Upload one or more sequences for processing.
    async uploadSequences(authToken_: string, files_: IFileData[], jobName_: string, userEmail_: string, 
-      userUID_: string): Promise<ISeqSearchJob> {
+      userUID_: string): Promise<IUploadResult> {
 
       // Validate parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -62,36 +63,8 @@ export class _SequenceSearchService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<ISeqSearchJob>(WebServiceKey.uploadSequences, authToken_, data);
+      return await WebService.drupalPost<IUploadResult>(WebServiceKey.uploadSequences, authToken_, data);
    } 
-
-
-   
-   /*
-   // Get all of this user's sequence search results (jobs).
-   async getSearchResults(authToken_: string, userEmail_: string, userUID_: string): Promise<ISeqSearchJob[]> {
-
-      // Validate the parameters
-      if (!authToken_) { throw new Error("Invalid auth token"); }
-      if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
-      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
-
-      const data = {
-         authToken: authToken_,
-         userEmail: userEmail_,
-         userUID: userUID_
-      };
-
-      let jobs: ISeqSearchJob[] = null;
-
-      let jobsJSON = await WebService.drupalPost<string>(WebServiceKey.getClassifiedSequences, authToken_, data);
-      if (!!jobsJSON) { 
-         jobs = JSON.parse(jobsJSON);
-         if (!jobs || !Array.isArray(jobs) || jobs.length < 1) { jobs = null; }
-      }
-      
-      return jobs;
-   }*/
 
 }
 

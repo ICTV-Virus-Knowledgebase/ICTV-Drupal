@@ -22,6 +22,9 @@ export class SequenceSearch {
    // The CSS selector for the container element where the Sequence Search UI will be rendered.
    containerSelector: string = null;
 
+   // How long should the upload panel wait to try to load job data?
+   retryDelay: number = 3000; // 3 seconds
+
    // DOM elements
    elements: {
       blastHitsPanel: HTMLElement,
@@ -39,7 +42,6 @@ export class SequenceSearch {
 
       // The currently-selected input file associated with the job.
       fileIndex: number,
-      //filename: string,
 
       // The current job UID (optional)
       jobUID: string,

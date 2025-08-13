@@ -4,15 +4,26 @@ import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { ButtonClass, Constants, Icon, GetSpinnerHTML } from "../Common";
 import { IFileData } from "../../../models/IFileData";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
+import { IUploadResult } from "../IUploadResults";
 import { JobStatus } from "../../../global/Types";
 import { SequenceSearch } from "../SequenceSearch";
 import { SequenceSearchService } from "../../../services/SequenceSearchService";
 import tippy from "tippy.js";
 
 enum PanelMode {
-   processing = "processing",
-   selection = "selection",
-   submission = "submission"
+
+   // The user can select one or more FASTA files.
+   file_selection = "file_selection",
+
+   // If FASTA files have been selected, the user can name the job and upload the file(s).
+   job_submission = "job_submission",
+
+   // The user has uploaded the file(s) to the web service and we're waiting for the new  
+   // job UID and the status of the upload.
+   job_submitted = "job_submitted",
+
+   // The files have been uploaded and we are waiting for the SeqSearch job to complete.
+   pending_results = "pending_results"
 }
 
 
@@ -22,17 +33,25 @@ export class UploadPanel implements ISeqSearchPanel {
 
    // DOM elements
    elements: {
-      cancelButton: HTMLButtonElement,
       container: HTMLElement,
+
+      // The file selection sub-panel
+      fileSelectionSubPanel: HTMLElement,
       fileControl: HTMLElement,
       fileInput: HTMLInputElement,
-      fileProcessingPanel: HTMLElement,
-      fileSelectionPanel: HTMLElement,
-      fileSubmissionPanel: HTMLElement,
-      fileUploadDetails: HTMLElement,
+      
+      // The job submission sub-panel
+      jobSubmissionSubPanel: HTMLElement,
+      cancelButton: HTMLButtonElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
-      uploadButton: HTMLButtonElement
+      uploadButton: HTMLButtonElement,
+
+      // The "job submitted" sub-panel
+      jobSubmittedSubPanel: HTMLElement,
+
+      // The "pending results" sub-panel
+      resultsSubPanel: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -49,85 +68,141 @@ export class UploadPanel implements ISeqSearchPanel {
 
       if (!containerEl_) { throw new Error("Invalid container element"); }
 
-      this.mode = PanelMode.selection;
+      this.mode = PanelMode.file_selection;
 
       if (!parent_) { throw new Error("Invalid parent parameter"); }
       this.parent = parent_;
 
       this.elements = {
-         cancelButton: null,
          container: containerEl_,
+         
+         // The file selection panel
+         fileSelectionSubPanel: null,
          fileControl: null,
          fileInput: null,
-         fileProcessingPanel: null,
-         fileSelectionPanel: null,
-         fileSubmissionPanel: null,
-         fileUploadDetails: null,
+
+         // The "job submitted" panel
+         jobSubmittedSubPanel: null,
+         
+         // The job submission panel
+         jobSubmissionSubPanel: null,
+         cancelButton: null,
          jobName: null,
          jobNameLabel: null,
-         uploadButton: null
+         uploadButton: null,
+
+         // The "pending results" panel
+         resultsSubPanel: null
       }
    }
 
    // Change which panel will be displayed (the other panel will be hidden).
    async changePanelMode(mode_: PanelMode) {
 
+      console.log(`in changePanelMode mode_ = ${mode_}`)
+
       // Clear the job name input
       this.elements.jobName.value = ""; 
 
-      if (mode_ === PanelMode.processing) {
+      switch (mode_) {
 
-         // Display the file processing panel.
-         this.elements.fileProcessingPanel.classList.add("active");
+         case PanelMode.file_selection:
 
-         const spinnerHTML = GetSpinnerHTML("Processing...");
-         this.elements.fileProcessingPanel.innerHTML = spinnerHTML;
+            // Display the file selection panel.
+            this.elements.fileSelectionSubPanel.classList.add("active");
 
-         // Hide the other panels.
-         this.elements.fileSelectionPanel.classList.remove("active");
-         this.elements.fileSubmissionPanel.classList.remove("active");
+            // Clear the file input
+            this.elements.fileInput.value = ""; 
+            this.elements.fileInput.files = null;
 
-      } else if (mode_ === PanelMode.selection) {
+            // Hide the other panels.
+            this.elements.jobSubmittedSubPanel.innerHTML = "";
+            this.elements.jobSubmittedSubPanel.classList.remove("active");
+            this.elements.jobSubmissionSubPanel.classList.remove("active");
+            break;
 
-         // Display the file selection panel.
-         this.elements.fileSelectionPanel.classList.add("active");
+         case PanelMode.job_submission:
 
-         // Clear the file input
-         this.elements.fileInput.value = ""; 
-         this.elements.fileInput.files = null;
+            // Display the job submission panel.
+            this.elements.jobSubmissionSubPanel.classList.add("active");
 
-         // Hide the other panels.
-         this.elements.fileProcessingPanel.innerHTML = "";
-         this.elements.fileProcessingPanel.classList.remove("active");
-         this.elements.fileSubmissionPanel.classList.remove("active");
+            // Generate the upload button text.
+            let buttonText = `${Icon.upload} Submit`;
+            
+            if (this.elements.fileInput.files.length === 1) {
+               buttonText += " file";
+            } else {
+               buttonText += ` ${this.elements.fileInput.files.length} files`;
+            }
+            
+            // Update the upload button text.
+            this.elements.uploadButton.innerHTML = buttonText;
 
-      } else if (mode_ === PanelMode.submission) {
+            // Hide the other panels.
+            this.elements.fileSelectionSubPanel.classList.remove("active");
+            this.elements.jobSubmittedSubPanel.innerHTML = "";
+            this.elements.jobSubmittedSubPanel.classList.remove("active");
+            this.elements.resultsSubPanel.classList.remove("active");
+            break;
 
-         // Display the file submission panel.
-         this.elements.fileSubmissionPanel.classList.add("active");
+         case PanelMode.job_submitted:
 
-         // Generate the upload button text.
-         let buttonText = `${Icon.upload} Submit`;
-         
-         if (this.elements.fileInput.files.length === 1) {
-            buttonText += " file";
-         } else {
-            buttonText += ` ${this.elements.fileInput.files.length} files`;
-         }
-         
-         // Update the upload button text.
-         this.elements.uploadButton.innerHTML = buttonText;
+            // Display the file processing panel.
+            this.elements.jobSubmittedSubPanel.classList.add("active");
 
-         // Hide the other panels.
-         this.elements.fileProcessingPanel.innerHTML = "";
-         this.elements.fileProcessingPanel.classList.remove("active");
-         this.elements.fileSelectionPanel.classList.remove("active");
+            const spinnerHTML = GetSpinnerHTML("Processing...");
+            this.elements.jobSubmittedSubPanel.innerHTML = spinnerHTML;
 
-      } else {
-         return await AlertBuilder.displayError(`Unrecognized panel mode ${mode_}`);
+            // Hide the other panels.
+            this.elements.fileSelectionSubPanel.classList.remove("active");
+            this.elements.jobSubmissionSubPanel.classList.remove("active");
+            this.elements.resultsSubPanel.classList.remove("active");
+            break;
+
+         case PanelMode.pending_results:
+
+            // Display the results panel.
+            this.elements.resultsSubPanel.classList.add("active");
+
+            this.elements.resultsSubPanel.innerHTML = "Checking to see if the job has completed";
+
+            console.log("TODO: start the timer loop and try to retrieve the job data")
+
+            // Hide the other panels.
+            this.elements.fileSelectionSubPanel.classList.remove("active");
+            this.elements.jobSubmissionSubPanel.classList.remove("active");
+            this.elements.jobSubmittedSubPanel.classList.remove("active");
+            break;
+
+         default:
+            return await AlertBuilder.displayError(`Unrecognized panel mode ${mode_}`);
       }
 
       return;
+   }
+
+   // Handle the web service's response to uploading FASTA file(s).
+   async handleUploadResult(result_: IUploadResult) {
+
+      // Error conditions
+      if (!result_ || result_.status !== JobStatus.pending) {
+
+         let errorMessage = "An error occurred uploading your file(s)";
+         if (!!result_ && !!result_.errorMessage) { errorMessage += `: ${result_.errorMessage}`; }
+
+         await AlertBuilder.displayError(errorMessage);
+
+         await this.changePanelMode(PanelMode.file_selection);
+         return;
+      }
+
+      // TODO: what if the job UID is empty?
+
+      this.parent.state.jobUID = result_.jobUID;
+      this.parent.state.fileIndex = NaN;
+      this.parent.state.sequenceIndex = NaN;
+
+      return await this.changePanelMode(PanelMode.pending_results);
    }
 
    // Make the panel visible and populate it with data.
@@ -143,7 +218,7 @@ export class UploadPanel implements ISeqSearchPanel {
       
       // Create HTML for the container Element.
       const html = 
-         `<div class="file-selection active">
+         `<div class="file-selection sub-panel">
             <div class="upload-message">Upload your <b>nucleotide-only</b> FASTA sequence(s)</div>
             <button 
                class=\"btn file-control\"
@@ -151,41 +226,38 @@ export class UploadPanel implements ISeqSearchPanel {
             >${Icon.browse} Select file(s)</button>
             <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
          </div>
-         <div class="file-submission">
+
+         <div class="job-submission sub-panel">
             <div class=\"job-name-label\">Job name</div>
             <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
             <button class=\"btn ${ButtonClass.upload}\">Submit file(s)</button>
             <button class=\"btn ${ButtonClass.cancel}\">${Icon.cancel} Cancel</button>
          </div>
-         <div class="file-processing"></div>`;
+
+         <div class="job-submitted sub-panel"></div>
+         
+         <div class="results sub-panel"></div>`;
 
       this.elements.container.innerHTML = html;
 
-      //------------------------------------------------------------------------------------------------------------------------------------
       // Get references to the DOM elements.
+      
       //------------------------------------------------------------------------------------------------------------------------------------
+      // The "job submitted" sub-panel
+      //------------------------------------------------------------------------------------------------------------------------------------
+      this.elements.jobSubmittedSubPanel = <HTMLElement>this.elements.container.querySelector(".job-submitted.sub-panel");
+      if (!this.elements.jobSubmittedSubPanel) { throw new Error("Invalid job submitted panel element"); }
 
-      // The file processing panel.
-      this.elements.fileProcessingPanel = <HTMLElement>this.elements.container.querySelector(".file-processing");
-      if (!this.elements.fileProcessingPanel) { throw new Error("Invalid file processing panel element"); }
-
-      // The file selection panel.
-      this.elements.fileSelectionPanel = <HTMLElement>this.elements.container.querySelector(".file-selection");
-      if (!this.elements.fileSelectionPanel) { throw new Error("Invalid file selection panel element"); }
-
-      // The file submission panel.
-      this.elements.fileSubmissionPanel = <HTMLElement>this.elements.container.querySelector(".file-submission");
-      if (!this.elements.fileSubmissionPanel) { throw new Error("Invalid file submission panel element"); }
-
-      // The upload button
-      this.elements.uploadButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.upload}`);
-      if (!this.elements.uploadButton) { throw new Error("Invalid upload button element"); }
-      this.elements.uploadButton.addEventListener("click", () => { this.uploadSequences(); })
+      //------------------------------------------------------------------------------------------------------------------------------------
+      // The file selection panel
+      //------------------------------------------------------------------------------------------------------------------------------------
+      this.elements.fileSelectionSubPanel = <HTMLElement>this.elements.container.querySelector(".file-selection.sub-panel");
+      if (!this.elements.fileSelectionSubPanel) { throw new Error("Invalid file selection panel element"); }
 
       // The file input control
       this.elements.fileInput = <HTMLInputElement>this.elements.container.querySelector("#file_input");
       if (!this.elements.fileInput) { throw new Error("Invalid file input element"); }
-      this.elements.fileInput.addEventListener("change", async () => this.changePanelMode(PanelMode.submission));
+      this.elements.fileInput.addEventListener("change", async () => this.changePanelMode(PanelMode.job_submission));
 
       // The file control
       this.elements.fileControl = <HTMLElement>this.elements.container.querySelector(".file-control");
@@ -194,6 +266,22 @@ export class UploadPanel implements ISeqSearchPanel {
       // Clicking on the file button will trigger a click on the file input element.
       this.elements.fileControl.addEventListener("click", () => this.elements.fileInput.click());
 
+      //------------------------------------------------------------------------------------------------------------------------------------
+      // The results panel
+      //------------------------------------------------------------------------------------------------------------------------------------
+      this.elements.resultsSubPanel = <HTMLElement>this.elements.container.querySelector(".results.sub-panel");
+
+      //------------------------------------------------------------------------------------------------------------------------------------
+      // The job submission panel
+      //------------------------------------------------------------------------------------------------------------------------------------
+      this.elements.jobSubmissionSubPanel = <HTMLElement>this.elements.container.querySelector(".job-submission.sub-panel");
+      if (!this.elements.jobSubmissionSubPanel) { throw new Error("Invalid job submission panel element"); }
+
+      // The upload button
+      this.elements.uploadButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.upload}`);
+      if (!this.elements.uploadButton) { throw new Error("Invalid upload button element"); }
+      this.elements.uploadButton.addEventListener("click", () => { this.uploadSequences(); })
+
       // The job name control and its label.
       this.elements.jobNameLabel = <HTMLElement>this.elements.container.querySelector(".job-name-label");
       if (!this.elements.jobNameLabel) { throw new Error("Invalid job name label element"); }
@@ -201,17 +289,20 @@ export class UploadPanel implements ISeqSearchPanel {
       this.elements.jobName = <HTMLInputElement>this.elements.container.querySelector(".job-name");
       if (!this.elements.jobName) { throw new Error("Invalid job name element"); }
 
-      // The cancel (submission) button
+      // The "cancel upload" button
       this.elements.cancelButton = <HTMLButtonElement>this.elements.container.querySelector(`.${ButtonClass.cancel}`);
       if (!this.elements.cancelButton) { throw new Error("Invalid cancel button element"); }
 
-      // The cancel button will hide the submission panel and display the selection panel.
-      this.elements.cancelButton.addEventListener("click", async () => { return this.changePanelMode(PanelMode.selection); })
+      // The cancel button will hide the upload panel and display the selection panel.
+      this.elements.cancelButton.addEventListener("click", async () => { return this.changePanelMode(PanelMode.file_selection); })
+
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
 
-      return;
+      // Display the file selection sub-panel.
+      await this.changePanelMode(PanelMode.file_selection);
+      return
    }
 
    // Read the contents of a file asynchronously and return it as a base64-encoded string.
@@ -252,16 +343,10 @@ export class UploadPanel implements ISeqSearchPanel {
    // Unload and hide the panel.
    unload() {
 
-      console.log("unloading upload panel")
-      console.debug("this.elements.container = ", this.elements.container)
-
       this.isActive = false;
-
-      //this.elements.container.classList.remove("active");
+      this.elements.container.classList.remove("active");
       
-
       // TODO: should we remove event listeners?
-      // TODO: anything else?
    }
 
    // Upload the selected files to the web service for processing.
@@ -309,48 +394,23 @@ export class UploadPanel implements ISeqSearchPanel {
                `that can be loaded is ${Constants.MAX_SEQUENCE_COUNT} (you tried to submit ${sequenceCount} sequences)`);
          }
 
-         // Change the panel mode to "processing".
-         await this.changePanelMode(PanelMode.processing);
+         // Change the panel mode to "job submitted".
+         await this.changePanelMode(PanelMode.job_submitted);
          
          // Show a modal dialog with information about the uploaded files.
-         await this.showInfoDialog(files.length, filenames);
+         //await this.showInfoDialog(files.length, filenames);
 
          // Upload the sequence file(s) to the web service for processing.
-         let job = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
+         let result = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
 
-         if (!job) {
+         console.log("upload result = ", result)
 
-            // Create a placeholder job.
-            job = {
-               createdOn: null,
-               data: null,
-               endedOn: null,
-               name: null,
-               message: "An unknown error occurred",
-               status: JobStatus.error,
-               uid: null
-            }
-         }
-
-         if (job.status === JobStatus.complete || job.status === JobStatus.pending) {
-
-            // Update the job and job UID.
-            this.parent.job = job; 
-            this.parent.state.jobUID = job !== null ? job.uid : null;
-
-            // Update the page to display the job results.
-            await this.parent.updatePage();
-
-         } else {
-            throw new Error(job.message || "An unknown error occurred");
-         }
+         // Handle the upload result and display the correct sub-panel.
+         await this.handleUploadResult(result);
        
       } catch (error_) {
          await AlertBuilder.displayError(error_);
       }
-
-      // Revert to the file selection mode.
-      await this.changePanelMode(PanelMode.selection);
 
       return;
    }

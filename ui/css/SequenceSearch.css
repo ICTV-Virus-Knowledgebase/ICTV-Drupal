@@ -78,12 +78,12 @@
    left: -1000px;
 }
 
-/* The upload panel's file submission section. */
-#ictv_seqsearch_container .upload-panel .file-submission {
+/* Sub-panels of the main panels. */
+#ictv_seqsearch_container .sub-panel {
    display: none;
    visibility: hidden;
 }
-#ictv_seqsearch_container .upload-panel .file-submission.active {
+#ictv_seqsearch_container .sub-panel.active {
    align-items: center;
    border-collapse: separate;
    display: flex;
@@ -91,16 +91,16 @@
    justify-content: flex-start;
    line-height: 1.5;
    margin: 0;
-   /*max-width: 600px;*/
    visibility: visible;
 }
-#ictv_seqsearch_container .upload-panel .file-submission .job-name-label {
+
+/* The upload panel */
+#ictv_seqsearch_container .upload-panel .job-submission .job-name-label {
    font-weight: 700;
    margin-right: 0.5rem;
 }
-#ictv_seqsearch_container .upload-panel .file-submission .job-name {
+#ictv_seqsearch_container .upload-panel .job-submission .job-name {
    background-color: #fff;
-   /*background-image: none;*/
    border: 1px solid #ccc;
    border-radius: 0; /*4px 0 0 4px;*/
    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
@@ -112,23 +112,23 @@
    vertical-align: middle;
    width: 300px;
 }
-#ictv_seqsearch_container .upload-panel .file-submission .job-name::placeholder {
+#ictv_seqsearch_container .upload-panel .job-submission .job-name::placeholder {
    font-size: 1.0rem;
    opacity: 0.75;
 }
-#ictv_seqsearch_container .upload-panel .file-submission .job-name:focus {
+#ictv_seqsearch_container .upload-panel .job-submission .job-name:focus {
    background-color: #fff;
    border-color: #80bdff;
    box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
    color: #495057;
    outline: 0;
 }
-#ictv_seqsearch_container .upload-panel .file-submission button.upload-button {
+#ictv_seqsearch_container .upload-panel .job-submission button.upload-button {
    background-color: #198754;
    border-radius: 0;
    color: #fff;
 }
-#ictv_seqsearch_container .upload-panel .file-submission button.cancel-button {
+#ictv_seqsearch_container .upload-panel .job-submission button.cancel-button {
    background-color: #999;
    border-radius: 0 5px 5px 0;
    color: #fff;
@@ -285,6 +285,13 @@
 #ictv_seqsearch_container table.job-details td .job-name {
    font-weight: bold;
 }
+
+#ictv_seqsearch_container .job-details-panel .no-results {
+   color: red;
+   font-size: 1.2rem;
+   margin-bottom: 0.5rem;
+}
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The link panel
