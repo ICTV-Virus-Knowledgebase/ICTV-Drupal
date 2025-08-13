@@ -37,7 +37,6 @@ export enum Icon {
 export enum PanelAction {
    displayJob = "displayJob",
    displayBlastHits = "displayBlastHits",
-   //displaySearchResults = "displaySearchResults",
    displayUpload = "displayUpload"
 }
 
@@ -72,7 +71,8 @@ export enum ResultFileType {
 export const Constants = {
 
    // Accepted file types for sequence uploads.
-   ACCEPTED_FILE_TYPES: [".fa", ".faa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".mpfa", ".txt"],
+   // TODO: Make sure this list is consistent with the seqsearch Python file in the ICTVseqsearch GitHub repo.
+   ACCEPTED_FILE_TYPES: [".fa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"],
 
    // Date and time format strings.
    DATE_FORMAT: {
