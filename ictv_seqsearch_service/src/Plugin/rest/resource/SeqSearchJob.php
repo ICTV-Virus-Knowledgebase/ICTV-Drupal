@@ -118,4 +118,31 @@ class SeqSearchJob {
       return SeqSearchJob::fromArray($row);
    }
 
+
+   // Update the job's JSON 
+   public static function updateJobJSON(Connection $connection, ?int $jobID, ?string $jobUID, 
+      ?string $json, ?string $message, JobStatus $status) {
+
+      try {
+         // Populate the stored procedure's parameters.
+         $parameters = [
+            ":jobID" => $jobID, 
+            ":jobUID" => $jobUID, 
+            ":json" => $json, 
+            ":message" => $message,
+            ":status" => $status->value
+         ];
+
+         // Generate SQL to call the stored procedure.
+         $sql = "CALL updateJobJSON(:jobID, :jobUID, :json, :message, :status)";
+
+         // Run the query
+         $result = $connection->query($sql, $parameters);
+         if (!$result) { return null; }
+
+      } catch (\Exception $e) {
+         \Drupal::logger($this->parentModule)->error($e->getMessage());
+         return null;
+      }
+   }
 }

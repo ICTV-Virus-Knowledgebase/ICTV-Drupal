@@ -96,7 +96,7 @@ class SequenceSearch {
       }
 
       // Add errors to the Drupal log.
-      if ($stdError) { \Drupal::logger(Common::$MODULE_NAME)->error($userUID."_".$jobUID.": ".$stdError); }
+      if ($stdError) { \Drupal::logger(Common::$MODULE_NAME)->error("Errors in ".$outputPath.": ".$stdError); }
 
       return $jobStatus;
    }

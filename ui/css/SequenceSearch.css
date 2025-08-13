@@ -354,6 +354,10 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    BLAST hits
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#ictv_seqsearch_container .blast-hits-panel .navigation-panel {
+   margin-bottom: 2.0rem; 
+}
 #ictv_seqsearch_container .blast-hits-panel .sequence-panel {
    align-items: center;
    display: flex;

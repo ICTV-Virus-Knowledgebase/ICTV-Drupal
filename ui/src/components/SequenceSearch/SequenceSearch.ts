@@ -111,9 +111,27 @@ export class SequenceSearch {
       return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
    }
 
+   // For now, only the "job details" and "upload" panels are supported. 
+   createUrlForPanel(panelKey_: PanelKey): string {
+
+      // The current URL
+      let url = window.location.href;
+
+      // Remove any existing query string parameters.
+      let qIndex = url.indexOf("?");
+      if (qIndex > -1) { url = url.substring(0, qIndex); }
+
+      if (panelKey_ == PanelKey.jobDetails && this.state.jobUID !== null && this.state.jobUID.length > 0) {
+         url += `?${ParameterKey.job}=${this.state.jobUID}`;
+      }
+
+      return url;
+   }
+
    // Create a SeqSearch URL using the current state. 
    createUrlUsingState(): string {
       
+      // The current URL
       let url = window.location.href;
 
       // Remove any existing query string parameters.

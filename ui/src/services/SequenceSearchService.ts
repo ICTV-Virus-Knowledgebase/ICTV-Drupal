@@ -8,7 +8,6 @@ import { WebServiceKey } from "../global/Types";
 
 export class _SequenceSearchService {
 
-
    
    // Get the specified job and result metadata.
    async getJob(authToken_: string, jobUID_: string): Promise<ISeqSearchJob> {

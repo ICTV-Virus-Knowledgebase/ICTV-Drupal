@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { AppSettings } from "../../../global/AppSettings";
-import { ButtonClass, CreateTaxonDetailsURL, Icon, ToggleAccordion } from "../Common";
+import { ButtonClass, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
 import { IBlastHit } from "../IBlastHit";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
@@ -235,13 +235,22 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          hitsHTML += this.createHitHTML(hit_, hitIndex_);
       })
 
+      // Create a URL to display the current page and BLAST hits.
       const sequenceURL = this.parent.createUrlUsingState();
 
       // Use this filename for the CSV file.
       const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
+      // Create URLs for the job details and "upload" pages.
+      const jobDetailsURL = this.parent.createUrlForPanel(PanelKey.jobDetails);
+      const uploadURL = this.parent.createUrlForPanel(PanelKey.upload);
+
+      // Create the panel's HTML.
       this.elements.container.innerHTML = 
-         `<div class="sequence-panel">
+         `<div class="navigation-panel">
+            View the <a href="${jobDetailsURL}" target="_blank">SeqSearch results</a> again or <a href="${uploadURL}" target="_blank">run SeqSearch</a> again with new FASTA files.
+         </div>
+         <div class="sequence-panel">
             <div class="label">Sequence:</div>
             <div class="name">${sequence.qseqid}</div>
             <div class="controls">
