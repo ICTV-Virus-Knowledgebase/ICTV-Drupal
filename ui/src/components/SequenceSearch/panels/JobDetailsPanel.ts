@@ -74,7 +74,6 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
       // Format the created on and ended on date/times.
       let createdOn = FormatDate(this.job.createdOn);
-      //let endedOn = FormatDate(this.job.endedOn);
 
       // Format the duration between two date/times.
       let duration = FormatDuration(this.job.createdOn, this.job.endedOn);

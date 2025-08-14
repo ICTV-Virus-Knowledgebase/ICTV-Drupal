@@ -22,9 +22,6 @@ export class SequenceSearch {
    // The CSS selector for the container element where the Sequence Search UI will be rendered.
    containerSelector: string = null;
 
-   // How long should the upload panel wait to try to load job data?
-   retryDelay: number = 3000; // 3 seconds
-
    // DOM elements
    elements: {
       blastHitsPanel: HTMLElement,
@@ -221,8 +218,6 @@ export class SequenceSearch {
 
             // Which panels will be loaded?
             loadBlastHits = true;
-            loadJobDetails = false;
-            loadUpload = false;
             break;
 
          case PanelAction.displayJob:
