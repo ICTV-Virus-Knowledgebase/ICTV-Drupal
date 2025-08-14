@@ -81,6 +81,9 @@ export const Constants = {
       TO_TIME: "h:mm:ss a"
    },
 
+   // How long should the upload panel wait to try to load job data?
+   JOB_POLLING_INTERVAL: 3000,
+
    // The maximum number of sequences that can be uploaded.
    MAX_SEQUENCE_COUNT: 64,
 

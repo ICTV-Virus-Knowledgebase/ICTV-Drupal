@@ -2,6 +2,7 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { ButtonClass, Constants, Icon, GetSpinnerHTML } from "../Common";
+import { DateTime } from "luxon";
 import { IFileData } from "../../../models/IFileData";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { IUploadResult } from "../IUploadResults";
@@ -57,6 +58,15 @@ export class UploadPanel implements ISeqSearchPanel {
    // Is the panel currently active/displayed?
    isActive: boolean;
 
+   // Metadata about polling the web service for job status.
+   jobResults: {
+      endedOn: any, // DateTime
+      intervalID: number,
+      isComplete: boolean,
+      retries: number,
+      startedOn: any // DateTime
+   }
+
    mode: PanelMode;
 
    // The parent page
@@ -94,6 +104,14 @@ export class UploadPanel implements ISeqSearchPanel {
          // The "pending results" panel
          resultsSubPanel: null
       }
+
+      this.jobResults = {
+         endedOn: null,
+         intervalID: null,
+         isComplete: false,
+         retries: 0,
+         startedOn: null
+      }
    }
 
    // Change which panel will be displayed (the other panel will be hidden).
@@ -102,7 +120,7 @@ export class UploadPanel implements ISeqSearchPanel {
       console.log(`in changePanelMode mode_ = ${mode_}`)
 
       // Clear the job name input
-      this.elements.jobName.value = ""; 
+      //this.elements.jobName.value = ""; 
 
       switch (mode_) {
 
@@ -168,6 +186,8 @@ export class UploadPanel implements ISeqSearchPanel {
 
             console.log("TODO: start the timer loop and try to retrieve the job data")
 
+            
+
             // Hide the other panels.
             this.elements.fileSelectionSubPanel.classList.remove("active");
             this.elements.jobSubmissionSubPanel.classList.remove("active");
@@ -185,10 +205,15 @@ export class UploadPanel implements ISeqSearchPanel {
    async handleUploadResult(result_: IUploadResult) {
 
       // Error conditions
-      if (!result_ || result_.status !== JobStatus.pending) {
+      if (!result_ || result_.status !== JobStatus.pending || !result_.jobUID) {
 
          let errorMessage = "An error occurred uploading your file(s)";
-         if (!!result_ && !!result_.errorMessage) { errorMessage += `: ${result_.errorMessage}`; }
+
+         if (!!result_ && !!result_.errorMessage) { 
+            errorMessage += `: ${result_.errorMessage}`; 
+         } else if (!result_.jobUID) {
+            errorMessage += ": No job UID was returned";
+         }
 
          await AlertBuilder.displayError(errorMessage);
 
@@ -196,13 +221,50 @@ export class UploadPanel implements ISeqSearchPanel {
          return;
       }
 
-      // TODO: what if the job UID is empty?
-
+      // Update the parent component's state with the new job UID.
       this.parent.state.jobUID = result_.jobUID;
       this.parent.state.fileIndex = NaN;
       this.parent.state.sequenceIndex = NaN;
 
-      return await this.changePanelMode(PanelMode.pending_results);
+      // Initialize the job results metadata.
+      this.jobResults.endedOn = null;
+      this.jobResults.isComplete = false;
+      this.jobResults.retries = 0;
+      this.jobResults.startedOn = DateTime.now();
+      
+      // Display the "pending results" sub-panel.
+      await this.changePanelMode(PanelMode.pending_results);
+
+      // Check for the job results every few seconds.
+      this.jobResults.intervalID = window.setInterval(async () => {
+
+         this.jobResults.retries += 1;
+
+         // Populate the results sub-panel with a link to the job details and a message about the job status.
+         this.populateResultsSubPanel();
+         
+         // Try to load the job data.
+         await this.parent.getJob();
+
+         // If the results are available, update the job results metadata and clear the interval timer.
+         if (this.parent.job && this.parent.job.data) {
+
+            // Clear the interval timer.
+            window.clearInterval(this.jobResults.intervalID);
+
+            this.jobResults.isComplete = true;
+            this.jobResults.endedOn = DateTime.now();
+            this.jobResults.intervalID = null;
+
+            // Load the job details panel.
+            return await this.parent.updatePage();
+         }
+
+         return;
+
+      }, Constants.JOB_POLLING_INTERVAL);
+
+      return;
    }
 
    // Make the panel visible and populate it with data.
@@ -305,6 +367,45 @@ export class UploadPanel implements ISeqSearchPanel {
       return
    }
 
+   // Populate the results sub-panel with a link to the job details and a message about the job status.
+   populateResultsSubPanel() {
+
+      let linkHTML = "";
+
+      if (this.parent.state.jobUID) {
+
+         const jobURL = this.parent.createUrlUsingState();
+
+         linkHTML = `<div class="link-panel">
+            <div class="instructions">Use the following URL to return to this page later when the results are ready:</div>
+            <div class="controls">
+               <a href="${jobURL}" target="_blank">${jobURL}</a> 
+               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
+            </div>
+         </div>`;
+      }
+
+      // Populate the results sub-panel with a message about the job status.
+      const seconds = (Constants.JOB_POLLING_INTERVAL / 1000).toFixed(0); 
+      const message = `The SeqSearch job is still running, but the page will be updated with the results as soon as they're ready. Trying again in ${seconds} second(s). (retry #${this.jobResults.retries + 1}). `;
+
+      // TESTING
+      console.log(`The SeqSearch job is still running, but the page will be updated with the results as soon as they're ready. Trying again in ${seconds} second(s). (retry #${this.jobResults.retries + 1}). `)
+
+      // Populate the results sub-panel.
+      this.elements.resultsSubPanel.innerHTML = `${linkHTML}<div class="status-message">${message}</div>`;
+
+      // Get a reference to the copy URL button.
+      const copyUrlButton = this.elements.resultsSubPanel.querySelector(`.${ButtonClass.copyURL}`);
+      if (!copyUrlButton) { throw new Error("Invalid copy URL button element"); }
+
+      // Add a click handler to the copy URL button.
+      copyUrlButton.addEventListener("click", async () => {
+         return await this.parent.copyJobURL();
+      });
+
+   }
+
    // Read the contents of a file asynchronously and return it as a base64-encoded string.
    async readFileAsync(file_): Promise<string> {
 
@@ -346,6 +447,15 @@ export class UploadPanel implements ISeqSearchPanel {
       this.isActive = false;
       this.elements.container.classList.remove("active");
       
+      // Re-initialize the job results metadata.
+      this.jobResults = {
+         endedOn: null,
+         isComplete: false,
+         retries: 0,
+         startedOn: null,
+         intervalID: null
+      }
+
       // TODO: should we remove event listeners?
    }
 
