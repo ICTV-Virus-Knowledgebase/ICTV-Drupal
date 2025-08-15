@@ -515,5 +515,6 @@ export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
 
 // Return the value of the taxonomy rank enum.
 export function LookupTaxonomyRank(rank_: string) {
+   if (!rank_) { return ""; }
    return TaxonomyRank[rank_ as TaxonomyRank];
 }

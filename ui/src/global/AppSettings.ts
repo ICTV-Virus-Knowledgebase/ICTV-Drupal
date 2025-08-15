@@ -48,7 +48,7 @@ export class _AppSettings {
 
       // Taxonomy
       taxonomy: "taxonomy.ashx",
-      taxonomyHistory: "api/get-taxon-history", // dmd 062025 previously "taxonomyHistory.ashx"
+      taxonomyHistory: "get-taxon-history", // dmd 062025 previously "taxonomyHistory.ashx"
       
       // Member species table
       virusIsolate: "virusIsolate.ashx",
