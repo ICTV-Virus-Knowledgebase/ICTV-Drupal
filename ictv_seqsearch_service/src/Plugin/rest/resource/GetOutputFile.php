@@ -7,35 +7,31 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Database;
 use Drupal\ictv_common\Jobs\JobService;
-use Drupal\ictv_common\Types\JobStatus;
-use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
-use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service to retrieve the result summary created by a sequence search.
+ * A web service for retrieving an output file from a SeqSearch job.
  * @RestResource(
- *   id = "get-seqsearch-result",
- *   label = @Translation("ICTV SeqSearch: Get the results of a sequence search"),
+ *   id = "get-seqsearch-output-file",
+ *   label = @Translation("ICTV SeqSearch: Get an output file"),
  *   uri_paths = {
- *      "canonical" = "/get-seqsearch-result",
- *      "create" = "/get-seqsearch-result"
+ *      "canonical" = "/get-seqsearch-output-file",
+ *      "create" = "/get-seqsearch-output-file"
  *   }
  * )
  */
-class GetSeqSearchResult extends ResourceBase {
+class GetOutputFile extends ResourceBase {
 
    // The connection to the ictv_apps database.
    protected Connection $connection;
@@ -43,21 +39,15 @@ class GetSeqSearchResult extends ResourceBase {
    // The name of the database used by this web service.
    protected string $databaseName;
 
-   // The path of the Drupal installation.
-   protected string $drupalRoot;
-
    // The directory where input sequences are uploaded.
    protected ?string $inputDirectory;
 
    // The full path of the jobs directory.
-   protected string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
+   protected ?string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
 
    // The JobService object.
    protected JobService $jobService;
    
-   // The name of the JSON result file.
-   protected ?string $jsonResultsFilename;
-
    // The directory where output files are stored.
    protected ?string $outputDirectory;
 
@@ -111,6 +101,9 @@ class GetSeqSearchResult extends ResourceBase {
          $this->databaseName = $config->get("databaseName");
          if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
          
+         // Get a database connection.
+         $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
+         
          // Get the input directory.
          $this->inputDirectory = $config->get("inputDirectory");
          if (Utils::isNullOrEmpty($this->inputDirectory)) { throw new \Exception("The inputDirectory setting is empty"); }
@@ -119,10 +112,6 @@ class GetSeqSearchResult extends ResourceBase {
          $this->jobsPath = $config->get("jobsPath");
          if (Utils::isNullOrEmpty($this->jobsPath)) { throw new \Exception("The jobsPath setting is empty"); }
          
-         // Get the filename of the JSON results file.
-         $this->jsonResultsFilename = $config->get("jsonResultsFilename");
-         if (Utils::isNullOrEmpty($this->jsonResultsFilename)) { throw new \Exception("The jsonResultsFilename setting is empty"); }
-
          // Get the output directory.
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
@@ -131,13 +120,11 @@ class GetSeqSearchResult extends ResourceBase {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return;
       }
-      
-      // Get a database connection.
-      $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
 
       // Create a new instance of JobService.
       $this->jobService = new JobService($this->jobsPath, $this->logger, Common::$MODULE_NAME, $this->inputDirectory, $this->outputDirectory);
    }
+
 
    /**
     * {@inheritdoc}
@@ -154,16 +141,17 @@ class GetSeqSearchResult extends ResourceBase {
       );
    }
 
+   
    /**
     * Responds to GET request.
-    * Passes the HTTP Request to the lookupName method and returns the result.
+    * Passes the HTTP Request to the getFiles method and returns the result.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
-    public function get(Request $request) {
+   public function get(Request $request) {
       
-      // Get the requested sequence search job.
-      $data = $this->getJob($request);
+      // Get the output file.
+      $data = $this->getFile($request);
 
       $build = array(
          '#cache' => array(
@@ -176,6 +164,7 @@ class GetSeqSearchResult extends ResourceBase {
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
    }
+
 
    /**
     * {@inheritdoc}
@@ -187,38 +176,65 @@ class GetSeqSearchResult extends ResourceBase {
    }
 
 
-   // Get the the results of a user's sequence search.
-   public function getJob(Request $request) {
+   /**
+    * Get the requested output file.
+    */
+   public function getFile(Request $request) {
 
       // Get and validate the JSON in the request body.
-      $json = Json::decode($request->getContent());
-      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+      $requestJSON = Json::decode($request->getContent());
+      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
+
+      // Get and validate the filename.
+      $filename = $requestJSON["filename"];
+      if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+
+      // Make sure the output directory isn't included in the filename.
+      if (str_starts_with($filename, $this->outputDirectory.'/')) {
+         $filename = substr($filename, strlen($this->outputDirectory) + 1);
+      }
 
       // Get and validate the job UID.
-      $jobUID = $json["jobUID"];
-      if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job identifier"); }
+      $jobUID = $requestJSON["jobUID"];
+      if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
 
-      // Get and validate the user email.
-      $userEmail = $json["userEmail"];
-      if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
-
-      // Get and validate the user UID.
-      $userUID = $json["userUID"];
+      // Lookup the job's user UID.
+      $userUID = Common::lookupJobUserUID($this->connection, $jobUID); //$requestJSON["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
 
-      // Get the job path and output path.
+      $isCompressed = False;
+      if (str_ends_with($filename, ".csv") || str_ends_with($filename, ".html")) { 
+         $isCompressed = True;
+         $filename .= ".gz";
+      }
+
+      // Determine the job path.
       $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
-      $filePath = $this->jobService->getOutputPath($jobPath);
-   
-      // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays).
-      $job = SeqSearchJob::getJob($this->connection, $jobUID, $userEmail, $userUID);
-      if ($job == null) { return null; }
 
-      // Add result files to the job.
-      $job = SeqSearchJob::addResultFiles($filePath, $job);
+      // Use the job path to generate the path of the output subdirectory.
+      $outputPath = $this->jobService->getOutputPath($jobPath);
 
-      return $job;
+      $errorMessage = "";
+      $fileContents = "";
+
+      try {
+         // Get the file contents.
+         $fileContents = Common::getFileContents(true, $filename, $outputPath);
+      } 
+      catch (Exception $e) {
+         \Drupal::logger('ictv_seqsearch_service')->error($e);
+         $errorMessage = $e->getMessage();
+      }
+
+      return [
+         "contents" => $fileContents,
+         "error" => $errorMessage,
+         "filename" => $filename,
+         "isCompressed" => $isCompressed,
+         "jobUID" => $jobUID
+      ];
    }
+
 
    /** 
     * {@inheritdoc} 
@@ -229,16 +245,17 @@ class GetSeqSearchResult extends ResourceBase {
       return []; 
    } 
 
+
    /**
     * Responds to POST request.
-    * Passes the HTTP Request to the lookupName method and returns the result.
+    * Passes the HTTP Request to the getFiles method and returns the result.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
    public function post(Request $request) {
 
-      // Get metadata for a specific job.
-      $data = $this->getJob($request);
+      // Get the output file.
+      $data = $this->getFile($request);
 
       $build = array(
          '#cache' => array(
@@ -251,6 +268,5 @@ class GetSeqSearchResult extends ResourceBase {
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
    }
-   
-}
 
+}

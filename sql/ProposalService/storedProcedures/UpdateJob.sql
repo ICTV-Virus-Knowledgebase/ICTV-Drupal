@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `updateJob`;
 DELIMITER //
 
 CREATE PROCEDURE `updateJob`(
-	IN `currentStatus` VARCHAR(100),
+	IN `jobStatus` VARCHAR(100),
 	IN `errorMessage` TEXT,
 	IN `jobUID` VARCHAR(100),
 	IN `userUID` VARCHAR(100)
@@ -16,13 +16,16 @@ BEGIN
 	DECLARE infoCount INT;
 	DECLARE jobID INT;
 	DECLARE jobMessage VARCHAR(300);
-	DECLARE jobStatus VARCHAR(100);
 	DECLARE statusTID INT;
 	DECLARE successCount INT;
 	DECLARE warningCount INT;
 	
-	
-	-- Validate the jobUID
+	-- Validate jobStatus
+	IF jobStatus IS NULL OR LENGTH(jobStatus) < 1 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid jobStatus parameter';
+	END IF; 
+
+	-- Validate jobUID
 	IF jobUID IS NULL OR jobUID = '' THEN 
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid jobUID parameter';
 	END IF;
@@ -59,6 +62,10 @@ BEGIN
 	-- Use the counts to generate the job's message.
 	SET jobMessage := (SELECT generateStatusMessage(errorCount, infoCount, successCount, warningCount));
 
+	
+	/*
+	dmd 08/07/25: Make sure commenting this out doesn't break the proposal service!
+	
 	-- Determine the job's status.
 	IF currentStatus IS NOT NULL AND currentStatus <> 'crashed' THEN
 		IF errorCount > 0 OR warningCount > 0 THEN
@@ -66,7 +73,7 @@ BEGIN
 		ELSE 
 			SET jobStatus := 'valid';
 		END IF;
-	END IF;
+	END IF;*/
 	
 	-- Get and validate the status term ID.
 	SET statusTID := (SELECT id FROM term WHERE full_key = CONCAT('job_status.', jobStatus) LIMIT 1);

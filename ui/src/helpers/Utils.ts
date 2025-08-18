@@ -7,6 +7,27 @@ import { Identifiers } from "../models/Identifiers";
 export class Utils {
 
 
+   // TODO: This doesn't work with floats!
+   static addCommasToNumber(number_: number): string {
+
+      const text = number_.toString();
+
+      const firstIndex = text.length - 1;
+
+      let result = "";
+
+      for (let c = firstIndex; c >= 0; c--) {
+
+         const count = firstIndex - c;
+
+         let comma = count % 3 === 0 && (c < firstIndex) ? "," : "";
+
+         result = `${text.charAt(c)}${comma}${result}`;
+      }
+
+      return result;
+   }
+
    // Convert a string containing an integer to an integer.
    static convertStringToInt(strInt_: string): number {
 

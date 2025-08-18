@@ -270,8 +270,9 @@ export enum WebServiceKey {
    // Proposal service
    proposal = "proposal",
 
-   // Sequence search
-   getSequenceSearchResult = "getSequenceSearchResult",
+   // SeqSearch
+   getSeqSearchOutputFile = "getSeqSearchOutputFile",
+   getSequenceSearchJob = "getSequenceSearchJob",
    uploadSequences = "uploadSequences",
 
    // Taxonomy
@@ -527,5 +528,6 @@ export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
 
 // Return the value of the taxonomy rank enum.
 export function LookupTaxonomyRank(rank_: string) {
+   if (!rank_) { return ""; }
    return TaxonomyRank[rank_ as TaxonomyRank];
 }
