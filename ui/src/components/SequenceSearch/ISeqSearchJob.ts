@@ -1,11 +1,11 @@
 
-import { ITaxResult } from "./ITaxResult";
+import { ISearchResults } from "./ISearchResults";
 import { JobStatus } from "../../global/Types";
 
 
 export interface ISeqSearchJob {
    createdOn: string; // Datetime
-   data: ITaxResult;
+   data: ISearchResults;
    endedOn: string; // DateTime
    name: string;
    message: string;

@@ -1,317 +1,327 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
-import { BlastPanel } from "./BlastPanel";
-import { ButtonClass, Constants, Icon, PanelKey } from "./Common";
+import { BlastHitsPanel } from "./panels/BlastHitsPanel";
+import { ButtonClass, Constants, GenerateUUID, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
-import { ISeqSearchPanel } from "./ISeqSearchPanel";
-import { JobPanel } from "./JobPanel";
-import { LookupTaxonomyRank, WebStorageKey } from "../../global/Types";
-
+import { ISeqSearchPanel } from "./panels/ISeqSearchPanel";
+import { JobDetailsPanel } from "./panels/JobDetailsPanel";
+import { WebStorageKey } from "../../global/Types";
+import * as pako from "pako";
+import { SearchResultsPanel } from "./panels/SearchResultsPanel";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
-import tippy from "tippy.js";
-import { UploadPanel } from "./UploadPanel";
+import { UploadPanel } from "./panels/UploadPanel";
 import { Utils } from "../../helpers/Utils";
-
 
 
 export class SequenceSearch {
 
+   // The authentication token that will be used when making API calls.
    authToken: string;
-
-   config = {
-      acceptedFileTypes: [".fa", ".faa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".mpfa", ".txt"],
-      contactEmail: null
-   }
 
    // The CSS selector for the container element where the Sequence Search UI will be rendered.
    containerSelector: string = null;
 
    // DOM elements
    elements: {
-      blastContainer: HTMLElement,
+      blastHitsPanel: HTMLElement,
       container: HTMLElement,
-      jobContainer: HTMLElement,
-      uploadContainer: HTMLElement
+      jobDetailsPanel: HTMLElement,
+      searchResultsPanel: HTMLElement,
+      uploadPanel: HTMLElement
    }
 
    job: ISeqSearchJob = null;
 
-   // The current job UID (optional)
-   jobUID: string = null;
-   
-   // Which panel is currently displayed?
-   panelKey: PanelKey = null;
-
    panels: Map<PanelKey, ISeqSearchPanel>;
 
-   // The previous panel key
-   previousPanelKey: PanelKey = null;
+   state: {
 
-   // The current result index (optional)
-   resultIndex: number = null;
+      // The currently-selected input file associated with the job.
+      fileIndex: number,
+
+      // The current job UID (optional)
+      jobUID: string,
+
+      // The currently-selected sequence index associated with the input filename.
+      sequenceIndex: number
+   }
 
    // User information
    user: {
-      email: string, 
+      email: string,
       name: string,
-      uid: string
+      uid: string,
+
+      // The user UID provided as a URL parameter (optional).
+      urlUID: string
    }
 
    
    // C-tor
-   constructor(authToken_: string, contactEmail_: string, containerSelector_: string, email_: string, 
+   constructor(authToken_: string, containerSelector_: string, email_: string, 
       name_: string, userUID_: string) {
       
       // Validate parameters
       if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in SequenceSearch"); }
-      if (!contactEmail_) { throw new Error("Invalid contact email"); }
       if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in SequenceSearch"); }
       if (!email_ || email_.length < 1) { email_ = Constants.NO_EMAIL; }
       if (!name_ || name_.length < 1) { name_ = "Anonymous user"; }
       userUID_ = Utils.safeTrim(userUID_);
 
-
       this.authToken = authToken_;
-      this.config.contactEmail = contactEmail_;
       this.containerSelector = containerSelector_;
 
       this.user = {
-         email: email_, 
+         email: email_,
          name: name_,
-         uid: userUID_
+         uid: userUID_,
+         urlUID: null
       }
 
       this.elements = {
+         blastHitsPanel: null,
          container: null,
-         jobContainer: null,
-         blastContainer: null,
-         uploadContainer: null
+         jobDetailsPanel: null,
+         searchResultsPanel: null,
+         uploadPanel: null
       }
 
       this.panels = new Map<PanelKey, ISeqSearchPanel>();
+
+      this.state = {
+         fileIndex: NaN,
+         jobUID: null,
+         sequenceIndex: NaN
+      }
    }
 
-   
-   /*async displayJob() {
 
-      if (!this.job || !this.job.data || !this.job.data.results) {
-         this.elements.blastContainer.innerHTML = "No results";
-         return;
-      }
+   // Copy the job/state URL to the clipboard.
+   async copyJobURL() {
 
-      // Clear any existing content in the results container.
-      this.elements.blastContainer.innerHTML = "";
-
-      
-      //----------------------------------------------------------------------------------------------------------------
       // Create the URL that can be used to view the job data.
-      //----------------------------------------------------------------------------------------------------------------
-      this.jobURL = window.location.href;
+      const jobURL = this.createUrlUsingState();
 
-      // TODO: Get rid of this line soon!!!
-      this.jobURL = this.jobURL.replace("test.ictv.global", "ictv.global");
+      // Copy the URL to the clipboard.
+      await navigator.clipboard.writeText(jobURL);
+
+      // Display a success message.
+      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
+   }
+
+   // For now, only the "job details" and "upload" panels are supported. 
+   createUrlForPanel(panelKey_: PanelKey): string {
+
+      // The current URL
+      let url = window.location.href;
 
       // Remove any existing query string parameters.
-      let qIndex = this.jobURL.indexOf("?");
-      if (qIndex > -1) { this.jobURL = this.jobURL.substring(0, qIndex); }
+      let qIndex = url.indexOf("?");
+      if (qIndex > -1) { url = url.substring(0, qIndex); }
 
-      this.jobURL += `?job=${this.job.uid}`;
+      if (panelKey_ == PanelKey.jobDetails && this.state.jobUID !== null && this.state.jobUID.length > 0) {
+         url += `?${ParameterKey.job}=${this.state.jobUID}`;
+      }
 
+      return url;
+   }
+
+   // Create a SeqSearch URL using the current state. 
+   createUrlUsingState(): string {
       
-      //----------------------------------------------------------------------------------------------------------------
-      // Generate the HTML for the job results.
-      //----------------------------------------------------------------------------------------------------------------
-      let resultsHTML = "";
+      // The current URL
+      let url = window.location.href;
 
-      let inputFiles = [];
+      // Remove any existing query string parameters.
+      let qIndex = url.indexOf("?");
+      if (qIndex > -1) { url = url.substring(0, qIndex); }
 
-      this.job.data.results.forEach((result_: ISearchResult, index_: number) => {
+      // Do we have a valid job UID?
+      if (this.state.jobUID !== null && this.state.jobUID.length > 0) {
+         url += `?${ParameterKey.job}=${this.state.jobUID}`;
 
-         // One-based instead of zero-based.
-         const displayIndex = index_ + 1;
+         // Do we have a valid file index?
+         if (!isNaN(this.state.fileIndex)) { 
+            url += `&${ParameterKey.file}=${this.state.fileIndex}`;
 
-         // Get the result's taxon name.
-         //let taxonName = result_.sseqid_lineage.species || "Unknown";
-
-         let isFirstRank = true;
-         let lineage = "";
-         
-         
-         // Populate the lineage to be displayed.
-         if (!result_.sseqid_lineage) {
-            lineage = "No lineage";
-
-         } else {
-
-            // Iterate over the classification lineage ranks.
-            Object.keys(result_.sseqid_lineage).forEach(rank_ => {
-
-               // Skip the species rank.
-               if (rank_ === "species") { return; } 
-
-               // Lookup this rank's taxon name in the lineage.
-               let name = Utils.safeTrim(result_.sseqid_lineage[rank_]);
-               if (!name || name.length < 1) { return; }
-
-               // Should we add a lineage delimiter?
-               if (isFirstRank) { 
-                  isFirstRank = false;
-               } else {
-                  lineage += this.icons.lineageDelimiter;
-               }
-   
-               const formattedRank = LookupTaxonomyRank(rank_);
-
-               lineage += `<span class="result-lineage">${formattedRank}: <i>${name}</i></span>`;
-            })
+            // Do we have a valid sequence index?
+            if (this.state.sequenceIndex !== null && !isNaN(this.state.sequenceIndex)) {
+               url += `&${ParameterKey.sequence}=${this.state.sequenceIndex}`;
+            }
          }
-         
-         // Add the input file to the list of files.
-         if (!inputFiles.includes(result_.input_file)) { inputFiles.push(result_.input_file); }
-
-         // Add the input sequence to the list of sequences.
-         //if (!inputSequences.includes(result_.input_seq)) { inputSequences.push(result_.input_seq); }
-
-         let subjectInfo = "";
-
-         // Display the BLAST subject and its GenBank accession(s), if available.
-         if (!!result_.sseqid_accession && !!result_.sseqid_species_name) {
-            
-            const genbankLink = Utils.createGenBankAccessionLink(result_.sseqid_accession);
-
-            subjectInfo = `<label>Virus name</label>: ${result_.sseqid_virus_names} (${genbankLink})`;
-         }
-
-         // Link the taxon name to the taxon details/history page.
-         const detailsURL = `https://${window.location.hostname}/${AppSettings.taxonHistoryPage}?taxon_name=${taxonName}`;
-         const linkedName = `<a href="${detailsURL}" target="_blank">${taxonName}</a>`;
-
-         let resultHTML =
-            `<div class="sequence-result">
-               <div class="info">
-                  <div class="result-index">#${displayIndex}</div>
-                  <div class="lineage-and-result">
-                     <div class="lineage">${lineage}</div>
-                     <div class="result">
-                        <div class="result-name">
-                           <span class="rank-name">Species</span>: 
-                           <span class="taxon-name">${linkedName}</span>
-                        </div>
-                        <div class="data-row">${subjectInfo}</div>
-                        <div class="data-row">
-                           <label>Bitscore</label>: ${result_.bitscore} bits
-                        </div>
-                        <div class="data-row">
-                           <label>E-value</label>: ${result_.evalue}
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div class="controls">
-                  <button class="btn ${ButtonClass.viewHTML} has-tooltip" 
-                     data-index="${index_}" 
-                     data-tippy-content="Click to view the HTML results (${result_.blast_html})"
-                  >${this.icons.html} View HTML results</button>
-                  <button class="btn ${ButtonClass.downloadCSV} has-tooltip" 
-                     data-index="${index_}"
-                     data-tippy-content="Click to download the results as a CSV file (${result_.blast_csv})"
-                  >${this.icons.csv} Download CSV results</button>
-               </div>  
-            </div>`; 
-
-         //resultsHTML += resultHTML;
-      })
-   
+      }
       
-      // Should the input file and input sequence labels be singular or plural?
-      const filesS = inputFiles.length == 1 ? "" : "s";
-      //const sequenceS = inputSequences.length == 1 ? "" : "s";
+      return url;
+   }
 
-      // Convert the lists of files and sequences to delimited strings.
-      const inputFilesHTML = inputFiles.join(", ");
-      //const inputSequencesHTML = inputSequences.join(", ");
+   // Download the BLAST CSV data for a specific result.
+   async downloadCSV(filename_: string, title_: string) {
 
-      let html = 
-         `<hr />
-         <div class="results">
-            <div class="results-title">Your results</div>
-            <div class="job-details">
-               <div class="job-table">
-                  <div class="job-row">
-                     <label>Job name:</label>
-                     <div class="job-value">${this.job.name || "(none)"}</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Job status:</label>
-                     <div class="job-value">${this.job.status}</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Program and version:</label>
-                     <div class="job-value">${this.job.data.program_name} (version ${this.job.data.version})</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Database:</label>
-                     <div class="job-value">${this.job.data.database_title}</div>
-                  </div>
-                  <div class="job-row">
-                     <label>Input file${filesS}:</label>
-                     <div class="job-value">${inputFilesHTML}</div>
-                  </div>
-               </div>
-               <div class="link-panel">
-                  <div class="instructions">You can view these results again using the following URL:</div>
-                  <div class="controls">
-                     <a href="${this.jobURL}" target="_blank">${this.jobURL}</a> 
-                     <button class="btn ${ButtonClass.copyURL}">${this.icons.copy} Copy to clipboard</button>
-                  </div>
-               </div>
-            </div>
-            <hr />
-            <div class="blast-hits-title">BLAST Hits</div>
-            <div class="sequence-results">${resultsHTML}</div>
-         </div>`;
+      filename_ = Utils.safeTrim(filename_);
+      if (filename_.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename"); }
 
-      this.elements.resultsContainer.innerHTML = html;
+      title_ = Utils.safeTrim(title_);
+      if (title_.length < 1) { title_ = filename_; }
 
-      // Get a reference to the results element.
-      this.elements.results = this.elements.resultsContainer.querySelector(".results");
-      if (!this.elements.results) { throw new Error("Invalid results element"); }
+      // Determine which user UID to use.
+      let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
 
-      // Add event handlers
-      this.elements.results.addEventListener("click", async (event_) => this.handleResultsClick(event_));
+      // Get the output file and its metadata.
+      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
+      if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The CSV file is invalid"); }
 
-      // Initialize tippy tooltips for the buttons
-      tippy(".has-tooltip");
-      
+      // Decompress the CSV file, if necessary.
+      let csv = outputFile.contents;
+      if (outputFile.isCompressed) { csv = pako.ungzip(decode(csv), { to: 'string' }); }
+      if (!csv || csv.length < 1) { return await AlertBuilder.displayError("The CSV file is empty or invalid"); }
+
+      // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(new Blob(
+         [ csv ],
+         { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      ))
+      link.download = title_;
+      link.click();
+
       return;
-   }*/
-
-   // Generate a universally unique identifier (UUID).
-   generateUUID() {
-
-      const bytes = new Uint8Array(16);
-      crypto.getRandomValues(bytes);
-    
-      // Set version (4) and variant bits as per RFC 4122
-      bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4 (random)
-      bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 1 (RFC-compliant)
-    
-      // Convert to hexadecimal format
-      return [...bytes].map((b, i) =>
-        ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0')
-      ).join('');
    }
 
    // Retrieve the job with this UID.
    async getJob() {
 
-      if (!this.jobUID) {
-         await AlertBuilder.displayError("No job UID provided");
-         return; 
+      if (!this.state.jobUID) { return await AlertBuilder.displayError("No job UID provided"); }
+
+      // Get the job data from the server.
+      this.job = await SequenceSearchService.getJob(this.authToken, this.state.jobUID);
+
+      return;
+   }
+
+   // Handle the panel action that was provided.
+   async handleAction(action_: PanelAction) {
+
+      if (!action_) { throw new Error("Invalid action parameter"); }
+      
+      let loadBlastHits = false;
+      let loadJobDetails = false;
+      let loadSearchResults = false;
+      let loadUpload = false;
+
+      // All panels besides the upload panel need to load the job specified in the state.
+      if (action_ != PanelAction.displayUpload && (!this.job || this.job.uid !== this.state.jobUID)) { await this.getJob(); }
+
+      switch (action_) {
+
+         case PanelAction.displayBlastHits:
+
+            // Which panels will be loaded?
+            loadBlastHits = true;
+            break;
+
+         case PanelAction.displayJob:
+
+            this.state.fileIndex = NaN;
+            this.state.sequenceIndex = NaN;
+
+            // Which panels will be loaded?
+            loadJobDetails = true;
+            loadSearchResults = true;
+            loadUpload = true;
+            break;
+
+         case PanelAction.displayUpload:
+
+            // Clear the job and state.
+            this.job = null;
+            this.state.fileIndex = NaN;
+            this.state.jobUID = null;
+            this.state.sequenceIndex = NaN;
+
+            // Which panels will be loaded?
+            loadUpload = true;
+
+            break;
+
+         default:
+            return await AlertBuilder.displayError(`Unhandled panel action: ${action_}`);
       }
 
-      this.job = await SequenceSearchService.getSearchResult(this.authToken, this.jobUID, this.user.email, this.user.uid);
+      // Load or unload panels as determined above.
+      await this.updatePanel(PanelKey.blastHits, loadBlastHits);
+      await this.updatePanel(PanelKey.jobDetails, loadJobDetails);
+      await this.updatePanel(PanelKey.searchResults, loadSearchResults);
+      await this.updatePanel(PanelKey.upload, loadUpload);
+
+      return;
+   }
+
+   // Handle a click event on a button or accordion control.
+   async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
+
+      // If an icon was clicked, use its parent Element.
+      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
+
+      // Was a button on a sequence row clicked?
+      if (targetEl_.tagName === "BUTTON") {
+
+         const button = targetEl_ as HTMLButtonElement;
+         
+         // Get and validate the filename attribute.
+         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
+
+         // Get and validate the title attribute.
+         const title = Utils.safeTrim(button.getAttribute("data-title"));
+         
+         // The button's class determines which action to take.
+         if (button.classList.contains(ButtonClass.viewHits)) {
+
+            // Get and validate the file index attribute.
+            let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
+            const fileIndex = parseInt(strFileIndex);
+            if (isNaN(fileIndex)) { return await AlertBuilder.displayError("The file index attribute is invalid"); }
+      
+            // Get and validate the sequence index attribute.
+            let strSeqIndex = button.getAttribute("data-seq-index");
+            const seqIndex = parseInt(strSeqIndex);
+            if (isNaN(seqIndex)) { return await AlertBuilder.displayError(`Invalid sequence index: ${seqIndex}`); }
+
+            // Update the state.
+            this.state.fileIndex = fileIndex;
+            this.state.sequenceIndex = seqIndex;
+            
+            window.open(this.createUrlUsingState(), "_blank");
+
+         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
+            
+            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename button attribute"); }
+
+            // Download the CSV file.
+            await this.downloadCSV(filename, title);
+
+         } else if (button.classList.contains(ButtonClass.viewHTML)) {
+            
+            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid HTML filename button attribute"); }
+
+            // Display the HTML file in a new browser tab.
+            await this.viewHTML(filename, title);
+         }
+
+         return;
+      }
+
+      // Was an accordion control clicked?
+      if (targetEl_.classList.contains("ictv-accordion-control")) {
+
+         const itemID = targetEl_.getAttribute("data-id");
+         if (!itemID) { return; }
+
+         if (!containerEl_) { await AlertBuilder.displayError("Unable to toggle accordion: Invalid container element"); }
+
+         ToggleAccordion(this.elements.container, itemID);
+      }
+      
       return;
    }
 
@@ -327,144 +337,142 @@ export class SequenceSearch {
 
       // Create HTML for the container elements.
       const html = 
-         `<div class=\"blast-container container\"></div>
-         <div class=\"job-container container\"></div>
-         <div class=\"upload-container container active\"></div>`;
+         `<div class=\"upload-panel container active\"></div>
+         <div class=\"job-details-panel container\"></div>
+         <div class=\"search-results-panel container\"></div>
+         <div class=\"blast-hits-panel container\"></div>`;
 
       this.elements.container.innerHTML = html;
 
-      // The BLAST container
-      this.elements.blastContainer = this.elements.container.querySelector(".blast-container") as HTMLElement;
-      if (!this.elements.blastContainer) { throw new Error("Invalid BLAST container Element"); }
+      // The BLAST hits panel
+      this.elements.blastHitsPanel = this.elements.container.querySelector(".blast-hits-panel") as HTMLElement;
+      if (!this.elements.blastHitsPanel) { throw new Error("Invalid BLAST hits panel Element"); }
 
-      // The job container
-      this.elements.jobContainer = this.elements.container.querySelector(".job-container") as HTMLElement;
-      if (!this.elements.jobContainer) { throw new Error("Invalid job container Element"); }
+      // The job details panel
+      this.elements.jobDetailsPanel = this.elements.container.querySelector(".job-details-panel") as HTMLElement;
+      if (!this.elements.jobDetailsPanel) { throw new Error("Invalid job details panel Element"); }
 
-      // The upload container
-      this.elements.uploadContainer = this.elements.container.querySelector(".upload-container") as HTMLElement;
-      if (!this.elements.uploadContainer) { throw new Error("Invalid upload container Element"); }
+      // The search results panel
+      this.elements.searchResultsPanel = this.elements.container.querySelector(".search-results-panel") as HTMLElement;
+      if (!this.elements.searchResultsPanel) { throw new Error("Invalid search results panel Element"); }
+
+      // The upload panel
+      this.elements.uploadPanel = this.elements.container.querySelector(".upload-panel") as HTMLElement;
+      if (!this.elements.uploadPanel) { throw new Error("Invalid upload panel Element"); }
 
 
       // Create the panel instances.
-      this.panels.set(PanelKey.blastPanel, new BlastPanel(this));
-      this.panels.set(PanelKey.jobPanel, new JobPanel(this));
-      this.panels.set(PanelKey.uploadPanel, new UploadPanel(this));
+      this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this.elements.blastHitsPanel, this));
+      this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
+      this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this.elements.searchResultsPanel, this));
+      this.panels.set(PanelKey.upload, new UploadPanel(this.elements.uploadPanel, this));
 
-      // Process the query string parameters.
-      this.processParameters();
+      //--------------------------------------------------------------------------------------------------------------
+      // Look for query string parameters and use them to determine which panel to display.
+      //--------------------------------------------------------------------------------------------------------------
 
-      // Unload the previous panel.
-      if (this.previousPanelKey) {
-         // TODO
-      }
-
-      let panel: ISeqSearchPanel = null;
-
-      switch (this.panelKey) {
-
-         case PanelKey.blastPanel:
-            // TODO
-            console.log("Displaying BLAST panel");
-            await this.getJob();
-            break;
-
-         case PanelKey.jobPanel:
-            
-            console.log("Displaying job panel");
-            await this.getJob();
-
-            // Get and validate the job panel.
-            panel = this.panels.get(PanelKey.jobPanel);
-            if (!panel) { throw new Error("Invalid job panel"); }
-
-            panel.display();
-            break;
-
-         case PanelKey.uploadPanel:
-            
-            console.log("Displaying upload panel");
-
-            // Get and validate the upload panel.
-            panel = this.panels.get(PanelKey.uploadPanel);
-            console.debug("upload panel = ", panel);
-            
-            if (!panel) { throw new Error("Invalid upload panel"); }
-            
-            panel.display();
-            break;
-
-         default:
-            return await AlertBuilder.displayError(`Unhandled panel key: ${this.panelKey}`);
-      }
-
-      /*
-      // If a job UID was provided as a query string parameter, retrieve the corresponding job and display it.
-      if (this.jobUID !== null) { 
-         await this.getJob();
-         await this.displayJob();
-      }*/
-
-      return;
-   }
-
-   // Look for query string parameters and use them to determine which panel to display.
-   processParameters() {
+      // Set a default action.
+      let action = PanelAction.displayUpload;
 
       // Was a job UID parameter provided?
       const urlParams = new URLSearchParams(window.location.search);
       
-      // Set default values
-      this.jobUID = null;
-      this.panelKey = PanelKey.uploadPanel;
-      this.resultIndex = null;
+      // Set default state values
+      this.state.fileIndex = NaN;
+      this.state.sequenceIndex = NaN;
 
       // Was a job UID provided in the query string?
-      this.jobUID = urlParams.get("job");
-      if (this.jobUID) {
+      this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
+      if (this.state.jobUID && this.state.jobUID.length > 0) {
 
-         // Was a result index provided in the query string?
-         let strResult = Utils.safeTrim(urlParams.get("result"));
-         if (strResult) {
-            this.resultIndex = parseInt(strResult, 10);
-            if (isNaN(this.resultIndex)) { 
-               this.resultIndex = null; 
-            } else {
-               // If a result index was provided, display the BLAST panel.
-               this.panelKey = PanelKey.blastPanel;
+         action = PanelAction.displayJob;
+
+         // Were file index and sequence index parameters provided?
+         let strFileIndex = Utils.safeTrim(urlParams.get(ParameterKey.file));
+         let strSeqIndex = Utils.safeTrim(urlParams.get(ParameterKey.sequence));
+
+         if (strFileIndex && strSeqIndex) {
+            this.state.fileIndex = parseInt(strFileIndex);
+            this.state.sequenceIndex = parseInt(strSeqIndex);
+
+            if (!isNaN(this.state.fileIndex) && !isNaN(this.state.sequenceIndex)) {
+               action = PanelAction.displayBlastHits; 
             }
-         } else {
-            // If no result index was provided, display the job panel.
-            this.panelKey = PanelKey.jobPanel;
          }
-      }  
+      }
+
+      return await this.handleAction(action);
    }
 
    // If the user UID is empty, look for one in web storage or generate a new one.
    async setDefaultUserUID() {
 
       // Is there already a user UID in web storage?
-      if (typeof(Storage) !== "undefined") {
-         this.user.uid = localStorage.getItem(WebStorageKey.sequenceSearchUserUID);
-
-         console.log("userUID from web storage = ", this.user.uid)
-      }
-
+      if (typeof(Storage) !== "undefined") { this.user.uid = localStorage.getItem(WebStorageKey.sequenceSearchUserUID); }
       if (!this.user.uid) { 
 
          // Generate a new user UID.
-         this.user.uid = this.generateUUID(); 
-      
-         console.log("just generated this userUID: ", this.user.uid)
-
-         if (typeof(Storage) !== "undefined") {
-
-            // Save it in web storage
-            localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid);
-         }
+         this.user.uid = GenerateUUID(); 
+   
+         // If web storage is available, save the user UID in local storage.
+         if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid); }
       }
 
       return;
    }
 
+   
+   // Update the window's location with a state-maintaining URL.
+   async updatePage() {
+      const url = this.createUrlUsingState();
+      window.location.assign(url);
+      return;
+   }
+
+   // Unload/hide the specified panel.
+   async updatePanel(panelKey_: PanelKey, load_: boolean) {
+
+      // Get the requested panel.
+      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
+      if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
+
+      if (load_) { 
+         await panel.load(); 
+      } else {
+         await panel.unload();
+      }
+
+      return;
+   }
+
+   // Display the BLAST HTML data for a specific sequence.
+   async viewHTML(filename_: string, title_: string) {
+
+      filename_ = Utils.safeTrim(filename_);
+      if (filename_.length < 1) { return await AlertBuilder.displayError("Invalid HTML filename"); }
+
+      title_ = Utils.safeTrim(title_);
+      if (title_.length < 1) { title_ = filename_; }
+      
+      // Determine which user UID to use.
+      let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
+
+      // Get the output file and its metadata.
+      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
+      if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The HTML file is invalid"); }
+
+      // Decompress the HTML file, if necessary.
+      let html = outputFile.contents;
+      if (outputFile.isCompressed) { html = pako.ungzip(decode(html), { to: 'string' }); }
+      if (!html || html.length < 1) { return await AlertBuilder.displayError("The HTML file is empty or invalid"); }
+
+      // Open a new tab/window and populate it with the contents of the BLAST HTML file.
+      const blastWindow = window.open("", "_blank");
+      blastWindow.document.writeln(html);
+
+      // Use the HTML filename as the window's title.
+      blastWindow.document.title = title_;
+
+      return;
+   }
 }

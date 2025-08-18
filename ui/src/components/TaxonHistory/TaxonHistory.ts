@@ -374,15 +374,19 @@ export class TaxonHistory {
 
       // Promoted or demoted
       if (taxon_.isPromoted) { 
-         descriptions.push(`${this.formatAction(ReleaseAction.promoted)}${taxon_.previousRank}`);
+         let fromRank = !taxon_.previousRank ? "" : ` from ${taxon_.previousRank}`;
+
+         descriptions.push(`${this.formatAction(ReleaseAction.promoted)}${fromRank}`);
          actions.push(ReleaseAction.promoted);
 
       } else if (taxon_.isDemoted) {
-         descriptions.push(`${this.formatAction(ReleaseAction.demoted)}${taxon_.previousRank}`);
+         let fromRank = !taxon_.previousRank ? "" : ` from ${taxon_.previousRank}`;
+
+         descriptions.push(`${this.formatAction(ReleaseAction.demoted)}${fromRank}`);
          actions.push(ReleaseAction.demoted);
       }
 
-      // Moved (don't include if the lineage has been updated, as well)
+      // Moved
       if (taxon_.isMoved /*&& !taxon_.isLineageUpdated*/) {
 
          // Create a formatted version of the taxon's parent from the previous MSL release.
@@ -925,13 +929,12 @@ export class TaxonHistory {
       }
    }
 
-   // Get a taxon's rank from a previous release. Note that previousLineage_ is expected to be 
-   // a list of "<rank name>:<taxon name>" delimited by a semicolon.
+   // Get a taxon's rank from a previous release.
    getPreviousRank(taxon_: ITaxon): string {
 
-      if (!taxon_.prevLineageRankArray || taxon_.prevLineageRankArray.length < 2) { return ""; }
+      if (!taxon_.prevLineageRankArray || taxon_.prevLineageRankArray.length < 1) { return ""; }
       
-      return taxon_.prevLineageRankArray[taxon_.prevLineageRankArray.length - 2];
+      return taxon_.prevLineageRankArray[taxon_.prevLineageRankArray.length - 1];
    }
 
    // Return a DIV that contains the spinner icon and optional text.
@@ -1193,7 +1196,7 @@ export class TaxonHistory {
       taxon_.formattedLineage = this.formatLineage(taxon_) || "";
 
       // Set the previous rank name.
-      taxon_.previousRank = LookupTaxonomyRank(this.getPreviousRank(taxon_));
+      taxon_.previousRank = this.getPreviousRank(taxon_);
 
       // Lookup the formatted version of the taxon's rank name.
       taxon_.rankName = LookupTaxonomyRank(taxon_.rankName);

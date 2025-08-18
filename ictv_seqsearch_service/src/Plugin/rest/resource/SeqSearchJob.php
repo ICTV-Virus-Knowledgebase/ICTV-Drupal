@@ -12,135 +12,13 @@ use Drupal\ictv_common\Utils;
 
 class SeqSearchJob {
 
-
-   // Open files referenced in the job results and add them to the job object (nested array).
-   public static function addResultFiles(string $filePath, array $job) {
-
-      // If there are no results, return the job unmodified.
-      if ($job == null || $job["data"] == null || $job["data"]["results"] == null) { return $job; }
-
-      // How many results are available?
-      $resultCount = count($job["data"]["results"]);
-
-      // Iterate over all results.
-      for ($r=0; $r<$resultCount; $r++) {
-
-         // Get the next result and validate it.
-         $result = $job["data"]["results"][$r];
-         if ($result == null) { continue; }
-
-         $csvFilename = $result["blast_csv"];
-         if (!Utils::isNullOrEmpty($csvFilename)) { 
-            
-            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-            if (str_starts_with($csvFilename, "tax_out/")) { $csvFilename = substr($csvFilename, strlen("tax_out/"));  }
-
-            // Open the compressed version of the CSV file.
-            $csvFilename = $csvFilename.".gz";
-
-            // Open the file and retrieve its contents.
-            $contents = Common::getFileContents(true, $csvFilename, $filePath);
-            
-            // Populate the "csv_file" attribute.
-            if (!Utils::isNullOrEmpty($contents)) { $job["data"]["results"][$r]["csv_file"] = $contents; }
-         }
-
-         $htmlFilename = $result["blast_html"];
-         if (!Utils::isNullOrEmpty($htmlFilename)) { 
-            
-            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-            if (str_starts_with($htmlFilename, "tax_out/")) { $htmlFilename = substr($htmlFilename, strlen("tax_out/"));  }
-
-            // Open the compressed version of the CSV file.
-            $htmlFilename = $htmlFilename.".gz";
-
-            // Open the file and retrieve its contents.
-            $contents = Common::getFileContents(true, $htmlFilename, $filePath);
-            
-            // Populate the "html_file" attribute.
-            if (!Utils::isNullOrEmpty($contents)) { $job["data"]["results"][$r]["html_file"] = $contents; }
-         }
-      }
-
-      return $job;
-   }
-
-
-   // Create compressed versions of the job's result files, add them to the job object, and return the job.
-   public static function createCompressedResultFiles(array $job, string $outputPath) {
-
-      // If the job has no results, return it unmodified.
-      if ($job == null || $job["data"] == null || $job["data"]["results"] == null) { return $job; }
-
-      // How many results are available?
-      $resultCount = count($job["data"]["results"]);
-      if ($resultCount < 1) { return $job;}
-
-      // Make sure the file path ends with a slash.
-      if (!str_ends_with($outputPath, '/')) { $outputPath = $outputPath.'/'; }
-
-      // Iterate over all search results.
-      for ($r=0; $r<$resultCount; $r++) {
-
-         // Get the next result and validate it.
-         $result = $job["data"]["results"][$r];
-         if ($result == null) { continue; }
-
-         // Get the CSV filename.
-         $csvFilename = $result["blast_csv"];
-         if (!Utils::isNullOrEmpty($csvFilename)) {
-
-            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-            if (str_starts_with($csvFilename, "tax_out/")) { $csvFilename = substr($csvFilename, strlen("tax_out/"));  }
-
-            $encodedData = null;
-
-            // Compress the CSV file, create a new compressed file, and return the compressed data.
-            $compressedData = Common::createCompressedFile($csvFilename, $outputPath); 
-
-            if ($compressedData != null) {
-
-               // Encode the compressed data as base64.
-               $encodedData = base64_encode($compressedData);
-            }
-            
-            // Create the "csv_file" attribute and populate it with the encoded data.
-            if (!Utils::isNullOrEmpty($encodedData)) { $job["data"]["results"][$r]["csv_file"] = $encodedData; }
-         }
-
-         // Get the HTML filename.
-         $htmlFilename = $result["blast_html"];
-         if (!Utils::isNullOrEmpty($htmlFilename)) { 
-
-            $encodedData = null;
-
-            // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-            if (str_starts_with($htmlFilename, "tax_out/")) { $htmlFilename = substr($htmlFilename, strlen("tax_out/"));  }
-
-            // Compress the HTML file, create a new compressed file, and return the compressed data.
-            $compressedData = Common::createCompressedFile($htmlFilename, $outputPath); 
-
-            if ($compressedData != null) {
-
-               // Encode the compressed data as base64.
-               $encodedData = base64_encode($compressedData);
-            }
-            
-            // Create the "html_file" attribute and populate it with the encoded data.
-            if (!Utils::isNullOrEmpty($encodedData)) { $job["data"]["results"][$r]["html_file"] = $encodedData; }
-         }
-      }
-
-      return $job;
-   }
-
-
    // Create an invalid SeqSearch Job "object" (nested arrays) to return when a job is not found or is invalid.
    public static function createInvalidJob(string $jobName, string $message, JobStatus $status, string $jobUID) {
 
-      // TODO: Validate input parameters
+      // TODO: Validate input parameters?
 
-      $createdOn = null; // TODO: get current datetime as string.
+      // TODO: get current datetime as string or let the DB provide defaults?
+      $createdOn = null; 
       $endedOn = null; 
 
       return [
@@ -211,21 +89,17 @@ class SeqSearchJob {
    }
 
 
-   // Retrieve a job and return it as a SeqSearch Job "object" (nested arrays). Note that job.data is initially a  
-   // serialized (and encoded) JSON string that the fromArray method deserializes as nested arrays. Job.data is then
-   // replaced by these nested arrays.
-   public static function getJob(Connection $connection, string $jobUID, string $userEmail, string $userUID) {
+   // RGet the job and result metadata generated by SeqSearch.
+   public static function getJob(Connection $connection, string $jobUID) {
 
       // Validate input parameters
       if (Utils::isNullOrEmpty($jobUID)) { throw new \Exception("Invalid job UID in getJob()"); }
-      if (Utils::isNullOrEmpty($userEmail)) { throw new \Exception("Invalid user email in getJob()"); }
-      if (Utils::isNullOrEmpty($userUID)) { throw new \Exception("Invalid user UID in getJob()"); }
 
       // Populate the stored procedure's parameters.
-      $parameters = [":jobType" => JobType::sequence_search->value, ":jobUID" => $jobUID, ":userEmail" => $userEmail, ":userUID" => $userUID];
+      $parameters = [":jobType" => JobType::sequence_search->value, ":jobUID" => $jobUID];
 
-      // Generate SQL to call the "getSeqSearchResults" stored procedure.
-      $sql = "CALL getSeqSearchResults(:jobType, :jobUID, :userEmail, :userUID);";
+      // Generate SQL to call the "getSeqSearchJob" stored procedure.
+      $sql = "CALL getSeqSearchJob(:jobType, :jobUID);";
 
       try {
          // Run the query
@@ -244,4 +118,31 @@ class SeqSearchJob {
       return SeqSearchJob::fromArray($row);
    }
 
+
+   // Update the job's JSON 
+   public static function updateJobJSON(Connection $connection, ?int $jobID, ?string $jobUID, 
+      ?string $json, ?string $message, JobStatus $status) {
+
+      try {
+         // Populate the stored procedure's parameters.
+         $parameters = [
+            ":jobID" => $jobID, 
+            ":jobUID" => $jobUID, 
+            ":json" => $json, 
+            ":message" => $message,
+            ":status" => $status->value
+         ];
+
+         // Generate SQL to call the stored procedure.
+         $sql = "CALL updateJobJSON(:jobID, :jobUID, :json, :message, :status)";
+
+         // Run the query
+         $result = $connection->query($sql, $parameters);
+         if (!$result) { return null; }
+
+      } catch (\Exception $e) {
+         \Drupal::logger($this->parentModule)->error($e->getMessage());
+         return null;
+      }
+   }
 }

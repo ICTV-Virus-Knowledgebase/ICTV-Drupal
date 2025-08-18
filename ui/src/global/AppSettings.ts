@@ -42,7 +42,8 @@ export class _AppSettings {
       proposal: "proposal-api",
 
       // Sequence search
-      getSequenceSearchResult: "get-seqsearch-result",
+      getSeqSearchOutputFile: "get-seqsearch-output-file",
+      getSequenceSearchJob: "get-seqsearch-job",
       uploadSequences: "upload-sequences",
 
       // Taxonomy
