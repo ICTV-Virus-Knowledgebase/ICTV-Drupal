@@ -239,7 +239,7 @@ class UploadSequences extends ResourceBase {
 
 
    /**
-    * Uploads the sequences that were sent in the request.
+    * Upload the FASTA sequence(s) sent in the HTTP request.
     */
    public function uploadSequences(Request $request) {
 
@@ -268,12 +268,44 @@ class UploadSequences extends ResourceBase {
       $jobUID = "";
       $jsonForSQL = null;
       $message = null;
+      $sequenceCount = 0;
+      $sequenceData = [];
       $taxResultJSON = null;
 
       try {
+         // Iterate over all uploaded files, validate them, and maintain their contents in an array.
+         foreach ($files as $file) {
+               
+            //-------------------------------------------------------------------------------------------------------
+            // Get and validate filename and contents.
+            //-------------------------------------------------------------------------------------------------------
+            $filename = $file["name"];
+            if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+
+            $contents = $file["contents"];
+            if (Utils::isNullOrEmpty($contents)) { throw new BadRequestHttpException("Invalid file contents"); }
+
+            // Validate the FASTA to make sure the number of sequences 
+            // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
+            $sequenceCount += preg_match_all('/^>/m', $contents);
+
+            // If the sequence count exceeds the maximum allowed, throw an error.
+            if ($sequenceCount > $this->MAX_SEQUENCE_COUNT) {
+               throw new BadRequestHttpException("Too many sequences have been submitted. Maximum allowed is {$this->MAX_SEQUENCE_COUNT}.");
+            }
+
+            // Update the sequence data array with the contents and filename.
+            \array_push($sequenceData, [
+               "fasta" => $contents,
+               "filename" => $filename
+            ]);
+         }
+
+         \Drupal::logger(Common::$MODULE_NAME)->info("Sequence count: ".$sequenceCount);
+         
          // Create a job record and get its ID and UID.
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_search, $jobUID, $userEmail, $userUID);
-         
+
          $jobStatus = JobStatus::pending;
 
          // Create the job directory and subdirectories and return the full path of the job directory.
@@ -283,43 +315,20 @@ class UploadSequences extends ResourceBase {
          $inputPath = $this->jobService->getInputPath($jobPath);
          $outputPath = $this->jobService->getOutputPath($jobPath);
 
-         //-------------------------------------------------------------------------------------------------------
-         // Create job_file records and actual files for every sequence file provided.
-         //-------------------------------------------------------------------------------------------------------
+         // Initialize the upload order.
          $uploadOrder = 1;
 
-         foreach ($files as $file) {
-               
-            //-------------------------------------------------------------------------------------------------------
-            // Get and validate file attributes.
-            //-------------------------------------------------------------------------------------------------------
-            $filename = $file["name"];
-            if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
-
-            $contents = $file["contents"];
-            if (Utils::isNullOrEmpty($contents)) { throw new BadRequestHttpException("Invalid file contents"); }
-
-            /*
-            $fileStartIndex = stripos($contents, ",");
-            if ($fileStartIndex < 0) { throw new BadRequestHttpException("Invalid data URL in sequence file"); }
-
-            $base64Data = substr($contents, $fileStartIndex + 1);
-            if (strlen($base64Data) < 1) { throw new BadRequestHttpException("The sequence file is empty"); }
-
-            // TODO: Consider gzipping the binary data in the browser and using gzuncompress() here.
-            // Decode the file contents from base64.
-            $binaryData = base64_decode($base64Data);
-            */
-
-            // TODO: This would be a good place to validate the sequence data to make sure the number of sequences 
-            // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
+         //-------------------------------------------------------------------------------------------------------
+         // Create job_file records and files for every uploaded FASTA file.
+         //-------------------------------------------------------------------------------------------------------
+         foreach ($sequenceData as $sequence) {
 
             // Create the sequence file in the job directory using the data provided.
-            $this->jobService->createInputFile($contents, $filename, $jobPath);
+            $this->jobService->createInputFile($sequence["fasta"], $sequence["filename"], $jobPath);
 
             // Create a job file record.
-            $jobFileUID = $this->jobService->createJobFile($this->connection, $filename, $jobID, $uploadOrder);
-      
+            $jobFileUID = $this->jobService->createJobFile($this->connection, $sequence["filename"], $jobID, $uploadOrder);
+
             $uploadOrder = $uploadOrder + 1;
          }
 
@@ -374,50 +383,10 @@ class UploadSequences extends ResourceBase {
          // Run the command on the command line.
          $commandResult = exec($command, $output, $resultCode);
 
-         /*
-         // Run the sequence search script. A job status should be returned.
-         $jobStatus = SequenceSearch::runSearch($inputPath, $outputPath, $this->scriptName, $fullPath);
-         
-         if ($jobStatus == JobStatus::complete) {
-
-            // Open and read the JSON file that should've been generated.
-            $taxResultJSON = TaxResult::getJSON($this->jsonResultsFilename, $outputPath);
-      
-            if (!$taxResultJSON) { 
-               $jobStatus = JobStatus::error;
-               throw new \Exception("Error reading the JSON results file: ".$this->jsonResultsFilename);
-            } 
-            
-            // Create a copy of the JSON encoded as hexadecimal.
-            $jsonForSQL = bin2hex($taxResultJSON);
-
-            // Gzip all CSV and HTML result files in the output directory.
-            $outputDirectory = new \DirectoryIterator($outputPath);
-            foreach ($outputDirectory as $fileInfo) {
-
-               if (!$fileInfo->isFile()) { continue; }
-
-               // We're only interested in CSV and HTML files.
-               $ext = strtolower($fileInfo->getExtension());
-               if ($ext !== "csv" && $ext !== "html") { continue; }
-
-               // Get the filename 
-               $filename = $fileInfo->getFilename();
-
-               // If the compressed file does not already exist, create it.
-               if (!file_exists($outputPath.'/'.$filename.".gz")) { 
-                  Common::createCompressedFile($filename, $outputPath); 
-               }
-            }
-         }
-
-         // Update the job record's JSON and status.
-         $this->jobService->updateJobJSON($this->connection, $jobID, $jsonForSQL, $message, $jobStatus); */
-
       } catch (Exception $e) {
 
          $jobStatus = JobStatus::crashed;
-
+         
          if ($e) { 
             $errorMessage = $e->getMessage(); 
          } else {
@@ -436,27 +405,12 @@ class UploadSequences extends ResourceBase {
          JobService::updateJobJSON($this->connection, $jobID, $jsonForSQL, $message, $jobStatus);
       }
 
-      // Retrieve a job and return it as a SeqSearch Job object (nested arrays, actually).
-      //return SeqSearchJob::getJob($this->connection, $jobUID, $userUID);
-
-      // Return the job UID and status and an (optional) error message.
+      // Return the job UID and status and an error message (if an error occurred).
       return [
          "errorMessage" => $errorMessage,
          "jobUID" => $jobUID,
          "status" => $jobStatus->value
       ];
-   }
-
-   
-   /**
-    * Validate the number of sequences that were sent in the request.
-    */
-   public function validateSequences($files): Boolean {
-
-
-
-      // TODO
-      return True;
    }
 
 }

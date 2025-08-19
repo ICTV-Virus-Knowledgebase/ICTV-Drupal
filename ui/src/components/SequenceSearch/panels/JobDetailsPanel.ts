@@ -1,5 +1,5 @@
 
-import { ButtonClass, FormatDate, FormatDuration, Icon } from "../Common";
+import { ButtonClass, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
@@ -46,7 +46,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
    }
 
    
-   // Make the panel visible and populate it with data.
+   // Load the panel contents and display them on the page.
    async load() {
 
       this.isActive = true;
@@ -65,12 +65,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Clear any existing content in the container.
       this.elements.container.innerHTML = "";
 
-      // Create the URL that can be used to view the job data.
-      const jobURL = this.parent.createUrlUsingState();
-
       // Format the job name
       let jobName = Utils.safeTrim(this.job.name);
-      jobName = jobName.length < 1 ? "(none)" : `<b>${jobName}</b>`;
+      if (jobName.length < 1) { jobName = "(No job name provided)"; }
 
       // Format the created on and ended on date/times.
       let createdOn = FormatDate(this.job.createdOn);
@@ -78,14 +75,24 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Format the duration between two date/times.
       let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
 
+      // Create a URL for the upload panel.
+      const uploadURL = this.parent.createUrlUsingState(PanelKey.upload);
+
+      // Create the link panel HTML containing a link to this job's details.
+      const linkPanelHTML = this.parent.createLinkPanel(PanelKey.jobDetails);
+
       //----------------------------------------------------------------------------------------------------------------
       // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
       let html = 
-         `<table class="job-details">
+         `<div class="navigation-panel">
+            <a href="${uploadURL}" target="_blank">Use SeqSearch again</a> with different FASTA files.
+         </div>
+         <div class="panel-title">Your results</div>
+         <table class="job-details">
             <tbody>
-               <tr>
-                  <th>Job name</th>
+               <tr class="job-name-row">
+                  <th class="job-name-label">Job name</th>
                   <td class="job-name">${jobName}</td>
                </tr>
                <tr>
@@ -110,27 +117,35 @@ export class JobDetailsPanel implements ISeqSearchPanel {
                </tr>
             </tbody>
          </table>
-
+         ${linkPanelHTML}`;
+         
+         /*
          <div class="link-panel">
-            <div class="instructions">You can view these search results again using the following URL:</div>
+            <div class="instructions">${Icon.link} You can view these results again using the following URL:</div>
             <div class="controls">
                <a href="${jobURL}" target="_blank">${jobURL}</a> 
                <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
             </div>
-         </div>`;
-         
+         </div>
+         */
       this.elements.container.innerHTML = html;
 
-      this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
-      if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
+      if (linkPanelHTML && linkPanelHTML.length > 0) {
+
+         this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
+         if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
+
+         // Add a click handler to the copy URL button.
+         this.elements.copyUrlButton.addEventListener("click", async (event_: MouseEvent) => {
+            return await this.parent.copyLinkURL(event_);
+         })
+      } else {
+         // TEST
+         console.warn("No link panel HTML was generated for the job details panel");
+      }
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
-
-      // Add a click handler to the copy URL button.
-      this.elements.copyUrlButton.addEventListener("click", async () => {
-         return await this.parent.copyJobURL();
-      });
 
       return;
    }

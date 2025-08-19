@@ -20,17 +20,19 @@ export enum ButtonClass {
 
 export enum Icon {
    browse = `<i class=\"fa fa-file\"></i>`,
-   cancel = `<i class="fa-solid fa-xmark"></i>`,
+   cancel = `<i class=\"fa-solid fa-xmark\"></i>`,
    chevronDown = `<i class=\"fa fa-chevron-down expanded\"></i>`,
    chevronRight = `<i class=\"fa fa-chevron-up collapsed\"></i>`,
    close = `<i class=\"fa fa-xmark\"></i>`,
    copy = `<i class=\"fa-regular fa-clipboard\"></i>`,
-   csv = `<i class="fa-regular fa-file-csv"></i>`,
-   dna = `<i class="fa-solid fa-dna"></i>`,
+   csv = `<i class=\"fa-regular fa-file-csv\"></i>`,
+   dna = `<i class=\"fa-solid fa-dna\"></i>`,
    download = `<i class=\"fa fa-download\"></i>`,
-   html = `<i class="fa-regular fa-file-lines"></i>`,
-   lineageDelimiter = `<i class="fa-solid fa-chevron-right"></i>`,
-   spinner = `<i class="fa fa-spinner fa-spin spinner-icon"></i>`,
+   html = `<i class=\"fa-regular fa-file-lines\"></i>`,
+   lineageDelimiter = `<i class=\"fa-solid fa-chevron-right\"></i>`,
+   link = `<i class=\"fa-solid fa-link\"></i>`,
+   repeat = `<i class=\"fa-solid fa-repeat\"></i>`,
+   spinner = `<i class=\"fa fa-spinner fa-spin spinner-icon\"></i>`,
    upload = `<i class=\"fa fa-upload\"></i>`
 }
 
@@ -82,10 +84,10 @@ export const Constants = {
    },
 
    // How long should the upload panel wait to try to load job data?
-   JOB_POLLING_INTERVAL: 3000,
+   JOB_POLLING_INTERVAL: 7000,  // TEST 3000,
 
    // The maximum number of sequences that can be uploaded.
-   MAX_SEQUENCE_COUNT: 64,
+   MAX_SEQUENCE_COUNT: 2, // TEST 64,
 
    NO_EMAIL: "NO_EMAIL"
 }
@@ -104,6 +106,19 @@ export function CreateKeyFromName(name_: string): string {
 export function CreateTaxonDetailsURL(ictvID_: string, name_: string) {
    const url = AppSettings.taxonHistoryPage;
    return `${url}?ictv_id=${ictvID_}&taxon_name=${name_}`;
+}
+
+export function FormatBytes(bytes_: number, decimals_: number): string {
+
+    if (!bytes_) return "0 B";
+
+    const k = 1024
+    const dm = decimals_ < 0 ? 0 : decimals_
+    const sizes = ['B', 'KB', 'MB', 'GB']
+
+    const i = Math.floor(Math.log(bytes_) / Math.log(k))
+
+    return `${parseFloat((bytes_ / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
 // Format a date string using the date and time format strings.
