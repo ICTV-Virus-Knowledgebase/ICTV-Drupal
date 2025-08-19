@@ -7,6 +7,7 @@ import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
+import { link } from "d3";
 
 
 export class BlastHitsPanel implements ISeqSearchPanel {
@@ -236,19 +237,21 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       })
 
       // Create a URL to display the current page and BLAST hits.
-      const sequenceURL = this.parent.createUrlUsingState();
+      //const sequenceURL = this.parent.createUrlUsingState();
 
       // Use this filename for the CSV file.
       const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
-      // Create URLs for the job details and "upload" pages.
-      const jobDetailsURL = this.parent.createUrlForPanel(PanelKey.jobDetails);
-      const uploadURL = this.parent.createUrlForPanel(PanelKey.upload);
+      // Create URLs for the job details and upload panels.
+      const jobDetailsURL = this.parent.createUrlUsingState(PanelKey.jobDetails);
+      const uploadURL = this.parent.createUrlUsingState(PanelKey.upload);
+
+      const linkPanelHTML = this.parent.createLinkPanel(PanelKey.blastHits);
 
       // Create the panel's HTML.
       this.elements.container.innerHTML = 
          `<div class="navigation-panel">
-            View the <a href="${jobDetailsURL}" target="_blank">SeqSearch results</a> again or <a href="${uploadURL}" target="_blank">run SeqSearch</a> again with new FASTA files.
+            View these <a href="${jobDetailsURL}" target="_blank">SeqSearch results</a> again or <a href="${uploadURL}" target="_blank">run SeqSearch</a> again with different FASTA files.
          </div>
          <div class="sequence-panel">
             <div class="label">Sequence:</div>
@@ -266,15 +269,19 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                >${Icon.csv} Download CSV results</button>
             </div>
          </div>
-         <div class="link-panel">
-            <div class="instructions">You can view this sequence's BLAST hits again using the following URL:</div>
+         ${linkPanelHTML}
+         <div class="blast-hits-title">BLAST Hits</div>
+         <div class="blast-hits">${hitsHTML}</div>`;
+
+         /*
+<div class="link-panel">
+            <div class="instructions">${Icon.link} You can view this sequence's BLAST hits again using the following URL:</div>
             <div class="controls">
                <a href="${sequenceURL}" target="_blank">${sequenceURL}</a> 
                <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
             </div>
          </div>
-         <div class="blast-hits-title">BLAST Hits</div>
-         <div class="blast-hits">${hitsHTML}</div>`;
+         */
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
@@ -302,8 +309,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
 
       // Add a click handler to the copy URL button.
-      this.elements.copyUrlButton.addEventListener("click", async () => {
-         return await this.parent.copyJobURL();
+      this.elements.copyUrlButton.addEventListener("click", async (event_: MouseEvent) => {
+         return await this.parent.copyLinkURL(event_);
       });
    }
 

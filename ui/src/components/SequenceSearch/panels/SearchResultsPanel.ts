@@ -60,7 +60,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
          // Create a TR for every sequence.
          file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
-            sequenceRows += this.createSequenceRow(fileIndex_, file_.name, sequence_, sequenceIndex_);
+            sequenceRows += this.createSequenceRow(fileIndex_, sequence_, sequenceIndex_);
          })
 
          sequencesHTML = 
@@ -79,7 +79,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       }
 
       const title = file_.sequences.length === 1 ? "Sequence" : "Sequences";
-
+      
       let html =
          `<div class="ictv-accordion-item" data-id="${fileKey}">
             <div class="ictv-accordion-header">
@@ -101,7 +101,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       return html;
    }
 
-   createSequenceRow(fileIndex_: number, filename_: string, sequence_: ISequence, seqIndex_: number): string {
+   createSequenceRow(fileIndex_: number, sequence_: ISequence, seqIndex_: number): string {
 
       const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length : 0;
 
@@ -162,7 +162,8 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          html += this.createFileHTML(file_, fileIndex_);
       })
       
-      const title = this.job.data.files.length === 1 ? "Submitted file" : "Submitted files";
+      const fileCount = this.job.data.files.length;
+      const title = fileCount === 1 ? "Submitted file" : `Submitted files (${fileCount})`;
 
       // Populate the container
       this.elements.container.innerHTML = 

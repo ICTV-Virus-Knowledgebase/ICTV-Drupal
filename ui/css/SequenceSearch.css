@@ -27,6 +27,7 @@
    color: #000;
 }
 
+/* Containers */
 #ictv_seqsearch_container .container {
    display: none;
    visibility: hidden;
@@ -38,11 +39,39 @@
    visibility: visible;
 }
 
-/* User row and upload panel */
-#ictv_seqsearch_container .user-row {
-   margin-bottom: 1.0rem;
+/* Common styles for panels */
+#ictv_seqsearch_container .no-results {
+   color: red;
+   font-size: 1.2rem;
+   margin-bottom: 0.5rem;
 }
 
+/* Sub-panels of the main panels. */
+#ictv_seqsearch_container .sub-panel {
+   display: none;
+   visibility: hidden;
+}
+#ictv_seqsearch_container .sub-panel.active {
+   align-items: center;
+   border-collapse: separate;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   line-height: 1.5;
+   margin: 0;
+   visibility: visible;
+}
+
+#ictv_seqsearch_container table {
+   border-style: none;
+   font-size: 1.0rem;
+   margin-bottom: 1.5rem;
+   width: 100%;
+}
+
+
+
+/* The upload panel */
 #ictv_seqsearch_container .upload-panel.active {
    align-items: center;
    display: flex;
@@ -78,22 +107,41 @@
    left: -1000px;
 }
 
-/* Sub-panels of the main panels. */
-#ictv_seqsearch_container .sub-panel {
-   display: none;
-   visibility: hidden;
-}
-#ictv_seqsearch_container .sub-panel.active {
-   align-items: center;
+
+/* The job submission sub-panel */
+#ictv_seqsearch_container .job-submission.sub-panel.active {
+   align-items: flex-start;
    border-collapse: separate;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: column nowrap;
    justify-content: flex-start;
    line-height: 1.5;
    margin: 0;
    visibility: visible;
 }
+#ictv_seqsearch_container .job-submission.sub-panel .controls-and-files {
+   display: none;
+   visibility: hidden;
+}
+#ictv_seqsearch_container .job-submission.sub-panel .controls-and-files.active {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+}
+#ictv_seqsearch_container .job-submission.sub-panel.active .controls {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+}
+#ictv_seqsearch_container .job-submission.sub-panel.active .selected-files-label {
+   font-weight: 700;
+}
 
+/* The results sub-panel */
 #ictv_seqsearch_container .results.sub-panel.active {
    align-items: flex-start;
    border-collapse: separate;
@@ -105,7 +153,38 @@
    visibility: visible;
 }
 
-/* The upload panel */
+
+
+/* 
+TODO: should we keep this?
+
+The upload panel's file submission section. 
+#ictv_seqsearch_container .upload-panel .file-submission {
+   display: none;
+   visibility: hidden;
+}
+#ictv_seqsearch_container .upload-panel .file-submission.active {
+   align-items: center;
+   border-collapse: separate;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   line-height: 1.5;
+   margin: 0;
+   visibility: visible;
+}*/
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The upload panel
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .upload-panel .job-submission .job-name-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+}
 #ictv_seqsearch_container .upload-panel .job-submission .job-name-label {
    font-weight: 700;
    margin-right: 0.5rem;
@@ -134,21 +213,29 @@
    color: #495057;
    outline: 0;
 }
+
+#ictv_seqsearch_container .upload-panel .job-submission .controls {
+   margin-top: 1.0rem;
+}
+
 #ictv_seqsearch_container .upload-panel .job-submission button.upload-button {
    background-color: #198754;
-   border-radius: 0;
+   border-radius: 5px;
    color: #fff;
+   margin-right: 0.5rem;
 }
 #ictv_seqsearch_container .upload-panel .job-submission button.cancel-button {
    background-color: #999;
-   border-radius: 0 5px 5px 0;
+   border-radius: 5px;
    color: #fff;
    min-width: 90px;
 }
 
 
 
-/* The status dialog */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The info dialog
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_seqsearch_container .modal-background {
    align-items: center;
    background-attachment: scroll;
@@ -244,35 +331,36 @@
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   The job details and BLAST hit tables
+   The job details panel
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_seqsearch_container table {
-   border-style: none;
-   font-size: 1.0rem;
-   margin-bottom: 1.5rem;
-   width: 100%;
+#ictv_seqsearch_container .job-details-panel .navigation-panel {
+   margin-bottom: 2.0rem; 
 }
-#ictv_seqsearch_container table.job-details {
+
+#ictv_seqsearch_container .job-details-panel .panel-title {
+   font-size: 1.2rem;
+   font-weight: 700;
+   margin: 0 0 1.0rem 0;
+}
+
+#ictv_seqsearch_container .job-details-panel table.job-details {
    border-color: #ddd;
    border-style: solid;
    border-width: 0.5px;
    width: 60%;
 }
 
-#ictv_seqsearch_container table.job-details tr,
-#ictv_seqsearch_container table.blast-hit tr {
+#ictv_seqsearch_container .job-details-panel table.job-details tr {
    border-color: #ddd;
    border-style: solid;
    border-width: 0 0 1px 0 !important;
 }
-#ictv_seqsearch_container table.job-details tr:last-of-type,
-#ictv_seqsearch_container table.blast-hit tr:last-of-type {
+#ictv_seqsearch_container .job-details-panel table.job-details tr:last-of-type {
    border-style: none;
    border-width: 0 !important;
 }
 
-#ictv_seqsearch_container table.job-details th,
-#ictv_seqsearch_container table.blast-hit th {
+#ictv_seqsearch_container .job-details-panel table.job-details th {
    background-color: inherit;
    border-color: #ddd;
    border-width: 0 0 1px 0;
@@ -282,26 +370,21 @@
    vertical-align: top;
    white-space: nowrap;
 }
-#ictv_seqsearch_container table.blast-hit th {
-   width: 160px !important;
-}
-#ictv_seqsearch_container table.job-details td,
-#ictv_seqsearch_container table.blast-hit td {
+#ictv_seqsearch_container .job-details-panel table.job-details td {
    border-color: #ddd;
    border-width: 0 0 1px 0;
    font-size: 1.0rem;
    padding: 0.5rem;
 }
 
-#ictv_seqsearch_container table.job-details td .job-name {
-   font-weight: bold;
+#ictv_seqsearch_container .job-details-panel table.job-details tr.job-name-row {
+   background-color: #777;
+   color: white;
+}
+#ictv_seqsearch_container .job-details-panel table.job-details tr.job-name-row .job-name-label {
+   color: white;
 }
 
-#ictv_seqsearch_container .job-details-panel .no-results {
-   color: red;
-   font-size: 1.2rem;
-   margin-bottom: 0.5rem;
-}
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -312,7 +395,11 @@
    flex-flow: column nowrap;
    font-size: 1.0rem;
    justify-content: flex-start;
-   margin-bottom: 2.0rem;
+   margin: 2.0rem 0;
+}
+#ictv_seqsearch_container .link-panel .instructions i {
+   color: #888;
+   margin-right: 0.25rem;
 }
 #ictv_seqsearch_container .link-panel .controls {
    text-align: left;
@@ -329,7 +416,7 @@
    Result files
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_seqsearch_container .result-files-title {
-   font-size: 1.5rem;
+   font-size: 1.2rem;
    font-weight: 700;
    margin: 1.75rem 0 0.75rem 0;
 }
@@ -356,6 +443,12 @@
    color: #3680f0;
 }
 
+#ictv_seqsearch_container .search-results-panel .sequences-title {
+   font-size: 1.0rem;
+   font-weight: 700;
+   margin-bottom: 0.5rem;
+}
+
 /*
 #ictv_seqsearch_container table.search-results button.view-hits {
    background-color: #198754;
@@ -370,9 +463,8 @@
 }*/
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   BLAST hits
+   The BLAST hits panel
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-
 #ictv_seqsearch_container .blast-hits-panel .navigation-panel {
    margin-bottom: 2.0rem; 
 }
@@ -407,6 +499,43 @@
 #ictv_seqsearch_container .blast-hits-panel .sequence-panel .controls button:hover {
    color: #3680f0;
 }
+
+#ictv_seqsearch_container .blast-hits-panel table.blast-hit tr {
+   border-color: #ddd;
+   border-style: solid;
+   border-width: 0 0 1px 0 !important;
+}
+#ictv_seqsearch_container .blast-hits-panel table.blast-hit tr:last-of-type {
+   border-style: none;
+   border-width: 0 !important;
+}
+
+#ictv_seqsearch_container .blast-hits-panel table.blast-hit th {
+   background-color: inherit;
+   border-color: #ddd;
+   border-width: 0 0 1px 0;
+   color: #5b616b;
+   font-size: 1.0rem;
+   padding: 0.5rem;
+   vertical-align: top;
+   white-space: nowrap;
+}
+#ictv_seqsearch_container .blast-hits-panel table.blast-hit th {
+   width: 160px !important;
+}
+#ictv_seqsearch_container .blast-hits-panel table.blast-hit td {
+   border-color: #ddd;
+   border-width: 0 0 1px 0;
+   font-size: 1.0rem;
+   padding: 0.5rem;
+}
+
+#ictv_seqsearch_container .blast-hits-panel .blast-hits-title {
+   font-size: 1.5rem;
+   font-weight: 700;
+   margin: 1.75rem 0 0.75rem 0;
+}
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Accordion 
@@ -578,12 +707,3 @@
    display: block;
 }
 
-
-/*-------------------------------------------------------------------------------------------------------------------------------------------------
-   The BLAST hits panel
--------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_seqsearch_container .blast-hits-title {
-   font-size: 1.5rem;
-   font-weight: 700;
-   margin: 1.75rem 0 0.75rem 0;
-}

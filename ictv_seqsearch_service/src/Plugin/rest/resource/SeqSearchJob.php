@@ -141,7 +141,7 @@ class SeqSearchJob {
          if (!$result) { return null; }
 
       } catch (\Exception $e) {
-         \Drupal::logger($this->parentModule)->error($e->getMessage());
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return null;
       }
    }
