@@ -16,8 +16,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    elements: {
       blastHits: HTMLElement,
       container: HTMLElement,
-      copyUrlButton: HTMLButtonElement,
-      sequencePanel: HTMLElement
+      panelControls: HTMLElement,
+      panelTitle: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -38,12 +38,13 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       this.elements = {
          blastHits: null,
          container: containerEl_,
-         copyUrlButton: null,
-         sequencePanel: null
+         panelControls: null,
+         panelTitle: null
       }
    }
 
 
+   // Create HTML for a BLAST hit.
    createHitHTML(hit_: IBlastHit, hitIndex_: number): string {
 
       // Format the hit's lineage.
@@ -236,52 +237,45 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          hitsHTML += this.createHitHTML(hit_, hitIndex_);
       })
 
-      // Create a URL to display the current page and BLAST hits.
-      //const sequenceURL = this.parent.createUrlUsingState();
-
       // Use this filename for the CSV file.
       const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
-      // Create URLs for the job details and upload panels.
+      // Create a URL for the job details/results page.
       const jobDetailsURL = this.parent.createUrlUsingState(PanelKey.jobDetails);
-      const uploadURL = this.parent.createUrlUsingState(PanelKey.upload);
 
+      // Create the link panel HTML containing a link to this job's details.
       const linkPanelHTML = this.parent.createLinkPanel(PanelKey.blastHits);
 
       // Create the panel's HTML.
       this.elements.container.innerHTML = 
-         `<div class="navigation-panel">
-            View these <a href="${jobDetailsURL}" target="_blank">SeqSearch results</a> again or <a href="${uploadURL}" target="_blank">run SeqSearch</a> again with different FASTA files.
-         </div>
-         <div class="sequence-panel">
-            <div class="label">Sequence:</div>
-            <div class="name">${sequence.qseqid}</div>
-            <div class="controls">
-               <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip"
+         `<div class="panel-title">BLAST hits for sequence ${sequence.qseqid}</div>
+         <div class="panel-controls">
+            ${linkPanelHTML}
+            <div class="sequence-controls">
+               <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip"
                   data-filename="${sequence.blast_html}"
-                  data-tippy-content="Click to view the alignement(s) in a new tab"
+                  data-tippy-content="View the alignments in a new tab"
                   data-title="${sequence.qseqid}"
-               >${Icon.html} View alignment(s)</button>
-               <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip"
-                  data-filename="${sequence.blast_csv}"
-                  data-tippy-content="Click to download the BLAST results as a CSV file"
-                  data-title="${csvName}"
-               >${Icon.csv} Download CSV results</button>
-            </div>
-         </div>
-         ${linkPanelHTML}
-         <div class="blast-hits-title">BLAST Hits</div>
-         <div class="blast-hits">${hitsHTML}</div>`;
+               >${Icon.html} View alignments</button>
 
-         /*
-<div class="link-panel">
-            <div class="instructions">${Icon.link} You can view this sequence's BLAST hits again using the following URL:</div>
-            <div class="controls">
-               <a href="${sequenceURL}" target="_blank">${sequenceURL}</a> 
-               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
+               <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip"
+                  data-filename="${sequence.blast_csv}"
+                  data-tippy-content="Download the BLAST hits as a CSV file"
+                  data-title="${csvName}"
+               >${Icon.csv} Download as CSV</button>
+
+               <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
+                  data-tippy-content="Return to the SeqSearch results page"
+                  data-url="${jobDetailsURL}"
+               >${Icon.back} Return to search results</button>
+
+               <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                  data-tippy-content="Use SeqSearch again with different FASTA files"
+                  data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
+               >${Icon.search} New search</button>
             </div>
          </div>
-         */
+         <div class="blast-hits">${hitsHTML}</div>`;
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
@@ -293,25 +287,16 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Add a click event handler.
       this.elements.blastHits.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
-      });
+      })
 
-      // Get a reference to the sequence panel element.
-      this.elements.sequencePanel = this.elements.container.querySelector(".sequence-panel");
-      if (!this.elements.sequencePanel) { throw new Error("Invalid sequence panel DOM element"); }
+      // Get a reference to the panel controls element.
+      this.elements.panelControls = this.elements.container.querySelector(".panel-controls");
+      if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
 
-      // Handle clicks in the sequence panel.
-      this.elements.sequencePanel.addEventListener("click", async (event_) => {
+      // Handle clicks in the panel controls.
+      this.elements.panelControls.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
-      });
-
-      // Get the copy URL button
-      this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
-      if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
-
-      // Add a click handler to the copy URL button.
-      this.elements.copyUrlButton.addEventListener("click", async (event_: MouseEvent) => {
-         return await this.parent.copyLinkURL(event_);
-      });
+      })
    }
 
    unload() {

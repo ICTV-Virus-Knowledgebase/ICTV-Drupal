@@ -12,9 +12,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
    // DOM elements
    elements: {
       container: HTMLElement,
-      copyUrlButton: HTMLButtonElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
+      panelControls: HTMLElement,
       searchResults: HTMLElement
    }
 
@@ -38,9 +38,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
       this.elements = {
          container: containerEl_,
-         copyUrlButton: null,
          jobName: null,
          jobNameLabel: null,
+         panelControls: null,
          searchResults: null
       }
    }
@@ -75,9 +75,6 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Format the duration between two date/times.
       let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
 
-      // Create a URL for the upload panel.
-      const uploadURL = this.parent.createUrlUsingState(PanelKey.upload);
-
       // Create the link panel HTML containing a link to this job's details.
       const linkPanelHTML = this.parent.createLinkPanel(PanelKey.jobDetails);
 
@@ -85,10 +82,14 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
       let html = 
-         `<div class="navigation-panel">
-            <a href="${uploadURL}" target="_blank">Use SeqSearch again</a> with different FASTA files.
+         `<div class="panel-title">Job details</div>
+         <div class="panel-controls">
+            ${linkPanelHTML}
+            <button class="btn ${ButtonClass.newSearch} has-tooltip"
+               data-tippy-content="Use SeqSearch again with different FASTA files"
+               data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
+            >${Icon.search} New search</button>
          </div>
-         <div class="panel-title">Your results</div>
          <table class="job-details">
             <tbody>
                <tr class="job-name-row">
@@ -116,33 +117,18 @@ export class JobDetailsPanel implements ISeqSearchPanel {
                   <td>${this.job.data.database_title}</td>
                </tr>
             </tbody>
-         </table>
-         ${linkPanelHTML}`;
-         
-         /*
-         <div class="link-panel">
-            <div class="instructions">${Icon.link} You can view these results again using the following URL:</div>
-            <div class="controls">
-               <a href="${jobURL}" target="_blank">${jobURL}</a> 
-               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
-            </div>
-         </div>
-         */
+         </table>`;
+
       this.elements.container.innerHTML = html;
 
-      if (linkPanelHTML && linkPanelHTML.length > 0) {
+      // Get a reference to the "panel controls" DOM element.
+      this.elements.panelControls = this.elements.container.querySelector(".panel-controls");
+      if (!this.elements.panelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
 
-         this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
-         if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
-
-         // Add a click handler to the copy URL button.
-         this.elements.copyUrlButton.addEventListener("click", async (event_: MouseEvent) => {
-            return await this.parent.copyLinkURL(event_);
-         })
-      } else {
-         // TEST
-         console.warn("No link panel HTML was generated for the job details panel");
-      }
+      // Handle clicks in the panel controls.
+      this.elements.panelControls.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+      })
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");

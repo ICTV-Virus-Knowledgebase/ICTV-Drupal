@@ -98,30 +98,8 @@ export class SequenceSearch {
       }
    }
 
-
-   // Copy the link URL to the clipboard.
-   async copyLinkURL(event_: MouseEvent) {
-
-      const buttonEl = event_.target as HTMLButtonElement;
-      if (!buttonEl || !buttonEl.classList.contains(ButtonClass.copyURL)) {
-         return await AlertBuilder.displayError("Invalid button element for copying the URL");
-      }
-
-      // Get the URL associated with the copy button.
-      const url = Utils.safeTrim(buttonEl.getAttribute("data-url"));
-      if (url.length < 1) { return await AlertBuilder.displayError("Invalid URL for copying to clipboard"); }
-
-      // Copy the URL to the clipboard.
-      await navigator.clipboard.writeText(url);
-
-      // Display a success message.
-      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
-   }
-
    // Create a link panel containing a link that allows the user to return to this page with the current job data.
    createLinkPanel(panelKey_: PanelKey): string {
-
-      console.log("in createLinkPanel() for panel: " + panelKey_ + " and this.state = ", this.state)
 
       // All link panels require a valid job UID.
       if (!this.state.jobUID || this.state.jobUID.length < 1) { return ""; }
@@ -131,26 +109,24 @@ export class SequenceSearch {
       // Create a link URL for the specified panel.
       const url = this.createUrlUsingState(panelKey_);
 
-      console.log("Link URL: " + url)
-
       switch (panelKey_) {
 
          case PanelKey.blastHits:
 
             // Specify the instructions for the BLAST hits panel.
-            instructions = "You can view this sequence's BLAST hits again using the following URL";
+            instructions = `View this sequence's results later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
             break;
 
          case PanelKey.jobDetails:
 
             // Specify the instructions for the job details panel.
-            instructions = "You can view these results again using the following URL";
+            instructions = `View this job later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
             break;
 
          case PanelKey.upload:
 
             // Specify the instructions for the upload panel.
-            instructions = "Use the following URL to return to this page later when the results are ready";
+            instructions = `View the completed results later using &nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
             break;
 
          default:
@@ -159,14 +135,11 @@ export class SequenceSearch {
       }
 
       return `<div class="link-panel">
-         <div class="instructions">${Icon.link} ${instructions}:</div>
-         <div class="controls">
-            <a href="${url}" target="_blank">${url}</a> 
-            <button class="btn ${ButtonClass.copyURL}"
-               data-tippy-content="Click to copy the URL to your clipboard"
-               data-url="${url}"
-            >${Icon.copy} Copy to clipboard</button>
-         </div>
+         ${Icon.link} ${instructions}
+         <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
+            data-tippy-content="Copy the URL to your clipboard"
+            data-url="${url}"
+         >${Icon.copy} Copy to clipboard</button>
       </div>`;
    }
 
@@ -260,9 +233,6 @@ export class SequenceSearch {
 
       // All panels besides the upload panel need to load the job specified in the state.
       if (action_ != PanelAction.displayUpload && (!this.job || this.job.uid !== this.state.jobUID)) {
-
-         console.log("Loading job data for action: " + action_)
-
          await this.getJob(); 
       }
 
@@ -322,14 +292,46 @@ export class SequenceSearch {
 
          const button = targetEl_ as HTMLButtonElement;
          
-         // Get and validate the filename attribute.
-         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
+         // Variables for button attributes.
+         let filename = null;
+         let title = null;
+         let url = null;
 
-         // Get and validate the title attribute.
-         const title = Utils.safeTrim(button.getAttribute("data-title"));
-         
          // The button's class determines which action to take.
-         if (button.classList.contains(ButtonClass.viewHits)) {
+         if (button.classList.contains(ButtonClass.back) || button.classList.contains(ButtonClass.newSearch)) {
+
+            // Get the button's URL data attribute.
+            url = Utils.safeTrim(button.getAttribute("data-url"));
+            if (!url || url.length < 1) { throw new Error("Invalid URL attribute"); }
+            
+            // Open the URL in a new browser tab.
+            window.open(url, "_blank");
+
+         } else if (button.classList.contains(ButtonClass.copyURL)) {
+
+            // Get the button's URL data attribute.
+            url = button.getAttribute("data-url");
+            if (!url || url.length < 1) { throw new Error("Unable to copy the URL: Invalid URL"); }
+
+            // Copy the URL to the clipboard.
+            await navigator.clipboard.writeText(url);
+
+            // Display a success message.
+            await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now paste it into a document for future reference or include it in an email.");
+               
+         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
+            
+            // Get the button's filename attribute.
+            filename = Utils.safeTrim(button.getAttribute("data-filename"));
+            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename button attribute"); }
+
+            // Get the button's title attribute.
+            title = Utils.safeTrim(button.getAttribute("data-title"));
+
+            // Download the CSV file.
+            await this.downloadCSV(filename, title);
+
+         } else if (button.classList.contains(ButtonClass.viewHits)) {
 
             // Get and validate the file index attribute.
             let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
@@ -347,16 +349,14 @@ export class SequenceSearch {
             
             window.open(this.createUrlUsingState(), "_blank");
 
-         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-            
-            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename button attribute"); }
-
-            // Download the CSV file.
-            await this.downloadCSV(filename, title);
-
          } else if (button.classList.contains(ButtonClass.viewHTML)) {
             
+            // Get and validate the button's filename attribute.
+            filename = Utils.safeTrim(button.getAttribute("data-filename"));
             if (filename.length < 1) { return await AlertBuilder.displayError("Invalid HTML filename button attribute"); }
+
+            // Get the button's title attribute.
+            title = Utils.safeTrim(button.getAttribute("data-title"));
 
             // Display the HTML file in a new browser tab.
             await this.viewHTML(filename, title);
@@ -368,11 +368,14 @@ export class SequenceSearch {
       // Was an accordion control clicked?
       if (targetEl_.classList.contains("ictv-accordion-control")) {
 
+         // Validate the container element.
+         if (!containerEl_) { await AlertBuilder.displayError("Unable to toggle accordion: Invalid container element"); }
+
+         // Get the accordion's item ID.
          const itemID = targetEl_.getAttribute("data-id");
          if (!itemID) { return; }
 
-         if (!containerEl_) { await AlertBuilder.displayError("Unable to toggle accordion: Invalid container element"); }
-
+         // Toggle the accordion item.
          ToggleAccordion(this.elements.container, itemID);
       }
       
@@ -484,7 +487,6 @@ export class SequenceSearch {
       return;
    }
 
-   
    // Update the window's location with a state-maintaining URL.
    async updatePage() {
       const url = this.createUrlUsingState();
