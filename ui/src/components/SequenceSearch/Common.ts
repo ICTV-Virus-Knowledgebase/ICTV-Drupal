@@ -10,15 +10,19 @@ import { Utils } from "../../helpers/Utils";
 
 // CSS class names for buttons.
 export enum ButtonClass {
+   back = "back-button",
    cancel = "cancel-button",
    copyURL = "copy-url-button",
    downloadCSV = "download-csv-button",
+   newSearch = "new-search-button",
    upload = "upload-button",
    viewHits = "view-hits",
    viewHTML = "view-html-button"
 }
 
 export enum Icon {
+   add = `<i class=\"fa-solid fa-plus\"></i>`,
+   back = `<i class=\"fa-solid fa-angle-left\"></i>`,
    browse = `<i class=\"fa fa-file\"></i>`,
    cancel = `<i class=\"fa-solid fa-xmark\"></i>`,
    chevronDown = `<i class=\"fa fa-chevron-down expanded\"></i>`,
@@ -32,6 +36,7 @@ export enum Icon {
    lineageDelimiter = `<i class=\"fa-solid fa-chevron-right\"></i>`,
    link = `<i class=\"fa-solid fa-link\"></i>`,
    repeat = `<i class=\"fa-solid fa-repeat\"></i>`,
+   search = `<i class=\"fa-solid fa-magnifying-glass\"></i>`,
    spinner = `<i class=\"fa fa-spinner fa-spin spinner-icon\"></i>`,
    upload = `<i class=\"fa fa-upload\"></i>`
 }

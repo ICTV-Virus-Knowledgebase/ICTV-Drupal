@@ -310,8 +310,8 @@ export class UploadPanel implements ISeqSearchPanel {
          `<div class="file-selection sub-panel">
             <div class="upload-message">Upload your <b>nucleotide-only</b> FASTA sequence(s)</div>
             <button 
-               class=\"btn file-control\"
-               data-tippy-content="Click to select one or more nucleotide-only FASTA files to upload. Up to 100 sequences can be submitted in one or multiple files."
+               class=\"btn file-control has-tooltip\"
+               data-tippy-content="Click to select one or more nucleotide-only FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
             >${Icon.browse} Select file(s)</button>
             <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
          </div>
@@ -320,10 +320,10 @@ export class UploadPanel implements ISeqSearchPanel {
          
             <div class="job-name-row">
                <div class=\"job-name-label\">Job name</div>
-               <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
+               <input type=\"text\" class=\"job-name\" placeholder=\"optional\" />
             </div>
             
-            <div class="selected-files-label">Selected file(s)</div>
+            <div class="selected-files-label">Selected files</div>
             <div class="selected-files"></div>
 
             <div class="controls">
@@ -336,17 +336,6 @@ export class UploadPanel implements ISeqSearchPanel {
          
          <div class="results sub-panel"></div>`;
 
-         /* job submission sub-panel HTML pre-noon
-
-            <div class="controls">
-               <div class=\"job-name-label\">Job name</div>
-               <input type=\"text\" class=\"job-name\" placeholder=\"(optional)\" />
-               <button class=\"btn ${ButtonClass.upload}\">Submit file(s)</button>
-               <button class=\"btn ${ButtonClass.cancel}\">${Icon.cancel} Cancel</button>
-            </div>
-            <div class="selected-files"></div>
-
-         */
       this.elements.container.innerHTML = html;
 
       // Get references to the DOM elements.
@@ -437,6 +426,11 @@ export class UploadPanel implements ISeqSearchPanel {
          <div class="status-message">${message}</div>
          <div class="retry-message">${retryMessage}</div>`;
 
+      this.elements.resultsSubPanel.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+      })
+
+/*
       // If a valid job details link was able to be created (and link panel HTML was generated), add a click handler to the copy URL button.),
       if (linkPanelHTML && linkPanelHTML.length > 0) {
 
@@ -446,9 +440,10 @@ export class UploadPanel implements ISeqSearchPanel {
 
          // Add a click handler to the copy URL button.
          copyUrlButton.addEventListener("click", async (event_: MouseEvent) => {
-            return await this.parent.copyLinkURL(event_);
+            return await this.parent.handleClickEvent(null, event_.target as HTMLElement);
+            //return await this.parent.copyLinkURL(event_);
          });
-      }
+      }*/
    }
 
    // Read the contents of a file asynchronously and return it as a base64-encoded string.

@@ -36,3 +36,4 @@ printf "Copying CSS files to ictv_seqsearch_ui/assets/css\n\n"
 
 cp ./css/SequenceSearch.css ../ictv_seqsearch_ui/assets/css/
 cp ./css/tippy.css ../ictv_seqsearch_ui/assets/css/
+cp ./css/ictv_common.css ../ictv_seqsearch_ui/assets/css/

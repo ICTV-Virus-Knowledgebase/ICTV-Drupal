@@ -33,7 +33,7 @@
    font-size: 12pt;
    font-size: 0.9rem;
    font-weight: 400;
-   padding: .375rem .75rem;
+   padding: .2rem .5rem; /*.375rem .75rem;*/
    text-align: center;
    user-select: none;
    vertical-align: middle;
@@ -44,12 +44,12 @@
 }
 
 .ictv-custom .btn i {
-   margin-right: 5px;
+   margin-right: 0.5rem;
 }
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-    Buttons styles from Bootstrap
+   Buttons styles from Bootstrap
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* Primary */
@@ -58,18 +58,18 @@
    background-color: #007bff;
    border-color: #007bff;
 }
-
+.ictv-custom .btn-primary i {
+   color: #fff;
+}
 .ictv-custom .btn-primary:hover {
    color: #fff;
    background-color: #0069d9;
    border-color: #0062cc;
 }
-
 .ictv-custom .btn-primary:focus,
 .ictv-custom .btn-primary.focus {
    box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
 }
-
 .ictv-custom .btn-primary.disabled,
 .ictv-custom .btn-primary:disabled {
    color: #fff;
@@ -80,10 +80,12 @@
 /* Success */
 .ictv-custom .btn-success {
    color: #fff;
-   background-color: #28a745;
+   background-color: #198754;
    border-color: #28a745;
 }
-
+.ictv-custom .btn-success i {
+   color: #fff;
+}
 .ictv-custom .btn-success:hover {
    color: #fff;
    background-color: #218838;
@@ -107,6 +109,9 @@
    color: #212529;
    background-color: #ffc107;
    border-color: #ffc107;
+}
+.ictv-custom .btn-warning i {
+   color: #212529;
 }
 
 .ictv-custom .btn-warning:hover {
