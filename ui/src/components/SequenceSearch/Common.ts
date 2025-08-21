@@ -92,7 +92,7 @@ export const Constants = {
    JOB_POLLING_INTERVAL: 7000,  // TEST 3000,
 
    // The maximum number of sequences that can be uploaded.
-   MAX_SEQUENCE_COUNT: 2, // TEST 64,
+   MAX_SEQUENCE_COUNT: 100,
 
    NO_EMAIL: "NO_EMAIL"
 }
