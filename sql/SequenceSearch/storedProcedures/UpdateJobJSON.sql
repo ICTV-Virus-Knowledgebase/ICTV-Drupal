@@ -5,10 +5,10 @@ DELIMITER //
 
 CREATE PROCEDURE `updateJobJSON`(
 	IN `jobID` INT,
-   IN `jobUID` VARCHAR(100),
-   IN `json_` LONGTEXT,
-   IN `message_` VARCHAR(1000),
-   IN `status_` VARCHAR(100)
+	IN `jobUID` VARCHAR(100),
+	IN `json_` LONGTEXT,
+	IN `message_` VARCHAR(1000),
+	IN `status_` VARCHAR(100)
 )
 BEGIN
 	DECLARE fullStatus VARCHAR(100);

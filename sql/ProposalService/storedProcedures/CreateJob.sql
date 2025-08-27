@@ -5,7 +5,7 @@ DELIMITER //
 
 CREATE PROCEDURE `createJob` (
 	IN jobName VARCHAR(100),
-   IN jobType VARCHAR(60),
+   	IN jobType VARCHAR(60),
 	IN userEmail VARCHAR(100),
 	IN userUID VARCHAR(100)
 )
