@@ -16,7 +16,6 @@ use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
-//use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
@@ -24,6 +23,7 @@ use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SequenceSearch;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
+
 
 /**
  * A web service for uploading sequence files and searching.
@@ -169,7 +169,7 @@ class UploadSequences extends ResourceBase {
       );
    }
 
-   
+
    /**
     * Responds to GET request.
     * Passes the HTTP Request to the updateSequences method and returns the result.
@@ -260,6 +260,7 @@ class UploadSequences extends ResourceBase {
       // Get and validate the array of files.
       $files = $requestJSON["files"];
       if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
+
 
       // Declare and initialize variables used below.
       $errorMessage = null;
