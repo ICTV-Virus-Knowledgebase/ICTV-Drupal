@@ -166,7 +166,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       
       // Populate the container
       this.elements.container.innerHTML = 
-         `<div class="result-files-title">Search results</div>
+         `<div class="result-files-title">Files</div>
          <div class="result-files">${html}</div>`;
 
       // Get references to DOM elements.

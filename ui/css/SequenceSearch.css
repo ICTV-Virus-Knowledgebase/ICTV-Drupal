@@ -119,6 +119,7 @@
 #ictv_seqsearch_container .panel-title {
    font-size: 1.5rem;
    font-weight: 700;
+   margin-bottom: 1.0rem;
    width: 100%;
 }
 
@@ -365,7 +366,10 @@
 #ictv_seqsearch_container .link-panel button.copy-url-button {
    margin-left: 0.25rem;
 }
-
+#ictv_seqsearch_container .link-panel .copy-url-link:hover {
+   color: #007bff;
+   transition: color 0.2s;
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Modal dialog

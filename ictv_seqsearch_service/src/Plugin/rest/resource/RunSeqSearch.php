@@ -130,9 +130,11 @@ try {
          throw new \Exception("Error reading the JSON results file: ".$jsonFilename);
       }
 
-      if (json_decode($json) === null && json_last_error() !== JSON_ERROR_NONE) {
+      // Convert the JSON text into a Taxonomy result (nested array).
+      $taxResult = json_decode($json, true);
+      if ($taxResult === null && json_last_error() !== JSON_ERROR_NONE) {
          $jobStatus = JobStatus::error;
-         throw new \Exception("JSON data is invalid after conversion");
+         throw new \Exception("JSON data is invalid after conversion: ".json_last_error_msg());
       }
 
       // Create a copy of the JSON encoded as hexadecimal.
@@ -157,44 +159,40 @@ try {
          }
       }
 
-      // Convert the JSON text into a Taxonomy result object.
-      $taxResult = json_decode($json);
+      try {
+         // Is the "files" attribute valid?
+         if (!empty($taxResult['files'])) { throw new \Exception("The taxonomy result JSON does not have a \"files\" attribute."); }
 
-      if ($taxResult !== null && $taxResult->files !== null) { 
-         
-         try {
-            // Update the job's job_file records.
-            foreach($taxResult->files as $file) {
+         // Update the job's job_file database record(s).
+         foreach($taxResult['files'] as $file) {
 
-               $fileStatus = JobStatus::error;
-
-               if ($file->errors === null || count($file->errors) < 1) { $fileStatus = JobStatus::complete; }
-
-               // Update the job file record.
-               $sql = "UPDATE job_file SET 
-                  status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".$fileStatus->value."') 
-                  WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1) 
-                  AND filename = '".$file->name."' ";
-
-               $fileQuery = $connection->query($sql);
-               $fileResult = $fileQuery->execute();
-            }  
-         } catch (Exception $e) {
-
-            $errorMessage = $e->getMessage();
-
-            // Update the log with the error message.
-            \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
-
-            // Update the job's job_files as unsuccessful.
+            // Update the job file record.
             $sql = "UPDATE job_file SET 
-               status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".JobStatus::error->value."') 
-               WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1)";
+               status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".$jobStatus->value."') 
+               WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1) 
+               AND filename = '".$file["name"]."' ";
 
             $fileQuery = $connection->query($sql);
             $fileResult = $fileQuery->execute();
-         }
-      }   
+         }  
+         
+      } catch (\Exception $ex) {
+
+         $errorMessage = $ex->getMessage();
+
+         // Update the log with the error message.
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
+
+         // Update the job's job_files as unsuccessful.
+         $sql = "UPDATE job_file SET 
+            status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".JobStatus::error->value."') 
+            WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1)";
+
+         $fileQuery = $connection->query($sql);
+         $fileResult = $fileQuery->execute();
+
+         // Don't exit yet.
+      }
    }
 
    $jobID = NULL;
@@ -204,7 +202,7 @@ try {
 
    fwrite(STDOUT, "Processing is complete");
 
-} catch (Exception $e) {
+} catch (\Exception $e) {
 
    $errorMessage = "Unspecified error";
    if ($e) { $errorMessage = $e->getMessage(); }

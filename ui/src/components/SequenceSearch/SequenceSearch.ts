@@ -114,7 +114,7 @@ export class SequenceSearch {
          case PanelKey.blastHits:
 
             // Specify the instructions for the BLAST hits panel.
-            instructions = `View this sequence's results later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
+            instructions = `View these later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
             break;
 
          case PanelKey.jobDetails:
@@ -135,7 +135,8 @@ export class SequenceSearch {
       }
 
       return `<div class="link-panel">
-         ${Icon.link} ${instructions}
+         <i class="fa-solid fa-link copy-url-link has-tooltip" data-tippy-content="Copy the URL to your clipboard" data-url="${url}"></i>
+         ${instructions}
          <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
             data-tippy-content="Copy the URL to your clipboard"
             data-url="${url}"
@@ -231,8 +232,8 @@ export class SequenceSearch {
       let loadSearchResults = false;
       let loadUpload = false;
 
-      // All panels besides the upload panel need to load the job specified in the state.
-      if (action_ != PanelAction.displayUpload && (!this.job || this.job.uid !== this.state.jobUID)) {
+      // All panels besides the upload panel need to load the job whose UID is in the state (this.state.jobUID).
+      if (action_ != PanelAction.displayUpload && !!this.state.jobUID && (!this.job || this.job.uid !== this.state.jobUID)) {
          await this.getJob(); 
       }
 
@@ -284,8 +285,27 @@ export class SequenceSearch {
    // Handle a click event on a button or accordion control.
    async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
 
-      // If an icon was clicked, use its parent Element.
-      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
+      let url = null;
+
+      // Was an icon clicked?
+      if (targetEl_.tagName === "I") { 
+         if (targetEl_.classList.contains("copy-url-link")) {
+
+            // Get the icon's URL data attribute.
+            url = targetEl_.getAttribute("data-url");
+            if (!url || url.length < 1) { throw new Error("Unable to copy the URL: Invalid URL"); }
+
+            // Copy the URL to the clipboard.
+            await navigator.clipboard.writeText(url);
+
+            // Display a success message.
+            return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now paste it into a document for future reference or include it in an email.");
+
+         } else {
+            // Use its parent element.
+            targetEl_ = targetEl_.parentElement; 
+         }
+      }
 
       // Was a button on a sequence row clicked?
       if (targetEl_.tagName === "BUTTON") {
@@ -295,7 +315,7 @@ export class SequenceSearch {
          // Variables for button attributes.
          let filename = null;
          let title = null;
-         let url = null;
+         
 
          // The button's class determines which action to take.
          if (button.classList.contains(ButtonClass.back) || button.classList.contains(ButtonClass.newSearch)) {
