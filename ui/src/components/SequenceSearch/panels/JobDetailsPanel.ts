@@ -82,7 +82,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
       let html = 
-         `<div class="panel-title">Job details</div>
+         `<div class="panel-title">Search Results</div>
          <div class="panel-controls">
             ${linkPanelHTML}
             <button class="btn ${ButtonClass.newSearch} has-tooltip"

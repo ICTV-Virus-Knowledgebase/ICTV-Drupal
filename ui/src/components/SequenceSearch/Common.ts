@@ -81,6 +81,9 @@ export const Constants = {
    // TODO: Make sure this list is consistent with the seqsearch Python file in the ICTVseqsearch GitHub repo.
    ACCEPTED_FILE_TYPES: [".fa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"],
 
+   // The application name
+   APPLICATION_NAME: "SeqSearch",
+
    // Date and time format strings.
    DATE_FORMAT: {
       FROM: "yyyy-MM-dd HH:mm:ss",
