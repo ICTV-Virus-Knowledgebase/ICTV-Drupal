@@ -144,7 +144,7 @@ export class SequenceSearch {
       </div>`;
    }
 
-   // Create a SeqSearch URL using the current state. 
+   // Create a TaxaBLAST URL using the current state. 
    createUrlUsingState(panelKey_?: PanelKey): string {
       
       // The current URL

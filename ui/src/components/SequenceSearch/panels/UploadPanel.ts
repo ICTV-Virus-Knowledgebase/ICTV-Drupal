@@ -23,7 +23,7 @@ enum PanelMode {
    // job UID and the status of the upload.
    job_submitted = "job_submitted",
 
-   // The files have been uploaded and we are waiting for the SeqSearch job to complete.
+   // The files have been uploaded and we are waiting for the TaxaBLAST job to complete.
    pending_results = "pending_results",
 
    // TEST
@@ -417,7 +417,7 @@ export class UploadPanel implements ISeqSearchPanel {
       const s = seconds === "1" ? "" : "s";
 
       // Populate the results sub-panel with a message about the job status.
-      const message = `The SeqSearch job is still running, but the page will be updated with the results as soon as they're ready.`;
+      const message = `The ${Constants.APPLICATION_NAME} job is still running, but the page will be updated with the results as soon as they're ready.`;
       const retryMessage = `Trying again in ${seconds} second${s} (retry #${this.jobResults.retries + 1})`;
 
       // Populate the results sub-panel.
@@ -545,6 +545,9 @@ export class UploadPanel implements ISeqSearchPanel {
             `(you tried to upload ${sequenceCount} sequences)`
 
             return await AlertBuilder.displayError(message, null, () => this.changePanelMode(PanelMode.file_selection));
+
+         } else if (sequenceCount < 1) {
+            return await AlertBuilder.displayError("Your selected file(s) do not contain any valid FASTA sequences", null, () => this.changePanelMode(PanelMode.file_selection));
          }
 
          // Change the panel mode to "job submitted".

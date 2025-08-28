@@ -27,7 +27,7 @@ export class _SequenceSearchService {
    }
 
 
-   // Get an output file from a SeqSearch job.
+   // Get an output file from a TaxaMATCH job.
    async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }

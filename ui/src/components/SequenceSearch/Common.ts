@@ -82,7 +82,7 @@ export const Constants = {
    ACCEPTED_FILE_TYPES: [".fa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"],
 
    // The application name
-   APPLICATION_NAME: "SeqSearch",
+   APPLICATION_NAME: "TaxaBLAST",
 
    // Date and time format strings.
    DATE_FORMAT: {

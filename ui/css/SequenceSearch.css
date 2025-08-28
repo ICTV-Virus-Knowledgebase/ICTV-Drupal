@@ -97,12 +97,13 @@
    visibility: visible;
 }
 
+/*
 #ictv_seqsearch_container table {
    border-style: none;
    font-size: 1.0rem;
    margin-bottom: 1.5rem;
    width: 100%;
-}
+}*/
 
 
 /* The navigation panel */
@@ -204,6 +205,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The accordion label (with result info)
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+
 #ictv_seqsearch_container .ictv-accordion-label {
    align-items: flex-start;
    display: flex;
@@ -211,15 +213,21 @@
    justify-content: flex-start;
    width: 100%;
 }
-#ictv_seqsearch_container .ictv-accordion-label .result-index {
+#ictv_seqsearch_container .ictv-accordion-label .filename {
+   font-size: 1.0rem;
+   margin-right: 0.25rem;
+}
+
+/*#ictv_seqsearch_container .ictv-accordion-label .result-index {
    font-size: 0.9rem; 
-   margin-right: 1.0rem;
+   margin-right: 0.5rem;
 }
 #ictv_seqsearch_container .ictv-accordion-label .lineage-and-result {
    align-items: flex-start;
    display: flex;
    flex-flow: column nowrap;
    justify-content: flex-start;
+   width: 100%;
 }
 #ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage {
    font-size: 0.9rem;
@@ -246,15 +254,13 @@
    flex-flow: column nowrap;
    justify-content: flex-start;
 }
-#ictv_seqsearch_container .ictv-accordion-label .filename {
-   margin-right: 0.25rem;
-}
 
+*/
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The BLAST hits panel
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_seqsearch_container .blast-hits-panel .sequence-panel {
+/*#ictv_seqsearch_container .blast-hits-panel .sequence-panel {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
@@ -294,13 +300,105 @@
    border-width: 0 0 1px 0;
    font-size: 1.0rem;
    padding: 0.5rem;
-}
+}*/
 
 #ictv_seqsearch_container .blast-hits-panel .blast-hits-title {
    font-size: 1.5rem;
    font-weight: 700;
    margin: 1.75rem 0 0.75rem 0;
 }
+
+
+/* BLAST hit tiles */
+#ictv_seqsearch_container .blast-hits .blast-hit-tile {
+   background-color: #e9e9e9;
+   border-color: rgba(0, 0, 0, 0.3);
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 0.5rem;
+   padding: 1.0rem 1.5rem 1.0rem 1.0rem;
+   width: 100%;
+}
+#ictv_seqsearch_container .blast-hits .result-index {
+   font-size: 0.9rem; 
+   margin-right: 0.5rem;
+}
+#ictv_seqsearch_container .blast-hits .lineage-and-result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+   width: 100%;
+}
+#ictv_seqsearch_container .blast-hits .lineage-and-result .lineage {
+   font-size: 0.9rem;
+   font-weight: 400;
+   margin-bottom: 0.25rem;
+}
+#ictv_seqsearch_container .blast-hits .lineage-and-result .lineage i.fa-chevron-right {
+   font-size: 0.7rem;
+   margin: 0 0.25rem;
+}
+#ictv_seqsearch_container .blast-hits .lineage-and-result .result {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: center;
+   z-index: 1000;
+}
+#ictv_seqsearch_container .blast-hits .lineage-and-result .result-name {
+   color: #333;
+}
+#ictv_seqsearch_container .blast-hits .lineage-and-result .result-note {
+   font-size: 0.9rem;
+}
+
+#ictv_seqsearch_container .blast-hits .identifier-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+}
+#ictv_seqsearch_container .blast-hits .identifier-row .identifier {
+   display: flex;
+   flex-flow: row nowrap;
+   margin-right: 1.0rem;
+}
+#ictv_seqsearch_container .blast-hits .identifier-row .identifier label {
+   font-size: 0.9rem;
+   margin-right: 0.25rem;
+}
+#ictv_seqsearch_container .blast-hits .identifier-row .identifier span.value {
+   font-size: 0.9rem;   
+}
+
+
+
+#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data {
+   vertical-align: middle;
+}
+#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data,
+#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data * {
+   border-collapse: collapse;
+   border-style: none;
+   border-width: 0;
+   padding: 0 !important;
+}
+#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data tr {
+   background-color: unset;
+}
+#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data th,
+#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data td {
+   background-color: unset;
+   font-size: 0.9rem;
+   padding: 0 !important;
+}
+
+
 
 
 
