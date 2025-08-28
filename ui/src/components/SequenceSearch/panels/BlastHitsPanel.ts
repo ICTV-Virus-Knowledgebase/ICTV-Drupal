@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { AppSettings } from "../../../global/AppSettings";
-import { ButtonClass, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
+import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
 import { IBlastHit } from "../IBlastHit";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
@@ -68,6 +68,36 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       let segment = Utils.safeTrim(hit_.segmentname);
       if (segment.length > 0) { segment = `<span class="segment-name"> segment ${segment}</span>`; }
 
+
+
+      let ictvIdHTML = "";
+      let ictvID = Utils.safeTrim(hit_.ictv_id);
+      if (ictvID.length > 0) {
+
+         let taxonName = "";
+         if (hit_.sseqid_lineage && hit_.sseqid_lineage.species) { taxonName = `&taxon_name=${hit_.sseqid_lineage.species}`; }
+
+         ictvIdHTML = `<div class="identifier">
+            <label>ICTV ID:</label>
+            <span class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${ictvID}${taxonName}" target="_blank">${ictvID}</a></span>
+         </div>`
+      }
+
+      let isolateHTML = "";
+      let isolateID = Utils.safeTrim(hit_.isolate_id);
+      if (isolateID.length > 0) {
+         isolateHTML = `<div class="identifier">
+            <label>Isolate ID:</label>
+            <span class="value"><a href="${AppSettings.taxonHistoryPage}?vmr_id=${hit_.isolate_id}" target="_blank">${hit_.isolate_id}</a></span>
+         </div>`;
+      }
+
+      let identifierRow = "";
+      if (ictvIdHTML.length > 0 || isolateHTML.length > 0) {
+         identifierRow = `<div class="identifier-row">${ictvIdHTML}${isolateHTML}</div>`;
+      }
+
+      /*
       let startAndEnd = "";
       if (hit_.start_loc !== null && !isNaN(hit_.start_loc) && hit_.end_loc !== null && !isNaN(hit_.end_loc)) { 
          startAndEnd = `<tr class="blast-row">
@@ -79,28 +109,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             <td class="value">${hit_.end_loc}</td>
          </tr>`;
       }
-
-      let ictvIdHTML = "";
-      let ictvID = Utils.safeTrim(hit_.ictv_id);
-      if (ictvID.length > 0) {
-
-         let taxonName = "";
-         if (hit_.sseqid_lineage && hit_.sseqid_lineage.species) { taxonName = `&taxon_name=${hit_.sseqid_lineage.species}`; }
-
-         ictvIdHTML = `<tr class="blast-row">
-            <th>ICTV ID</label>
-            <td class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${ictvID}${taxonName}" target="_blank">${ictvID}</a></td>
-         </tr>`
-      }
-
-      let isolateHTML = "";
-      let isolateID = Utils.safeTrim(hit_.isolate_id);
-      if (isolateID.length > 0) {
-         isolateHTML = `<tr class="blast-row">
-            <th>Isolate ID</th>
-            <td class="value"><a href="${AppSettings.taxonHistoryPage}?vmr_id=${hit_.isolate_id}" target="_blank">${hit_.isolate_id}</a></td>
-         </tr>`;
-      }
+      */
 
       let eValue = "0";
 
@@ -116,6 +125,34 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          eValue = `${coefficient}×10<sup>${exponent}</sup>`;
       }
       
+      let html = 
+      `<div class="blast-hit-tile">
+         <div class="result-index">#${hitIndex_ + 1}</div>
+         <div class="lineage-and-result">
+            <div class="lineage">${lineage}</div>
+            <div class="result">
+               <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i>${segment}</div>
+               <div class="result-note">${exemplarOrAdditional} virus: ${virusNames} (${sseqAccessionLink})</div>
+            </div>
+            ${identifierRow}
+         </div>
+         <table class="blast-data">
+            <tr>
+               <th>Bitscore</th>
+               <th>E-value</th>
+               <th>Query ID</th>
+               <th>Subject ID</th>
+            </tr>
+            <tr>
+               <td>${hit_.bitscore}</td>
+               <td>${eValue}</td>
+               <td>${hit_.qseqid}</td>
+               <td>${hit_.sseqid}</td>
+            </tr>
+         </table>
+      </div>`;
+
+      /*
       let html =
          `<div class="ictv-accordion-item" data-id="${hitIndex_}">
             <div class="ictv-accordion-header">
@@ -128,6 +165,14 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                         <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i>${segment}</div>
                         <div class="result-note">${exemplarOrAdditional} virus: ${virusNames} (${sseqAccessionLink})</div>
                      </div>
+                  </div>
+                  <div class="bitscore">
+                     <div class="bitscore-label">Bitscore</div>
+                     <div class="bitscore-value">${hit_.bitscore}</div>
+                  </div>
+                  <div class="evalue">
+                     <div class="evalue-label">E-value</div>
+                     <div class="evalue-value">${eValue}</div>
                   </div>
                </div>
             </div>
@@ -160,7 +205,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                   </table>
                </div>
             </div>
-         </div>`;
+         </div>`;*/
 
       return html;
    }
@@ -262,15 +307,15 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                   data-filename="${sequence.blast_csv}"
                   data-tippy-content="Download the BLAST hits as a CSV file"
                   data-title="${csvName}"
-               >${Icon.csv} Download as CSV</button>
+               >${Icon.csv} Download results as CSV</button>
 
                <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
-                  data-tippy-content="Return to the SeqSearch results page"
+                  data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
                   data-url="${jobDetailsURL}"
                >${Icon.back} Return to search results</button>
 
                <button class="btn ${ButtonClass.newSearch} has-tooltip"
-                  data-tippy-content="Use SeqSearch again with different FASTA files"
+                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
                   data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
                >${Icon.search} New search</button>
             </div>

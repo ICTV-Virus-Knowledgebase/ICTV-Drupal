@@ -270,7 +270,7 @@ export enum WebServiceKey {
    // Proposal service
    proposal = "proposal",
 
-   // SeqSearch
+   // TaxaBLAST
    getSeqSearchOutputFile = "getSeqSearchOutputFile",
    getSequenceSearchJob = "getSequenceSearchJob",
    uploadSequences = "uploadSequences",

@@ -127,7 +127,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
                data-filename="${sequence_.blast_csv}"
                data-tippy-content="Download the BLAST hits as a CSV file"
                data-title="${csvTitle}"
-            >${Icon.csv} Download CSV results</button>
+            >${Icon.csv} Download results as CSV</button>
          </td>
       </tr>`;
 

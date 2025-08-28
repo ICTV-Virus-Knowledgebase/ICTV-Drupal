@@ -1,5 +1,5 @@
 
-import { ButtonClass, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
+import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
@@ -75,6 +75,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Format the duration between two date/times.
       let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
 
+      // TODO: Temporary fix to display taxablast instead of seqsearch.
+      let programName = "taxablast"; // this.job.data.program_name;
+
       // Create the link panel HTML containing a link to this job's details.
       const linkPanelHTML = this.parent.createLinkPanel(PanelKey.jobDetails);
 
@@ -86,7 +89,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
          <div class="panel-controls">
             ${linkPanelHTML}
             <button class="btn ${ButtonClass.newSearch} has-tooltip"
-               data-tippy-content="Use SeqSearch again with different FASTA files"
+               data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
                data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
             >${Icon.search} New search</button>
          </div>
@@ -110,7 +113,7 @@ export class JobDetailsPanel implements ISeqSearchPanel {
                </tr>
                <tr>
                   <th>Program and version</th>
-                  <td>${this.job.data.program_name} (version ${this.job.data.version})</td>
+                  <td>${programName} (version ${this.job.data.version})</td>
                </tr>
                <tr>
                   <th>Database</th>
