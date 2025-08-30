@@ -1,10 +1,13 @@
 
+import { IBlastHitScore } from "./IBlastHitScore";
+
 // A BLAST hit associated with an ISearchResult.
 export interface IBlastHit {
    bitscore: number;
    end_loc: number;
    evalue: number;
    exemplar_additional: string;
+   hsps: IBlastHitScore[];         // Note: This is populated by the BLAST hits panel.
    ictv_id: string;
    input_seq: string;
    isolate_id: string;

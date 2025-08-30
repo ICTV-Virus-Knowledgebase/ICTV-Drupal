@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { ButtonClass, Constants, GenerateUUID, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./panels/ISeqSearchPanel";
@@ -406,7 +406,8 @@ export class SequenceSearch {
    async initialize() {
 
       // If the user UID is empty, look for one in web storage or generate a new one.
-      if (!this.user.uid) { this.setDefaultUserUID(); }
+      if (!this.user.uid || this.user.uid === "0") { this.setDefaultUserUID(); } 
+      else { console.log(`in initialize this.user.uid = ${this.user.uid}`) }
 
       // Get a reference to the container element.
       this.elements.container = document.querySelector(this.containerSelector);
@@ -494,14 +495,16 @@ export class SequenceSearch {
    async setDefaultUserUID() {
 
       // Is there already a user UID in web storage?
-      if (typeof(Storage) !== "undefined") { this.user.uid = localStorage.getItem(WebStorageKey.sequenceSearchUserUID); }
+      if (typeof(Storage) !== "undefined") { this.user.uid = localStorage.getItem(WebStorageKey.taxaBlastUserUID); }
       if (!this.user.uid) { 
 
-         // Generate a new user UID.
-         this.user.uid = GenerateUUID(); 
+         // Generate a new user UID using the current Unix timestamp in seconds.
+         this.user.uid = `${Math.floor(Date.now() / 1000)}`;
    
+         console.log("in setDefaultUserUID about to add this.user.uid ", this.user.uid)
+
          // If web storage is available, save the user UID in local storage.
-         if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid); }
+         if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.taxaBlastUserUID, this.user.uid); }
       }
 
       return;

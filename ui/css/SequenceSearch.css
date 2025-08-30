@@ -128,7 +128,7 @@
 #ictv_seqsearch_container .panel-controls {
    align-items: center;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: row;
    justify-content: space-between;
    margin: 0 0 0.5rem 0;
    width: 100%;
@@ -217,90 +217,25 @@
    font-size: 1.0rem;
    margin-right: 0.25rem;
 }
-
-/*#ictv_seqsearch_container .ictv-accordion-label .result-index {
-   font-size: 0.9rem; 
-   margin-right: 0.5rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: column nowrap;
-   justify-content: flex-start;
-   width: 100%;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage {
-   font-size: 0.9rem;
-   font-weight: 400;
-   margin-bottom: 0.25rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .lineage i.fa-chevron-right {
-   font-size: 0.7rem;
-   margin: 0 0.25rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .result {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: column nowrap;
-   justify-content: center;
-   z-index: 1000;
-}
-#ictv_seqsearch_container .ictv-accordion-label .lineage-and-result .result .result-note {
-   font-size: 0.9rem;
-}
-#ictv_seqsearch_container .ictv-accordion-label .summary-data {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: column nowrap;
-   justify-content: flex-start;
+#ictv_seqsearch_container .ictv-accordion-label .sequence-count {
+   font-size: 1.0rem;
+   margin-right: 0.25rem;
 }
 
-*/
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The BLAST hits panel
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*#ictv_seqsearch_container .blast-hits-panel .sequence-panel {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
-   margin-bottom: 1.5rem;
-}
-#ictv_seqsearch_container .blast-hits-panel .sequence-panel .label {
-   font-size: 1.25rem;
-   margin-right: 0.5rem;
+#ictv_seqsearch_container .blast-hits-panel {
+   min-width: 900px;
+   overflow-x: auto;
+   width: 90vw;
 }
 
-#ictv_seqsearch_container .blast-hits-panel table.blast-hit tr {
-   border-color: #ddd;
-   border-style: solid;
-   border-width: 0 0 1px 0 !important;
+#ictv_seqsearch_container .blast-hits-panel > * {
+  flex: 0 0 auto;      /* Don’t grow; don’t shrink below intrinsic width */
+  min-width: 0;        /* Let items actually shrink if needed (flexbox gotcha) */
 }
-#ictv_seqsearch_container .blast-hits-panel table.blast-hit tr:last-of-type {
-   border-style: none;
-   border-width: 0 !important;
-}
-
-#ictv_seqsearch_container .blast-hits-panel table.blast-hit th {
-   background-color: inherit;
-   border-color: #ddd;
-   border-width: 0 0 1px 0;
-   color: #5b616b;
-   font-size: 1.0rem;
-   padding: 0.5rem;
-   vertical-align: top;
-   white-space: nowrap;
-}
-#ictv_seqsearch_container .blast-hits-panel table.blast-hit th {
-   width: 160px !important;
-}
-#ictv_seqsearch_container .blast-hits-panel table.blast-hit td {
-   border-color: #ddd;
-   border-width: 0 0 1px 0;
-   font-size: 1.0rem;
-   padding: 0.5rem;
-}*/
 
 #ictv_seqsearch_container .blast-hits-panel .blast-hits-title {
    font-size: 1.5rem;
@@ -317,12 +252,20 @@
    border-style: solid;
    border-width: 1px;
    display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
+   flex-flow: row;
+   justify-content: space-between;
    margin-bottom: 0.5rem;
    padding: 1.0rem 1.5rem 1.0rem 1.0rem;
    width: 100%;
 }
+
+#ictv_seqsearch_container .blast-hits .blast-hit-tile .left-side {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row;
+   justify-content: flex-start;
+}
+
 #ictv_seqsearch_container .blast-hits .result-index {
    font-size: 0.9rem; 
    margin-right: 0.5rem;
@@ -332,7 +275,7 @@
    display: flex;
    flex-flow: column nowrap;
    justify-content: flex-start;
-   width: 100%;
+   width: 700px;
 }
 #ictv_seqsearch_container .blast-hits .lineage-and-result .lineage {
    font-size: 0.9rem;
@@ -357,48 +300,34 @@
    font-size: 0.9rem;
 }
 
-#ictv_seqsearch_container .blast-hits .identifier-row {
+#ictv_seqsearch_container .blast-hit-tile .right-side {
+   text-align: left;
+   width: 400px;
+}
+#ictv_seqsearch_container .blast-hit-tile .right-side * {
+   font-size: 0.9rem;
+}
+
+/* A BLAST hit's bitscores and e-values. */
+#ictv_seqsearch_container .blast-hit-tile .hit-score-row {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
 }
-#ictv_seqsearch_container .blast-hits .identifier-row .identifier {
-   display: flex;
-   flex-flow: row nowrap;
-   margin-right: 1.0rem;
+#ictv_seqsearch_container .blast-hit-tile .hit-score-row .hit-index {
+   width: 20px;
 }
-#ictv_seqsearch_container .blast-hits .identifier-row .identifier label {
-   font-size: 0.9rem;
+#ictv_seqsearch_container .blast-hit-tile .hit-score-row .bitscore {
+   width: 120px; 
+}
+#ictv_seqsearch_container .blast-hit-tile .hit-score-row .score-label {
+   font-weight: 700;
    margin-right: 0.25rem;
 }
-#ictv_seqsearch_container .blast-hits .identifier-row .identifier span.value {
-   font-size: 0.9rem;   
+#ictv_seqsearch_container .blast-hit-tile .hit-score-row .score-label::after {
+   content: ": ";
 }
-
-
-
-#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data {
-   vertical-align: middle;
-}
-#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data,
-#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data * {
-   border-collapse: collapse;
-   border-style: none;
-   border-width: 0;
-   padding: 0 !important;
-}
-#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data tr {
-   background-color: unset;
-}
-#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data th,
-#ictv_seqsearch_container .blast-hits .blast-hit-tile table.blast-data td {
-   background-color: unset;
-   font-size: 0.9rem;
-   padding: 0 !important;
-}
-
-
 
 
 
@@ -454,7 +383,7 @@
 #ictv_seqsearch_container .link-panel {
    align-items: center;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: row;
    justify-content: flex-start;
 }
 #ictv_seqsearch_container .link-panel i {
