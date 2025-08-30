@@ -289,7 +289,7 @@ export enum WebServiceKey {
 // Keys used to set and retrieve data in local (web) storage.
 export enum WebStorageKey {
    lineageExportSettings = "lineage_export_settings",
-   sequenceSearchUserUID = "sequence_search_user_uid"
+   taxaBlastUserUID = "taxa_blast_user_uid"
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
