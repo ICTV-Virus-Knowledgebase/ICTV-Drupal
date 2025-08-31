@@ -307,6 +307,10 @@ export class SequenceSearch {
          }
       }
 
+      // Was a "btn-label" on a button clicked?
+      // TODO: This will probably be temporary!
+      if (targetEl_.classList.contains("btn-label")) { targetEl_ = targetEl_.parentElement; }
+
       // Was a button on a sequence row clicked?
       if (targetEl_.tagName === "BUTTON") {
 
