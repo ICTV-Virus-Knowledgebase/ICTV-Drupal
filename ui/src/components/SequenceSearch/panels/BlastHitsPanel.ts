@@ -47,9 +47,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    // Consolidate the BLAST hits by combining multiple hits for the same species.
    consolidateBlastHits(hits_: IBlastHit[]): IBlastHit[] {
 
-      let results = [];
-
       let latestHit: IBlastHit = null;
+      let results = [];
 
       hits_.forEach((hit_: IBlastHit) => {
 
@@ -72,7 +71,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          }
 
          // Add this bitscore and e-value to the latest hit.
-         latestHit.hsps.push({ bitscore: hit_.bitscore, evalue: hit_.evalue} as IBlastHitScore)
+         latestHit.hsps.push({ bitscore: hit_.bitscore, evalue: hit_.evalue, length: hit_.length, pident: hit_.pident} as IBlastHitScore);
       })
 
       // Add the latest hit to the results.
@@ -154,8 +153,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       hit_.hsps.forEach((hsp_: IBlastHitScore, index_: number) => {
 
-         console.log(`index_ % 2 = ${index_ % 2}`)
-
          let rowClass = index_ % 2 == 0 ? "even" : "odd";
 
          let indexTD = "";
@@ -178,13 +175,13 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          }
 
          let pIdent = "?";
-         if (!isNaN(hit_.pident)) { pIdent = `${hit_.pident.toFixed(2)}%`; }
+         if (!isNaN(hsp_.pident)) { pIdent = `${hsp_.pident.toFixed(2)}%`; }
 
          html += `<tr class="${rowClass}">
             ${indexTD}
             <td class="bitscore">${bitscore}</td>
             <td class="evalue">${eValue}</td>
-            <td class="length">${hit_.length}</td>
+            <td class="length">${hsp_.length}</td>
             <td class="pident">${pIdent}</td>
          </tr>`;
       })
