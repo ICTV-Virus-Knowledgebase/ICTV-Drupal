@@ -11,6 +11,8 @@ export interface IBlastHit {
    ictv_id: string;
    input_seq: string;
    isolate_id: string;
+   length: number;
+   pident: number;
    qseqid: string;
    segmentname: string;
    sseqid: string;
