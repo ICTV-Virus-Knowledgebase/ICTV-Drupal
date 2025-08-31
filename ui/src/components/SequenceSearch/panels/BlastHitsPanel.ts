@@ -108,7 +108,10 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       if (segment.length > 0) { segment = `<span class="segment-name"> segment ${segment}</span>`; }
 
       // Format the HSP bitscores and e-values.
-      let hspHTML = this.createScoresHTML(hit_);
+      let hspRows = this.createScoresHTML(hit_);
+
+      let indexTH = "";
+      if (hit_.hsps.length > 1) { indexTH = "<th>#</th>"; }
 
       let html = 
          `<div class="blast-hit-tile">
@@ -124,7 +127,16 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             </div>
             <div class="right-side">
                <div class="blast-scores-title">${scoresTitle}</div>
-               <div class="hsps">${hspHTML}</div>
+               <table class="blast-scores">
+                  <tr>
+                     ${indexTH}
+                     <th>Bitscore</th>
+                     <th>E-value</th>
+                     <th>Length</th>
+                     <th>% Identity</th>
+                  </tr>
+                  ${hspRows}
+               </table>
             </div>
          </div>`;
 
@@ -142,8 +154,12 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       hit_.hsps.forEach((hsp_: IBlastHitScore, index_: number) => {
 
-         let indexHTML = "";
-         if (hspCount > 1) { indexHTML = `<span class="hit-index">${index_ + 1})</span>`; }
+         console.log(`index_ % 2 = ${index_ % 2}`)
+
+         let rowClass = index_ % 2 == 0 ? "even" : "odd";
+
+         let indexTD = "";
+         if (hspCount > 1) { indexTD = `<td class="hit-index">${index_ + 1}</td>`; }
 
          let bitscore = isNaN(hsp_.bitscore) ? "0" : `${hsp_.bitscore}`;
 
@@ -152,7 +168,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
          if (hsp_.evalue > 0) {
 
             // Format to exponential with 3 decimals
-            const exponential = hsp_.evalue.toExponential(3); // "7.050e-140"
+            const exponential = hsp_.evalue.toExponential(3); // ex. "7.050e-140"
 
             // Split into parts
             const [coefficient, exponent] = exponential.split('e');
@@ -161,17 +177,16 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             eValue = `${coefficient}×10<sup>${exponent}</sup>`;
          }
 
-         html += `<div class="hit-score-row">
-            ${indexHTML}
-            <span class="bitscore">
-               <span class="score-label">Bitscore</span>
-               <span class="score-value">${bitscore}</span>
-            </span>
-            <span class="evalue">
-               <span class="score-label">E-value</span>
-               <span class="score-value">${eValue}</span>
-            </span>
-         </div>`;
+         let pIdent = "?";
+         if (!isNaN(hit_.pident)) { pIdent = `${hit_.pident.toFixed(2)}%`; }
+
+         html += `<tr class="${rowClass}">
+            ${indexTD}
+            <td class="bitscore">${bitscore}</td>
+            <td class="evalue">${eValue}</td>
+            <td class="length">${hit_.length}</td>
+            <td class="pident">${pIdent}</td>
+         </tr>`;
       })
       
       return html;
@@ -275,24 +290,24 @@ export class BlastHitsPanel implements ISeqSearchPanel {
                <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
                   data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
                   data-url="${jobDetailsURL}"
-               >${Icon.back} Return to search results</button>
+               >${Icon.back}<span class="btn-label">Return to search results</span></button>
 
                <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip"
                   data-filename="${sequence.blast_html}"
                   data-tippy-content="View the alignments in a new tab"
                   data-title="${sequence.qseqid}"
-               >${Icon.html} View alignments</button>
+               >${Icon.html}<span class="btn-label">View alignments</span></button>
 
                <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip"
                   data-filename="${sequence.blast_csv}"
                   data-tippy-content="Download the BLAST hits as a CSV file"
                   data-title="${csvName}"
-               >${Icon.csv} Download results as CSV</button>
+               >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
 
                <button class="btn ${ButtonClass.newSearch} has-tooltip"
                   data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
                   data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
-               >${Icon.search} New search</button>
+               >${Icon.search}<span class="btn-label">New search</span></button>
             </div>
          </div>
          <div class="blast-hits">${hitsHTML}</div>`;

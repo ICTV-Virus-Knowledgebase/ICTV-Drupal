@@ -229,7 +229,7 @@
 #ictv_seqsearch_container .blast-hits-panel {
    min-width: 900px;
    overflow-x: auto;
-   width: 90vw;
+   /*width: 90vw;*/
 }
 
 #ictv_seqsearch_container .blast-hits-panel > * {
@@ -275,7 +275,6 @@
    display: flex;
    flex-flow: column nowrap;
    justify-content: flex-start;
-   width: 700px;
 }
 #ictv_seqsearch_container .blast-hits .lineage-and-result .lineage {
    font-size: 0.9rem;
@@ -302,33 +301,25 @@
 
 #ictv_seqsearch_container .blast-hit-tile .right-side {
    text-align: left;
-   width: 400px;
 }
 #ictv_seqsearch_container .blast-hit-tile .right-side * {
    font-size: 0.9rem;
 }
 
-/* A BLAST hit's bitscores and e-values. */
-#ictv_seqsearch_container .blast-hit-tile .hit-score-row {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
+/* A BLAST hit's HSPs */
+/*#ictv_seqsearch_container .blast-hit-tile table.blast-score {
+   
+}*/
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores tr.even {
+   background-color: #fff;
 }
-#ictv_seqsearch_container .blast-hit-tile .hit-score-row .hit-index {
-   width: 20px;
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores tr.odd {
+   background-color: #eee;
 }
-#ictv_seqsearch_container .blast-hit-tile .hit-score-row .bitscore {
-   width: 120px; 
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores th,
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td {
+   padding: 3px 6px;
 }
-#ictv_seqsearch_container .blast-hit-tile .hit-score-row .score-label {
-   font-weight: 700;
-   margin-right: 0.25rem;
-}
-#ictv_seqsearch_container .blast-hit-tile .hit-score-row .score-label::after {
-   content: ": ";
-}
-
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -383,8 +374,10 @@
 #ictv_seqsearch_container .link-panel {
    align-items: center;
    display: flex;
+   flex: 0 0 auto;
    flex-flow: row;
    justify-content: flex-start;
+   min-width: 0;
 }
 #ictv_seqsearch_container .link-panel i {
    color: #888;
@@ -725,6 +718,28 @@
    min-width: 90px;
 }
 
+
+
+/* Desktop (full screen) */
+@media only screen and (min-width: 1260px) {
+  
+   #ictv_seqsearch_container .blast-hits-panel .sequence-controls button .btn-label {
+      display: inline;
+      visibility: visible;
+   }
+}
+
+/* Mobile */
+@media only screen and (max-width: 1259px) {
+  
+   #ictv_seqsearch_container .blast-hits-panel .sequence-controls button i {
+      margin-right: 0;
+   }
+   #ictv_seqsearch_container .blast-hits-panel .sequence-controls button .btn-label {
+      display: none;
+      visibility: hidden;
+   }
+}
 
 
 
