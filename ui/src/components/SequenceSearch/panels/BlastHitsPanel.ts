@@ -254,6 +254,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const sequence = file.sequences[this.parent.state.sequenceIndex];
       if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
+      let sequenceLength = isNaN(sequence.sequence_length) ? "Unknown" : `${sequence.sequence_length}`;
+
       // Consolidate the BLAST hits by combining multiple hits for the same species.
       const consolidatedHits = this.consolidateBlastHits(sequence.hits);
 
@@ -280,6 +282,10 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Create the panel's HTML.
       this.elements.container.innerHTML = 
          `<div class="panel-title">BLAST hits for Query ID ${sequence.qseqid}</div>
+         <div class="blast-sequence-length">
+            <span class="length-label">Query sequence length:</span>
+            <span class="length-value">${sequenceLength}</span>
+         </div>
          <div class="panel-controls">
             ${linkPanelHTML}
             <div class="sequence-controls">

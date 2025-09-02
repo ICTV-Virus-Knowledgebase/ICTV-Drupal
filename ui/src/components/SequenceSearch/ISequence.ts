@@ -19,6 +19,9 @@ export interface ISequence {
    // The BLAST qseqid
    qseqid: string;
 
+   // The length of the FASTA sequence.
+   sequence_length: number;
+
    // Were there hits?
    status: string;      
 }
