@@ -411,7 +411,6 @@ export class SequenceSearch {
 
       // If the user UID is empty, look for one in web storage or generate a new one.
       if (!this.user.uid || this.user.uid === "0") { this.setDefaultUserUID(); } 
-      else { console.log(`in initialize this.user.uid = ${this.user.uid}`) }
 
       // Get a reference to the container element.
       this.elements.container = document.querySelector(this.containerSelector);

@@ -103,7 +103,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
    createSequenceRow(fileIndex_: number, sequence_: ISequence, seqIndex_: number): string {
 
-      const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length : 0;
+      const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length.toLocaleString("en-US") : 0;
 
       const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
 
