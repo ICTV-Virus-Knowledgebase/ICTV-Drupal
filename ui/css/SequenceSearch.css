@@ -243,6 +243,22 @@
    margin: 1.75rem 0 0.75rem 0;
 }
 
+#ictv_seqsearch_container .blast-hits-panel .panel-title {
+   font-size: 1.5rem;
+   font-weight: 700;
+   margin-bottom: 0.25rem;
+   width: 100%;
+}
+#ictv_seqsearch_container .blast-hits-panel .blast-sequence-length {
+   margin-bottom: 1.0rem;
+}
+#ictv_seqsearch_container .blast-hits-panel .blast-sequence-length .length-label {
+   font-size: 1.0rem;
+   font-weight: 700;
+}
+#ictv_seqsearch_container .blast-hits-panel .blast-sequence-length .length-value {
+   font-size: 1.0rem;
+}
 
 /* BLAST hit tiles */
 #ictv_seqsearch_container .blast-hits .blast-hit-tile {
