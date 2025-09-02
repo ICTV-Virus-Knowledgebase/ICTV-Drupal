@@ -10,6 +10,8 @@ import { JobStatus } from "../../../global/Types";
 import { SequenceSearch } from "../SequenceSearch";
 import { SequenceSearchService } from "../../../services/SequenceSearchService";
 import tippy from "tippy.js";
+import { Utils } from "../../../helpers/Utils";
+
 
 enum PanelMode {
 
@@ -305,15 +307,30 @@ export class UploadPanel implements ISeqSearchPanel {
       // Format the accepted file types.
       let fileFormats = Constants.ACCEPTED_FILE_TYPES.join(",");
       
+      let appleWarning = "";
+      if (Utils.isIOS()) {
+         appleWarning = `<div class="ios-warning">
+            <i class="fa-solid fa-triangle-exclamation warning"></i> 
+            <div class="warning-message">
+               <b>NOTE</b>: iOS devices only permit the upload of files with the <b>.txt</b> extension, so you'll need to change 
+               the extension of your FASTA files to <b>.txt</b> before they can be selected for upload. 
+               For example: change <span class="filename">my_data.fas</span> to <span class="filename">my_data.txt</span>.
+            </div>
+         </div>`;
+      }
+
       // Create HTML for the container Element.
       const html = 
          `<div class="file-selection sub-panel">
-            <div class="upload-message">Upload your <b>nucleotide-only</b> FASTA sequence(s)</div>
-            <button 
-               class=\"btn file-control has-tooltip\"
-               data-tippy-content="Click to select one or more nucleotide-only FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
-            >${Icon.browse} Select file(s)</button>
-            <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
+            <div class="selection-controls">
+               <div class="upload-message">Upload your <b>nucleotide-only</b> FASTA sequence(s)</div>
+               <button 
+                  class=\"btn file-control has-tooltip\"
+                  data-tippy-content="Click to select one or more nucleotide-only FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
+               >${Icon.browse} Select file(s)</button>
+               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
+            </div>
+            ${appleWarning}
          </div>
 
          <div class="job-submission sub-panel">
@@ -429,21 +446,6 @@ export class UploadPanel implements ISeqSearchPanel {
       this.elements.resultsSubPanel.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
       })
-
-/*
-      // If a valid job details link was able to be created (and link panel HTML was generated), add a click handler to the copy URL button.),
-      if (linkPanelHTML && linkPanelHTML.length > 0) {
-
-         // Get a reference to the copy URL button.
-         const copyUrlButton = this.elements.resultsSubPanel.querySelector(`.${ButtonClass.copyURL}`);
-         if (!copyUrlButton) { throw new Error("Invalid copy URL button element"); }
-
-         // Add a click handler to the copy URL button.
-         copyUrlButton.addEventListener("click", async (event_: MouseEvent) => {
-            return await this.parent.handleClickEvent(null, event_.target as HTMLElement);
-            //return await this.parent.copyLinkURL(event_);
-         });
-      }*/
    }
 
    // Read the contents of a file asynchronously and return it as a base64-encoded string.

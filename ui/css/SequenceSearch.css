@@ -271,7 +271,7 @@
    flex-flow: row;
    justify-content: space-between;
    margin-bottom: 0.5rem;
-   padding: 1.0rem 1.5rem 1.0rem 1.0rem;
+   padding: 1.0rem;
    width: 100%;
 }
 
@@ -323,9 +323,10 @@
 }
 
 /* A BLAST hit's HSPs */
-/*#ictv_seqsearch_container .blast-hit-tile table.blast-score {
-   
-}*/
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores {
+   margin: 0;
+   width: 500px;
+}
 #ictv_seqsearch_container .blast-hit-tile table.blast-scores tr.even {
    background-color: #fff;
 }
@@ -336,7 +337,20 @@
 #ictv_seqsearch_container .blast-hit-tile table.blast-scores td {
    padding: 3px 6px;
 }
-
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td.bitscore,
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td.evalue,
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td.length,
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td.pident {
+   text-align: right;
+}
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td.bitscore {
+   width: 100px;
+}
+#ictv_seqsearch_container .blast-hit-tile table.blast-scores td.hit-index {
+   padding: 3px 6px !important;
+   text-align: right;
+   width: 2.7rem !important;
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The job details panel
@@ -547,6 +561,7 @@
    The sequences table
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_seqsearch_container table.sequences-table {
+   margin: 0;
    min-width: 800px;
    /*overflow: visible !important;
    table-layout: fixed !important;*/
@@ -614,11 +629,14 @@
    visibility: hidden;
 }
 #ictv_seqsearch_container .upload-panel .file-selection.active {
+   display: block;
+   visibility: visible;
+}
+#ictv_seqsearch_container .upload-panel .file-selection.active .selection-controls {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
-   visibility: visible;
 }
 #ictv_seqsearch_container .upload-panel .file-selection .upload-message {
    font-size: 1.2rem;
@@ -634,6 +652,30 @@
    position: absolute;
    left: -1000px;
 }
+
+#ictv_seqsearch_container .file-selection .ios-warning:not(:empty) {
+   align-items: flex-start;
+   background-color: rgba(255, 0, 0, 0.05);
+   border-color: rgba(255, 0, 0, 0.15);
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-top: 1.0rem;
+   max-width: 700px;
+   padding: 1.0rem; 
+}
+#ictv_seqsearch_container .file-selection .ios-warning i.warning {
+   color: red;
+   font-size: 1.3rem;
+   margin: 0.25rem 0.75rem 0 0;
+}
+#ictv_seqsearch_container .file-selection .ios-warning .filename {
+   font-style: italic;
+}
+
 
 /* The upload panel's job submission sub-panel */
 #ictv_seqsearch_container .job-submission.sub-panel.active {
@@ -734,6 +776,41 @@
    min-width: 90px;
 }
 
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Overriding DataTables CSS
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The "Show ___ entries" row above the table */
+.dt-length {
+   display: flex;
+   flex-flow: row nowrap;
+   margin-bottom: 1.0rem;
+}
+.dt-length label {
+   align-items: center;
+   font-weight: normal;
+   display: flex !important;
+   flex-flow: row nowrap !important;
+   justify-content: flex-start;
+}
+.dt-length select.dt-input {
+   border: 1px solid #aaa;
+   border-radius: 5px;
+   display: inline-block;
+   font-size: 0.8rem;
+   padding: 0 0 0 3px !important;
+   margin: 0 0.25rem;
+   text-align: left;
+   width: 50px;
+}
+.dt-paging .dt-paging-button {
+   border-color: #aaa;
+   border-width: 1px;
+}
+.dt-type-numeric {
+   padding: 3px 6px;
+}
 
 
 /* Desktop (full screen) */

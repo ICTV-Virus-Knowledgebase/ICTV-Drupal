@@ -117,7 +117,24 @@ export class Utils {
       return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${displayText}</a>`;
    }
 
-   
+
+   // Is the user's browser on iOS?
+   static isIOS() {
+
+      // Try modern API first
+      if ("userAgentData" in navigator) {
+         const platform = (navigator as any).userAgentData.platform || "unknown";
+         return platform === "iOS";
+      } 
+      
+      const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Macintosh") && "ontouchend" in document); 
+      //const isMac = /Macintosh/.test(ua) && !("ontouchend" in document);
+
+      return isIOS; // || isMac;
+   }
+
+
    // Look for URL query string parameters that represent identifiers.
    static getIdentifiersFromURL(params_: URLSearchParams) {
 

@@ -2,6 +2,7 @@
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { AppSettings } from "../../../global/AppSettings";
 import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
+import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
 import { IBlastHitScore } from "../IBlastHitScore";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
@@ -109,9 +110,6 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Format the HSP bitscores and e-values.
       let hspRows = this.createScoresHTML(hit_);
 
-      let indexTH = "";
-      if (hit_.hsps.length > 1) { indexTH = "<th>#</th>"; }
-
       let html = 
          `<div class="blast-hit-tile">
             <div class="left-side">
@@ -126,15 +124,19 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             </div>
             <div class="right-side">
                <div class="blast-scores-title">${scoresTitle}</div>
-               <table class="blast-scores">
-                  <tr>
-                     ${indexTH}
-                     <th>Bitscore</th>
-                     <th>E-value</th>
-                     <th>Length</th>
-                     <th>% Identity</th>
-                  </tr>
+               <table class="blast-scores" data-sseqid="${hit_.sseqid}">
+                  <thead>
+                     <tr>
+                        <th>#</th>
+                        <th>Bitscore</th>
+                        <th>E-value</th>
+                        <th>Length</th>
+                        <th>% Identity</th>
+                     </tr>
+                  </thead>
+                  <tbody>
                   ${hspRows}
+                  </tbody>
                </table>
             </div>
          </div>`;
@@ -147,18 +149,14 @@ export class BlastHitsPanel implements ISeqSearchPanel {
 
       let html = "";
 
-      if (!Array.isArray(hit_.hsps) || hit_.hsps.length < 1) { return "No data available"; }
-
-      const hspCount = hit_.hsps.length;
-
+      if (!Array.isArray(hit_.hsps) || hit_.hsps.length < 1) { return `<tr><td colspan="5">No data available</td></tr>`; }
+      
       hit_.hsps.forEach((hsp_: IBlastHitScore, index_: number) => {
 
          let rowClass = index_ % 2 == 0 ? "even" : "odd";
 
-         let indexTD = "";
-         if (hspCount > 1) { indexTD = `<td class="hit-index">${index_ + 1}</td>`; }
-
-         let bitscore = isNaN(hsp_.bitscore) ? "0" : `${hsp_.bitscore}`;
+         let bitscore = isNaN(hsp_.bitscore) ? "0" : hsp_.bitscore.toLocaleString("en-US");
+         if (bitscore.indexOf(".") < 0) { bitscore += ".0"; }
 
          let eValue = "0";
 
@@ -174,14 +172,14 @@ export class BlastHitsPanel implements ISeqSearchPanel {
             eValue = `${coefficient}×10<sup>${exponent}</sup>`;
          }
 
-         let pIdent = "?";
-         if (!isNaN(hsp_.pident)) { pIdent = `${hsp_.pident.toFixed(2)}%`; }
+         let pIdent = "unknown";
+         if (!isNaN(hsp_.pident)) { pIdent = `${hsp_.pident.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`; }
 
          html += `<tr class="${rowClass}">
-            ${indexTD}
+            <td class="hit-index">${index_ + 1}</td>
             <td class="bitscore">${bitscore}</td>
             <td class="evalue">${eValue}</td>
-            <td class="length">${hsp_.length}</td>
+            <td class="length">${hsp_.length.toLocaleString("en-US")}</td>
             <td class="pident">${pIdent}</td>
          </tr>`;
       })
@@ -254,7 +252,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const sequence = file.sequences[this.parent.state.sequenceIndex];
       if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
-      let sequenceLength = isNaN(sequence.sequence_length) ? "Unknown" : `${sequence.sequence_length}`;
+      let sequenceLength = isNaN(sequence.sequence_length) ? "Unknown" : `${sequence.sequence_length.toLocaleString("en-US")}`;
 
       // Consolidate the BLAST hits by combining multiple hits for the same species.
       const consolidatedHits = this.consolidateBlastHits(sequence.hits);
@@ -334,6 +332,58 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Handle clicks in the panel controls.
       this.elements.panelControls.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+      })
+
+      // Convert the tables into DataTable instances.
+      consolidatedHits.forEach((hit_) => {
+
+         let bottomEnd = {
+            paging: { buttons: 4}
+         }
+
+         let info = true;
+         let ordering = true;
+         let paging = true;
+         
+
+         if (hit_.hsps.length < 20) { 
+            bottomEnd = null;
+            info = false;
+            ordering = false;
+            paging = false;
+         }
+
+         new DataTables(`.blast-hits table.blast-scores[data-sseqid="${hit_.sseqid}"]`, {
+            autoWidth: false,
+            columnDefs: [
+               { width: "50px", targets: 0},
+               { width: "100px", targets: 1},
+               { width: "120px", targets: 2},
+               { width: "120px", targets: 3},
+               { width: "120px", targets: 4},
+            ],
+            info: info,
+            layout: {
+               bottomEnd: bottomEnd
+            },
+            ordering: ordering,
+            paging: paging,
+            searching: false
+            
+            /*columnDefs: [{ orderable: true, targets: [0,1,2,3,4] }],*/
+            /*layout: {
+               topStart: null,
+               topEnd: null,
+               bottomEnd: {
+                  paging: {
+                     buttons: 4
+                  }
+               }
+            },
+            order: [], // Important: If this isn't an empty array it will move the child rows to the end!
+            pagingType: "full", // simple, simple_numbers, full, full_numbers
+            searching: false*/
+         });
       })
    }
 
