@@ -389,14 +389,15 @@ export class SequenceSearch {
          return;
       }
 
-      // Was an accordion control clicked?
-      if (targetEl_.classList.contains("ictv-accordion-control")) {
+      // Was the child of an accordion header clicked?
+      const accordionHeaderEl = targetEl_.closest(".ictv-accordion-header");
+      if (accordionHeaderEl) {
 
          // Validate the container element.
          if (!containerEl_) { await AlertBuilder.displayError("Unable to toggle accordion: Invalid container element"); }
 
-         // Get the accordion's item ID.
-         const itemID = targetEl_.getAttribute("data-id");
+         // Get the accordion's ID.
+         const itemID = accordionHeaderEl.getAttribute("data-id");
          if (!itemID) { return; }
 
          // Toggle the accordion item.
@@ -456,10 +457,10 @@ export class SequenceSearch {
       this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this.elements.searchResultsPanel, this));
       this.panels.set(PanelKey.upload, new UploadPanel(this.elements.uploadPanel, this));
 
-      //--------------------------------------------------------------------------------------------------------------
-      // Look for query string parameters and use them to determine which panel to display.
-      //--------------------------------------------------------------------------------------------------------------
+      // Use query string parameters to determine which panel to display.
+      return this.updatePanelFromURL();
 
+      /*
       // Set a default action.
       let action = PanelAction.displayUpload;
 
@@ -491,7 +492,7 @@ export class SequenceSearch {
       }
 
       await this.handleAction(action);
-      return;
+      return; */
    }
 
    // If the user UID is empty, look for one in web storage or generate a new one.
@@ -515,6 +516,9 @@ export class SequenceSearch {
 
    // Update the window's location with a state-maintaining URL.
    async updatePage() {
+
+      alert("TODO: try not to refresh the browser with the updated URL!")
+
       const url = this.createUrlUsingState();
       window.location.assign(url);
       return;
@@ -534,6 +538,68 @@ export class SequenceSearch {
       }
 
       return;
+   }
+
+   // Use URL parameters to determine which panel to load.
+   async updatePanelFromURL() {
+
+      let action = PanelAction.displayUpload;
+
+      // Get the URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Set default state values
+      this.state.fileIndex = NaN;
+      this.state.sequenceIndex = NaN;
+
+      // Was a job UID provided in the query string?
+      this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
+      if (this.state.jobUID && this.state.jobUID.length > 0) {
+
+         action = PanelAction.displayJob;
+
+         // Were file index and sequence index parameters provided?
+         let strFileIndex = Utils.safeTrim(urlParams.get(ParameterKey.file));
+         let strSeqIndex = Utils.safeTrim(urlParams.get(ParameterKey.sequence));
+
+         if (strFileIndex && strSeqIndex) {
+            this.state.fileIndex = parseInt(strFileIndex);
+            this.state.sequenceIndex = parseInt(strSeqIndex);
+
+            if (!isNaN(this.state.fileIndex) && !isNaN(this.state.sequenceIndex)) {
+               action = PanelAction.displayBlastHits; 
+            }
+         }
+      }
+
+      return await this.handleAction(action);
+   }
+
+   // Update the URL parameters without reloading the page.
+   async updateUrlFromState() {
+      
+      const params = new URLSearchParams(window.location.search);
+      
+      // If the job UID is valid, update its URL parameter.
+      if (this.state.jobUID && this.state.jobUID.length > 0) {
+         params.set(ParameterKey.job, this.state.jobUID);
+
+         // If the sequence and file indices are valid, update their URL parameters.
+         if (!isNaN(this.state.sequenceIndex) && !isNaN(this.state.fileIndex)) {
+            params.set(ParameterKey.sequence, this.state.sequenceIndex.toString());
+            params.set(ParameterKey.file, this.state.fileIndex.toString());
+         } else {
+            params.delete(ParameterKey.sequence);
+            params.delete(ParameterKey.file);
+         }
+      } else {
+         params.delete(ParameterKey.job);
+         params.delete(ParameterKey.sequence);
+         params.delete(ParameterKey.file);
+         // TODO: filename and userUID?
+      }
+
+      history.replaceState(null, "", "?" + params.toString());
    }
 
    // Display the BLAST HTML data for a specific sequence.

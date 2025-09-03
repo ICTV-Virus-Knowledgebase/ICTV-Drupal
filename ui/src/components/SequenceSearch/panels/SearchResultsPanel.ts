@@ -82,7 +82,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       
       let html =
          `<div class="ictv-accordion-item" data-id="${fileKey}">
-            <div class="ictv-accordion-header">
+            <div class="ictv-accordion-header" data-id="${fileKey}">
                <div class="ictv-accordion-control" data-id="${fileKey}">${Icon.chevronDown}</div>
                <div class="ictv-accordion-label">
                   <div class="filename">${file_.name}</div>
