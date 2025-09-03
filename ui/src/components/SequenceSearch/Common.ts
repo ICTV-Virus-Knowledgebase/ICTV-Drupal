@@ -92,7 +92,7 @@ export const Constants = {
    },
 
    // How long should the upload panel wait to try to load job data?
-   JOB_POLLING_INTERVAL: 7000,  // TEST 3000,
+   JOB_POLLING_INTERVAL: 3000,  // TEST: original value = 3000,
 
    // The maximum number of sequences that can be uploaded.
    MAX_SEQUENCE_COUNT: 100,

@@ -1,14 +1,13 @@
 
-
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { ButtonClass, FormatBytes, Constants, Icon, GetSpinnerHTML, PanelKey } from "../Common";
-import { DateTime } from "luxon";
 import { IFileData } from "../../../models/IFileData";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { IUploadResult } from "../IUploadResults";
 import { JobStatus } from "../../../global/Types";
 import { SequenceSearch } from "../SequenceSearch";
 import { SequenceSearchService } from "../../../services/SequenceSearchService";
+import { SubmissionStatus } from "../SubmissionStatus";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
@@ -64,15 +63,6 @@ export class UploadPanel implements ISeqSearchPanel {
    // Is the panel currently active/displayed?
    isActive: boolean;
 
-   // Metadata about polling the web service for job status.
-   jobResults: {
-      endedOn: any, // DateTime
-      intervalID: number,
-      isComplete: boolean,
-      retries: number,
-      startedOn: any // DateTime
-   }
-
    mode: PanelMode;
 
    // The parent page
@@ -80,6 +70,9 @@ export class UploadPanel implements ISeqSearchPanel {
 
    // TEST
    previousPanelMode: PanelMode = null;
+
+   // Metadata about polling the web service for job status.
+   submissionStatus: SubmissionStatus;
 
 
    // C-tor
@@ -115,20 +108,11 @@ export class UploadPanel implements ISeqSearchPanel {
          resultsSubPanel: null
       }
 
-      this.jobResults = {
-         endedOn: null,
-         intervalID: null,
-         isComplete: false,
-         retries: 0,
-         startedOn: null
-      }
+      this.submissionStatus = new SubmissionStatus();
    }
 
    // Change which panel will be displayed (the other panel will be hidden).
    async changePanelMode(mode_: PanelMode) {
-
-      // Clear the job name input
-      //this.elements.jobName.value = ""; 
 
       switch (mode_) {
 
@@ -182,7 +166,7 @@ export class UploadPanel implements ISeqSearchPanel {
             // Display the file processing panel.
             this.elements.jobSubmittedSubPanel.classList.add("active");
 
-            const spinnerHTML = GetSpinnerHTML("Processing...");
+            const spinnerHTML = GetSpinnerHTML("Submitting your sequence file(s)...");
             this.elements.jobSubmittedSubPanel.innerHTML = spinnerHTML;
 
             // Hide the other sub-panels.
@@ -196,11 +180,9 @@ export class UploadPanel implements ISeqSearchPanel {
             // Display the results panel.
             this.elements.resultsSubPanel.classList.add("active");
 
-            this.elements.resultsSubPanel.innerHTML = "Checking to see if the job has completed";
+            //this.elements.resultsSubPanel.innerHTML = "";
 
             console.log("TODO: start the timer loop and try to retrieve the job data")
-
-            
 
             // Hide the other sub-panels.
             this.elements.fileSelectionSubPanel.classList.remove("active");
@@ -218,7 +200,6 @@ export class UploadPanel implements ISeqSearchPanel {
             } 
             
             this.parent.updatePage();
-
             break;
 
          default:
@@ -226,6 +207,34 @@ export class UploadPanel implements ISeqSearchPanel {
       }
 
       this.previousPanelMode = this.mode;
+
+      return;
+   }
+
+   // Load the pending job if it has completed.
+   async getJobStatus() {
+
+      console.log("in getJobStatus")
+
+      this.submissionStatus.retries += 1;
+
+      // Populate the results sub-panel with a link to the job details and a message about the job status.
+      this.populateResultsSubPanel();
+      
+      // Try to load the job data.
+      await this.parent.getJob();
+
+      // If the results are available, update the job results metadata and clear the interval timer.
+      if (this.parent.job && this.parent.job.data) {
+
+         // Clear the interval timer.
+         if (!isNaN(this.submissionStatus.intervalID)) { window.clearInterval(this.submissionStatus.intervalID); }
+         
+         this.submissionStatus.end();
+
+         // Load the job details panel.
+         return await this.parent.updatePanelFromURL();
+      }
 
       return;
    }
@@ -255,44 +264,26 @@ export class UploadPanel implements ISeqSearchPanel {
       this.parent.state.fileIndex = NaN;
       this.parent.state.sequenceIndex = NaN;
 
-      // Initialize the job results metadata.
-      this.jobResults.endedOn = null;
-      this.jobResults.isComplete = false;
-      this.jobResults.retries = 0;
-      this.jobResults.startedOn = DateTime.now();
-      
+      // Update the URL parameters without reloading the page.
+      this.parent.updateUrlFromState();
+
       // Display the "pending results" sub-panel.
       await this.changePanelMode(PanelMode.pending_results);
 
-      // Check for the job results every few seconds.
-      this.jobResults.intervalID = window.setInterval(async () => {
+      // Load the pending job to see if it has completed.
+      await this.getJobStatus();
 
-         this.jobResults.retries += 1;
+      if (!this.submissionStatus.isComplete) {
 
-         // Populate the results sub-panel with a link to the job details and a message about the job status.
-         this.populateResultsSubPanel();
-         
-         // Try to load the job data.
-         await this.parent.getJob();
+         // Check for the job results every few seconds.
+         this.submissionStatus.intervalID = window.setInterval(async () => {
 
-         // If the results are available, update the job results metadata and clear the interval timer.
-         if (this.parent.job && this.parent.job.data) {
+            // Load the pending job to see if it has completed.
+            return this.getJobStatus();
 
-            // Clear the interval timer.
-            window.clearInterval(this.jobResults.intervalID);
-
-            this.jobResults.isComplete = true;
-            this.jobResults.endedOn = DateTime.now();
-            this.jobResults.intervalID = null;
-
-            // Load the job details panel.
-            return await this.parent.updatePage();
-         }
-
-         return;
-
-      }, Constants.JOB_POLLING_INTERVAL);
-
+         }, Constants.JOB_POLLING_INTERVAL);
+      }
+      
       return;
    }
 
@@ -429,18 +420,39 @@ export class UploadPanel implements ISeqSearchPanel {
       // If a valid job UID exists, create a link panel to the job details.
       let linkPanelHTML = this.parent.createLinkPanel(PanelKey.jobDetails);
 
+      let messageItems = "";
+      let title = "";
+
+      // The message content depends on the number of files.
+      if (this.submissionStatus.fileCount === 1) {
+         title = "Processing your sequence file";
+         messageItems = 
+            `<li>Your sequence file has been uploaded and is being processed.</li>
+            <li>When processing is complete, this page will automatically be updated.</li> 
+            <li>Depending on the sequence size, the processing may take several minutes to complete.</li>`
+
+      } else {
+         title = "Processing your sequence files";
+         messageItems = 
+            `<li>Your sequence files have been uploaded and are being processed.</li>
+            <li>When processing is complete, this page will automatically be updated.</li>
+            <li>Depending on the number of sequences and their size, the processing may take several minutes to complete.</li>`;
+      }
+
       // How many seconds until the next retry?
       const seconds = (Constants.JOB_POLLING_INTERVAL / 1000).toFixed(0); 
       const s = seconds === "1" ? "" : "s";
 
       // Populate the results sub-panel with a message about the job status.
-      const message = `The ${Constants.APPLICATION_NAME} job is still running, but the page will be updated with the results as soon as they're ready.`;
-      const retryMessage = `Trying again in ${seconds} second${s} (retry #${this.jobResults.retries + 1})`;
+      const retryMessage = `Trying again in ${seconds} second${s} (retry #${this.submissionStatus.retries + 1})`;
 
       // Populate the results sub-panel.
       this.elements.resultsSubPanel.innerHTML = 
-         `${linkPanelHTML}
-         <div class="status-message">${message}</div>
+         `<div class="status-title">${title}</div>
+         <div class="status-message">
+            <ul>${messageItems}</ul>
+         </div>
+         ${linkPanelHTML}
          <div class="retry-message">${retryMessage}</div>`;
 
       this.elements.resultsSubPanel.addEventListener("click", async (event_) => {
@@ -461,42 +473,14 @@ export class UploadPanel implements ISeqSearchPanel {
       })
    }
 
-   // This dialog lets the user know that their files are being processed and what to expect.
-   async showInfoDialog(fileCount_: number, filenames_: string) {
-
-      let content: string;
-      let title: string;
-
-      // The message content depends on the number of files.
-      if (fileCount_ === 1) {
-         title = "Processing your sequence file";
-         content = "Your sequence file has been uploaded and is being processed. When processing is complete, this page will be updated. " +
-            "Depending on the size of the file, the processing may take several minutes to complete.";
-
-      } else {
-         title = "Processing your sequence files";
-         content = "Your sequence files have been uploaded and are being processed. When processing is complete, this page will be updated. " +
-            "Depending on the number of files and their size, the processing may take several minutes to complete.";
-      }
-
-      // Display a "success" dialog.
-      return await AlertBuilder.displaySuccess(content, title);
-   }
-
    // Unload and hide the panel.
    unload() {
 
       this.isActive = false;
       this.elements.container.classList.remove("active");
       
-      // Re-initialize the job results metadata.
-      this.jobResults = {
-         endedOn: null,
-         isComplete: false,
-         retries: 0,
-         startedOn: null,
-         intervalID: null
-      }
+      // Reset the job submission status.
+      this.submissionStatus.reset();
 
       // TODO: should we remove event listeners?
    }
@@ -552,18 +536,14 @@ export class UploadPanel implements ISeqSearchPanel {
             return await AlertBuilder.displayError("Your selected file(s) do not contain any valid FASTA sequences", null, () => this.changePanelMode(PanelMode.file_selection));
          }
 
+         // Initialize the submission status.
+         this.submissionStatus.start(files.length, sequenceCount);
+
          // Change the panel mode to "job submitted".
          await this.changePanelMode(PanelMode.job_submitted);
          
-         const [_, result] = await Promise.all([
-
-            // Show a modal dialog with information about the uploaded files.
-            this.showInfoDialog(files.length, filenames),
-
-            // Upload the sequence file(s) to the web service for processing.
-            SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid)
-         ]);
-         console.log("upload result = ", result)
+         // Upload the sequence file(s) to the web service for processing.
+         const result = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
 
          // Handle the upload result and display the correct sub-panel.
          await this.handleUploadResult(result);

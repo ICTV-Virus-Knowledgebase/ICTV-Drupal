@@ -151,7 +151,7 @@
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
-   margin-bottom: 0.5rem; /* DMD testing 082025 */
+   margin-bottom: 0.5rem;
    width: 100%;
 }
 #ictv_seqsearch_container .ictv-accordion-header {
@@ -164,6 +164,9 @@
    transition: all 0.25s ease-out;
    width: 100%;
    will-change: background-color color;
+}
+#ictv_seqsearch_container .ictv-accordion-header:hover {
+   cursor: pointer;
 }
 
 #ictv_seqsearch_container .ictv-accordion-control {
@@ -721,6 +724,19 @@
    margin: 0;
    visibility: visible;
 }
+#ictv_seqsearch_container .results.sub-panel .status-title {
+   font-size: 1.3rem;
+   font-weight: 700;
+   margin-bottom: 1.0rem;
+}
+#ictv_seqsearch_container .results.sub-panel .status-message {
+   margin-bottom: 1.0rem;
+}
+#ictv_seqsearch_container .results.sub-panel .retry-message {
+   margin-top: 1.0rem;
+}
+
+
 
 /* The upload panel's job submission sub-panel */
 #ictv_seqsearch_container .upload-panel .job-submission .job-name-row {
