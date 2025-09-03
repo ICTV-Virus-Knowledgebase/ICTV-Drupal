@@ -6,6 +6,18 @@
 # Here's how to remove the carriage return characters from this script:
 # sed -i 's/\r$//' update_ictv_apps.sh
 
+# Script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# SQL Directory for most DB objects that ictv_apps_temp needs.
+SQL_DIR="$SCRIPT_DIR/../initialize"
+
+# GetFilteredName.sql directory
+GetFilteredNameSQL_DIR="$SCRIPT_DIR/../Functions"
+
+# QuerySearchableTaxon.sql directory
+QuerySearchableTaxonSQL_DIR="$SCRIPT_DIR/../storedProcedures"
+
 INITIAL_START_TIME=$(date +%s)
 
 # The ictv_apps database
@@ -31,7 +43,7 @@ function display_elapsed_time {
 
 # Create the disease_ontology table.
 echo -e "\nCreating disease_ontology table"
-mariadb -D $AppsDB -s -b --show-warnings < CreateDiseaseOntologyTable.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_DIR/CreateDiseaseOntologyTable.sql"
 if [ $? -ne 0 ]; then
   echo "An error occurred creating the disease_ontology table"
   exit 1
@@ -39,7 +51,7 @@ fi
 
 # Add views that reference the ictv_taxonomy database.
 echo -e "\nAdding views that reference the ictv_taxonomy database"
-mariadb -D $AppsDB -s -b --show-warnings < AddViewsToIctvApps.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_DIR/AddViewsToIctvApps.sql"
 
 
 #------------------------------------------------------------------------------------------------------------------
@@ -47,7 +59,7 @@ mariadb -D $AppsDB -s -b --show-warnings < AddViewsToIctvApps.sql
 #------------------------------------------------------------------------------------------------------------------
 START_TIME=$(date +%s)
 echo -e "\nUpdating vocabulary and term tables"
-mariadb -D $AppsDB -s -b --show-warnings < UpdateVocabularyAndTerms.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_DIR/UpdateVocabularyAndTerms.sql"
 if [ $? -ne 0 ]; then
   echo "An error occurred adding UpdateVocabularyAndTerms.sql"
   exit 1
@@ -87,15 +99,15 @@ display_elapsed_time "$START_TIME"
 
 # Add the function "get filtered name".
 echo -e "\nAdding GetFilteredName.sql"
-mariadb -D $AppsDB -s -b --show-warnings < GetFilteredName.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$GetFilteredNameSQL_DIR/GetFilteredName.sql"
 
 # Add the stored procedure used to import records into searchable_taxon.
 echo -e "\nAdding ImportSearchableTaxon.sql"
-mariadb -D $AppsDB -s -b --show-warnings < ImportSearchableTaxon.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_DIR/ImportSearchableTaxon.sql"
 
 # Add the stored procedure that searches searchable_taxon.
 echo -e "\nAdding QuerySearchableTaxon.sql"
-mariadb -D $AppsDB -s -b --show-warnings < QuerySearchableTaxon.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$QuerySearchableTaxonSQL_DIR/QuerySearchableTaxon.sql"
 
 
 #------------------------------------------------------------------------------------------------------------------
@@ -103,7 +115,7 @@ mariadb -D $AppsDB -s -b --show-warnings < QuerySearchableTaxon.sql
 #------------------------------------------------------------------------------------------------------------------
 echo -e "\nPopulating tables in the ictv_apps database with data from the ictv_apps_temp database"
 START_TIME=$(date +%s)
-mariadb -D $AppsDB -s -b --show-warnings < PopulateIctvAppsFromTemp.sql
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_DIR/PopulateIctvAppsFromTemp.sql"
 if [ $? -ne 0 ]; then
   echo "An error occurred populating tables in the ictv_apps database from the ictv_apps_temp database"
   exit 1
