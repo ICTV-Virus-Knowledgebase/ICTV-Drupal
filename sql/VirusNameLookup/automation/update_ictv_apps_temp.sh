@@ -21,6 +21,9 @@ QuerySearchableTaxonSQL_DIR="$SCRIPT_DIR/../storedProcedures"
 # Python scripts directory
 PY_SCRIPT_DIR="$SCRIPT_DIR/../../../scripts/VirusNameLookup"
 
+# SQL Directory for views
+SQL_VIEWS_DIR="$SCRIPT_DIR/../views"
+
 INITIAL_START_TIME=$(date +%s)
 
 # The ictv_apps_temp database
@@ -89,10 +92,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Add views that reference the ictv_taxonomy database.
-echo -e "\nAdding temp views that reference the ictv_taxonomy database"
-mariadb -s -b --show-warnings < "$SQL_DIR/AddViewsToIctvAppsTemp.sql"
-
+# Add SQL views
+echo -e "\nAdding SQL views"
+mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_searchable_taxon.sql"
+mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_species_isolates.sql"
+mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node_merge_split.sql"
+mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node_names.sql"
+mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node.sql"
 
 #------------------------------------------------------------------------------------------------------------------
 # Update the vocabulary and term tables with new data.
