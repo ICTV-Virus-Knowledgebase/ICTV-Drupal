@@ -5,6 +5,20 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* General purpose button styles */
+#ictv_seqsearch_container button {
+   border: 1px solid transparent;
+   display: inline-block;
+   font-size: 0.9rem;
+   font-weight: 400;
+   padding: .375rem .75rem;
+   text-align: center;
+   user-select: none;
+   vertical-align: middle;
+   white-space: nowrap;
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+}
 #ictv_seqsearch_container button i {
    margin-right: 0.25rem;
 }
@@ -423,6 +437,106 @@
    color: #007bff;
    transition: color 0.2s;
 }
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Job history: search controls
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .search-controls {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   max-width: 1000px;
+}
+#ictv_seqsearch_container .search-controls > * {
+   font-size: 0.9rem;
+   height: 40px; 
+   border: 1px solid #ccc;
+   border-radius: 0; /* Remove default border radius */
+   margin: 0;
+   box-sizing: border-box; /* Include border in height calculation */
+}
+
+/* Remove borders between adjacent elements to avoid double borders */
+#ictv_seqsearch_container .search-controls > *:not(:first-child) {
+  border-left: none;
+}
+
+/* Last button - right border radius only */
+#ictv_seqsearch_container .search-controls > button:last-child {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+#ictv_seqsearch_container .search-controls .search-text {
+   background-color: #fff;
+   background-image: none;
+   border-color: #ccc;
+   padding-left: 0.75rem;
+   width: 345px;
+}
+#ictv_seqsearch_container .search-controls .search-text:focus {
+   color: #495057;
+   background-color: #fff;
+   border-color: #80bdff;
+   outline: 0;
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, .15);
+}
+
+#ictv_seqsearch_container .search-controls .search-button {
+   background-color: #0062cc;
+   border-color: #005cbf;
+   color: #fff;
+   cursor: pointer;
+}
+#ictv_seqsearch_container .search-controls .search-button i {
+   margin-right: 0.25rem;
+}
+
+#ictv_seqsearch_container .search-controls .clear-button {
+   background-color: #999;
+   border-color: #999;
+   color: #fff;
+   cursor: pointer;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Job history
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_seqsearch_container .jobs-panel {
+   margin: 2.0rem 0 2.0rem 0;
+}
+#ictv_seqsearch_container table.jobs {
+   width: 800px;
+}
+#ictv_seqsearch_container table.jobs tr.header-row {
+   background-color: #aaa;
+   color: #fff;
+}
+#ictv_seqsearch_container table.jobs tr.header-row th {
+   font-weight: normal;
+}
+#ictv_seqsearch_container table.jobs tr.even {
+   background-color: #fff;
+}
+#ictv_seqsearch_container table.jobs tr.odd {
+   background-color: #eee;
+}
+#ictv_seqsearch_container table.jobs th,
+#ictv_seqsearch_container table.jobs td {
+   padding: 3px 6px;
+}
+#ictv_seqsearch_container table.jobs td.name {
+   width: 160px;
+}
+#ictv_seqsearch_container table.jobs td.created-on {
+   width: 80px;
+}
+#ictv_seqsearch_container table.jobs td.status {
+   width: 60px;
+}
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Modal dialog

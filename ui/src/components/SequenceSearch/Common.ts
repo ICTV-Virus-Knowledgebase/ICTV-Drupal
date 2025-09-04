@@ -42,6 +42,7 @@ export enum Icon {
 }
 
 export enum PanelAction {
+   displayHistory = "displayHistory",
    displayJob = "displayJob",
    displayBlastHits = "displayBlastHits",
    displayUpload = "displayUpload"
@@ -50,6 +51,7 @@ export enum PanelAction {
 export enum PanelKey {
    blastHits = "blastHits",
    jobDetails = "jobDetails",
+   jobHistory = "jobHistory",
    searchResults = "searchResults",
    upload = "upload"
 }
@@ -57,6 +59,7 @@ export enum PanelKey {
 export enum ParameterKey {
    file = "file",
    filename = "filename",
+   history = "history", // TESTING
    job = "job",
    sequence = "sequence",
    userUID = "userUID"

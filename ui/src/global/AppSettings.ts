@@ -41,14 +41,15 @@ export class _AppSettings {
       // Proposal service
       proposal: "proposal-api",
 
-      // Sequence search
+      // Sequence search / TaxaBLAST
       getSeqSearchOutputFile: "get-seqsearch-output-file",
       getSequenceSearchJob: "get-seqsearch-job",
+      searchTaxaBlastJobs: "search-taxablast-jobs",
       uploadSequences: "upload-sequences",
 
       // Taxonomy
       taxonomy: "taxonomy.ashx",
-      taxonomyHistory: "get-taxon-history", // dmd 062025 previously "taxonomyHistory.ashx"
+      taxonomyHistory: "get-taxon-history",
       
       // Member species table
       virusIsolate: "virusIsolate.ashx",

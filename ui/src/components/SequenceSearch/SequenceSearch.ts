@@ -12,6 +12,7 @@ import { SearchResultsPanel } from "./panels/SearchResultsPanel";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
 import { UploadPanel } from "./panels/UploadPanel";
 import { Utils } from "../../helpers/Utils";
+import { JobHistoryPanel } from "./panels/JobHistoryPanel";
 
 
 export class SequenceSearch {
@@ -27,6 +28,7 @@ export class SequenceSearch {
       blastHitsPanel: HTMLElement,
       container: HTMLElement,
       jobDetailsPanel: HTMLElement,
+      jobHistoryPanel: HTMLElement,
       messagePanel: HTMLElement,
       searchResultsPanel: HTMLElement,
       uploadPanel: HTMLElement
@@ -84,6 +86,7 @@ export class SequenceSearch {
          blastHitsPanel: null,
          container: null,
          jobDetailsPanel: null,
+         jobHistoryPanel: null,
          messagePanel: null,
          searchResultsPanel: null,
          uploadPanel: null
@@ -229,6 +232,7 @@ export class SequenceSearch {
       
       let loadBlastHits = false;
       let loadJobDetails = false;
+      let loadJobHistory = false;
       let loadSearchResults = false;
       let loadUpload = false;
 
@@ -243,6 +247,10 @@ export class SequenceSearch {
 
             // Which panels will be loaded?
             loadBlastHits = true;
+            break;
+
+         case PanelAction.displayHistory:
+            loadJobHistory = true;
             break;
 
          case PanelAction.displayJob:
@@ -274,6 +282,7 @@ export class SequenceSearch {
       // Load or unload panels as determined above.
       await this.updatePanel(PanelKey.blastHits, loadBlastHits);
       await this.updatePanel(PanelKey.jobDetails, loadJobDetails);
+      await this.updatePanel(PanelKey.jobHistory, loadJobHistory);
       await this.updatePanel(PanelKey.searchResults, loadSearchResults);
       await this.updatePanel(PanelKey.upload, loadUpload);
 
@@ -425,6 +434,7 @@ export class SequenceSearch {
          `<div class=\"message-panel container active\">${spinnerHTML}</div>
          <div class=\"upload-panel container\"></div>
          <div class=\"job-details-panel container\"></div>
+         <div class=\"job-history-panel container\"></div>
          <div class=\"search-results-panel container\"></div>
          <div class=\"blast-hits-panel container\"></div>`;
 
@@ -437,6 +447,10 @@ export class SequenceSearch {
       // The job details panel
       this.elements.jobDetailsPanel = this.elements.container.querySelector(".job-details-panel") as HTMLElement;
       if (!this.elements.jobDetailsPanel) { throw new Error("Invalid job details panel Element"); }
+
+      // The job history panel
+      this.elements.jobHistoryPanel = this.elements.container.querySelector(".job-history-panel") as HTMLElement;
+      if (!this.elements.jobHistoryPanel) { throw new Error("Invalid job history panel Element"); }
 
       // The message panel
       this.elements.messagePanel = this.elements.container.querySelector(".message-panel") as HTMLElement;
@@ -454,45 +468,12 @@ export class SequenceSearch {
       // Create the panel instances.
       this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this.elements.blastHitsPanel, this));
       this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
+      this.panels.set(PanelKey.jobHistory, new JobHistoryPanel(this.elements.jobHistoryPanel, this));
       this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this.elements.searchResultsPanel, this));
       this.panels.set(PanelKey.upload, new UploadPanel(this.elements.uploadPanel, this));
 
       // Use query string parameters to determine which panel to display.
       return this.updatePanelFromURL();
-
-      /*
-      // Set a default action.
-      let action = PanelAction.displayUpload;
-
-      // Was a job UID parameter provided?
-      const urlParams = new URLSearchParams(window.location.search);
-      
-      // Set default state values
-      this.state.fileIndex = NaN;
-      this.state.sequenceIndex = NaN;
-
-      // Was a job UID provided in the query string?
-      this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
-      if (this.state.jobUID && this.state.jobUID.length > 0) {
-
-         action = PanelAction.displayJob;
-
-         // Were file index and sequence index parameters provided?
-         let strFileIndex = Utils.safeTrim(urlParams.get(ParameterKey.file));
-         let strSeqIndex = Utils.safeTrim(urlParams.get(ParameterKey.sequence));
-
-         if (strFileIndex && strSeqIndex) {
-            this.state.fileIndex = parseInt(strFileIndex);
-            this.state.sequenceIndex = parseInt(strSeqIndex);
-
-            if (!isNaN(this.state.fileIndex) && !isNaN(this.state.sequenceIndex)) {
-               action = PanelAction.displayBlastHits; 
-            }
-         }
-      }
-
-      await this.handleAction(action);
-      return; */
    }
 
    // If the user UID is empty, look for one in web storage or generate a new one.
@@ -552,6 +533,12 @@ export class SequenceSearch {
       this.state.fileIndex = NaN;
       this.state.sequenceIndex = NaN;
 
+      // TESTING
+      let history = Utils.safeTrim(urlParams.get(ParameterKey.history));
+      if (history === "display") {
+         return await this.handleAction(PanelAction.displayHistory);
+      }
+
       // Was a job UID provided in the query string?
       this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
       if (this.state.jobUID && this.state.jobUID.length > 0) {
@@ -580,6 +567,9 @@ export class SequenceSearch {
       
       const params = new URLSearchParams(window.location.search);
       
+      // TESTING: Remove the history parameter.
+      if (params.has(ParameterKey.history)) { params.delete(ParameterKey.history); }
+
       // If the job UID is valid, update its URL parameter.
       if (this.state.jobUID && this.state.jobUID.length > 0) {
          params.set(ParameterKey.job, this.state.jobUID);

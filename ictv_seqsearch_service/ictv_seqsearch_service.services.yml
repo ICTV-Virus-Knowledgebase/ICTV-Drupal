@@ -11,6 +11,12 @@ services:
     tags:
       - { name: 'rest.resource' }
 
+  ictv_seqsearch_service.SearchTaxaBlastJobs:
+    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\SearchTaxaBlastJobs'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
   ictv_seqsearch_service.UploadSequences:
     class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\UploadSequences'
     arguments: ['@current_user']

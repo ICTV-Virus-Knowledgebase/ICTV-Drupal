@@ -273,6 +273,7 @@ export enum WebServiceKey {
    // TaxaBLAST
    getSeqSearchOutputFile = "getSeqSearchOutputFile",
    getSequenceSearchJob = "getSequenceSearchJob",
+   searchTaxaBlastJobs = "searchTaxaBlastJobs",
    uploadSequences = "uploadSequences",
 
    // Taxonomy
