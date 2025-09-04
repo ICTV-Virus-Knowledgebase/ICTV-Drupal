@@ -27,6 +27,23 @@ export class _SequenceSearchService {
    }
 
 
+   // Search the user's TaxaBLAST jobs.
+   async searchJobs(authToken_: string, searchText_: string, userUID_: string): Promise<ISeqSearchJob[]> {
+      
+      // Validate the parameters
+      if (!authToken_) { throw new Error("Invalid auth token"); }
+      if (!userUID_) { throw new Error("Invalid user UID"); }
+
+      const data = {
+         authToken: authToken_,
+         searchText: searchText_,
+         userUID: userUID_
+      };
+
+      return await WebService.drupalPost<ISeqSearchJob[]>(WebServiceKey.searchTaxaBlastJobs, authToken_, data);
+   }
+
+   
    // Get an output file from a TaxaMATCH job.
    async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
 
