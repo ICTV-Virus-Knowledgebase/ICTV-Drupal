@@ -18,6 +18,9 @@ GetFilteredNameSQL_DIR="$SCRIPT_DIR/../Functions"
 # QuerySearchableTaxon.sql directory
 QuerySearchableTaxonSQL_DIR="$SCRIPT_DIR/../storedProcedures"
 
+# SQL Directory for views
+SQL_VIEWS_DIR="$SCRIPT_DIR/../views"
+
 INITIAL_START_TIME=$(date +%s)
 
 # The ictv_apps database
@@ -49,9 +52,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Add views that reference the ictv_taxonomy database.
-echo -e "\nAdding views that reference the ictv_taxonomy database"
-mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_DIR/AddViewsToIctvApps.sql"
+# Add SQL views
+echo -e "\nAdding SQL views"
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_searchable_taxon.sql"
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_species_isolates.sql"
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node_merge_split.sql"
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node_names.sql"
+mariadb -D "$AppsDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node.sql"
 
 
 #------------------------------------------------------------------------------------------------------------------
