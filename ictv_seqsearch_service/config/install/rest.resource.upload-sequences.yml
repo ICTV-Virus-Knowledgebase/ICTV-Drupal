@@ -1,0 +1,11 @@
+id: upload-sequences
+plugin_id: upload-sequences
+granularity: method
+configuration:
+  get:
+    supported_formats: [json]
+    supported_auth: [cookie, basic_auth]
+  post:
+    # Accept multipart and JSON bodies for inbound requests, respond as JSON.
+    supported_formats: [multipart_form, json]
+    supported_auth: [cookie, basic_auth, oauth2]

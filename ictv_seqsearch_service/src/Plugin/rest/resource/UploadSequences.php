@@ -24,6 +24,8 @@ use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
 
 /**
  * A web service for uploading sequence files and searching.
@@ -222,6 +224,9 @@ class UploadSequences extends ResourceBase {
     */
    public function post(Request $request) {
 
+      \Drupal::logger(Common::$MODULE_NAME)->info("In post()");
+
+
       // Upload the sequences that were sent in the request.
       $data = $this->uploadSequences($request);
 
@@ -238,29 +243,67 @@ class UploadSequences extends ResourceBase {
    }
 
 
+   /** @return \Generator|UploadedFile[] */
+   function iterUploadedFiles(mixed $value): \Generator {
+      if ($value instanceof UploadedFile) {
+         yield $value;
+         return;
+      }
+      if (is_array($value)) {
+         foreach ($value as $v) {
+            if ($v === null) continue;
+            yield from iterUploadedFiles($v);
+         }
+      }
+   }
+
    /**
     * Upload the FASTA sequence(s) sent in the HTTP request.
     */
    public function uploadSequences(Request $request) {
 
-      // Get and validate the JSON in the request body.
-      $requestJSON = Json::decode($request->getContent());
-      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
+      // TESTING
+      //$fileCount = count($request->files);
+      //\Drupal::logger(Common::$MODULE_NAME)->info("HTTP request files: ".$fileCount);
 
-      $jobName = $requestJSON["jobName"];
+      //$files = $request->files->get("files");
+
+      $bag = $request->files;
+
+      // Iterate a specific field that might be single or multiple:
+      if (($f = $bag->get('files')) !== null) {
+         foreach (iterUploadedFiles($f) as $uploaded) {
+            // $uploaded is an UploadedFile
+            \Drupal::logger(Common::$MODULE_NAME)->info("found a file ".$uploaded->getClientOriginalName());
+         }
+      }
+
+      return [
+         "errorMessage" => "",
+         "jobUID" => "No job UID",
+         "status" => "complete"
+      ];
+
+      /*
+      // Get and validate the JSON in the request body.
+      //$requestJSON = Json::decode($request->getContent());
+      //if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
+
+      $jobName = $request->get("jobName");
 
       // Get and validate the user email.
-      $userEmail = $requestJSON["userEmail"];
+      $userEmail = $request->get("userEmail");
       if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
 
       // Get and validate the user UID.
-      $userUID = $requestJSON["userUID"];
+      $userUID = $request->get("userUID");
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
       
       // Get and validate the array of files.
-      $files = $requestJSON["files"];
-      if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
+      //$files = $requestJSON["files"];
+      //if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
+      \Drupal::logger(Common::$MODULE_NAME)->info("jobName = ".$jobName.", userUID = ".$userUID);
 
       // Declare and initialize variables used below.
       $errorMessage = null;
@@ -275,7 +318,7 @@ class UploadSequences extends ResourceBase {
 
       try {
          // Iterate over all uploaded files, validate them, and maintain their contents in an array.
-         foreach ($files as $file) {
+         foreach ($request->files as $file) {
                
             //-------------------------------------------------------------------------------------------------------
             // Get and validate filename and contents.
@@ -411,7 +454,7 @@ class UploadSequences extends ResourceBase {
          "errorMessage" => $errorMessage,
          "jobUID" => $jobUID,
          "status" => $jobStatus->value
-      ];
+      ];*/
    }
 
 }

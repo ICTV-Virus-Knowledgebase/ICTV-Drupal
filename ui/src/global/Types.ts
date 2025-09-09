@@ -271,6 +271,7 @@ export enum WebServiceKey {
    proposal = "proposal",
 
    // TaxaBLAST
+   downloadTaxaBlastFile = "downloadTaxaBlastFile", //download-taxablast-file
    getSeqSearchOutputFile = "getSeqSearchOutputFile",
    getSequenceSearchJob = "getSequenceSearchJob",
    searchTaxaBlastJobs = "searchTaxaBlastJobs",
