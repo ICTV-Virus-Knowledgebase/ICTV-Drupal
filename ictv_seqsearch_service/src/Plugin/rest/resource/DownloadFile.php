@@ -4,6 +4,7 @@ namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -17,21 +18,25 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
+
+
 /**
- * A web service for retrieving an output file from a SeqSearch job.
+ * A web service for downloading a binary output file from a TaxaBLAST job.
  * @RestResource(
- *   id = "get-seqsearch-output-file",
- *   label = @Translation("ICTV SeqSearch: Get an output file"),
+ *   id = "download-taxablast-file",
+ *   label = @Translation("ICTV TaxaBLAST: Download a binary output file"),
  *   uri_paths = {
- *      "canonical" = "/get-seqsearch-output-file",
- *      "create" = "/get-seqsearch-output-file"
- *   }
+ *      "canonical" = "/download-taxablast-file",
+ *      "create" = "/download-taxablast-file"
+ *   },
+ *   formats = {"json", "bin"}
  * )
  */
-class GetOutputFile extends ResourceBase {
+class DownloadFile extends ResourceBase {
 
    // The connection to the ictv_apps database.
    protected Connection $connection;
@@ -141,28 +146,75 @@ class GetOutputFile extends ResourceBase {
       );
    }
 
+
+   public function generateResponse(string $filename_, string $jobUID_): BinaryFileResponse {
+      
+      if (Utils::isNullOrEmpty($filename_)) { throw new BadRequestHttpException("Invalid filename"); }
+
+      // Make sure the output directory isn't included in the filename.
+      if (str_starts_with($filename_, $this->outputDirectory.'/')) {
+         $filename = substr($filename_, strlen($this->outputDirectory) + 1);
+      }
+
+      if (Utils::isNullOrEmpty($jobUID_)) { throw new BadRequestHttpException("Invalid job UID"); }
+
+      // Lookup the job's user UID.
+      $userUID = Common::lookupJobUserUID($this->connection, $jobUID_);
+      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
+
+      // Determine the job path.
+      $jobPath = $this->jobService->getJobPath($jobUID_, $userUID);
+
+      // Use the job path to generate the path of the output subdirectory.
+      $outputPath = $this->jobService->getOutputPath($jobPath);
+
+      // The full path of the job directory, including the filename.
+      $filePath = $outputPath.DIRECTORY_SEPARATOR.$filename_;
+
+      // Make sure the file isn't empty and get its size.
+      $fileSize = filesize($filePath);
+      if (!$fileSize) { throw new BadRequestHttpException("The requested file is empty"); }
+
+      // Bypass Drupal entirely
+      header('Content-Type: application/octet-stream');
+      header('Content-Disposition: attachment; filename="' . $filename_ . '"');
+      header('Content-Length: ' . $fileSize);
+      header('Content-Transfer-Encoding: binary');
+      
+      readfile($filePath);
+      exit();
+
+      /*
+      // Create and return the response.
+      $response = new BinaryFileResponse($filePath);
+
+      $response->headers->remove('Content-Type');
+      //$response->headers->set('Content-Type', 'application/zip');
+      $response->headers->set('Content-Type', 'application/octet-stream');
+      $response->headers->set('Content-Disposition', 'attachment; filename="'.$filename_.'"');
+      $response->headers->set('Content-Length', $fileSize);
+      $response->headers->set('Content-Transfer-Encoding', 'binary');
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+
+      // Prevent any text processing
+      $response->headers->set('Cache-Control', 'no-transform');
+
+      return $response;*/
+   }
+
    
    /**
     * Responds to GET request.
-    * Passes the HTTP Request to the getFiles method and returns the result.
+    * 
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
    public function get(Request $request) {
       
-      // Get the output file.
-      $data = $this->getFile($request);
+      $filename = $request->get("filename");
+      $jobUID = $request->get("jobUID");
 
-      $build = array(
-         '#cache' => array(
-            'max-age' => 0,
-         ),
-      );
-       
-      $response = new ResourceResponse($data);
-      $response->addCacheableDependency($build);
-      $response->headers->set('Access-Control-Allow-Origin', '*');
-      return $response;
+      return $this->generateResponse($filename, $jobUID);
    }
 
 
@@ -173,66 +225,6 @@ class GetOutputFile extends ResourceBase {
     */
    public function getCacheMaxAge() {
       return 2;
-   }
-
-
-   /**
-    * Get the requested output file.
-    */
-   public function getFile(Request $request) {
-
-      // Get and validate the JSON in the request body.
-      $requestJSON = Json::decode($request->getContent());
-      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
-
-      // Get and validate the filename.
-      $filename = $requestJSON["filename"];
-      if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
-
-      // Make sure the output directory isn't included in the filename.
-      if (str_starts_with($filename, $this->outputDirectory.'/')) {
-         $filename = substr($filename, strlen($this->outputDirectory) + 1);
-      }
-
-      // Get and validate the job UID.
-      $jobUID = $requestJSON["jobUID"];
-      if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
-
-      // Lookup the job's user UID.
-      $userUID = Common::lookupJobUserUID($this->connection, $jobUID);
-      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
-
-      $isCompressed = False;
-      if (str_ends_with($filename, ".csv") || str_ends_with($filename, ".html")) { 
-         $isCompressed = True;
-         $filename .= ".gz";
-      }
-
-      // Determine the job path.
-      $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
-
-      // Use the job path to generate the path of the output subdirectory.
-      $outputPath = $this->jobService->getOutputPath($jobPath);
-
-      $errorMessage = "";
-      $fileContents = "";
-
-      try {
-         // Get the file contents.
-         $fileContents = Common::getFileContents(true, $filename, $outputPath);
-      } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_seqsearch_service')->error($e);
-         $errorMessage = $e->getMessage();
-      }
-
-      return [
-         "contents" => $fileContents,
-         "error" => $errorMessage,
-         "filename" => $filename,
-         "isCompressed" => $isCompressed,
-         "jobUID" => $jobUID
-      ];
    }
 
 
@@ -248,26 +240,83 @@ class GetOutputFile extends ResourceBase {
 
    /**
     * Responds to POST request.
-    * Passes the HTTP Request to the getFiles method and returns the result.
+    * 
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
    public function post(Request $request) {
 
-      // Get the output file.
-      $data = $this->getFile($request);
+      // Get and validate the JSON in the request body.
+      $requestJSON = Json::decode($request->getContent());
+      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
 
-      $build = array(
-         '#cache' => array(
-            'max-age' => 0,
-         ),
-      );
-       
-      $response = new ResourceResponse($data);
-      $response->addCacheableDependency($build);
+      // Get the filename and job UID.
+      $filename = $requestJSON["filename"];
+      $jobUID = $requestJSON["jobUID"];
+      
+
+
+      if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
+
+      // Make sure the output directory isn't included in the filename.
+      if (str_starts_with($filename, $this->outputDirectory.'/')) {
+         $filename = substr($filename, strlen($this->outputDirectory) + 1);
+      }
+
+      if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
+
+      // Lookup the job's user UID.
+      $userUID = Common::lookupJobUserUID($this->connection, $jobUID);
+      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
+
+      // Determine the job path.
+      $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
+
+      // Use the job path to generate the path of the output subdirectory.
+      $outputPath = $this->jobService->getOutputPath($jobPath);
+
+      // The full path of the job directory, including the filename.
+      $filePath = $outputPath.DIRECTORY_SEPARATOR.$filename;
+
+      // Make sure the file isn't empty and get its size.
+      $fileSize = filesize($filePath);
+      if (!$fileSize) { throw new BadRequestHttpException("The requested file is empty"); }
+
+      // Nuclear option - bypass everything
+      if (ob_get_level()) ob_end_clean();
+
+      // Bypass Drupal entirely
+      header('Content-Type: application/zip');
+      header('Content-Disposition: attachment; filename="' . $filename . '"');
+      header('Content-Length: ' . $fileSize);
+      header('Content-Transfer-Encoding: binary');
+      
+      readfile($filePath);
+
+      // Prevent Drupal from doing anything else
+      \Drupal::service('kernel')->terminate();
+
+      exit();
+
+
+
+      //return $this->generateResponse($filename, $jobUID);
+
+      /*
+      $response = new StreamedResponse(function() use ($filePath) {
+         $handle = fopen($filePath, 'rb');
+         while (!feof($handle)) {
+            echo fread($handle, 8192); // 8KB chunks
+            flush();
+         }
+         fclose($handle);
+      });
+         
+      $response->headers->set('Content-Type', 'application/zip');
+      $response->headers->set('Content-Disposition', 'attachment; filename="'.$filename.'"');
+      $response->headers->set('Content-Length', $fileSize);
       $response->headers->set('Access-Control-Allow-Origin', '*');
-
-      return $response;
+      return $response;*/
    }
 
 }

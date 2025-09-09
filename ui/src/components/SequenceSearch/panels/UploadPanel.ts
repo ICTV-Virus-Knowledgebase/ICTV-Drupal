@@ -5,6 +5,7 @@ import { IFileData } from "../../../models/IFileData";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { IUploadResult } from "../IUploadResults";
 import { JobStatus } from "../../../global/Types";
+import { ParseFASTA } from "../../../helpers/FastaUtils";
 import { SequenceSearch } from "../SequenceSearch";
 import { SequenceSearchService } from "../../../services/SequenceSearchService";
 import { SubmissionStatus } from "../SubmissionStatus";
@@ -489,61 +490,70 @@ export class UploadPanel implements ISeqSearchPanel {
    async uploadSequences() {
 
       if (!this.elements.fileInput) { throw new Error("Invalid file control"); }
-      if (!this.elements.fileInput.files || !this.elements.fileInput.files[0]) { throw new Error("Invalid upload file"); }
+
+      if (!this.elements.fileInput.files || this.elements.fileInput.files.length < 1) { 
+         return await AlertBuilder.displayError(`No files were selected to upload`); 
+      }
       
       // Get the (optional) job name.
       let jobName = this.elements.jobName.value;
       if (!jobName) { jobName = null; }
 
       try {
-         let filenames = "";
          let files: IFileData[] = [];
-         let sequenceCount = 0;
+         let recordCount = 0;
+         let totalSize = 0;
 
          // Iterate over all files
          for (let f=0; f < this.elements.fileInput.files.length; f++) {
 
+            // Is this a valid file?
             const file = this.elements.fileInput.files.item(f);
             if (!file) { continue; }
+
+            // Update the total file size.
+            totalSize += file.size;
+            if (totalSize > Constants.MAX_FILE_SIZE_TOTAL) { 
+               return await AlertBuilder.displayError(`The total size of all uploaded files must be less than ${Constants.MAX_FILE_SIZE_TOTAL}`); 
+            }
 
             // Get the file's contents
             const contents = await this.readFileAsync(file);
             if (!contents) { continue; }
 
-            // Update the sequence count with the number of FASTA headers in this file.
-            sequenceCount += (contents.match(/>/g) || []).length;
+            // Parse the file text as one or more FASTA records and validate them.
+            const records = ParseFASTA(contents, true);
 
-            if (filenames.length > 0) { filenames += ", "; }
-            filenames += file.name;
-
-            // Add file data to the array.
-            files.push({
-               name: file.name,
-               contents: contents
-            })
+            // Update the sequence count with the number of FASTA records in this file.
+            recordCount += records.length;
          }
          
-         if (files.length < 1) { return await AlertBuilder.displayError("Unable to upload: no valid files were found"); }
+         // Validate the number of FASTA records/sequences found in the file(s).
+         if (recordCount >= Constants.MAX_SEQUENCE_COUNT) {  
 
-         if (sequenceCount >= Constants.MAX_SEQUENCE_COUNT) {    
-            const s = sequenceCount === 1 ? "" : "s";
-            const message = `Unable to upload your file${s}: The maximum number of sequences that can be loaded is ${Constants.MAX_SEQUENCE_COUNT} ` +
-            `(you tried to upload ${sequenceCount} sequences)`
+            const s = recordCount === 1 ? "" : "s";
 
-            return await AlertBuilder.displayError(message, null, () => this.changePanelMode(PanelMode.file_selection));
+            // Create an error message.
+            const errorMessage = `Unable to upload your file${s}: The maximum number of sequences that can be loaded is ${Constants.MAX_SEQUENCE_COUNT} ` +
+            `(you tried to upload ${recordCount} sequence${s})`
 
-         } else if (sequenceCount < 1) {
-            return await AlertBuilder.displayError("Your selected file(s) do not contain any valid FASTA sequences", null, () => this.changePanelMode(PanelMode.file_selection));
+            return await AlertBuilder.displayError(errorMessage, null, () => this.changePanelMode(PanelMode.file_selection));
+
+         } else if (recordCount < 1) {
+            return await AlertBuilder.displayError(`Your selected file(s) do not contain any valid FASTA sequences`, null, () => this.changePanelMode(PanelMode.file_selection));
          }
 
+         // TEST
+         console.log(`record count = ${recordCount} and total file size = ${totalSize}`)
+
          // Initialize the submission status.
-         this.submissionStatus.start(files.length, sequenceCount);
+         this.submissionStatus.start(files.length, recordCount);
 
          // Change the panel mode to "job submitted".
          await this.changePanelMode(PanelMode.job_submitted);
          
          // Upload the sequence file(s) to the web service for processing.
-         const result = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
+         const result = await SequenceSearchService.uploadFiles(this.parent.authToken, this.elements.fileInput.files, jobName, this.parent.user.email, this.parent.user.uid);
 
          // Handle the upload result and display the correct sub-panel.
          await this.handleUploadResult(result);
