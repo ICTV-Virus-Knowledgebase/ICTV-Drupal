@@ -1,5 +1,5 @@
 releaseHistoryTaxonomyBrowser:
-  version: 1.x
+  version: 20250911
   css:
     theme:
       assets/css/fa-regular.css: {}
