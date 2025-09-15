@@ -423,6 +423,7 @@
    display: flex;
    flex: 0 0 auto;
    flex-flow: row;
+   font-size: 1.0rem;
    justify-content: flex-start;
    min-width: 0;
 }
@@ -431,7 +432,7 @@
    margin-right: 0.25rem;
 }
 #ictv_seqsearch_container .link-panel button.copy-url-button {
-   margin-left: 0.25rem;
+   margin-left: 0.5rem;
 }
 #ictv_seqsearch_container .link-panel .copy-url-link:hover {
    color: #007bff;

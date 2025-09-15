@@ -526,8 +526,16 @@ export class UploadPanel implements ISeqSearchPanel {
 
             // Update the sequence count with the number of FASTA records in this file.
             recordCount += records.length;
+
+            // Add file data to the array.
+            files.push({
+               name: file.name,
+               contents: contents
+            })
          }
          
+         if (files.length < 1) { return await AlertBuilder.displayError("Unable to upload: no valid files were found"); }
+
          // Validate the number of FASTA records/sequences found in the file(s).
          if (recordCount >= Constants.MAX_SEQUENCE_COUNT) {  
 
@@ -553,7 +561,8 @@ export class UploadPanel implements ISeqSearchPanel {
          await this.changePanelMode(PanelMode.job_submitted);
          
          // Upload the sequence file(s) to the web service for processing.
-         const result = await SequenceSearchService.uploadFiles(this.parent.authToken, this.elements.fileInput.files, jobName, this.parent.user.email, this.parent.user.uid);
+         const result = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
+         //.uploadFiles(this.parent.authToken, this.elements.fileInput.files, jobName, this.parent.user.email, this.parent.user.uid);
 
          // Handle the upload result and display the correct sub-panel.
          await this.handleUploadResult(result);

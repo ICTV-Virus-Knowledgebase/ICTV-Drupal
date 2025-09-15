@@ -3,11 +3,18 @@
 namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaRecord;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Utils;
 
 
 class Common {
+
+   // The maximum number of sequences that can be submitted (across all FASTA files that are uploaded).
+   public static int $MAX_SEQUENCE_COUNT = 100;
+
+   // The maximum total size (in bytes) of all uploaded files.
+   public static int $MAX_TOTAL_UPLOAD_SIZE = 500000000; // 500 MB
 
    // The name of the parent module.
    public static string $MODULE_NAME = "ictv_seqsearch_service";
@@ -223,6 +230,32 @@ class Common {
       return file_exists($zipFilePath);
    }
 
+   /**
+    * Decode a Base64URL-encoded filename.
+    */
+   public static function decodeFilenameFromBase64URL(string $encodedFilename): string {
+      
+      $encodedFilename = trim($encodedFilename);
+      if (strlen($encodedFilename) < 1) { return ""; }
+      
+      $basename = null;
+      $extension = null;
+
+      // The index of the last dot.
+      $lastDotIndex = strrpos($encodedFilename, ".");
+
+      // Get the file extension.
+      if ($lastDotIndex && $lastDotIndex > -1) {
+         $basename = substr($encodedFilename, 0, $lastDotIndex);
+         $extension = substr($encodedFilename, $lastDotIndex);
+      } else {
+         $basename = $encodedFilename;
+         $extension = "";
+      }
+      
+      return Common::base64url_decode($basename).$extension;
+   }
+
 
    /**
     * Delete the specified directory (courtesy of Claude.ai).
@@ -243,6 +276,32 @@ class Common {
       }
         
       rmdir($dir);
+   }
+
+   /**
+    * Encode a filename using Base64URL encoding.
+    */ 
+   public static function encodeFilenameAsBase64URL(string $filename): string {
+      
+      $filename = trim($filename);
+      if (strlen($filename) < 1) { return ""; }
+      
+      $basename = null;
+      $extension = null;
+
+      // The index of the last dot.
+      $lastDotIndex = strrpos($filename, ".");
+
+      // Get the file extension.
+      if ($lastDotIndex && $lastDotIndex > -1) {
+         $basename = substr($filename, 0, $lastDotIndex);
+         $extension = substr($filename, $lastDotIndex);
+      } else {
+         $basename = $filename;
+         $extension = "";
+      }
+      
+      return Common::base64url_encode($basename).$extension;
    }
 
 
@@ -317,7 +376,39 @@ class Common {
       return $userUID;
    }
 
+
+   // Parse a FASTA string and yield FastaRecord objects.
+   public static function parseFasta(string $fasta, string $filename, bool $validate) {
+      
+      $fasta = trim($fasta);
+      if (strlen($fasta) < 1) { return null; }
+
+      if (strlen($filename) < 1) { return null; }
+
+      $header = null;
+      $sequenceLines = [];
+
+      $lines = preg_split('/\r\n|\r|\n/', $fasta);
+      foreach ($lines as $line) {
+         $line = trim($line);
+         if ($line === "") continue;
+         if ($line[0] === ">") {
+
+            // If we have a previous record, yield it.
+            if ($header !== null) {  yield new FastaRecord($header, $filename, $sequenceLines, true); }
+
+            $header = substr($line, 1);  // remove '>'
+            $sequenceLines = [];
+         } else {
+            // Append the sequence
+            $sequenceLines[] = $line;
+         }
+      }
+      
+      // Yield the last record
+      if ($header !== null) { yield new FastaRecord($header, $filename, $sequenceLines, true); }
+   }
+
+   
+   
 }
-
-
-

@@ -1,7 +1,3 @@
-parameters:
-  request_formats:
-    multipart_form:
-      - 'multipart/form-data'
 services:
   ictv_seqsearch_service.DownloadFile:
     class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\DownloadFile'
@@ -17,12 +13,6 @@ services:
 
   ictv_seqsearch_service.GetSeqSearchJob:
     class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetSeqSearchJob'
-    arguments: ['@current_user']
-    tags:
-      - { name: 'rest.resource' }
-
-  ictv_seqsearch_service.SearchTaxaBlastJobs:
-    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\SearchTaxaBlastJobs'
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }

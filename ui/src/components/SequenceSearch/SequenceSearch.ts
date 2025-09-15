@@ -117,6 +117,52 @@ export class SequenceSearch {
          case PanelKey.blastHits:
 
             // Specify the instructions for the BLAST hits panel.
+            instructions = `Save this page's URL to view these results later`;
+            break;
+
+         case PanelKey.jobDetails:
+
+            // Specify the instructions for the job details panel.
+            instructions = `Save this page's URL to view these results later`;
+            break;
+
+         case PanelKey.upload:
+
+            // Specify the instructions for the upload panel.
+            instructions = `Save this page's URL to view the completed results later`;
+            break;
+
+         default:
+            AlertBuilder.displayErrorSync(`Unable to create a link panel for the unhandled panel key: ${panelKey_}`);
+            break;
+      }
+
+      return `<div class="link-panel">
+         ${Icon.info} ${instructions}
+         <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
+            data-tippy-content="Copy the URL to your clipboard"
+            data-url="${url}"
+         >${Icon.copy} Copy URL to clipboard</button>
+      </div>`;
+   }
+
+   /*
+   // Create a link panel containing a link that allows the user to return to this page with the current job data.
+   createLinkPanel(panelKey_: PanelKey): string {
+
+      // All link panels require a valid job UID.
+      if (!this.state.jobUID || this.state.jobUID.length < 1) { return ""; }
+
+      let instructions = "";
+
+      // Create a link URL for the specified panel.
+      const url = this.createUrlUsingState(panelKey_);
+
+      switch (panelKey_) {
+
+         case PanelKey.blastHits:
+
+            // Specify the instructions for the BLAST hits panel.
             instructions = `View these later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
             break;
 
@@ -145,7 +191,7 @@ export class SequenceSearch {
             data-url="${url}"
          >${Icon.copy} Copy to clipboard</button>
       </div>`;
-   }
+   }*/
 
    // Create a TaxaBLAST URL using the current state. 
    createUrlUsingState(panelKey_?: PanelKey): string {

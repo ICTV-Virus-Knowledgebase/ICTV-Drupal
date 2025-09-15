@@ -10,6 +10,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaRecord;
 use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
@@ -60,9 +61,6 @@ class UploadSequences extends ResourceBase {
    
    // The name of the JSON result file.
    protected ?string $jsonResultsFilename;
-
-   // The maximum number of sequences that can be submitted (across all FASTA files that are uploaded).
-   public int $MAX_SEQUENCE_COUNT = 100;
 
    // The directory where output files are stored.
    protected ?string $outputDirectory;
@@ -224,9 +222,6 @@ class UploadSequences extends ResourceBase {
     */
    public function post(Request $request) {
 
-      \Drupal::logger(Common::$MODULE_NAME)->info("In post()");
-
-
       // Upload the sequences that were sent in the request.
       $data = $this->uploadSequences($request);
 
@@ -243,109 +238,102 @@ class UploadSequences extends ResourceBase {
    }
 
 
-   /** @return \Generator|UploadedFile[] */
-   function iterUploadedFiles(mixed $value): \Generator {
-      if ($value instanceof UploadedFile) {
-         yield $value;
-         return;
-      }
-      if (is_array($value)) {
-         foreach ($value as $v) {
-            if ($v === null) continue;
-            yield from iterUploadedFiles($v);
-         }
-      }
-   }
-
    /**
     * Upload the FASTA sequence(s) sent in the HTTP request.
     */
    public function uploadSequences(Request $request) {
 
-      // TESTING
-      //$fileCount = count($request->files);
-      //\Drupal::logger(Common::$MODULE_NAME)->info("HTTP request files: ".$fileCount);
-
-      //$files = $request->files->get("files");
-
-      $bag = $request->files;
-
-      // Iterate a specific field that might be single or multiple:
-      if (($f = $bag->get('files')) !== null) {
-         foreach (iterUploadedFiles($f) as $uploaded) {
-            // $uploaded is an UploadedFile
-            \Drupal::logger(Common::$MODULE_NAME)->info("found a file ".$uploaded->getClientOriginalName());
-         }
-      }
-
-      return [
-         "errorMessage" => "",
-         "jobUID" => "No job UID",
-         "status" => "complete"
-      ];
-
-      /*
       // Get and validate the JSON in the request body.
-      //$requestJSON = Json::decode($request->getContent());
-      //if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
+      $requestJSON = Json::decode($request->getContent());
+      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
 
-      $jobName = $request->get("jobName");
+      $jobName = $requestJSON["jobName"];
 
       // Get and validate the user email.
-      $userEmail = $request->get("userEmail");
+      $userEmail = $requestJSON["userEmail"];
       if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
 
       // Get and validate the user UID.
-      $userUID = $request->get("userUID");
+      $userUID = $requestJSON["userUID"];
       if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
       
       // Get and validate the array of files.
-      //$files = $requestJSON["files"];
-      //if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
-
-      \Drupal::logger(Common::$MODULE_NAME)->info("jobName = ".$jobName.", userUID = ".$userUID);
+      $files = $requestJSON["files"];
+      if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
       // Declare and initialize variables used below.
       $errorMessage = null;
+      $invalidRecordCount = 0;
       $jobID = 0;
       $jobStatus = JobStatus::invalid;
       $jobUID = "";
       $jsonForSQL = null;
       $message = null;
+
+      // A list of FastaRecord objects parsed from the uploaded files.
+      $records = [];
+
       $sequenceCount = 0;
       $sequenceData = [];
       $taxResultJSON = null;
 
+      // The total size (in bytes) of all uploaded files.
+      $totalSize = 0;
+
       try {
          // Iterate over all uploaded files, validate them, and maintain their contents in an array.
-         foreach ($request->files as $file) {
+         foreach ($files as $file) {
                
+            $fileRecordCount = 1;
+
             //-------------------------------------------------------------------------------------------------------
             // Get and validate filename and contents.
             //-------------------------------------------------------------------------------------------------------
             $filename = $file["name"];
             if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
 
+            // Encode the filename as URL-safe base64 but maintain the extension.
+            $encodedFilename = Common::encodeFilenameAsBase64URL($filename);
+
+            \Drupal::logger(Common::$MODULE_NAME)->info("encodedFilename = ".$encodedFilename);
+
+            $decodedFilename = Common::decodeFilenameFromBase64URL($encodedFilename);
+            \Drupal::logger(Common::$MODULE_NAME)->info("decodedFilename = ".$decodedFilename);
+
             $contents = $file["contents"];
             if (Utils::isNullOrEmpty($contents)) { throw new BadRequestHttpException("Invalid file contents"); }
 
-            // Validate the FASTA to make sure the number of sequences 
-            // submitted is less than or equal to $MAX_SEQUENCE_COUNT.
-            $sequenceCount += preg_match_all('/^>/m', $contents);
-
-            // If the sequence count exceeds the maximum allowed, throw an error.
-            if ($sequenceCount > $this->MAX_SEQUENCE_COUNT) {
-               throw new BadRequestHttpException("Too many sequences have been submitted. Maximum allowed is {$this->MAX_SEQUENCE_COUNT}.");
+            // Update the total size of all uploaded files.
+            $totalSize += strlen($contents);
+            if ($totalSize > Common::$MAX_TOTAL_UPLOAD_SIZE) {
+               throw new BadRequestHttpException("The total size of all uploaded files exceeds the maximum allowed (".Common::$MAX_TOTAL_UPLOAD_SIZE." bytes)");
             }
 
+            foreach (Common::parseFasta($contents, $filename, true) as $record) {
+               
+               if (!$record || !$record->isValid) {
+                  $invalidRecordCount++; //throw new BadRequestHttpException("The file {$filename} contains an invalid FASTA sequence");
+               } else {
+                  array_push($records, $record);
+               }
+
+               $fileRecordCount++;
+               $sequenceCount++;
+            }
+
+            // If the sequence count exceeds the maximum allowed, throw an error.
+            if ($sequenceCount > Common::$MAX_SEQUENCE_COUNT) {
+               throw new BadRequestHttpException("Too many sequences have been submitted. Maximum allowed is ".Common::$MAX_SEQUENCE_COUNT);
+            }
+            
             // Update the sequence data array with the contents and filename.
-            \array_push($sequenceData, [
+            array_push($sequenceData, [
                "fasta" => $contents,
-               "filename" => $filename
+               "filename" => $encodedFilename //$filename
             ]);
          }
 
-         \Drupal::logger(Common::$MODULE_NAME)->info("Sequence count: ".$sequenceCount);
+         \Drupal::logger(Common::$MODULE_NAME)->info("Sequence count: ".$sequenceCount.", Invalid record count: ".$invalidRecordCount.", Total size: ".$totalSize);
          
          // Create a job record and get its ID and UID.
          $this->jobService->createJob($this->connection, $jobID, $jobName, JobType::sequence_search, $jobUID, $userEmail, $userUID);
@@ -355,7 +343,7 @@ class UploadSequences extends ResourceBase {
          // Create the job directory and subdirectories and return the full path of the job directory.
          $jobPath = $this->jobService->createDirectories($jobUID, $userUID);
 
-         // Use the job path to generate the paths of the intput and output subdirectories.
+         // Use the job path to generate the paths of the input and output subdirectories.
          $inputPath = $this->jobService->getInputPath($jobPath);
          $outputPath = $this->jobService->getOutputPath($jobPath);
 
@@ -454,7 +442,7 @@ class UploadSequences extends ResourceBase {
          "errorMessage" => $errorMessage,
          "jobUID" => $jobUID,
          "status" => $jobStatus->value
-      ];*/
+      ];
    }
 
 }
