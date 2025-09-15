@@ -33,6 +33,7 @@ export enum Icon {
    dna = `<i class=\"fa-solid fa-dna\"></i>`,
    download = `<i class=\"fa fa-download\"></i>`,
    html = `<i class=\"fa-regular fa-file-lines\"></i>`,
+   info = `<i class=\"fa-solid fa-circle-info\"></i>`,
    lineageDelimiter = `<i class=\"fa-solid fa-chevron-right\"></i>`,
    link = `<i class=\"fa-solid fa-link\"></i>`,
    repeat = `<i class=\"fa-solid fa-repeat\"></i>`,
@@ -116,11 +117,13 @@ export function CreateKeyFromName(name_: string): string {
    return name_.toLowerCase().replace(/\W+/g, '_');
 }
 
+
 // Create a URL for the ICTV taxon details page.
 export function CreateTaxonDetailsURL(ictvID_: string, name_: string) {
    const url = AppSettings.taxonHistoryPage;
    return `${url}?ictv_id=${ictvID_}&taxon_name=${name_}`;
 }
+
 
 export function FormatBytes(bytes_: number, decimals_: number): string {
 
@@ -135,6 +138,7 @@ export function FormatBytes(bytes_: number, decimals_: number): string {
     return `${parseFloat((bytes_ / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
+
 // Format a date string using the date and time format strings.
 export function FormatDate(date_: string) {
 
@@ -148,6 +152,7 @@ export function FormatDate(date_: string) {
 
    return `${datePart} at ${timePart}`;
 }
+
 
 // Format the duration between two date/times.
 export function FormatDuration(start_: string, end_: string): string {
@@ -173,6 +178,7 @@ export function FormatDuration(start_: string, end_: string): string {
    return parts.length > 0 ? parts.join(", ") : "0 seconds";
 }
 
+
 // Generate a universally unique identifier (UUID).
 export function GenerateUUID() {
 
@@ -189,10 +195,12 @@ export function GenerateUUID() {
    ).join('');
 }
 
+
 // Return a spinner icon and a message.
 export function GetSpinnerHTML(message_: string): string {
    return `<span class="spinner-message">${Icon.spinner} ${message_}</span>`;
 }
+
 
 // Expand or collapse a specific accordion widget.
 export function ToggleAccordion(containerEl: HTMLElement, itemID_: string) {

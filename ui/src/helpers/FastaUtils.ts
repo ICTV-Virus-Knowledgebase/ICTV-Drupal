@@ -1,12 +1,11 @@
 
+// A collection of utilities for parsing and validating FASTA sequences.
 
+// A regex for valid amino acids (proteins) in a FASTA sequence.
+export const FASTA_AA_REGEX = /^[ACDEFGHIKLMNPQRSTVWY]+$/i;
 
-
-// A regex that excludes valid amino acids (proteins) in a FASTA sequence.
-export const FASTA_NON_AA_REGEX = /^[ACDEFGHIKLMNPQRSTVWY]+$/i;
-
-// A regex that excludes valid  nucleotides in a FASTA sequence.
-export const FASTA_NON_NT_REGEX = /^[ACGTURYSWKMBDHVN\.\-]+$/i;
+// A regex for valid nucleotides in a FASTA sequence.
+export const FASTA_NT_REGEX = /^[ACGTURYSWKMBDHVN\.\-]+$/i;
 
 
 
@@ -23,11 +22,13 @@ export interface IFastaRecord {
   sequence: string[];
 }
 
+
 // A quick validator for IUPAC approved bases.
 export function IsValidFastaSequence(sequence_: string): boolean {
    const upperCase = sequence_.toUpperCase();
-   return FASTA_NON_AA_REGEX.test(upperCase) || FASTA_NON_AA_REGEX.test(upperCase);
+   return FASTA_AA_REGEX.test(upperCase) || FASTA_AA_REGEX.test(upperCase);
 }
+
 
 // Parse text for one or more FASTA records, optionally validating the sequences.
 export function ParseFASTA(fasta_: string, validate_: boolean): IFastaRecord[] {
@@ -75,11 +76,13 @@ export function ParseFASTA(fasta_: string, validate_: boolean): IFastaRecord[] {
          return;
       }
 
+      console.log(`Processing line: ${line} and record is `, record)
+
       // Is the current record valid?
       if (!record || !record.id) { throw new Error("Invalid record: Unable to add sequence line"); }
 
       // Is the FASTA sequence valid?
-      if (validate_ && !IsValidFastaSequence(line)) { throw new Error(`FASTA sequence ${records.length + 1} is invalid: ${line}`); }
+      if (validate_ && !IsValidFastaSequence(line)) { throw new Error(`The following line of FASTA sequence ${records.length + 1} is invalid: ${line}`); }
 
       // Update the current record's sequence.
       record.sequence.push(line);
