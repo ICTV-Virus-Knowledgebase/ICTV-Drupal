@@ -10,16 +10,17 @@ use Drupal\ictv_common\Utils;
 
 class Common {
 
-   // The maximum number of sequences that can be submitted (across all FASTA files that are uploaded).
-   public static int $MAX_SEQUENCE_COUNT = 100;
+   // A regex for valid amino acids (proteins) in a FASTA sequence.
+   public static string $FASTA_AA_REGEX = "/^[ACDEFGHIKLMNPQRSTVWY]+$/i";
 
-   // The maximum total size (in bytes) of all uploaded files.
-   public static int $MAX_TOTAL_UPLOAD_SIZE = 500000000; // 500 MB
+   // A regex for valid nucleotides in a FASTA sequence.
+   public static string $FASTA_NT_REGEX = "/^[ACGTURYSWKMBDHVN\.\-]+$/i";
 
    // The name of the parent module.
    public static string $MODULE_NAME = "ictv_seqsearch_service";
 
 
+   
    /**
     * Decode data from Base64URL (http://base64.guru/developers/php/examples/base64url)
     * @param string $data
@@ -231,10 +232,11 @@ class Common {
    }
 
    /**
-    * Decode a Base64URL-encoded filename.
+    * Decode a Base64URL-encoded filename that has a record number suffix an underscore and the word "seq" followed by a 4 digit record number.
     */
    public static function decodeFilenameFromBase64URL(string $encodedFilename): string {
       
+      // Trim and validate the encoded filename.
       $encodedFilename = trim($encodedFilename);
       if (strlen($encodedFilename) < 1) { return ""; }
       
@@ -252,7 +254,14 @@ class Common {
          $basename = $encodedFilename;
          $extension = "";
       }
-      
+
+      // Does the basename end with a suffix of the form "_seqNNNN" where NNNN is a 4 digit number?
+      if (preg_match("/_seq\d{4}$/", $basename)) {
+
+         // Remove the suffix.
+         $basename = substr($basename, 0, strlen($basename) - 8);
+      }
+
       return Common::base64url_decode($basename).$extension;
    }
 
@@ -279,9 +288,9 @@ class Common {
    }
 
    /**
-    * Encode a filename using Base64URL encoding.
+    * Encode a filename using Base64URL encoding and append a suffix based on the record number.
     */ 
-   public static function encodeFilenameAsBase64URL(string $filename): string {
+   public static function encodeFilenameAsBase64URL(string $filename, int $recordNumber = 1): string {
       
       $filename = trim($filename);
       if (strlen($filename) < 1) { return ""; }
@@ -300,8 +309,34 @@ class Common {
          $basename = $filename;
          $extension = "";
       }
+
+      // Generate a suffix for the basename based on the record number.
+      $suffix = Common::generateFastaBasenameSuffix($recordNumber);
       
-      return Common::base64url_encode($basename).$extension;
+      return Common::base64url_encode($basename).$suffix.$extension;
+   }
+
+   /**
+    * Generate a suffix for the basename based on the record number.
+    * The suffix will be an underscore and the word "seq" followed by a 4 digit record number.
+    */
+   public static function generateFastaBasenameSuffix(int $recordNumber): string {
+      
+      $digits = "";
+
+      if ($recordNumber < 1000) { 
+         if ($recordNumber >= 100) { 
+            $digits = "0"; 
+         } else if ($recordNumber >= 10) { 
+            $digits = "00"; 
+         } else { 
+            $digits = "000"; 
+         }
+      }
+
+      $digits .= strval($recordNumber);
+
+      return "_seq".$digits;
    }
 
 
@@ -349,7 +384,6 @@ class Common {
    }
 
    
-
    /**
     * Return the name of the job directory that will be added to a zip file for download by the user.
     */
@@ -376,39 +410,4 @@ class Common {
       return $userUID;
    }
 
-
-   // Parse a FASTA string and yield FastaRecord objects.
-   public static function parseFasta(string $fasta, string $filename, bool $validate) {
-      
-      $fasta = trim($fasta);
-      if (strlen($fasta) < 1) { return null; }
-
-      if (strlen($filename) < 1) { return null; }
-
-      $header = null;
-      $sequenceLines = [];
-
-      $lines = preg_split('/\r\n|\r|\n/', $fasta);
-      foreach ($lines as $line) {
-         $line = trim($line);
-         if ($line === "") continue;
-         if ($line[0] === ">") {
-
-            // If we have a previous record, yield it.
-            if ($header !== null) {  yield new FastaRecord($header, $filename, $sequenceLines, true); }
-
-            $header = substr($line, 1);  // remove '>'
-            $sequenceLines = [];
-         } else {
-            // Append the sequence
-            $sequenceLines[] = $line;
-         }
-      }
-      
-      // Yield the last record
-      if ($header !== null) { yield new FastaRecord($header, $filename, $sequenceLines, true); }
-   }
-
-   
-   
 }

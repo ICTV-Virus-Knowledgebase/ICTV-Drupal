@@ -16,6 +16,9 @@ export interface ISequence {
    // The BLAST hits
    hits: IBlastHit[];
 
+   // The name of the FASTA file containing the sequence.
+   input_file: string;
+
    // The BLAST qseqid
    qseqid: string;
 

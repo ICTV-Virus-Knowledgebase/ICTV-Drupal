@@ -169,11 +169,11 @@ try {
    }
 
    // Zip the contents of the job directory and save in the output subdirectory.
-   Common::copyOutputFilesAndZip($jobPath, $jobUID, $outputPath);
+   //Common::copyOutputFilesAndZip($jobPath, $jobUID, $outputPath);
 
    try {
       // Is the "files" attribute valid?
-      if (!empty($taxResult['files'])) { throw new \Exception("The taxonomy result JSON does not have a \"files\" attribute."); }
+      if (empty($taxResult['files'])) { throw new \Exception("The taxonomy result JSON does not have a \"files\" attribute."); }
 
       // Update the job's job_file database record(s).
       foreach($taxResult['files'] as $file) {

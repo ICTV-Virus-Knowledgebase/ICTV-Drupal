@@ -32,7 +32,8 @@ class SequenceSearch {
       );
       
       // Generate the command to be run.
-      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName;
+      // The "-decode" argument decodes the input filenames from base64URL encoding before serializing the search results.
+      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -decode";
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
