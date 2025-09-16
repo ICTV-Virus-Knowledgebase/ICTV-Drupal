@@ -1,6 +1,6 @@
 ictv_seqsearch_service.settings:
   type: config_object
-  label: 'Settings for the ICTV SeqSearch Service'
+  label: 'Settings for the ICTV TaxaBLAST Service'
   mapping:
     databaseName:
       type: string
@@ -17,6 +17,12 @@ ictv_seqsearch_service.settings:
     jsonResultsFilename:
       type: string
       label: 'The name of the JSON results file'
+    maxTotalUploadSize:
+      type: integer
+      label: 'The maximum total size (in bytes) of all uploaded files'
+    maxUploadedRecords:
+      type: integer
+      label: 'The maximum number of FASTA records/sequences that can be submitted (across all FASTA files that are uploaded)'
     outputDirectory:
       type: string
       label: 'The directory where output files are stored'
@@ -25,4 +31,4 @@ ictv_seqsearch_service.settings:
       label: 'The name of the seqsearch script (from within a Docker container)'
     scriptParameters:
       type: string
-      label: 'Command line parameters for the seqsearch script'
+      label: 'Command line parameters for the TaxaBLAST script'
