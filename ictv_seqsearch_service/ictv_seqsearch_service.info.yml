@@ -1,9 +1,13 @@
-name: ICTV SeqSearch Service
+name: ICTV TaxaBLAST Service
 type: module
-description: 'A custom module that provides RESTful web services for sequence search'
+description: 'A custom module that provides RESTful web services for TaxaBLAST'
 package: ICTV
-configure: ictv_seqsearch_service.settings
+#configure: ictv_seqsearch_service.settings
 core_version_requirement: ^9 || ^10 || ^11
 dependencies:
   - drupal:block
   - ictv_common
+configuration:
+  formats:
+    - json
+    - bin

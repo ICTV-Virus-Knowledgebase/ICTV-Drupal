@@ -7,46 +7,41 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Database;
+use Drupal\ictv_common\Jobs\JobService;
+use Drupal\ictv_common\Types\JobStatus;
+use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
+use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service for retrieving an output file from a SeqSearch job.
+ * A web service to search a user's TaxaBLAST jobs.
  * @RestResource(
- *   id = "get-seqsearch-output-file",
- *   label = @Translation("ICTV SeqSearch: Get an output file"),
+ *   id = "search-taxablast-jobs",
+ *   label = @Translation("ICTV TaxaBLAST: Search a user's TaxaBLAST jobs"),
  *   uri_paths = {
- *      "canonical" = "/get-seqsearch-output-file",
- *      "create" = "/get-seqsearch-output-file"
+ *      "canonical" = "/search-taxablast-jobs",
+ *      "create" = "/search-taxablast-jobs"
  *   }
  * )
  */
-class GetOutputFile extends ResourceBase {
+class SearchTaxaBlastJobs extends ResourceBase {
 
    // The connection to the ictv_apps database.
    protected Connection $connection;
 
    // The name of the database used by this web service.
    protected string $databaseName;
-
-   // The directory where input sequences are uploaded.
-   protected ?string $inputDirectory;
-
-   // The full path of the jobs directory.
-   protected ?string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
-   
-   // The directory where output files are stored.
-   protected ?string $outputDirectory;
-
 
    /**
     * A current user instance which is logged in the session.
@@ -99,18 +94,6 @@ class GetOutputFile extends ResourceBase {
          
          // Get a database connection.
          $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
-         
-         // Get the input directory.
-         $this->inputDirectory = $config->get("inputDirectory");
-         if (Utils::isNullOrEmpty($this->inputDirectory)) { throw new \Exception("The inputDirectory setting is empty"); }
-
-         // Get the jobs path.
-         $this->jobsPath = $config->get("jobsPath");
-         if (Utils::isNullOrEmpty($this->jobsPath)) { throw new \Exception("The jobsPath setting is empty"); }
-         
-         // Get the output directory.
-         $this->outputDirectory = $config->get("outputDirectory");
-         if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
       }
       catch (\Exception $e) {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
@@ -134,17 +117,21 @@ class GetOutputFile extends ResourceBase {
       );
    }
 
-   
    /**
     * Responds to GET request.
-    * Passes the HTTP Request to the getFiles method and returns the result.
+    * Search a user's TaxaBLAST jobs.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
-   public function get(Request $request) {
+    public function get(Request $request) {
       
-      // Get the output file.
-      $data = $this->getFile($request);
+      $searchText = $request->get("searchText");
+
+      $userUID = $request->get("userUID");
+      if (Utils::isNullOrEmpty($userUID)) { throw new BadRequestHttpException("Invalid user UID"); }
+
+      // Search a user's TaxaBLAST jobs.
+      $data = SeqSearchJob::searchJobs($this->connection, $searchText, $userUID);
 
       $build = array(
          '#cache' => array(
@@ -157,7 +144,6 @@ class GetOutputFile extends ResourceBase {
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
    }
-
 
    /**
     * {@inheritdoc}
@@ -168,67 +154,6 @@ class GetOutputFile extends ResourceBase {
       return 2;
    }
 
-
-   /**
-    * Get the requested output file.
-    */
-   public function getFile(Request $request) {
-
-      // Get and validate the JSON in the request body.
-      $requestJSON = Json::decode($request->getContent());
-      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
-
-      // Get and validate the filename.
-      $filename = $requestJSON["filename"];
-      if (Utils::isNullOrEmpty($filename)) { throw new BadRequestHttpException("Invalid filename"); }
-
-      // Make sure the output directory isn't included in the filename.
-      if (str_starts_with($filename, $this->outputDirectory.'/')) {
-         $filename = substr($filename, strlen($this->outputDirectory) + 1);
-      }
-
-      // Get and validate the job UID.
-      $jobUID = $requestJSON["jobUID"];
-      if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }
-
-      // Lookup the job's user UID.
-      $userUID = Common::lookupJobUserUID($this->connection, $jobUID);
-      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
-
-      $isCompressed = False;
-      if (str_ends_with($filename, ".csv") || str_ends_with($filename, ".html")) { 
-         $isCompressed = True;
-         $filename .= ".gz";
-      }
-
-      // Determine the job path.
-      $jobPath = $this->jobsPath.DIRECTORY_SEPARATOR.$jobUID;
-      
-      // Use the job path to generate the path of the output subdirectory.
-      $outputPath = $jobPath.DIRECTORY_SEPARATOR.$this->outputDirectory;
-
-      $errorMessage = "";
-      $fileContents = "";
-
-      try {
-         // Get the file contents.
-         $fileContents = Common::getFileContents(true, $filename, $outputPath);
-      } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_seqsearch_service')->error($e);
-         $errorMessage = $e->getMessage();
-      }
-
-      return [
-         "contents" => $fileContents,
-         "error" => $errorMessage,
-         "filename" => $filename,
-         "isCompressed" => $isCompressed,
-         "jobUID" => $jobUID
-      ];
-   }
-
-
    /** 
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
@@ -238,17 +163,26 @@ class GetOutputFile extends ResourceBase {
       return []; 
    } 
 
-
    /**
     * Responds to POST request.
-    * Passes the HTTP Request to the getFiles method and returns the result.
+    * Search a user's TaxaBLAST jobs.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
    public function post(Request $request) {
 
-      // Get the output file.
-      $data = $this->getFile($request);
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+
+      $searchText = $json["searchText"];
+
+      // Get and validate the user UID.
+      $userUID = $json["userUID"];
+      if (Utils::isNullOrEmpty($userUID)) { throw new BadRequestHttpException("Invalid user UID"); }
+
+      // Search a user's TaxaBLAST jobs.
+      $data = SeqSearchJob::searchJobs($this->connection, $searchText, $userUID);
 
       $build = array(
          '#cache' => array(
@@ -259,8 +193,8 @@ class GetOutputFile extends ResourceBase {
       $response = new ResourceResponse($data);
       $response->addCacheableDependency($build);
       $response->headers->set('Access-Control-Allow-Origin', '*');
-
       return $response;
    }
-
+   
 }
+

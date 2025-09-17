@@ -1,12 +1,14 @@
 sequenceSearch:
-  version: 1.x
+  version: 20250911
   css:
     theme:
       assets/css/ictv_common.css: {}
+      assets/css/jquery.dataTables.min.css: {}
       assets/css/SequenceSearch.css: {}
       assets/css/tippy.css: {}
       assets/css/light-border.css: {}
   js:
+    assets/js/jquery.dataTables.min.js: { preprocess: false }
     assets/js/ICTV_SequenceSearch.js: { preprocess: false }
     assets/js/sequenceSearch.js: { preprocess: false }
   dependencies:

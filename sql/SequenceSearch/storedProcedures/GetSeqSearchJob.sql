@@ -3,8 +3,6 @@ DROP PROCEDURE IF EXISTS `getSeqSearchJob`;
 
 DELIMITER //
 
--- TODO: delete the stored procedure "getSeqSearchResults"
-
 CREATE PROCEDURE `getSeqSearchJob`(
    IN `jobType` VARCHAR(60),
    IN `jobUID` VARCHAR(100)

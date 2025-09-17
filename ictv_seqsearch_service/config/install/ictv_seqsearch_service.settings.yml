@@ -1,8 +1,10 @@
 databaseName: 'ictv_apps'
-drupalRoot: '/var/www/drupal/site'
+drupalRoot: '/var/www/dapp/web'
 inputDirectory: 'seq_in'
-jobsPath: '/var/www/drupal/files/jobs'
+jobsPath: '/var/www/dapp/files/jobs'
 jsonResultsFilename: 'tax_results.json'
+maxTotalUploadSize: 500000000
+maxUploadedRecords: 100
 outputDirectory: 'tax_out'
 scriptName: 'curtish/ictv_seqsearch:latest'
 scriptParameters: ''

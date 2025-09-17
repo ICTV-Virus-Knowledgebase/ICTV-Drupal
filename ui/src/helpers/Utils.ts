@@ -51,8 +51,8 @@ export class Utils {
    }
 
 
-   // Create a link to GenBank using one or more accessions.
-   static createGenBankAccessionLink(accessions_: string) {
+   // Create a link to GenBank using one or more accessions. If a text parameter was provided, use it as the link text instead of the accession(s).
+   static createGenBankAccessionLink(accessions_: string, text_?: string) {
 
       if (!accessions_) { return ""; }
 
@@ -111,10 +111,30 @@ export class Utils {
 
       if (accessionList.length < 1 || linkText.length < 1) { return ""; }
 
-      return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${linkText}</a>`;
+      let displayText = Utils.safeTrim(text_);
+      if (displayText.length < 1) { displayText = linkText; }
+
+      return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${displayText}</a>`;
    }
 
-   
+
+   // Is the user's browser on iOS?
+   static isIOS() {
+
+      // Try modern API first
+      if ("userAgentData" in navigator) {
+         const platform = (navigator as any).userAgentData.platform || "unknown";
+         return platform === "iOS";
+      } 
+      
+      const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Macintosh") && "ontouchend" in document); 
+      //const isMac = /Macintosh/.test(ua) && !("ontouchend" in document);
+
+      return isIOS; // || isMac;
+   }
+
+
    // Look for URL query string parameters that represent identifiers.
    static getIdentifiersFromURL(params_: URLSearchParams) {
 

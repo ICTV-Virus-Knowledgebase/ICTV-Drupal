@@ -1,5 +1,5 @@
 
-import { ButtonClass, FormatDate, FormatDuration, Icon } from "../Common";
+import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
 import { ISeqSearchJob } from "../ISeqSearchJob";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
@@ -12,9 +12,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
    // DOM elements
    elements: {
       container: HTMLElement,
-      copyUrlButton: HTMLButtonElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
+      panelControls: HTMLElement,
       searchResults: HTMLElement
    }
 
@@ -38,15 +38,15 @@ export class JobDetailsPanel implements ISeqSearchPanel {
 
       this.elements = {
          container: containerEl_,
-         copyUrlButton: null,
          jobName: null,
          jobNameLabel: null,
+         panelControls: null,
          searchResults: null
       }
    }
 
    
-   // Make the panel visible and populate it with data.
+   // Load the panel contents and display them on the page.
    async load() {
 
       this.isActive = true;
@@ -65,12 +65,9 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Clear any existing content in the container.
       this.elements.container.innerHTML = "";
 
-      // Create the URL that can be used to view the job data.
-      const jobURL = this.parent.createUrlUsingState();
-
       // Format the job name
       let jobName = Utils.safeTrim(this.job.name);
-      jobName = jobName.length < 1 ? "(none)" : `<b>${jobName}</b>`;
+      if (jobName.length < 1) { jobName = "(No job name provided)"; }
 
       // Format the created on and ended on date/times.
       let createdOn = FormatDate(this.job.createdOn);
@@ -78,14 +75,28 @@ export class JobDetailsPanel implements ISeqSearchPanel {
       // Format the duration between two date/times.
       let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
 
+      // TODO: Temporary fix to display taxablast instead of seqsearch.
+      let programName = "taxablast"; // this.job.data.program_name;
+
+      // Create the link panel HTML containing a link to this job's details.
+      const linkPanelHTML = this.parent.createLinkPanel(PanelKey.jobDetails);
+
       //----------------------------------------------------------------------------------------------------------------
       // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
       let html = 
-         `<table class="job-details">
+         `<div class="panel-title">Search Results</div>
+         <div class="panel-controls">
+            ${linkPanelHTML}
+            <button class="btn ${ButtonClass.newSearch} has-tooltip"
+               data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+               data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
+            >${Icon.search} New search</button>
+         </div>
+         <table class="job-details">
             <tbody>
-               <tr>
-                  <th>Job name</th>
+               <tr class="job-name-row">
+                  <th class="job-name-label">Job name</th>
                   <td class="job-name">${jobName}</td>
                </tr>
                <tr>
@@ -102,35 +113,28 @@ export class JobDetailsPanel implements ISeqSearchPanel {
                </tr>
                <tr>
                   <th>Program and version</th>
-                  <td>${this.job.data.program_name} (version ${this.job.data.version})</td>
+                  <td>${programName} (version ${this.job.data.version})</td>
                </tr>
                <tr>
                   <th>Database</th>
                   <td>${this.job.data.database_title}</td>
                </tr>
             </tbody>
-         </table>
+         </table>`;
 
-         <div class="link-panel">
-            <div class="instructions">You can view these search results again using the following URL:</div>
-            <div class="controls">
-               <a href="${jobURL}" target="_blank">${jobURL}</a> 
-               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
-            </div>
-         </div>`;
-         
       this.elements.container.innerHTML = html;
 
-      this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
-      if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
+      // Get a reference to the "panel controls" DOM element.
+      this.elements.panelControls = this.elements.container.querySelector(".panel-controls");
+      if (!this.elements.panelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
+
+      // Handle clicks in the panel controls.
+      this.elements.panelControls.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+      })
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
-
-      // Add a click handler to the copy URL button.
-      this.elements.copyUrlButton.addEventListener("click", async () => {
-         return await this.parent.copyJobURL();
-      });
 
       return;
    }
