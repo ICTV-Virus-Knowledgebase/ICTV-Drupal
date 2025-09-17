@@ -7,7 +7,6 @@ module.exports = {
    target: "web",
    entry: {
       "ICTV_MemberSpeciesTable": [
-         "./node_modules/dataTables.net-dt/js/dataTables.dataTables.min.js",
          path.resolve(__dirname, "./") + "/index.ts"
       ]
    },
