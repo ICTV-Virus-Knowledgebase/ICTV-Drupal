@@ -124,49 +124,53 @@ export class _WebService {
 
          case RequestMethod.GET:
 
-               // Call the web service and wait for a response.
-               response = await axios.get(webServiceURL_, {
-                  headers: {
-                     ["Authorization"]: authHeaderValue
-                  },
-                  params: data_
-               })
+            // Call the web service and wait for a response.
+            response = await axios.get(webServiceURL_, {
+               headers: {
+                  ["Authorization"]: authHeaderValue
+               },
+               params: data_
+            })
 
-               break;
+            // TESTING
+            console.log("in WebService.performRequest, response is ", response)
+            
+            break;
 
          case RequestMethod.POST:
 
-               // Initialize the form data.
-               let formData: FormData = new FormData();
+            // Initialize the form data.
+            let formData: FormData = new FormData();
 
-               // Convert the JSON data to form data.
-               Object.keys(data_).forEach((key_: string) => {
-                  const value = data_[key_];
-                  formData.set(key_, value);
-               })
-               
-               // Call the web service and wait for a response.
-               response = await axios.post(webServiceURL_, formData, {
-                  headers: {
-                     ["Authorization"]: authHeaderValue
-                  }
-               })
+            // Convert the JSON data to form data.
+            Object.keys(data_).forEach((key_: string) => {
+               const value = data_[key_];
+               formData.set(key_, value);
+            })
+            
+            // Call the web service and wait for a response.
+            response = await axios.post(webServiceURL_, formData, {
+               headers: {
+                  ["Authorization"]: authHeaderValue
+               }
+            })
 
-               break;
+            break;
 
          case RequestMethod.POST_JSON:
 
-               // Call the web service and wait for a response.
-               response = await axios.post(webServiceURL_, data_, {
-                  headers: {
-                     ["Authorization"]: authHeaderValue,
-                     ["X-CSRF-TOKEN"]: csrfToken_
-                  }
-               })
-               break;
+            // Call the web service and wait for a response.
+            response = await axios.post(webServiceURL_, data_, {
+               headers: {
+                  ["Authorization"]: authHeaderValue,
+                  ["X-CSRF-TOKEN"]: csrfToken_
+               }
+            })
+            
+            break;
 
          default:
-               throw new Error(`Unhandled request method ${method_}`);
+            throw new Error(`Unhandled request method ${method_}`);
       }
 
       // Validate the Axios response.
@@ -198,6 +202,72 @@ export class _WebService {
 
       return result;
    }
+
+
+
+   // TESTING 090825
+   public async postFiles<T>(authToken_: string, data_: any, files_: FileList, webServiceKey_: WebServiceKey): Promise<T> {
+
+      if (!authToken_) { throw new Error("Unable to post files: Invalid auth token"); }
+      if (!files_) { throw new Error("Unable to post files: No files provided"); }
+
+      // Get the name of the CSRF service.
+      const csrfService = AppSettings.webServiceLookup[WebServiceKey.csrfToken];
+      if (!csrfService) { throw new Error(`Unable to post files: Unrecognized web service key ${WebServiceKey.csrfToken}`); }
+
+      // Combine the Drupal web service URL with the CSRF web service.
+      const csrfURL = `${AppSettings.drupalWebServiceURL}${csrfService}`;
+
+      let csrfToken = null;
+
+      try {
+         // Get a CSRF token to include in the web request.
+         csrfToken = await this.performRequest<string>(authToken_, RequestMethod.GET, csrfURL);
+      }
+      catch (error_) {
+         console.error(`Unable to post files: Invalid CSRF token in drupalPost: ${error_}`);
+         return null;
+      }
+
+      // Lookup the web service using the key provided.
+      const webService = AppSettings.webServiceLookup[webServiceKey_];
+      if (!webService) { throw new Error(`Unable to post files: Unrecognized web service key ${webServiceKey_}`); }
+
+      // Combine the Drupal web service URL with the web service.
+      const url = `${AppSettings.drupalWebServiceURL}${webService}`;
+
+      // Initialize the form data.
+      let formData: FormData = new FormData();
+
+      Array.from(files_).forEach((file_) => {
+         formData.append("files[]", file_);
+      })
+
+      if (data_) {
+
+         // Convert the JSON data to form data.
+         Object.keys(data_).forEach((key_: string) => {
+            const value = data_[key_];
+            formData.set(key_, value);
+         })
+      }
+
+      // Call the web service and wait for a response.
+      let response: AxiosResponse = await axios.post(url, formData, {
+         headers: {
+            ["Authorization"]: `Bearer ${authToken_}`,
+            ["X-CSRF-TOKEN"]: csrfToken
+         }
+      })
+
+      // Validate the Axios response.
+      if (!response || !response.data) { throw new Error("Invalid HTTP Response"); }
+
+      return response.data as T;
+   }
+
+
+
 
 }
 

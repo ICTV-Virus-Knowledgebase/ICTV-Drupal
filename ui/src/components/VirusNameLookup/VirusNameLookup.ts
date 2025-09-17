@@ -1010,7 +1010,7 @@ export class VirusNameLookup {
       if (!this.elements.container) { return await AlertBuilder.displayError("Invalid container Element"); }
 
       const html = 
-         `<div class="lookup-container">
+         `<div class="lookup-container minimal-component">
             <div class="search-controls">
                <select class="search-modifier">
                   <option value="${SearchModifier.exact_match}" selected>Exact match</option>

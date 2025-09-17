@@ -1,8 +1,10 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { AppSettings } from "../../../global/AppSettings";
-import { ButtonClass, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
+import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
+import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
+import { IBlastHitScore } from "../IBlastHitScore";
 import { ISeqSearchPanel } from "./ISeqSearchPanel";
 import { SequenceSearch } from "../SequenceSearch";
 import tippy from "tippy.js";
@@ -15,8 +17,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    elements: {
       blastHits: HTMLElement,
       container: HTMLElement,
-      copyUrlButton: HTMLButtonElement,
-      sequencePanel: HTMLElement
+      panelControls: HTMLElement,
+      panelTitle: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -37,13 +39,52 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       this.elements = {
          blastHits: null,
          container: containerEl_,
-         copyUrlButton: null,
-         sequencePanel: null
+         panelControls: null,
+         panelTitle: null
       }
    }
 
 
+   // Consolidate the BLAST hits by combining multiple hits for the same species.
+   consolidateBlastHits(hits_: IBlastHit[]): IBlastHit[] {
+
+      let latestHit: IBlastHit = null;
+      let results = [];
+
+      hits_.forEach((hit_: IBlastHit) => {
+
+         if (!hit_) { return; }
+
+         // Should we add the latest hit to the results?
+         if (latestHit !== null && hit_.ictv_id !== latestHit.ictv_id) {
+
+            results.push(latestHit);
+
+            // This hit is now the latest. Initialize its hsps array.
+            latestHit = hit_;
+            latestHit.hsps = [];
+
+         } else if (!latestHit) {
+
+            // Set the first "latest hit".
+            latestHit = hit_;
+            latestHit.hsps = [];
+         }
+
+         // Add this bitscore and e-value to the latest hit.
+         latestHit.hsps.push({ bitscore: hit_.bitscore, evalue: hit_.evalue, length: hit_.length, pident: hit_.pident} as IBlastHitScore);
+      })
+
+      // Add the latest hit to the results.
+      if (latestHit !== null) { results.push(latestHit); }
+
+      return results;
+   }
+
+   // Create HTML for a BLAST hit.
    createHitHTML(hit_: IBlastHit, hitIndex_: number): string {
+
+      const scoresTitle = hitIndex_ === 0 ? "High-scoring Segment Pairs (HSPs)" : "HSPs";
 
       // Format the hit's lineage.
       const lineage = this.formatLineage(hit_);
@@ -54,8 +95,8 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Create the link using the taxon details URL.
       const linkedHitName = `<a href="${hitURL}" target="_blank">${hit_.sseqid_lineage.species}</a>`;
 
-      // Create a GenBank link using the accession.
-      let sseqAccessionLink = Utils.createGenBankAccessionLink(hit_.sseqid_accession);
+      // Create a link to GenBank using the accession.
+      let accessionLink = Utils.createGenBankAccessionLink(hit_.sseqid_accession);
       
       // Is this an exemplar or an additional isolate?
       let exemplarOrAdditional = hit_.exemplar_additional === "E" ? "Exemplar" : "Additional";
@@ -66,100 +107,83 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       let segment = Utils.safeTrim(hit_.segmentname);
       if (segment.length > 0) { segment = `<span class="segment-name"> segment ${segment}</span>`; }
 
-      let startAndEnd = "";
-      if (hit_.start_loc !== null && !isNaN(hit_.start_loc) && hit_.end_loc !== null && !isNaN(hit_.end_loc)) { 
-         startAndEnd = `<tr class="blast-row">
-            <th>Start location</th>
-            <td class="value">${hit_.start_loc}</td>
-         </tr>
-         <tr class="blast-row">
-            <th>End location</th>
-            <td class="value">${hit_.end_loc}</td>
-         </tr>`;
-      }
+      // Format the HSP bitscores and e-values.
+      let hspRows = this.createScoresHTML(hit_);
 
-      let ictvIdHTML = "";
-      let ictvID = Utils.safeTrim(hit_.ictv_id);
-      if (ictvID.length > 0) {
-
-         let taxonName = "";
-         if (hit_.sseqid_lineage && hit_.sseqid_lineage.species) { taxonName = `&taxon_name=${hit_.sseqid_lineage.species}`; }
-
-         ictvIdHTML = `<tr class="blast-row">
-            <th>ICTV ID</label>
-            <td class="value"><a href="${AppSettings.taxonHistoryPage}?ictv_id=${ictvID}${taxonName}" target="_blank">${ictvID}</a></td>
-         </tr>`
-      }
-
-      let isolateHTML = "";
-      let isolateID = Utils.safeTrim(hit_.isolate_id);
-      if (isolateID.length > 0) {
-         isolateHTML = `<tr class="blast-row">
-            <th>Isolate ID</th>
-            <td class="value"><a href="${AppSettings.taxonHistoryPage}?vmr_id=${hit_.isolate_id}" target="_blank">${hit_.isolate_id}</a></td>
-         </tr>`;
-      }
-
-      let eValue = "0";
-
-      if (hit_.evalue > 0) {
-
-         // Format to exponential with 3 decimals
-         const exponential = hit_.evalue.toExponential(3); // "7.050e-140"
-
-         // Split into parts
-         const [coefficient, exponent] = exponential.split('e');
-
-         // Format the final HTML string
-         eValue = `${coefficient}×10<sup>${exponent}</sup>`;
-      }
-      
-      let html =
-         `<div class="ictv-accordion-item" data-id="${hitIndex_}">
-            <div class="ictv-accordion-header">
-               <div class="ictv-accordion-control" data-id="${hitIndex_}">${Icon.chevronDown}</div>
-               <div class="ictv-accordion-label">
-                  <div class="result-index">#${hitIndex_ + 1}</div>
-                  <div class="lineage-and-result">
-                     <div class="lineage">${lineage}</div>
-                     <div class="result">
-                        <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i>${segment}</div>
-                        <div class="result-note">${exemplarOrAdditional} virus: ${virusNames} (${sseqAccessionLink})</div>
-                     </div>
+      let html = 
+         `<div class="blast-hit-tile">
+            <div class="left-side">
+               <div class="result-index">#${hitIndex_ + 1}</div>
+               <div class="lineage-and-result">
+                  <div class="lineage">${lineage}</div>
+                  <div class="result">
+                     <div class="result-name"><b>Species</b>: <i>${linkedHitName}</i>${segment}</div>
+                     <div class="result-note">${exemplarOrAdditional} virus: ${virusNames} (${accessionLink})</div>
                   </div>
                </div>
             </div>
-            <div class="ictv-accordion-body" data-id="${hitIndex_}">
-               <div class="ictv-accordion-content">
-                  <table class="blast-hit">
-                     <tr class="blast-row">
-                        <th>Query ID</th>
-                        <td class="value">${hit_.qseqid}</td>
-                     </tr>
-                     <tr class="blast-row">
-                        <th>Subject ID</th>
-                        <td class="value">${hit_.sseqid}</td>
-                     </tr>
-                     <tr class="blast-row">
-                        <th>Subject accession</th>
-                        <td class="value">${sseqAccessionLink}</td>
-                     </tr>
-                     <tr class="blast-row">
-                        <th>E-value</th>
-                        <td class="value">${eValue}</td>
-                     </tr>
-                     <tr class="blast-row">
+            <div class="right-side">
+               <div class="blast-scores-title">${scoresTitle}</div>
+               <table class="blast-scores" data-sseqid="${hit_.sseqid}">
+                  <thead>
+                     <tr>
+                        <th>#</th>
                         <th>Bitscore</th>
-                        <td class="value">${hit_.bitscore}</td>
+                        <th>E-value</th>
+                        <th>Length</th>
+                        <th>% Identity</th>
                      </tr>
-                     ${startAndEnd}
-                     ${ictvIdHTML}
-                     ${isolateHTML}
-                  </table>
-               </div>
+                  </thead>
+                  <tbody>
+                  ${hspRows}
+                  </tbody>
+               </table>
             </div>
          </div>`;
 
+      return html;
+   }
+
+   // Create HTML for the BLAST hit's bitscores and evalues.
+   createScoresHTML(hit_: IBlastHit): string {
+
+      let html = "";
+
+      if (!Array.isArray(hit_.hsps) || hit_.hsps.length < 1) { return `<tr><td colspan="5">No data available</td></tr>`; }
+      
+      hit_.hsps.forEach((hsp_: IBlastHitScore, index_: number) => {
+
+         let rowClass = index_ % 2 == 0 ? "even" : "odd";
+
+         let bitscore = isNaN(hsp_.bitscore) ? "0" : hsp_.bitscore.toLocaleString("en-US");
+         if (bitscore.indexOf(".") < 0) { bitscore += ".0"; }
+
+         let eValue = "0";
+
+         if (hsp_.evalue > 0) {
+
+            // Format to exponential with 3 decimals
+            const exponential = hsp_.evalue.toExponential(3); // ex. "7.050e-140"
+
+            // Split into parts
+            const [coefficient, exponent] = exponential.split('e');
+
+            // Format the final HTML string
+            eValue = `${coefficient}×10<sup>${exponent}</sup>`;
+         }
+
+         let pIdent = "unknown";
+         if (!isNaN(hsp_.pident)) { pIdent = `${hsp_.pident.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`; }
+
+         html += `<tr class="${rowClass}">
+            <td class="hit-index">${index_ + 1}</td>
+            <td class="bitscore">${bitscore}</td>
+            <td class="evalue">${eValue}</td>
+            <td class="length">${hsp_.length.toLocaleString("en-US")}</td>
+            <td class="pident">${pIdent}</td>
+         </tr>`;
+      })
+      
       return html;
    }
 
@@ -219,7 +243,7 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const file = this.parent.job.data.files[this.parent.state.fileIndex];
       if (!file) { return this.displayErrorMessage("The specified input file is invalid"); }
 
-      // Validate the specified sequence.
+      // Validate the file's sequences and the specified sequence index.
       if (!Array.isArray(file.sequences) || file.sequences.length < 1 || file.sequences.length < this.parent.state.sequenceIndex + 1) { 
          return this.displayErrorMessage("The specified sequence is invalid"); 
       }
@@ -228,52 +252,65 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       const sequence = file.sequences[this.parent.state.sequenceIndex];
       if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
+      let sequenceLength = isNaN(sequence.sequence_length) ? "Unknown" : `${sequence.sequence_length.toLocaleString("en-US")}`;
+
+      // Consolidate the BLAST hits by combining multiple hits for the same species.
+      const consolidatedHits = this.consolidateBlastHits(sequence.hits);
+
       let hitsHTML = "";
 
-      // Generate HTML for the hits.
-      sequence.hits.forEach((hit_: IBlastHit, hitIndex_: number) => {
-         hitsHTML += this.createHitHTML(hit_, hitIndex_);
-      })
+      if (!Array.isArray(consolidatedHits) || consolidatedHits.length < 1) { 
+         hitsHTML = "No BLAST hits are available"; 
+      } else {
+         // Generate HTML for the consolidated hits.
+         consolidatedHits.forEach((hit_: IBlastHit, hitIndex_: number) => {
+            hitsHTML += this.createHitHTML(hit_, hitIndex_);
+         })
+      }
 
-      // Create a URL to display the current page and BLAST hits.
-      const sequenceURL = this.parent.createUrlUsingState();
-
-      // Use this filename for the CSV file.
+      // Use the query ID for the CSV filename.
       const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
-      // Create URLs for the job details and "upload" pages.
-      const jobDetailsURL = this.parent.createUrlForPanel(PanelKey.jobDetails);
-      const uploadURL = this.parent.createUrlForPanel(PanelKey.upload);
+      // Create a URL for the job details/results page.
+      const jobDetailsURL = this.parent.createUrlUsingState(PanelKey.jobDetails);
+
+      // Create the link panel HTML containing a link to this job's details.
+      const linkPanelHTML = this.parent.createLinkPanel(PanelKey.blastHits);
 
       // Create the panel's HTML.
       this.elements.container.innerHTML = 
-         `<div class="navigation-panel">
-            View the <a href="${jobDetailsURL}" target="_blank">SeqSearch results</a> again or <a href="${uploadURL}" target="_blank">run SeqSearch</a> again with new FASTA files.
+         `<div class="panel-title">BLAST hits for Query ID ${sequence.qseqid}</div>
+         <div class="blast-sequence-length">
+            <span class="length-label">Query sequence length:</span>
+            <span class="length-value">${sequenceLength}</span>
          </div>
-         <div class="sequence-panel">
-            <div class="label">Sequence:</div>
-            <div class="name">${sequence.qseqid}</div>
-            <div class="controls">
-               <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip"
+         <div class="panel-controls">
+            ${linkPanelHTML}
+            <div class="sequence-controls">
+
+               <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
+                  data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
+                  data-url="${jobDetailsURL}"
+               >${Icon.back}<span class="btn-label">Return to search results</span></button>
+
+               <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip"
                   data-filename="${sequence.blast_html}"
-                  data-tippy-content="Click to view the alignement(s) in a new tab"
+                  data-tippy-content="View the alignments in a new tab"
                   data-title="${sequence.qseqid}"
-               >${Icon.html} View alignment(s)</button>
-               <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip"
+               >${Icon.html}<span class="btn-label">View alignments</span></button>
+
+               <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip"
                   data-filename="${sequence.blast_csv}"
-                  data-tippy-content="Click to download the BLAST results as a CSV file"
+                  data-tippy-content="Download the BLAST hits as a CSV file"
                   data-title="${csvName}"
-               >${Icon.csv} Download CSV results</button>
+               >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
+
+               <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+                  data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
+               >${Icon.search}<span class="btn-label">New search</span></button>
             </div>
          </div>
-         <div class="link-panel">
-            <div class="instructions">You can view this sequence's BLAST hits again using the following URL:</div>
-            <div class="controls">
-               <a href="${sequenceURL}" target="_blank">${sequenceURL}</a> 
-               <button class="btn ${ButtonClass.copyURL}">${Icon.copy} Copy to clipboard</button>
-            </div>
-         </div>
-         <div class="blast-hits-title">BLAST Hits</div>
          <div class="blast-hits">${hitsHTML}</div>`;
 
       // Initialize tippy tooltips for buttons.
@@ -286,25 +323,68 @@ export class BlastHitsPanel implements ISeqSearchPanel {
       // Add a click event handler.
       this.elements.blastHits.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
-      });
+      })
 
-      // Get a reference to the sequence panel element.
-      this.elements.sequencePanel = this.elements.container.querySelector(".sequence-panel");
-      if (!this.elements.sequencePanel) { throw new Error("Invalid sequence panel DOM element"); }
+      // Get a reference to the panel controls element.
+      this.elements.panelControls = this.elements.container.querySelector(".panel-controls");
+      if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
 
-      // Handle clicks in the sequence panel.
-      this.elements.sequencePanel.addEventListener("click", async (event_) => {
+      // Handle clicks in the panel controls.
+      this.elements.panelControls.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
-      });
+      })
 
-      // Get the copy URL button
-      this.elements.copyUrlButton = this.elements.container.querySelector(`.${ButtonClass.copyURL}`);
-      if (!this.elements.copyUrlButton) { throw new Error("Invalid copy URL button element"); }
+      // Convert the tables into DataTable instances.
+      consolidatedHits.forEach((hit_) => {
 
-      // Add a click handler to the copy URL button.
-      this.elements.copyUrlButton.addEventListener("click", async () => {
-         return await this.parent.copyJobURL();
-      });
+         let bottomEnd = {
+            paging: { buttons: 4}
+         }
+
+         let info = true;
+         let ordering = true;
+         let paging = true;
+         
+
+         if (hit_.hsps.length < 20) { 
+            bottomEnd = null;
+            info = false;
+            ordering = false;
+            paging = false;
+         }
+
+         new DataTables(`.blast-hits table.blast-scores[data-sseqid="${hit_.sseqid}"]`, {
+            autoWidth: false,
+            columnDefs: [
+               { width: "50px", targets: 0},
+               { width: "100px", targets: 1},
+               { width: "120px", targets: 2},
+               { width: "120px", targets: 3},
+               { width: "120px", targets: 4},
+            ],
+            info: info,
+            layout: {
+               bottomEnd: bottomEnd
+            },
+            ordering: ordering,
+            paging: paging,
+            searching: false
+            
+            /*columnDefs: [{ orderable: true, targets: [0,1,2,3,4] }],*/
+            /*layout: {
+               topStart: null,
+               topEnd: null,
+               bottomEnd: {
+                  paging: {
+                     buttons: 4
+                  }
+               }
+            },
+            order: [], // Important: If this isn't an empty array it will move the child rows to the end!
+            pagingType: "full", // simple, simple_numbers, full, full_numbers
+            searching: false*/
+         });
+      })
    }
 
    unload() {

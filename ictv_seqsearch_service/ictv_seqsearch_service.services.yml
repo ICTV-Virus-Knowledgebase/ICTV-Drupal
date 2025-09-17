@@ -1,4 +1,10 @@
 services:
+  ictv_seqsearch_service.DownloadFile:
+    class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\DownloadFile'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
   ictv_seqsearch_service.GetOutputFile:
     class: '\Drupal\ictv_seqsearch_service\Plugin\rest\resource\GetOutputFile'
     arguments: ['@current_user']

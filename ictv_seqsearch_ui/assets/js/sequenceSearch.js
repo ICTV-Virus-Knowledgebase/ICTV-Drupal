@@ -14,7 +14,6 @@
             initialized = true;
             
             const authToken = settings_.authToken;
-            const contactEmail = "info@ictv.global"; 
             let userEmail = settings_.userEmail;
             let userName = settings_.userName;
             let userUID = settings_.userUID;
@@ -33,8 +32,7 @@
             const containerSelector = "#ictv_seqsearch_container";
 
             // Create a new SequenceSearch instance.
-            const sequenceSearch = new window.ICTV_SequenceSearch.SequenceSearch(authToken, contactEmail, 
-                containerSelector, userEmail, userName, userUID);
+            const sequenceSearch = new window.ICTV_SequenceSearch.SequenceSearch(authToken, containerSelector, userEmail, userName, userUID);
 
             // Initialize and display the UI.
             sequenceSearch.initialize();

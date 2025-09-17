@@ -3,17 +3,137 @@
 namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaRecord;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Utils;
 
 
 class Common {
 
+   // A regex for valid amino acids (proteins) in a FASTA sequence.
+   public static string $FASTA_AA_REGEX = "/^[ACDEFGHIKLMNPQRSTVWY]+$/i";
+
+   // A regex for valid nucleotides in a FASTA sequence.
+   public static string $FASTA_NT_REGEX = "/^[ACGTURYSWKMBDHVN\.\-]+$/i";
+
    // The name of the parent module.
    public static string $MODULE_NAME = "ictv_seqsearch_service";
 
 
-   // Open the file specified by $filename and $filePath, compress it using zlib, save the compressed file 
-   // in $filePath, and return the compressed data.
+   
+   /**
+    * Decode data from Base64URL (http://base64.guru/developers/php/examples/base64url)
+    * @param string $data
+    * @param boolean $strict
+    * @return boolean|string
+    */
+   public static function base64url_decode($data, $strict = false) {
+
+      // Convert Base64URL to Base64 by replacing "-" with "+" and "_" with "/".
+      $b64 = strtr($data, '-_', '+/');
+
+      // Decode Base64 string and return the original data
+      return base64_decode($b64, $strict);
+   }
+   
+
+   /**
+    * Encode data to Base64URL (http://base64.guru/developers/php/examples/base64url)
+    * @param string $data
+    * @return boolean|string
+    */
+   public static function base64url_encode($data) {
+      
+      // Encode $data to a Base64 string.
+      $b64 = base64_encode($data);
+
+      // Make sure you get a valid result. Otherwise, return FALSE.
+      if ($b64 === false) { return false; }
+
+      // Convert Base64 to Base64URL by replacing "+" with "-" and "/" with "_".
+      $url = strtr($b64, '+/', '-_');
+
+      // Remove padding characters from the end of line and return the Base64URL result.
+      return rtrim($url, '=');
+   }
+
+
+   /**
+    * Create a temp directory, copy the output files to it, and create a zip file from the temp directory.
+    */
+   public static function copyOutputFilesAndZip(string $jobPath, string $jobUID, string $outputPath) {
+
+      // Validate input parameters.
+      if (strlen($jobPath) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid job path parameter"); }
+      if (strlen($jobUID) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid job UID parameter"); }
+      if (strlen($outputPath) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid output path parameter"); }
+
+   
+      // Get the path of the system's tmp directory.
+      $tempBase = sys_get_temp_dir();
+
+      \Drupal::logger(Common::$MODULE_NAME)->info("temp base = {$tempBase}");
+
+      // Create a job-specific directory name.
+      $directoryName = Common::getZipFileDirectoryName($jobUID);
+      
+      // Add the directory name to the temp directory name.
+      $newDirectory = $tempBase.DIRECTORY_SEPARATOR.$directoryName;
+
+      $fileSystem = \Drupal::service("file_system");
+      if (!$fileSystem) { throw new \Exception("Invalid file system reference"); }
+
+      // Create the job directory.
+      if (!$fileSystem->prepareDirectory($newDirectory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         $errorMessage = "Unable to create temp directory {$newDirectory}";
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
+         throw new \Exception($errorMessage);
+      }
+
+      \Drupal::logger(Common::$MODULE_NAME)->info("Created directory {$newDirectory}");
+
+      // Get all files in the output directory.
+      $files = scandir($outputPath);
+
+      if (!str_ends_with($outputPath, DIRECTORY_SEPARATOR)) { $outputPath .= DIRECTORY_SEPARATOR; }
+
+      // We will compare the total number of files to the number of successfully copied files.
+      $copyCount = 0;
+      $fileCount = count($files);
+      
+      // Copy files from the output directory to the temp job directory.
+      foreach ($files as $file) {
+
+         // Skip special dirs
+         if ($file === "." || $file === "..") { continue; }
+
+         $sourceFile = $outputPath.$file;
+         $targetFile = $newDirectory.DIRECTORY_SEPARATOR.$file;
+
+         // Only copy regular files
+         if (is_file($sourceFile)) {
+
+            // Ignore gzipped files
+            if (str_ends_with($sourceFile, ".gz")) { continue; }
+
+            if (copy($sourceFile, $targetFile)) { $copyCount += 1; }
+         }
+      }
+
+      $zipFilePath = $outputPath.$directoryName.".zip";
+
+      // Create the zip file in the output directory.
+      Common::createZipFromDirectory($newDirectory, $zipFilePath);
+
+      // Delete the temp directory.
+      Common::deleteDirectory($newDirectory);
+   }
+
+
+   /**
+    * Open the file specified by $filename and $filePath, compress it using zlib, save the compressed file
+    * in $filePath, and return the compressed data.
+    */
    public static function createCompressedFile(string $filename, string $filePath) {
 
       // Validate the filename.
@@ -68,15 +188,166 @@ class Common {
    }
 
 
-   // Open a file and return its contents.
+   /**
+    * Create a zip file of the job directory (courtesy of Claude.ai).
+    */
+   public static function createZipFromDirectory($sourceDir, $zipFilePath) {
+
+      // Initialize archive object
+      $zip = new \ZipArchive();
+      $result = $zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+      
+      if ($result !== TRUE) { throw new \Exception("Cannot create zip file: " . $result); }
+      
+      // Create recursive directory iterator
+      $iterator = new \RecursiveIteratorIterator(
+         new \RecursiveDirectoryIterator($sourceDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+         \RecursiveIteratorIterator::SELF_FIRST
+      );
+      
+      foreach ($iterator as $file) {
+
+         $filePath = $file->getRealPath();
+         $relativePath = substr($filePath, strlen($sourceDir) + 1);
+         
+         if ($file->isDir()) {
+
+            // Add the directory
+            $zip->addEmptyDir($relativePath);
+
+         } elseif ($file->isFile()) {
+
+            // Does it have a file extension we're ignoring?
+            if ($file->getExtension() == "gz") { continue; }
+
+            // Add the file
+            $zip->addFile($filePath, $relativePath);
+         }
+      }
+      
+      // Close and save
+      $zip->close();
+      
+      return file_exists($zipFilePath);
+   }
+
+   /**
+    * Decode a Base64URL-encoded filename that has a record number suffix an underscore and the word "seq" followed by a 4 digit record number.
+    */
+   public static function decodeFilenameFromBase64URL(string $encodedFilename): string {
+      
+      // Trim and validate the encoded filename.
+      $encodedFilename = trim($encodedFilename);
+      if (strlen($encodedFilename) < 1) { return ""; }
+      
+      $basename = null;
+      $extension = null;
+
+      // The index of the last dot.
+      $lastDotIndex = strrpos($encodedFilename, ".");
+
+      // Get the file extension.
+      if ($lastDotIndex && $lastDotIndex > -1) {
+         $basename = substr($encodedFilename, 0, $lastDotIndex);
+         $extension = substr($encodedFilename, $lastDotIndex);
+      } else {
+         $basename = $encodedFilename;
+         $extension = "";
+      }
+
+      // Does the basename end with a suffix of the form "_seqNNNN" where NNNN is a 4 digit number?
+      if (preg_match("/_seq\d{4}$/", $basename)) {
+
+         // Remove the suffix.
+         $basename = substr($basename, 0, strlen($basename) - 8);
+      }
+
+      return Common::base64url_decode($basename).$extension;
+   }
+
+
+   /**
+    * Delete the specified directory (courtesy of Claude.ai).
+    */
+   private static function deleteDirectory($dir) {
+        
+      if (!is_dir($dir)) { return; }
+        
+      $iterator = new \RecursiveIteratorIterator(
+         new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
+      
+      foreach ($iterator as $file) {
+         if ($file->isDir()) {
+            rmdir($file->getRealPath());
+         } else {
+            unlink($file->getRealPath());
+         }
+      }
+        
+      rmdir($dir);
+   }
+
+   /**
+    * Encode a filename using Base64URL encoding and append a suffix based on the record number.
+    */ 
+   public static function encodeFilenameAsBase64URL(string $filename, int $recordNumber = 1): string {
+      
+      $filename = trim($filename);
+      if (strlen($filename) < 1) { return ""; }
+      
+      $basename = null;
+      $extension = null;
+
+      // The index of the last dot.
+      $lastDotIndex = strrpos($filename, ".");
+
+      // Get the file extension.
+      if ($lastDotIndex && $lastDotIndex > -1) {
+         $basename = substr($filename, 0, $lastDotIndex);
+         $extension = substr($filename, $lastDotIndex);
+      } else {
+         $basename = $filename;
+         $extension = "";
+      }
+
+      // Generate a suffix for the basename based on the record number.
+      $suffix = Common::generateFastaBasenameSuffix($recordNumber);
+      
+      return Common::base64url_encode($basename).$suffix.$extension;
+   }
+
+   /**
+    * Generate a suffix for the basename based on the record number.
+    * The suffix will be an underscore and the word "seq" followed by a 4 digit record number.
+    */
+   public static function generateFastaBasenameSuffix(int $recordNumber): string {
+      
+      $digits = "";
+
+      if ($recordNumber < 1000) { 
+         if ($recordNumber >= 100) { 
+            $digits = "0"; 
+         } else if ($recordNumber >= 10) { 
+            $digits = "00"; 
+         } else { 
+            $digits = "000"; 
+         }
+      }
+
+      $digits .= strval($recordNumber);
+
+      return "_seq".$digits;
+   }
+
+
+   /**
+    * Open a file and return its contents.
+    */
    public static function getFileContents(bool $encodeBase64, string $filename, string $filePath) {
 
       $handle = null;
       $fileData = null;
    
-      // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-      // if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
-      
       if (!str_ends_with($filePath, '/')) { $filePath = $filePath.'/'; }
 
       // Concatenate the path and filename.
@@ -112,27 +383,13 @@ class Common {
       }
    }
 
-   /*
-   public static function getJSON(string $jsonFilename, string $outputPath) {
-
-      // The contents of the JSON file as text.
-      $json = NULL;
-
-      try {
-         // Open and read the JSON file.
-         $json = file_get_contents($outputPath."/".$jsonFilename);
-
-         if (json_decode($json) === null && json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception("JSON data is invalid after conversion");
-         }
-      }
-      catch (\Exception $e) {
-          throw new \Exception("Error in getJSON: ".$e->getMessage());
-      }
-
-      return $json;
-   }*/
-
+   
+   /**
+    * Return the name of the job directory that will be added to a zip file for download by the user.
+    */
+   public static function getZipFileDirectoryName(string $jobUID) {
+      return "TaxaBLAST_".$jobUID;
+   }
 
    /**
     * Lookup the user UID associated with this job UID.
@@ -154,6 +411,3 @@ class Common {
    }
 
 }
-
-
-

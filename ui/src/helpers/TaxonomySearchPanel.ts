@@ -316,11 +316,12 @@ export class TaxonomySearchPanel {
                            data-id="${dataID}" 
                            data-lineage="${dataLineage}" 
                            data-rank="${searchResult_.rankName}" 
-                           data-release="${searchResult_.releaseNumber}">View</button>
-
+                           data-release="${searchResult_.releaseNumber}"
+                        >View</button>
                         <button class="slim-btn view-history-button"
                            data-id="${dataID}" 
-                           data-name="${searchResult_.name}">History</button>
+                           data-name="${searchResult_.name}"
+                        >History</button>
                      </td>
                      <td class="release-name">${searchResult_.treeName}</td>
                      <td class="level-name">${searchResult_.rankName}</td>

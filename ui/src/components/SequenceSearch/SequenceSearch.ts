@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { ButtonClass, Constants, GenerateUUID, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ISeqSearchJob } from "./ISeqSearchJob";
 import { ISeqSearchPanel } from "./panels/ISeqSearchPanel";
@@ -12,6 +12,7 @@ import { SearchResultsPanel } from "./panels/SearchResultsPanel";
 import { SequenceSearchService } from "../../services/SequenceSearchService";
 import { UploadPanel } from "./panels/UploadPanel";
 import { Utils } from "../../helpers/Utils";
+import { JobHistoryPanel } from "./panels/JobHistoryPanel";
 
 
 export class SequenceSearch {
@@ -27,6 +28,8 @@ export class SequenceSearch {
       blastHitsPanel: HTMLElement,
       container: HTMLElement,
       jobDetailsPanel: HTMLElement,
+      jobHistoryPanel: HTMLElement,
+      messagePanel: HTMLElement,
       searchResultsPanel: HTMLElement,
       uploadPanel: HTMLElement
    }
@@ -83,6 +86,8 @@ export class SequenceSearch {
          blastHitsPanel: null,
          container: null,
          jobDetailsPanel: null,
+         jobHistoryPanel: null,
+         messagePanel: null,
          searchResultsPanel: null,
          uploadPanel: null
       }
@@ -96,39 +101,100 @@ export class SequenceSearch {
       }
    }
 
+   // Create a link panel containing a link that allows the user to return to this page with the current job data.
+   createLinkPanel(panelKey_: PanelKey): string {
 
-   // Copy the job/state URL to the clipboard.
-   async copyJobURL() {
+      // All link panels require a valid job UID.
+      if (!this.state.jobUID || this.state.jobUID.length < 1) { return ""; }
 
-      // Create the URL that can be used to view the job data.
-      const jobURL = this.createUrlUsingState();
+      let instructions = "";
 
-      // Copy the URL to the clipboard.
-      await navigator.clipboard.writeText(jobURL);
+      // Create a link URL for the specified panel.
+      const url = this.createUrlUsingState(panelKey_);
 
-      // Display a success message.
-      return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now bookmark it or paste it into a document for future reference.");
-   }
+      switch (panelKey_) {
 
-   // For now, only the "job details" and "upload" panels are supported. 
-   createUrlForPanel(panelKey_: PanelKey): string {
+         case PanelKey.blastHits:
 
-      // The current URL
-      let url = window.location.href;
+            // Specify the instructions for the BLAST hits panel.
+            instructions = `Save this page's URL to view these results later`;
+            break;
 
-      // Remove any existing query string parameters.
-      let qIndex = url.indexOf("?");
-      if (qIndex > -1) { url = url.substring(0, qIndex); }
+         case PanelKey.jobDetails:
 
-      if (panelKey_ == PanelKey.jobDetails && this.state.jobUID !== null && this.state.jobUID.length > 0) {
-         url += `?${ParameterKey.job}=${this.state.jobUID}`;
+            // Specify the instructions for the job details panel.
+            instructions = `Save this page's URL to view these results later`;
+            break;
+
+         case PanelKey.upload:
+
+            // Specify the instructions for the upload panel.
+            instructions = `Save this page's URL to view the completed results later`;
+            break;
+
+         default:
+            AlertBuilder.displayErrorSync(`Unable to create a link panel for the unhandled panel key: ${panelKey_}`);
+            break;
       }
 
-      return url;
+      return `<div class="link-panel">
+         ${Icon.info} ${instructions}
+         <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
+            data-tippy-content="Copy the URL to your clipboard"
+            data-url="${url}"
+         >${Icon.copy} Copy URL to clipboard</button>
+      </div>`;
    }
 
-   // Create a SeqSearch URL using the current state. 
-   createUrlUsingState(): string {
+   /*
+   // Create a link panel containing a link that allows the user to return to this page with the current job data.
+   createLinkPanel(panelKey_: PanelKey): string {
+
+      // All link panels require a valid job UID.
+      if (!this.state.jobUID || this.state.jobUID.length < 1) { return ""; }
+
+      let instructions = "";
+
+      // Create a link URL for the specified panel.
+      const url = this.createUrlUsingState(panelKey_);
+
+      switch (panelKey_) {
+
+         case PanelKey.blastHits:
+
+            // Specify the instructions for the BLAST hits panel.
+            instructions = `View these later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
+            break;
+
+         case PanelKey.jobDetails:
+
+            // Specify the instructions for the job details panel.
+            instructions = `View this job later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
+            break;
+
+         case PanelKey.upload:
+
+            // Specify the instructions for the upload panel.
+            instructions = `View the completed results later using &nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
+            break;
+
+         default:
+            AlertBuilder.displayErrorSync(`Unable to create a link panel for the unhandled panel key: ${panelKey_}`);
+            break;
+      }
+
+      return `<div class="link-panel">
+         <i class="fa-solid fa-link copy-url-link has-tooltip" data-tippy-content="Copy the URL to your clipboard" data-url="${url}"></i>
+         ${instructions}
+         <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
+            data-tippy-content="Copy the URL to your clipboard"
+            data-url="${url}"
+         >${Icon.copy} Copy to clipboard</button>
+      </div>`;
+   }*/
+
+   // Create a TaxaBLAST URL using the current state. 
+   createUrlUsingState(panelKey_?: PanelKey): string {
       
       // The current URL
       let url = window.location.href;
@@ -137,9 +203,15 @@ export class SequenceSearch {
       let qIndex = url.indexOf("?");
       if (qIndex > -1) { url = url.substring(0, qIndex); }
 
+      // The upload panel requires no parameters.
+      if (panelKey_ && panelKey_ === PanelKey.upload) { return url; }
+
       // Do we have a valid job UID?
       if (this.state.jobUID !== null && this.state.jobUID.length > 0) {
          url += `?${ParameterKey.job}=${this.state.jobUID}`;
+
+         // The job details panel only requires a job UID.
+         if (panelKey_ && panelKey_ === PanelKey.jobDetails) { return url; }
 
          // Do we have a valid file index?
          if (!isNaN(this.state.fileIndex)) { 
@@ -206,11 +278,14 @@ export class SequenceSearch {
       
       let loadBlastHits = false;
       let loadJobDetails = false;
+      let loadJobHistory = false;
       let loadSearchResults = false;
       let loadUpload = false;
 
-      // All panels besides the upload panel need to load the job specified in the state.
-      if (action_ != PanelAction.displayUpload && (!this.job || this.job.uid !== this.state.jobUID)) { await this.getJob(); }
+      // All panels besides the upload panel need to load the job whose UID is in the state (this.state.jobUID).
+      if (action_ != PanelAction.displayUpload && !!this.state.jobUID && (!this.job || this.job.uid !== this.state.jobUID)) {
+         await this.getJob(); 
+      }
 
       switch (action_) {
 
@@ -218,6 +293,10 @@ export class SequenceSearch {
 
             // Which panels will be loaded?
             loadBlastHits = true;
+            break;
+
+         case PanelAction.displayHistory:
+            loadJobHistory = true;
             break;
 
          case PanelAction.displayJob:
@@ -228,7 +307,6 @@ export class SequenceSearch {
             // Which panels will be loaded?
             loadJobDetails = true;
             loadSearchResults = true;
-            loadUpload = true;
             break;
 
          case PanelAction.displayUpload:
@@ -241,7 +319,6 @@ export class SequenceSearch {
 
             // Which panels will be loaded?
             loadUpload = true;
-
             break;
 
          default:
@@ -251,31 +328,89 @@ export class SequenceSearch {
       // Load or unload panels as determined above.
       await this.updatePanel(PanelKey.blastHits, loadBlastHits);
       await this.updatePanel(PanelKey.jobDetails, loadJobDetails);
+      await this.updatePanel(PanelKey.jobHistory, loadJobHistory);
       await this.updatePanel(PanelKey.searchResults, loadSearchResults);
       await this.updatePanel(PanelKey.upload, loadUpload);
 
+      // Always hide the message panel.
+      this.elements.messagePanel.classList.remove("active");
       return;
    }
 
    // Handle a click event on a button or accordion control.
    async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
 
-      // If an icon was clicked, use its parent Element.
-      if (targetEl_.tagName === "I") { targetEl_ = targetEl_.parentElement; }
+      let url = null;
+
+      // Was an icon clicked?
+      if (targetEl_.tagName === "I") { 
+         if (targetEl_.classList.contains("copy-url-link")) {
+
+            // Get the icon's URL data attribute.
+            url = targetEl_.getAttribute("data-url");
+            if (!url || url.length < 1) { throw new Error("Unable to copy the URL: Invalid URL"); }
+
+            // Copy the URL to the clipboard.
+            await navigator.clipboard.writeText(url);
+
+            // Display a success message.
+            return await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now paste it into a document for future reference or include it in an email.");
+
+         } else {
+            // Use its parent element.
+            targetEl_ = targetEl_.parentElement; 
+         }
+      }
+
+      // Was a "btn-label" on a button clicked?
+      // TODO: This will probably be temporary!
+      if (targetEl_.classList.contains("btn-label")) { targetEl_ = targetEl_.parentElement; }
 
       // Was a button on a sequence row clicked?
       if (targetEl_.tagName === "BUTTON") {
 
          const button = targetEl_ as HTMLButtonElement;
          
-         // Get and validate the filename attribute.
-         const filename = Utils.safeTrim(button.getAttribute("data-filename"));
-
-         // Get and validate the title attribute.
-         const title = Utils.safeTrim(button.getAttribute("data-title"));
+         // Variables for button attributes.
+         let filename = null;
+         let title = null;
          
+
          // The button's class determines which action to take.
-         if (button.classList.contains(ButtonClass.viewHits)) {
+         if (button.classList.contains(ButtonClass.back) || button.classList.contains(ButtonClass.newSearch)) {
+
+            // Get the button's URL data attribute.
+            url = Utils.safeTrim(button.getAttribute("data-url"));
+            if (!url || url.length < 1) { throw new Error("Invalid URL attribute"); }
+            
+            // Open the URL in a new browser tab.
+            window.open(url, "_blank");
+
+         } else if (button.classList.contains(ButtonClass.copyURL)) {
+
+            // Get the button's URL data attribute.
+            url = button.getAttribute("data-url");
+            if (!url || url.length < 1) { throw new Error("Unable to copy the URL: Invalid URL"); }
+
+            // Copy the URL to the clipboard.
+            await navigator.clipboard.writeText(url);
+
+            // Display a success message.
+            await AlertBuilder.displaySuccess("The URL has been copied to your clipboard. You can now paste it into a document for future reference or include it in an email.");
+               
+         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
+            
+            // Get the button's filename attribute.
+            filename = Utils.safeTrim(button.getAttribute("data-filename"));
+            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename button attribute"); }
+
+            // Get the button's title attribute.
+            title = Utils.safeTrim(button.getAttribute("data-title"));
+
+            // Download the CSV file.
+            await this.downloadCSV(filename, title);
+
+         } else if (button.classList.contains(ButtonClass.viewHits)) {
 
             // Get and validate the file index attribute.
             let strFileIndex = Utils.safeTrim(button.getAttribute("data-file-index"));
@@ -293,16 +428,14 @@ export class SequenceSearch {
             
             window.open(this.createUrlUsingState(), "_blank");
 
-         } else if (button.classList.contains(ButtonClass.downloadCSV)) {
-            
-            if (filename.length < 1) { return await AlertBuilder.displayError("Invalid CSV filename button attribute"); }
-
-            // Download the CSV file.
-            await this.downloadCSV(filename, title);
-
          } else if (button.classList.contains(ButtonClass.viewHTML)) {
             
+            // Get and validate the button's filename attribute.
+            filename = Utils.safeTrim(button.getAttribute("data-filename"));
             if (filename.length < 1) { return await AlertBuilder.displayError("Invalid HTML filename button attribute"); }
+
+            // Get the button's title attribute.
+            title = Utils.safeTrim(button.getAttribute("data-title"));
 
             // Display the HTML file in a new browser tab.
             await this.viewHTML(filename, title);
@@ -311,14 +444,18 @@ export class SequenceSearch {
          return;
       }
 
-      // Was an accordion control clicked?
-      if (targetEl_.classList.contains("ictv-accordion-control")) {
+      // Was the child of an accordion header clicked?
+      const accordionHeaderEl = targetEl_.closest(".ictv-accordion-header");
+      if (accordionHeaderEl) {
 
-         const itemID = targetEl_.getAttribute("data-id");
-         if (!itemID) { return; }
-
+         // Validate the container element.
          if (!containerEl_) { await AlertBuilder.displayError("Unable to toggle accordion: Invalid container element"); }
 
+         // Get the accordion's ID.
+         const itemID = accordionHeaderEl.getAttribute("data-id");
+         if (!itemID) { return; }
+
+         // Toggle the accordion item.
          ToggleAccordion(this.elements.container, itemID);
       }
       
@@ -329,16 +466,21 @@ export class SequenceSearch {
    async initialize() {
 
       // If the user UID is empty, look for one in web storage or generate a new one.
-      if (!this.user.uid) { this.setDefaultUserUID(); }
+      if (!this.user.uid || this.user.uid === "0") { this.setDefaultUserUID(); } 
 
       // Get a reference to the container element.
-      this.elements.container = <HTMLElement>document.querySelector(this.containerSelector);
+      this.elements.container = document.querySelector(this.containerSelector);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
+
+      // Get a spinner and message for the message panel.
+      const spinnerHTML = GetSpinnerHTML("Loading...");
 
       // Create HTML for the container elements.
       const html = 
-         `<div class=\"upload-panel container active\"></div>
+         `<div class=\"message-panel container active\">${spinnerHTML}</div>
+         <div class=\"upload-panel container\"></div>
          <div class=\"job-details-panel container\"></div>
+         <div class=\"job-history-panel container\"></div>
          <div class=\"search-results-panel container\"></div>
          <div class=\"blast-hits-panel container\"></div>`;
 
@@ -352,6 +494,14 @@ export class SequenceSearch {
       this.elements.jobDetailsPanel = this.elements.container.querySelector(".job-details-panel") as HTMLElement;
       if (!this.elements.jobDetailsPanel) { throw new Error("Invalid job details panel Element"); }
 
+      // The job history panel
+      this.elements.jobHistoryPanel = this.elements.container.querySelector(".job-history-panel") as HTMLElement;
+      if (!this.elements.jobHistoryPanel) { throw new Error("Invalid job history panel Element"); }
+
+      // The message panel
+      this.elements.messagePanel = this.elements.container.querySelector(".message-panel") as HTMLElement;
+      if (!this.elements.messagePanel) { throw new Error("Invalid message panel Element"); }
+
       // The search results panel
       this.elements.searchResultsPanel = this.elements.container.querySelector(".search-results-panel") as HTMLElement;
       if (!this.elements.searchResultsPanel) { throw new Error("Invalid search results panel Element"); }
@@ -364,22 +514,76 @@ export class SequenceSearch {
       // Create the panel instances.
       this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this.elements.blastHitsPanel, this));
       this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
+      this.panels.set(PanelKey.jobHistory, new JobHistoryPanel(this.elements.jobHistoryPanel, this));
       this.panels.set(PanelKey.searchResults, new SearchResultsPanel(this.elements.searchResultsPanel, this));
       this.panels.set(PanelKey.upload, new UploadPanel(this.elements.uploadPanel, this));
 
-      //--------------------------------------------------------------------------------------------------------------
-      // Look for query string parameters and use them to determine which panel to display.
-      //--------------------------------------------------------------------------------------------------------------
+      // Use query string parameters to determine which panel to display.
+      return this.updatePanelFromURL();
+   }
 
-      // Set a default action.
+   // If the user UID is empty, look for one in web storage or generate a new one.
+   async setDefaultUserUID() {
+
+      // Is there already a user UID in web storage?
+      if (typeof(Storage) !== "undefined") { this.user.uid = localStorage.getItem(WebStorageKey.taxaBlastUserUID); }
+      if (!this.user.uid) { 
+
+         // Generate a new user UID using the current Unix timestamp in seconds.
+         this.user.uid = `${Math.floor(Date.now() / 1000)}`;
+   
+         console.log("in setDefaultUserUID about to add this.user.uid ", this.user.uid)
+
+         // If web storage is available, save the user UID in local storage.
+         if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.taxaBlastUserUID, this.user.uid); }
+      }
+
+      return;
+   }
+
+   // Update the window's location with a state-maintaining URL.
+   async updatePage() {
+
+      alert("TODO: try not to refresh the browser with the updated URL!")
+
+      const url = this.createUrlUsingState();
+      window.location.assign(url);
+      return;
+   }
+
+   // Unload/hide the specified panel.
+   async updatePanel(panelKey_: PanelKey, load_: boolean) {
+
+      // Get the requested panel.
+      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
+      if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
+
+      if (load_) { 
+         await panel.load(); 
+      } else {
+         await panel.unload();
+      }
+
+      return;
+   }
+
+   // Use URL parameters to determine which panel to load.
+   async updatePanelFromURL() {
+
       let action = PanelAction.displayUpload;
 
-      // Was a job UID parameter provided?
+      // Get the URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       
       // Set default state values
       this.state.fileIndex = NaN;
       this.state.sequenceIndex = NaN;
+
+      // TESTING
+      let history = Utils.safeTrim(urlParams.get(ParameterKey.history));
+      if (history === "display") {
+         return await this.handleAction(PanelAction.displayHistory);
+      }
 
       // Was a job UID provided in the query string?
       this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));
@@ -404,45 +608,34 @@ export class SequenceSearch {
       return await this.handleAction(action);
    }
 
-   // If the user UID is empty, look for one in web storage or generate a new one.
-   async setDefaultUserUID() {
+   // Update the URL parameters without reloading the page.
+   async updateUrlFromState() {
+      
+      const params = new URLSearchParams(window.location.search);
+      
+      // TESTING: Remove the history parameter.
+      if (params.has(ParameterKey.history)) { params.delete(ParameterKey.history); }
 
-      // Is there already a user UID in web storage?
-      if (typeof(Storage) !== "undefined") { this.user.uid = localStorage.getItem(WebStorageKey.sequenceSearchUserUID); }
-      if (!this.user.uid) { 
+      // If the job UID is valid, update its URL parameter.
+      if (this.state.jobUID && this.state.jobUID.length > 0) {
+         params.set(ParameterKey.job, this.state.jobUID);
 
-         // Generate a new user UID.
-         this.user.uid = GenerateUUID(); 
-   
-         // If web storage is available, save the user UID in local storage.
-         if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.sequenceSearchUserUID, this.user.uid); }
-      }
-
-      return;
-   }
-
-   
-   // Update the window's location with a state-maintaining URL.
-   async updatePage() {
-      const url = this.createUrlUsingState();
-      window.location.assign(url);
-      return;
-   }
-
-   // Unload/hide the specified panel.
-   async updatePanel(panelKey_: PanelKey, load_: boolean) {
-
-      // Get the requested panel.
-      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
-      if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
-
-      if (load_) { 
-         await panel.load(); 
+         // If the sequence and file indices are valid, update their URL parameters.
+         if (!isNaN(this.state.sequenceIndex) && !isNaN(this.state.fileIndex)) {
+            params.set(ParameterKey.sequence, this.state.sequenceIndex.toString());
+            params.set(ParameterKey.file, this.state.fileIndex.toString());
+         } else {
+            params.delete(ParameterKey.sequence);
+            params.delete(ParameterKey.file);
+         }
       } else {
-         await panel.unload();
+         params.delete(ParameterKey.job);
+         params.delete(ParameterKey.sequence);
+         params.delete(ParameterKey.file);
+         // TODO: filename and userUID?
       }
 
-      return;
+      history.replaceState(null, "", "?" + params.toString());
    }
 
    // Display the BLAST HTML data for a specific sequence.

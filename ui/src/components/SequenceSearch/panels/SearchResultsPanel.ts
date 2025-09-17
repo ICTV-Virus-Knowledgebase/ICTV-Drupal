@@ -60,7 +60,7 @@ export class SearchResultsPanel implements ISeqSearchPanel {
 
          // Create a TR for every sequence.
          file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
-            sequenceRows += this.createSequenceRow(fileIndex_, file_.name, sequence_, sequenceIndex_);
+            sequenceRows += this.createSequenceRow(fileIndex_, sequence_, sequenceIndex_);
          })
 
          sequencesHTML = 
@@ -79,10 +79,10 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       }
 
       const title = file_.sequences.length === 1 ? "Sequence" : "Sequences";
-
+      
       let html =
          `<div class="ictv-accordion-item" data-id="${fileKey}">
-            <div class="ictv-accordion-header">
+            <div class="ictv-accordion-header" data-id="${fileKey}">
                <div class="ictv-accordion-control" data-id="${fileKey}">${Icon.chevronDown}</div>
                <div class="ictv-accordion-label">
                   <div class="filename">${file_.name}</div>
@@ -101,31 +101,33 @@ export class SearchResultsPanel implements ISeqSearchPanel {
       return html;
    }
 
-   createSequenceRow(fileIndex_: number, filename_: string, sequence_: ISequence, seqIndex_: number): string {
+   createSequenceRow(fileIndex_: number, sequence_: ISequence, seqIndex_: number): string {
 
-      const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length : 0;
+      const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length.toLocaleString("en-US") : 0;
 
       const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
 
       let html = `<tr>
-         <td>${sequence_.qseqid}</td>
-         <td>${hitsCount}</td>
-         <td>
-            <button class="btn btn-default ${ButtonClass.viewHits} has-tooltip"
+         <td class="qseqid">${sequence_.qseqid}</td>
+         <td class="hits">${hitsCount}</td>
+         <td class="controls">
+            <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip"
                data-file-index="${fileIndex_}"
                data-seq-index="${seqIndex_}" 
-               data-tippy-content="Click to view the BLAST hits in a new tab"
+               data-tippy-content="View the BLAST hits in a new tab"
             >${Icon.dna} View BLAST hits</button>
-            <button class="btn btn-default ${ButtonClass.viewHTML} has-tooltip" 
+
+            <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip" 
                data-filename="${sequence_.blast_html}"
-               data-tippy-content="Click to view the alignement(s) in a new tab"
+               data-tippy-content="View the alignments in a new tab"
                data-title="${sequence_.qseqid}"
-            >${Icon.html} View alignment(s)</button>
-            <button class="btn btn-default ${ButtonClass.downloadCSV} has-tooltip" 
+            >${Icon.html} View alignments</button>
+            
+            <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip" 
                data-filename="${sequence_.blast_csv}"
-               data-tippy-content="Click to download the BLAST results as a CSV file"
+               data-tippy-content="Download the BLAST hits as a CSV file"
                data-title="${csvTitle}"
-            >${Icon.csv} Download CSV results</button>
+            >${Icon.csv} Download results as CSV</button>
          </td>
       </tr>`;
 
@@ -162,11 +164,9 @@ export class SearchResultsPanel implements ISeqSearchPanel {
          html += this.createFileHTML(file_, fileIndex_);
       })
       
-      const title = this.job.data.files.length === 1 ? "Submitted file" : "Submitted files";
-
       // Populate the container
       this.elements.container.innerHTML = 
-         `<div class="result-files-title">${title}</div>
+         `<div class="result-files-title">Files</div>
          <div class="result-files">${html}</div>`;
 
       // Get references to DOM elements.

@@ -9,8 +9,11 @@ BEGIN
 
    DECLARE vocabID INT;
 
+   -- NOTE: As of 09/04/25 all vocabularies and terms have been added. If any new vocabularies or terms need to be added, 
+   -- they should be added below.
 
-   -- Updates for SeqSearch in Spring 2025.
+   /*
+   Updates for SeqSearch in Spring 2025.
 
    -- Get the job_status vocabulary
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'job_status');
@@ -22,7 +25,7 @@ BEGIN
    IF NOT EXISTS (SELECT 1 FROM term WHERE term_key = 'complete' AND vocab_id = vocabID) THEN
       INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('job_status.complete', 'complete', 'complete', vocabID);
    END IF;
-
+   */
 
    /* 
    Updates from early February 2025
