@@ -1114,7 +1114,7 @@ export class TaxonHistory {
       this.data.taxa.forEach((taxon_: ITaxon) => {
 
          // If this taxon is the same as the one we previously encountered, skip it to avoid duplicates.
-         if (previousTaxNodeID && taxon_.taxnodeID === previousTaxNodeID) { return; }
+         if (previousTaxNodeID && taxon_.taxnodeID === previousTaxNodeID && !taxon_.isDeleted) { return; }
 
          // This taxon will be considered the "previous" taxon in the next iteration.
          previousTaxNodeID = taxon_.taxnodeID;
