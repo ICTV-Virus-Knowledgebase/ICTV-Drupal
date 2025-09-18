@@ -31,8 +31,9 @@ class SequenceSearch {
          2 => array("pipe", "w")  // Write to stderr
       );
       
-      // Generate the command to be run.
-      // The "-decode" argument decodes the input filenames from base64URL encoding before serializing the search results.
+      // Generate the command to be run. 
+      // Note that the "-decode" argument assumes that the input files' basenames have been encoded as base64URL  
+      // with a sequence number suffix appended, followed by the original file's extension.
       $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -decode";
 
       try {

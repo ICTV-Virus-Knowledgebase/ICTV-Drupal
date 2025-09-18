@@ -256,11 +256,11 @@ class Common {
       }
 
       // Does the basename end with a suffix of the form "_seqNNNN" where NNNN is a 4 digit number?
-      if (preg_match("/_seq\d{4}$/", $basename)) {
+      /*if (preg_match("/_seq\d{4}$/", $basename)) {
 
          // Remove the suffix.
          $basename = substr($basename, 0, strlen($basename) - 8);
-      }
+      }*/
 
       return Common::base64url_decode($basename).$extension;
    }
@@ -290,7 +290,7 @@ class Common {
    /**
     * Encode a filename using Base64URL encoding and append a suffix based on the record number.
     */ 
-   public static function encodeFilenameAsBase64URL(string $filename, int $recordNumber = 1): string {
+   public static function encodeFilenameAsBase64URL(string $filename): string {
       
       $filename = trim($filename);
       if (strlen($filename) < 1) { return ""; }
@@ -309,11 +309,8 @@ class Common {
          $basename = $filename;
          $extension = "";
       }
-
-      // Generate a suffix for the basename based on the record number.
-      $suffix = Common::generateFastaBasenameSuffix($recordNumber);
       
-      return Common::base64url_encode($basename).$suffix.$extension;
+      return Common::base64url_encode($basename).$extension;
    }
 
    /**
@@ -408,6 +405,91 @@ class Common {
       $userUID = $result->fetchField(0);
 
       return $userUID;
+   }
+
+
+   // Validate a FASTA file's contents and filename.
+   public static function validateFASTA(string $fasta, string $filename, int &$invalidCount, int &$recordCount): bool {
+
+      $invalidCount = 0;
+      $isValid = true;
+      $recordCount = 0;
+   
+      $fasta = trim($fasta);
+      if (strlen($fasta) < 1) { return false; }
+
+      if (strlen($filename) < 1) { return false; }
+
+      $header = null;
+      $sequenceLines = [];
+
+      $lines = preg_split('/\r\n|\r|\n/', $fasta);
+
+      foreach ($lines as $line) {
+
+         $line = trim($line);
+         if ($line === "") continue;
+
+         if ($line[0] === ">") {
+
+            $recordNumber += 1;
+
+            // If we have a previous record, validate it.
+            if ($header !== null) {
+
+               $recordCount += 1;
+
+               if (!Common::validateFastaRecord($header, $sequenceLines)) {
+                  $isValid = false;
+                  $invalidCount += 1;
+               }
+            }
+
+            $header = substr($line, 1);  // remove '>'
+            $sequenceLines = [];
+
+         } else {
+
+            // NOTE: We shouldn't have to initialize this array here, so this is just in case.
+            if ($sequenceLines == null) { $sequenceLines = []; }
+
+            // Append the sequence line.
+            array_push($sequenceLines, $line);
+         }
+      }
+
+      // Is there a last record to validate?
+      if ($header !== null) { 
+         $recordNumber += 1;
+         if (!Common::validateFastaRecord($header, $sequenceLines)) {
+            $isValid = false;
+            $invalidCount += 1;
+         }
+      }
+
+      return $isValid;
+   }
+
+   // Validate a FASTA record's header and sequence lines.
+   public static function validateFastaRecord(string $header, array $sequenceLines): bool {
+
+      $isValid = true;
+
+      // TODO: Validate the header line.
+
+      // Validate the sequence lines.
+      foreach ($sequenceLines as $line) {
+
+         if (strlen($line) < 1) continue;
+
+         // Are there any bases that aren't a nucleotide or amino acid?
+         if (!preg_match(Common::$FASTA_AA_REGEX, $line) && !preg_match(Common::$FASTA_NT_REGEX, $line)) {
+            $isValid = false;
+            break;
+         }
+      }
+
+      return $isValid;
    }
 
 }
