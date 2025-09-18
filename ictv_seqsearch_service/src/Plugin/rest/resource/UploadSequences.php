@@ -309,14 +309,11 @@ class UploadSequences extends ResourceBase {
     */
    public function uploadSequences(Request $request) {
 
-      // TODO: This try/catch handles BadRequestHttpException, right?
-
       $errorMessage = null;
       $jobID = null;
       $jobUID = null;
 
       try {
-
          // Get and validate the JSON in the request body.
          $requestJSON = Json::decode($request->getContent());
          if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
@@ -339,7 +336,6 @@ class UploadSequences extends ResourceBase {
          // Process the uploaded files and return an array of FastaFile objects.
          $inputFiles = $this->processUploadedJSONFiles($files);
          if (count($inputFiles) < 1) { throw new \Exception("No valid FASTA records were found in the uploaded files"); }
-         // TODO: The process method should probably have an isValid output parameter.
 
          // Create a new job record and get its ID and UID.
          SeqSearchJob::createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
@@ -364,20 +360,11 @@ class UploadSequences extends ResourceBase {
          //------------------------------------------------------------------------------------------------------------
          foreach ($inputFiles as $inputFile) {
 
-            // Create an encoded filename with a suffix that includes the record number.
-            $filename = Common::encodeFilenameAsBase64URL($inputFile->filename);
-            if (Utils::isNullOrEmpty($filename)) { throw new \Exception("Unable to create encoded filename for file ".$inputFile->filename); }
-
-            // TEST
-            $decodeFilename = Common::decodeFilenameFromBase64URL($filename);
-
-            \Drupal::logger(Common::$MODULE_NAME)->info("record filename is ".$filename.", original filename = ".$inputFile->filename.", and decodeFilename = ".$decodeFilename);
-
             // Create a FASTA file in the job's input directory.
-            FastaFile::createInputFile($inputFile, $inputPath);
+            FastaFile::createInputFile($inputFile, $inputPath, true);
 
             // Create a job file record.
-            //SeqSearchJob::createJobFileRecord($this->connection, $fileName, $jobID, $uploadOrder);
+            SeqSearchJob::createJobFileRecord($this->connection, $inputFile->encodedFilename, $jobID, $uploadOrder);
 
             $uploadOrder = $uploadOrder + 1;
          }

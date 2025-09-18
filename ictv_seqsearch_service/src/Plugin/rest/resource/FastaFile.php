@@ -9,6 +9,9 @@ use Drupal\ictv_common\Utils;
 
 class FastaFile {
 
+   // The base64url encoded version of the filename.
+   public ?string $encodedFilename = null;
+
    // The contents of the FASTA file.
    public ?string $fasta = null;
 
@@ -32,6 +35,7 @@ class FastaFile {
       $filename = trim($filename);
       if (strlen($filename) < 1) { throw new \InvalidArgumentException("Invalid filename parameter"); }
 
+      $this->encodedFilename = Common::encodeFilenameAsBase64URL($filename);
       $this->fasta = $fasta;
       $this->filename = $filename;
       $this->isValid = $isValid;
@@ -40,14 +44,24 @@ class FastaFile {
 
 
    // Create a FASTA file in the job's input directory.
-   public static function createInputFile(FastaFile $file, string $inputPath): bool {
+   public static function createInputFile(FastaFile $file, string $inputPath, bool $encodeFilename = true): bool {
 
       if (!$file) { throw new \InvalidArgumentException("Unable to create input file: Invalid file parameter"); }
       if (!$file->isValid) { throw new \InvalidArgumentException("Unable to create input file: File is invalid"); }
-      if (Utils::isnullOrEmpty($inputPath)) { throw new \InvalidArgumentException("Unable to create input file: Invalid input path"); }
+      if (Utils::isNullOrEmpty($inputPath)) { throw new \InvalidArgumentException("Unable to create input file: Invalid input path"); }
+
+      // Use the input file's filename.
+      $filename = $file->filename;
+
+      // Should we encode the filename as base64url?
+      if ($encodeFilename) { 
+         $filename = $file->encodedFilename;
+      } else {
+         $filename = $file->filename;
+      }
 
       // The full path of the new file in the input directory.
-      $filePath = $inputPath.DIRECTORY_SEPARATOR.$file->filename;
+      $filePath = $inputPath.DIRECTORY_SEPARATOR.$filename;
 
       try {
          // Create an alias for the file system service.

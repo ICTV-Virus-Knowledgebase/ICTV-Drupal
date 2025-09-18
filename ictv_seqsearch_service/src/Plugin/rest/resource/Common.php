@@ -3,18 +3,74 @@
 namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaRecord;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Utils;
 
 
 class Common {
 
+   /*
+   Standard amino acids: 
+   A: Alanine
+   C: Cysteine
+   D: Aspartic acid
+   E: Glutamic acid
+   F: Phenylalanine
+   G: Glycine
+   H: Histidine
+   I: Isoleucine
+   K: Lysine
+   L: Leucine
+   M: Methionine
+   N: Asparagine
+   P: Proline
+   Q: Glutamine
+   R: Arginine
+   S: Serine
+   T: Threonine
+   V: Valine
+   W: Tryptophan
+   Y: Tyrosine
+
+   Ambiguous Codes
+   B: Aspartic acid or Asparagine (Asp/Asn) 
+   J: Leucine or Isoleucine (Leu/Ile) 
+   X: Any amino acid 
+   Z: Glutamic acid or Glutamine (Glu/Gln) - Note: Some tools use this for glutamic acid or glutamine, though it's less common in standard FASTA formats for protein sequences, which typically rely on other standard codes. 
+   U: Selenocysteine - This is a standard amino acid, but it is also sometimes represented with the code for Uridine if dealing with RNA or modified nucleotides. However, for protein sequences, U is typically not a valid amino acid, but a nucleic acid base. 
+   */
+
    // A regex for valid amino acids (proteins) in a FASTA sequence.
+   // NOTE: We are not currently including ambiguous codes!
    public static string $FASTA_AA_REGEX = "/^[ACDEFGHIKLMNPQRSTVWY]+$/i";
 
+   /*
+   Standard Bases: 
+   A (adenine), 
+   C (cytosine), 
+   G (guanine), 
+   T (thymine) for DNA
+   U (uracil) for RNA. 
+
+   Ambiguity Codes: These represent multiple possibilities or unknown nucleotides, such as:
+   N: Any nucleotide. 
+   R: Purine (A or G). 
+   Y: Pyrimidine (C or T). 
+   W: Weak (A or T). 
+   S: Strong (G or C). 
+   K: Keto (G or T). 
+   M: Amino (A or C). 
+   B: Not A (C or G or T). 
+   D: Not C (A or G or T). 
+   H: Not G (A or C or T). 
+   V: Not T (A or C or G).
+
+   Other Allowed Characters
+   Hyphen/Dash (-): Used to represent a gap in a sequence alignment. 
+   */
+
    // A regex for valid nucleotides in a FASTA sequence.
-   public static string $FASTA_NT_REGEX = "/^[ACGTURYSWKMBDHVN\.\-]+$/i";
+   public static string $FASTA_NT_REGEX = "/^[ABCDGHKMNRSTUVWY\.\-]+$/i";
 
    // The name of the parent module.
    public static string $MODULE_NAME = "ictv_seqsearch_service";
@@ -23,38 +79,33 @@ class Common {
    
    /**
     * Decode data from Base64URL (http://base64.guru/developers/php/examples/base64url)
-    * @param string $data
-    * @param boolean $strict
+    * @param string $text
     * @return boolean|string
     */
-   public static function base64url_decode($data, $strict = false) {
+   public static function base64url_decode(string $text) {
 
       // Convert Base64URL to Base64 by replacing "-" with "+" and "_" with "/".
-      $b64 = strtr($data, '-_', '+/');
-
-      // Decode Base64 string and return the original data
-      return base64_decode($b64, $strict);
+      return base64_decode(str_pad(strtr($text, '-_', '+/'), strlen($text) + (4 - strlen($text) % 4) % 4));
    }
    
 
    /**
     * Encode data to Base64URL (http://base64.guru/developers/php/examples/base64url)
-    * @param string $data
+    * @param string $text
     * @return boolean|string
     */
-   public static function base64url_encode($data) {
-      
+   public static function base64url_encode(string $text) {
+
       // Encode $data to a Base64 string.
-      $b64 = base64_encode($data);
+      $b64 = base64_encode($text);
 
       // Make sure you get a valid result. Otherwise, return FALSE.
       if ($b64 === false) { return false; }
 
       // Convert Base64 to Base64URL by replacing "+" with "-" and "/" with "_".
-      $url = strtr($b64, '+/', '-_');
+      $encoded = strtr($b64, '+/', '-_');
 
-      // Remove padding characters from the end of line and return the Base64URL result.
-      return rtrim($url, '=');
+      return $encoded;
    }
 
 
@@ -255,13 +306,6 @@ class Common {
          $extension = "";
       }
 
-      // Does the basename end with a suffix of the form "_seqNNNN" where NNNN is a 4 digit number?
-      /*if (preg_match("/_seq\d{4}$/", $basename)) {
-
-         // Remove the suffix.
-         $basename = substr($basename, 0, strlen($basename) - 8);
-      }*/
-
       return Common::base64url_decode($basename).$extension;
    }
 
@@ -287,8 +331,11 @@ class Common {
       rmdir($dir);
    }
 
+
    /**
     * Encode a filename using Base64URL encoding and append a suffix based on the record number.
+    *
+    * @param string $filename (required) The filename to encode as url and filename safe base64
     */ 
    public static function encodeFilenameAsBase64URL(string $filename): string {
       
@@ -312,6 +359,7 @@ class Common {
       
       return Common::base64url_encode($basename).$extension;
    }
+
 
    /**
     * Generate a suffix for the basename based on the record number.
@@ -411,8 +459,10 @@ class Common {
    // Validate a FASTA file's contents and filename.
    public static function validateFASTA(string $fasta, string $filename, int &$invalidCount, int &$recordCount): bool {
 
-      $invalidCount = 0;
       $isValid = true;
+
+      // The number of invalid records and total records.
+      $invalidCount = 0;
       $recordCount = 0;
    
       $fasta = trim($fasta);
@@ -432,13 +482,10 @@ class Common {
 
          if ($line[0] === ">") {
 
-            $recordNumber += 1;
+            $recordCount += 1;
 
             // If we have a previous record, validate it.
             if ($header !== null) {
-
-               $recordCount += 1;
-
                if (!Common::validateFastaRecord($header, $sequenceLines)) {
                   $isValid = false;
                   $invalidCount += 1;
@@ -460,7 +507,6 @@ class Common {
 
       // Is there a last record to validate?
       if ($header !== null) { 
-         $recordNumber += 1;
          if (!Common::validateFastaRecord($header, $sequenceLines)) {
             $isValid = false;
             $invalidCount += 1;
@@ -482,8 +528,8 @@ class Common {
 
          if (strlen($line) < 1) continue;
 
-         // Are there any bases that aren't a nucleotide or amino acid?
-         if (!preg_match(Common::$FASTA_AA_REGEX, $line) && !preg_match(Common::$FASTA_NT_REGEX, $line)) {
+         // Are there any bases that aren't a nucleotide?
+         if (!preg_match(Common::$FASTA_NT_REGEX, $line)) {
             $isValid = false;
             break;
          }
