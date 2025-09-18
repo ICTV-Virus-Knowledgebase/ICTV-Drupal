@@ -10,7 +10,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaRecord;
+use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaFile;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
@@ -246,14 +246,12 @@ class UploadSequences extends ResourceBase {
 
 
    /**
-    * Process the uploaded files and return an array of FastaRecord objects.
+    * Process the uploaded files and return an array of FastaFile objects.
     */
    private function processUploadedJSONFiles(array $files) {
 
-      $invalidRecordCount = 0;
-
-      // The FASTA records parsed from the uploaded files.
-      $records = [];
+      // An array of FastaFile objects.
+      $inputFiles = [];
 
       // The total size (in bytes) of all uploaded files.
       $totalFileSize = 0;
@@ -264,9 +262,6 @@ class UploadSequences extends ResourceBase {
       
       // Iterate over all uploaded files, validate them, and maintain their contents in an array.
       foreach ($files as $file) {
-            
-         // The record number in the file (1-based).
-         $fileRecordCount = 1;
 
          // Get and validate the filename.
          $filename = $file["name"];
@@ -283,29 +278,29 @@ class UploadSequences extends ResourceBase {
             throw new \Exception("The total size of all uploaded files exceeds the maximum allowed (".$this->maxTotalUploadSize." bytes)");
          }
 
-         // Iterate over all FASTA records in the file.
-         foreach (FastaRecord::getFastaRecords($contents, $filename, true) as $record) {
-            
-            if (!$record || !$record->isValid) {
-               $invalidRecordCount++;
-            } else {
-               array_push($records, $record);
-            }
+         // The number of invalid records in the current file.
+         $invalidCount = 0;
 
-            $fileRecordCount++;
-            $totalRecordCount++;
-         }
+         // The number of records in the current file.
+         $recordCount = 0;
+
+         // Validate the FASTA file's contents.
+         $isValid = Common::validateFASTA($contents, $filename, $invalidCount, $recordCount);
+         if (!$isValid) { throw new \Exception("File ".$filename." is not a valid FASTA file"); }
+
+         // Update the total record count.
+         $totalRecordCount += $recordCount;
 
          // If the total record/sequence count exceeds the maximum allowed, raise an exception.
          if ($totalRecordCount > $this->maxUploadedRecords) {
             throw new \Exception("Too many sequences have been submitted. Maximum allowed is ".Common::$MAX_SEQUENCE_COUNT);
          }
+
+         // Add the input file to the array.
+         array_push($inputFiles, new FastaFile($contents, $filename, $isValid, $recordCount));
       }
 
-      // DEBUGGING
-      \Drupal::logger(Common::$MODULE_NAME)->info("FASTA records: ".$totalRecordCount.", Invalid record count: ".$invalidRecordCount.", Total file size: ".$totalFileSize);
-      
-      return $records;
+      return $inputFiles;
    }
 
 
@@ -341,9 +336,10 @@ class UploadSequences extends ResourceBase {
          if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
 
 
-         // Process the uploaded files and return an array of FastaRecord objects.
-         $records = $this->processUploadedJSONFiles($files);
-         if (count($records) < 1) { throw new \Exception("No valid FASTA records were found in the uploaded files"); }
+         // Process the uploaded files and return an array of FastaFile objects.
+         $inputFiles = $this->processUploadedJSONFiles($files);
+         if (count($inputFiles) < 1) { throw new \Exception("No valid FASTA records were found in the uploaded files"); }
+         // TODO: The process method should probably have an isValid output parameter.
 
          // Create a new job record and get its ID and UID.
          SeqSearchJob::createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
@@ -363,23 +359,22 @@ class UploadSequences extends ResourceBase {
          // Initialize the upload order.
          $uploadOrder = 1;
 
-         //-------------------------------------------------------------------------------------------------------
-         // Create a FASTA file for each FastaRecord object and create a job file record every file.
-         //-------------------------------------------------------------------------------------------------------
-         foreach ($records as $record) {
+         //------------------------------------------------------------------------------------------------------------
+         // Create a FASTA file on the filesystem for each FastaFile object and create a job file record for every file.
+         //------------------------------------------------------------------------------------------------------------
+         foreach ($inputFiles as $inputFile) {
 
             // Create an encoded filename with a suffix that includes the record number.
-            $filename = Common::encodeFilenameAsBase64URL($record->originalFilename, $record->recordNumber);
-
-            if (Utils::isNullOrEmpty($filename)) { throw new \Exception("Unable to create encoded filename for record #".$record->recordNumber); }
+            $filename = Common::encodeFilenameAsBase64URL($inputFile->filename);
+            if (Utils::isNullOrEmpty($filename)) { throw new \Exception("Unable to create encoded filename for file ".$inputFile->filename); }
 
             // TEST
             $decodeFilename = Common::decodeFilenameFromBase64URL($filename);
 
-            \Drupal::logger(Common::$MODULE_NAME)->info("record filename is ".$filename.", original filename = ".$record->originalFilename.", and decodeFilename = ".$decodeFilename);
+            \Drupal::logger(Common::$MODULE_NAME)->info("record filename is ".$filename.", original filename = ".$inputFile->filename.", and decodeFilename = ".$decodeFilename);
 
             // Create a FASTA file in the job's input directory.
-            FastaRecord::createInputFile($filename, $inputPath, $record);
+            FastaFile::createInputFile($inputFile, $inputPath);
 
             // Create a job file record.
             //SeqSearchJob::createJobFileRecord($this->connection, $fileName, $jobID, $uploadOrder);

@@ -123,13 +123,14 @@ class FastaRecord {
 
 
    // A generator that parses a FASTA string and returns a FastaRecord object for every record/sequence it finds.
-   public static function getFastaRecords(string $fasta, string $filename) {
+   /*public static function getFastaRecords(string $fasta, string $filename) {
       
       $fasta = trim($fasta);
       if (strlen($fasta) < 1) { return null; }
       if (strlen($filename) < 1) { return null; }
 
       $header = null;
+      $recordNumber = 0;
       $sequenceLines = [];
 
       $lines = preg_split('/\r\n|\r|\n/', $fasta);
@@ -141,8 +142,10 @@ class FastaRecord {
 
          if ($line[0] === ">") {
 
+            $recordNumber += 1;
+
             // If we have a previous record, yield it.
-            if ($header !== null) { yield new FastaRecord($header, $filename, $sequenceLines, true); }
+            if ($header !== null) { yield new FastaRecord($header, $filename, $sequenceLines, $recordNumber); }
 
             $header = substr($line, 1);  // remove '>'
             $sequenceLines = [];
@@ -158,8 +161,11 @@ class FastaRecord {
       }
       
       // Yield the last record
-      if ($header !== null) { yield new FastaRecord($header, $filename, $sequenceLines, true); }
-   }
+      if ($header !== null) { 
+         $recordNumber += 1;
+         yield new FastaRecord($header, $filename, $sequenceLines, $recordNumber); 
+      }
+   }*/
 
 }
 
