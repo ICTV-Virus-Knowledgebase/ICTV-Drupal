@@ -10,7 +10,6 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
-use Drupal\ictv_common\Jobs\JobService;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Psr\Log\LoggerInterface;
@@ -44,9 +43,6 @@ class GetOutputFile extends ResourceBase {
 
    // The full path of the jobs directory.
    protected ?string $jobsPath; // Ex. "/var/www/drupal/files/jobs";
-
-   // The JobService object.
-   protected JobService $jobService;
    
    // The directory where output files are stored.
    protected ?string $outputDirectory;
@@ -120,9 +116,6 @@ class GetOutputFile extends ResourceBase {
          \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
          return;
       }
-
-      // Create a new instance of JobService.
-      $this->jobService = new JobService($this->jobsPath, $this->logger, Common::$MODULE_NAME, $this->inputDirectory, $this->outputDirectory);
    }
 
 
@@ -209,10 +202,10 @@ class GetOutputFile extends ResourceBase {
       }
 
       // Determine the job path.
-      $jobPath = $this->jobService->getJobPath($jobUID, $userUID);
-
+      $jobPath = $this->jobsPath.DIRECTORY_SEPARATOR.$jobUID;
+      
       // Use the job path to generate the path of the output subdirectory.
-      $outputPath = $this->jobService->getOutputPath($jobPath);
+      $outputPath = $jobPath.DIRECTORY_SEPARATOR.$this->outputDirectory;
 
       $errorMessage = "";
       $fileContents = "";
