@@ -4,6 +4,7 @@ namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
@@ -12,6 +13,117 @@ use Drupal\ictv_common\Utils;
 
 class SeqSearchJob {
 
+   /**
+    * Creates a job record in the database.
+    * Returns the new job's ID and UID.
+    */
+   public static function createJob(Connection $connection, ?int &$jobID, ?string $jobName, ?string &$jobUID, string $userEmail, string $userUID): bool {
+
+      $jobID = null;
+      $jobUID = null;
+
+      if (Utils::isEmptyElseTrim($jobName)) { $jobName = null; }
+
+      // Populate the stored procedure's parameters.
+      $parameters = [":jobName" => $jobName, ":jobType" => JobType::sequence_search->value, ":userEmail" => $userEmail, ":userUID" => $userUID];
+
+      // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
+      $sql = "CALL createJob(:jobName, :jobType, :userEmail, :userUID);";
+
+      // Run the query
+      $query = $connection->query($sql, $parameters);
+      if (!$query) { return false; }
+      
+      // Get the result.
+      $result = $query->fetchAssoc();
+      if (!$result) { return false; }
+
+      $jobID = $result["jobID"];
+      $jobUID = $result["jobUID"];
+
+      return true;
+   }
+
+
+   /**
+    * Creates a job file record in the database.
+    */
+   public static function createJobFileRecord(Connection $connection, string $fileName, int $jobID, int $uploadOrder): bool {
+
+      try {
+         // Populate the stored procedure's parameters.
+         $parameters = [":fileName" => $fileName, ":jobID" => $jobID, ":uploadOrder" => $uploadOrder];
+
+         // Generate SQL to call the "createJobFile" stored procedure.
+         $sql = "CALL createJobFile(:fileName, :jobID, :uploadOrder);";
+
+         // Run the query
+         $query = $connection->query($sql, $parameters);
+         if (!$query) { return false; }
+         
+         // Get the result.
+         $result = $query->fetchAssoc();
+         if (!$result) { return false; }
+
+      } catch (\Exception $e) {
+         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+         return false;
+      }
+
+      return true;
+   }
+
+
+   /**
+    * Create the job directory and subdirectories.
+    *
+    * @param string $inputDirName   The input directory name (from the config file)
+    * @param string $jobsPath       The parent directory where job folders are created (from the config file)
+    * @param string $jobUID         A job's unique identifier (UUID)
+    * @param string $outputDirName  The output directory name (from the config file)
+    * @return string                The full path of the newly-created job folder
+    */
+   public static function createJobFolder(string $inputDirName, string $jobsPath, string $jobUID, string $outputDirName): string {
+
+      // Validate input parameters
+      if (Utils::isNullOrEmpty($inputDirName)) { throw new \InvalidArgumentException("Invalid input directory name parameter"); }
+      if (Utils::isNullOrEmpty($jobsPath)) { throw new \InvalidArgumentException("Invalid jobs path parameter"); }
+      if (Utils::isNullOrEmpty($jobUID)) { throw new \InvalidArgumentException("Invalid job UID parameter"); }
+      if (Utils::isNullOrEmpty($outputDirName)) { throw new \InvalidArgumentException("Invalid output directory name parameter"); }
+
+      // Create an alias for the file system service.
+      $fileSystem = \Drupal::service("file_system");
+
+      // The new job directory path.
+      $jobPath = $jobsPath.DIRECTORY_SEPARATOR.$jobUID;
+      
+      // Create the job directory
+      if (!$fileSystem->prepareDirectory($jobPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         throw new \Exception("Unable to create the job directory");
+      }
+
+      // The full path of the input subdirectory
+      $inputPath = $jobPath.DIRECTORY_SEPARATOR.$inputDirName;
+
+      // Create the input subdirectory
+      if (!$fileSystem->prepareDirectory($inputPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         throw new \Exception("Unable to create {$inputDirName} subdirectory");
+      }
+
+      // The full path of the output subdirectory.
+      $outputPath = $jobPath.DIRECTORY_SEPARATOR.$outputDirName;
+
+      // Create the output subdirectory.
+      if (!$fileSystem->prepareDirectory($outputPath, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+         throw new \Exception("Unable to create {$outputDirName} subdirectory");
+      }
+
+      // Return the full path of the new job directory.
+      return $jobPath;
+   }
+   
+
+   /*
    // Create an invalid SeqSearch Job "object" (nested arrays) to return when a job is not found or is invalid.
    public static function createInvalidJob(string $jobName, string $message, JobStatus $status, string $jobUID) {
 
@@ -31,7 +143,7 @@ class SeqSearchJob {
          "status" => $status->value,
          "uid" => $jobUID
       ];
-   }
+   }*/
 
 
    // Return a SeqSearch Job "object" (nested arrays) from a row of database results.
@@ -180,4 +292,5 @@ class SeqSearchJob {
          return null;
       }
    }
+
 }
