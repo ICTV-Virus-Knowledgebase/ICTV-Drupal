@@ -78,6 +78,8 @@ export class _SequenceSearchService {
    }
 
    
+   /* Not currently used.
+   
    // Upload one or more sequence files.
    async uploadFiles(authToken_: string, files_: FileList, jobName_: string, userEmail_: string, userUID_: string): Promise<IUploadResult> {
 
@@ -95,7 +97,7 @@ export class _SequenceSearchService {
       };
 
       return await WebService.postFiles<IUploadResult>(authToken_, data, files_, WebServiceKey.uploadSequences);
-   } 
+   }*/
 
 
    // Upload one or more sequences for processing.
