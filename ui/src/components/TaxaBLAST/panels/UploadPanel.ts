@@ -1,13 +1,14 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
-import { ButtonClass, FormatBytes, Constants, Icon, GetSpinnerHTML, PanelKey } from "../Common";
+import { BlastParams } from "../BlastParams";
+import { BlastTask, ButtonClass, FormatBytes, Constants, Icon, GetSpinnerHTML, PanelKey, ParameterKey } from "../Common";
 import { IFileData } from "../../../models/IFileData";
-import { ISeqSearchPanel } from "./ISeqSearchPanel";
+import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { IUploadResult } from "../IUploadResults";
 import { JobStatus } from "../../../global/Types";
 import { ParseFASTA } from "../../../helpers/FastaUtils";
-import { SequenceSearch } from "../SequenceSearch";
-import { SequenceSearchService } from "../../../services/SequenceSearchService";
+import { TaxaBLAST } from "../TaxaBLAST";
+import { TaxaBlastService } from "../../../services/TaxaBlastService";
 import { SubmissionStatus } from "../SubmissionStatus";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
@@ -33,7 +34,7 @@ enum PanelMode {
 }
 
 
-export class UploadPanel implements ISeqSearchPanel {
+export class UploadPanel implements ITaxaBlastPanel {
 
    containerSelector: string;
 
@@ -67,7 +68,7 @@ export class UploadPanel implements ISeqSearchPanel {
    mode: PanelMode;
 
    // The parent page
-   parent: SequenceSearch = null;
+   parent: TaxaBLAST = null;
 
    // TEST
    previousPanelMode: PanelMode = null;
@@ -77,7 +78,7 @@ export class UploadPanel implements ISeqSearchPanel {
 
 
    // C-tor
-   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: TaxaBLAST) {
 
       if (!containerEl_) { throw new Error("Invalid container element"); }
 
@@ -167,7 +168,7 @@ export class UploadPanel implements ISeqSearchPanel {
             // Display the file processing panel.
             this.elements.jobSubmittedSubPanel.classList.add("active");
 
-            const spinnerHTML = GetSpinnerHTML("Submitting your sequence file(s)...");
+            const spinnerHTML = GetSpinnerHTML("Running BLAST...");
             this.elements.jobSubmittedSubPanel.innerHTML = spinnerHTML;
 
             // Hide the other sub-panels.
@@ -183,8 +184,6 @@ export class UploadPanel implements ISeqSearchPanel {
 
             //this.elements.resultsSubPanel.innerHTML = "";
 
-            console.log("TODO: start the timer loop and try to retrieve the job data")
-
             // Hide the other sub-panels.
             this.elements.fileSelectionSubPanel.classList.remove("active");
             this.elements.jobSubmissionSubPanel.classList.remove("active");
@@ -192,8 +191,6 @@ export class UploadPanel implements ISeqSearchPanel {
             break;
 
          case PanelMode.previous_panel:
-
-            console.log("handling previous_panel mode")
 
             // TEST
             if (!this.previousPanelMode || this.previousPanelMode === PanelMode.file_selection) { 
@@ -212,10 +209,21 @@ export class UploadPanel implements ISeqSearchPanel {
       return;
    }
 
+   // Get BLAST parameters from the URL.
+   async getBlastParams(): Promise<BlastParams> {
+
+      // Get the URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      let maxHSPS = Utils.safeTrim(urlParams.get(ParameterKey.maxHSPS));
+      let maxTargetSeqs = Utils.safeTrim(urlParams.get(ParameterKey.maxTargetSeqs));
+      let task = Utils.safeTrim(urlParams.get(ParameterKey.task));
+      
+      return new BlastParams(maxHSPS, maxTargetSeqs, task);
+   }
+
    // Load the pending job if it has completed.
    async getJobStatus() {
-
-      console.log("in getJobStatus")
 
       this.submissionStatus.retries += 1;
 
@@ -336,7 +344,7 @@ export class UploadPanel implements ISeqSearchPanel {
             <div class="selected-files"></div>
 
             <div class="controls">
-               <button class=\"btn ${ButtonClass.upload}\">${Icon.upload} Upload</button>
+               <button class=\"btn ${ButtonClass.upload}\">${Icon.upload} Run</button>
                <button class=\"btn ${ButtonClass.cancel}\">${Icon.cancel} Cancel</button>
             </div>
          </div>
@@ -499,6 +507,9 @@ export class UploadPanel implements ISeqSearchPanel {
       let jobName = this.elements.jobName.value;
       if (!jobName) { jobName = null; }
 
+      // Get BLAST parameters from the URL.
+      const blastParams = await this.getBlastParams();
+
       try {
          let files: IFileData[] = [];
          let recordCount = 0;
@@ -542,7 +553,7 @@ export class UploadPanel implements ISeqSearchPanel {
             const s = recordCount === 1 ? "" : "s";
 
             // Create an error message.
-            const errorMessage = `Unable to upload your file${s}: The maximum number of sequences that can be loaded is ${Constants.MAX_SEQUENCE_COUNT} ` +
+            const errorMessage = `Unable to process your file${s}: The maximum number of sequences that can be run is ${Constants.MAX_SEQUENCE_COUNT} ` +
             `(you tried to upload ${recordCount} sequence${s})`
 
             return await AlertBuilder.displayError(errorMessage, null, () => this.changePanelMode(PanelMode.file_selection));
@@ -551,9 +562,6 @@ export class UploadPanel implements ISeqSearchPanel {
             return await AlertBuilder.displayError(`Your selected file(s) do not contain any valid FASTA sequences`, null, () => this.changePanelMode(PanelMode.file_selection));
          }
 
-         // TEST
-         console.log(`record count = ${recordCount} and total file size = ${totalSize}`)
-
          // Initialize the submission status.
          this.submissionStatus.start(files.length, recordCount);
 
@@ -561,8 +569,7 @@ export class UploadPanel implements ISeqSearchPanel {
          await this.changePanelMode(PanelMode.job_submitted);
          
          // Upload the sequence file(s) to the web service for processing.
-         const result = await SequenceSearchService.uploadSequences(this.parent.authToken, files, jobName, this.parent.user.email, this.parent.user.uid);
-         //.uploadFiles(this.parent.authToken, this.elements.fileInput.files, jobName, this.parent.user.email, this.parent.user.uid);
+         const result = await TaxaBlastService.uploadSequences(this.parent.authToken, blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
 
          // Handle the upload result and display the correct sub-panel.
          await this.handleUploadResult(result);

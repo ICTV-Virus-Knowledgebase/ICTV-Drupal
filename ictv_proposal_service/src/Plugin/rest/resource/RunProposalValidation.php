@@ -157,10 +157,9 @@ try {
 
    fwrite(STDOUT, "Validation is complete");
 
-} catch (Exception $e) {
+} catch (\Throwable $e) {
 
-   $errorMessage = "Unspecified error";
-   if ($e) { $errorMessage = $e->getMessage(); }
+   $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
 
    // Write the error message to stderr.
    fwrite(STDERR, $errorMessage);

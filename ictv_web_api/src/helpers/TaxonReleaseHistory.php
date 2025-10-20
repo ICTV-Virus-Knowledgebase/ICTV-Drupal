@@ -46,12 +46,14 @@ class TaxonReleaseHistory {
       // \Drupal::logger('ictv_web_api')->debug('Query results: @rows', ['@rows' => print_r($rows, TRUE)]);
     }
 
-    catch (\Exception $e) {
+    catch (\Throwable $e) {
+
+      $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
 
       // if the proc itself failed, capture its message
       return [
         'details'  => [],
-        'messages' => $e->getMessage(),
+        'messages' => $errorMessage,
         'releases' => [],
         'taxa'     => [],
       ];

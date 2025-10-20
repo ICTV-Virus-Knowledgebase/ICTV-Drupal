@@ -18,7 +18,7 @@ ictv_release_history_taxonomy_browser/assets/images/
 ictv_release_history_taxonomy_browser/assets/js/ICTV_TaxonomyBrowser.js
 
 ictv_seqsearch_ui/assets/css/
-ictv_seqsearch_ui/assets/js/ICTV_SequenceSearch.js
+ictv_seqsearch_ui/assets/js/ICTV_TaxaBLAST.js
 
 ictv_taxon_history/assets/css/
 ictv_taxon_history/assets/js/ICTV_TaxonReleaseHistory.js

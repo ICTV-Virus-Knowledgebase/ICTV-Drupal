@@ -1,5 +1,5 @@
 
 export { AppSettings } from "../../global/AppSettings";
-export { SequenceSearch } from "./SequenceSearch";
+export { TaxaBLAST } from "./TaxaBLAST";
 
 export * from "../../global/Types";

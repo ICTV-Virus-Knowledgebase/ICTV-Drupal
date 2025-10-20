@@ -1,13 +1,13 @@
 
 import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
-import { ISeqSearchJob } from "../ISeqSearchJob";
-import { ISeqSearchPanel } from "./ISeqSearchPanel";
-import { SequenceSearch } from "../SequenceSearch";
+import { ITaxaBlastJob } from "../ITaxaBlastJob";
+import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
+import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
 
-export class JobDetailsPanel implements ISeqSearchPanel {
+export class JobDetailsPanel implements ITaxaBlastPanel {
    
    // DOM elements
    elements: {
@@ -21,15 +21,15 @@ export class JobDetailsPanel implements ISeqSearchPanel {
    // Is the panel currently active/displayed?
    isActive: boolean;
 
-   job: ISeqSearchJob = null;
+   job: ITaxaBlastJob = null;
 
    // The parent page
-   parent: SequenceSearch = null;
+   parent: TaxaBLAST = null;
 
 
 
    // C-tor
-   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: TaxaBLAST) {
 
       if (!containerEl_) { throw new Error("Invalid container element"); }
 

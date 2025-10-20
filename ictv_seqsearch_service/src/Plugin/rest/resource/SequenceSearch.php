@@ -14,9 +14,13 @@ class SequenceSearch {
    public static string $stdOutFilename = "stdout.txt";
 
 
-   // Run ictv_seqsearch from the Docker image.
-   public static function runSearch(string $inputPath, string $outputPath, 
-      string $scriptName, string $workingDirectory): JobStatus {
+   // Run TaxaBLAST from the Docker image.
+   public static function runSearch(string $inputPath, int $maxHSPS, int $maxTargetSeqs, string $outputPath, 
+      string $scriptName, string $task, string $workingDirectory): JobStatus {
+
+      if (!is_int($maxHSPS) || $maxHSPS < 1) { throw new \Exception("Invalid maxHSPS parameter in runSearch"); }
+      if (!is_int($maxTargetSeqs) || $maxTargetSeqs < 1) { throw new \Exception("Invalid maxTargetSeqs parameter in runSearch"); }
+      if (strlen($task) < 1) { throw new \Exception("Invalid task parameter in runSearch"); }
 
       // Declare variables used below.
       $exitCode = 0;
@@ -34,7 +38,8 @@ class SequenceSearch {
       // Generate the command to be run. 
       // Note that the "-decode" argument assumes that the input files' basenames have been encoded as base64URL  
       // with a sequence number suffix appended, followed by the original file's extension.
-      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -decode";
+      $command = "docker run -v \"{$inputPath}:/seq_in\" -v \"{$outputPath}:/tax_out\" ".$scriptName." -decode".
+         " -max_hsps {$maxHSPS} -max_target_seqs {$maxTargetSeqs} -task {$task}";
 
       try {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
@@ -69,13 +74,14 @@ class SequenceSearch {
             $stdError = "Process is not a resource";
          }
       } 
-      catch (Exception $e) {
+      catch (\Throwable $e) {
 
          $jobStatus = JobStatus::error;
 
          if ($e) { 
+            $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
             if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
-            $stdError = $stdError.$e->getMessage(); 
+            $stdError = $stdError.$errorMessage; 
          }
 
          \Drupal::logger(Common::$MODULE_NAME)->error("An error occurred in SequenceSearch: ".$stdError);

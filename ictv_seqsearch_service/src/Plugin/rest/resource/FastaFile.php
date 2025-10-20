@@ -75,8 +75,9 @@ class FastaFile {
             throw new \Exception("Unable to change permissions on file ".$filename);
          }
       }
-      catch (\FileException $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return false;
       }
       finally {

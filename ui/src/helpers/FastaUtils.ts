@@ -76,8 +76,6 @@ export function ParseFASTA(fasta_: string, validate_: boolean): IFastaRecord[] {
          return;
       }
 
-      console.log(`Processing line: ${line} and record is `, record)
-
       // Is the current record valid?
       if (!record || !record.id) { throw new Error("Invalid record: Unable to add sequence line"); }
 

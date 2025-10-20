@@ -1,26 +1,27 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { BlastTask, ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
-import { ISeqSearchJob } from "./ISeqSearchJob";
-import { ISeqSearchPanel } from "./panels/ISeqSearchPanel";
+import { ITaxaBlastJob } from "./ITaxaBlastJob";
+import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
 import { JobDetailsPanel } from "./panels/JobDetailsPanel";
 import { WebStorageKey } from "../../global/Types";
 import * as pako from "pako";
 import { SearchResultsPanel } from "./panels/SearchResultsPanel";
-import { SequenceSearchService } from "../../services/SequenceSearchService";
+import { TaxaBlastService } from "../../services/TaxaBlastService";
 import { UploadPanel } from "./panels/UploadPanel";
 import { Utils } from "../../helpers/Utils";
 import { JobHistoryPanel } from "./panels/JobHistoryPanel";
 
 
-export class SequenceSearch {
+export class TaxaBLAST {
 
    // The authentication token that will be used when making API calls.
    authToken: string;
 
-   // The CSS selector for the container element where the Sequence Search UI will be rendered.
+   
+   // The CSS selector for the container element where the TaxaBLAST UI will be rendered.
    containerSelector: string = null;
 
    // DOM elements
@@ -34,9 +35,9 @@ export class SequenceSearch {
       uploadPanel: HTMLElement
    }
 
-   job: ISeqSearchJob = null;
+   job: ITaxaBlastJob = null;
 
-   panels: Map<PanelKey, ISeqSearchPanel>;
+   panels: Map<PanelKey, ITaxaBlastPanel>;
 
    state: {
 
@@ -66,8 +67,8 @@ export class SequenceSearch {
       name_: string, userUID_: string) {
       
       // Validate parameters
-      if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in SequenceSearch"); }
-      if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in SequenceSearch"); }
+      if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in TaxaBLAST"); }
+      if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in TaxaBLAST"); }
       if (!email_ || email_.length < 1) { email_ = Constants.NO_EMAIL; }
       if (!name_ || name_.length < 1) { name_ = "Anonymous user"; }
       userUID_ = Utils.safeTrim(userUID_);
@@ -92,7 +93,7 @@ export class SequenceSearch {
          uploadPanel: null
       }
 
-      this.panels = new Map<PanelKey, ISeqSearchPanel>();
+      this.panels = new Map<PanelKey, ITaxaBlastPanel>();
 
       this.state = {
          fileIndex: NaN,
@@ -146,53 +147,6 @@ export class SequenceSearch {
       </div>`;
    }
 
-   /*
-   // Create a link panel containing a link that allows the user to return to this page with the current job data.
-   createLinkPanel(panelKey_: PanelKey): string {
-
-      // All link panels require a valid job UID.
-      if (!this.state.jobUID || this.state.jobUID.length < 1) { return ""; }
-
-      let instructions = "";
-
-      // Create a link URL for the specified panel.
-      const url = this.createUrlUsingState(panelKey_);
-
-      switch (panelKey_) {
-
-         case PanelKey.blastHits:
-
-            // Specify the instructions for the BLAST hits panel.
-            instructions = `View these later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
-            break;
-
-         case PanelKey.jobDetails:
-
-            // Specify the instructions for the job details panel.
-            instructions = `View this job later using&nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
-            break;
-
-         case PanelKey.upload:
-
-            // Specify the instructions for the upload panel.
-            instructions = `View the completed results later using &nbsp;<a href="${url}" target="_blank">this link</a>&nbsp;`;
-            break;
-
-         default:
-            AlertBuilder.displayErrorSync(`Unable to create a link panel for the unhandled panel key: ${panelKey_}`);
-            break;
-      }
-
-      return `<div class="link-panel">
-         <i class="fa-solid fa-link copy-url-link has-tooltip" data-tippy-content="Copy the URL to your clipboard" data-url="${url}"></i>
-         ${instructions}
-         <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
-            data-tippy-content="Copy the URL to your clipboard"
-            data-url="${url}"
-         >${Icon.copy} Copy to clipboard</button>
-      </div>`;
-   }*/
-
    // Create a TaxaBLAST URL using the current state. 
    createUrlUsingState(panelKey_?: PanelKey): string {
       
@@ -240,7 +194,7 @@ export class SequenceSearch {
       let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
 
       // Get the output file and its metadata.
-      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
+      const outputFile = await TaxaBlastService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The CSV file is invalid"); }
 
       // Decompress the CSV file, if necessary.
@@ -266,7 +220,7 @@ export class SequenceSearch {
       if (!this.state.jobUID) { return await AlertBuilder.displayError("No job UID provided"); }
 
       // Get the job data from the server.
-      this.job = await SequenceSearchService.getJob(this.authToken, this.state.jobUID);
+      this.job = await TaxaBlastService.getJob(this.authToken, this.state.jobUID);
 
       return;
    }
@@ -462,7 +416,7 @@ export class SequenceSearch {
       return;
    }
 
-   // Initialize the Sequence Search component.
+   // Initialize the TaxaBLAST component.
    async initialize() {
 
       // If the user UID is empty, look for one in web storage or generate a new one.
@@ -532,8 +486,6 @@ export class SequenceSearch {
          // Generate a new user UID using the current Unix timestamp in seconds.
          this.user.uid = `${Math.floor(Date.now() / 1000)}`;
    
-         console.log("in setDefaultUserUID about to add this.user.uid ", this.user.uid)
-
          // If web storage is available, save the user UID in local storage.
          if (typeof(Storage) !== "undefined") { localStorage.setItem(WebStorageKey.taxaBlastUserUID, this.user.uid); }
       }
@@ -555,7 +507,7 @@ export class SequenceSearch {
    async updatePanel(panelKey_: PanelKey, load_: boolean) {
 
       // Get the requested panel.
-      let panel: ISeqSearchPanel = this.panels.get(panelKey_);
+      let panel: ITaxaBlastPanel = this.panels.get(panelKey_);
       if (!panel) { throw new Error(`Unhandled panel: ${panelKey_}`); }
 
       if (load_) { 
@@ -651,7 +603,7 @@ export class SequenceSearch {
       let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
 
       // Get the output file and its metadata.
-      const outputFile = await SequenceSearchService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
+      const outputFile = await TaxaBlastService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The HTML file is invalid"); }
 
       // Decompress the HTML file, if necessary.

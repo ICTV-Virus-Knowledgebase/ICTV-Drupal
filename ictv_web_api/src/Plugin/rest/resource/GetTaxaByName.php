@@ -215,8 +215,9 @@ class GetTaxaByName extends ResourceBase {
         }
       }
     }
-    catch (\Exception $e) {
-      \Drupal::logger('ictv_web_api')->error($e->getMessage());
+    catch (\Throwable $e) {
+      $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+      \Drupal::logger('ictv_web_api')->error($errorMessage);
 
       // Return some fallback
       return [

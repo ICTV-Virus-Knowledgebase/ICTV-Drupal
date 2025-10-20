@@ -151,8 +151,9 @@ class UploadSequences extends ResourceBase {
          $this->scriptName = $config->get("scriptName");
          if (Utils::isNullOrEmpty($this->scriptName)) { throw new \Exception("The scriptName setting is empty"); }
       }
-      catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return;
       }
 
@@ -185,17 +186,27 @@ class UploadSequences extends ResourceBase {
     */
    public function get(Request $request) {
       
-      // Upload the sequences that were sent in the request.
-      $data = $this->uploadSequences($request);
+      try {
+         // Upload the sequences that were sent in the request.
+         $data = $this->uploadSequences($request);
+         
+      } catch (\Throwable $e) {
 
-      $build = array(
-         '#cache' => array(
-            'max-age' => 0,
-         ),
-      );
-       
+         // Get the error message.
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         
+         // Add an error to the system log.
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
+
+         $data = [
+            "errorMessage" => $errorMessage,
+            "jobUID" => null,
+            "status" => JobStatus::crashed->value
+         ];
+      }
+
       $response = new ResourceResponse($data);
-      $response->addCacheableDependency($build);
+      $response->addCacheableDependency(array("#cache" => array("max-age" => 0)));
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
    }
@@ -229,17 +240,27 @@ class UploadSequences extends ResourceBase {
     */
    public function post(Request $request) {
 
-      // Upload the sequences that were sent in the request.
-      $data = $this->uploadSequences($request);
+      try {
+         // Upload the sequences that were sent in the request.
+         $data = $this->uploadSequences($request);
+         
+      } catch (\Throwable $e) {
 
-      $build = array(
-         '#cache' => array(
-            'max-age' => 0,
-         ),
-      );
-       
+         // Get the error message.
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         
+         // Add an error to the system log.
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
+
+         $data = [
+            "errorMessage" => $errorMessage,
+            "jobUID" => null,
+            "status" => JobStatus::crashed->value
+         ];
+      }
+
       $response = new ResourceResponse($data);
-      $response->addCacheableDependency($build);
+      $response->addCacheableDependency(array("#cache" => array("max-age" => 0)));
       $response->headers->set('Access-Control-Allow-Origin', '*');
       return $response;
    }
@@ -293,7 +314,7 @@ class UploadSequences extends ResourceBase {
 
          // If the total record/sequence count exceeds the maximum allowed, raise an exception.
          if ($totalRecordCount > $this->maxUploadedRecords) {
-            throw new \Exception("Too many sequences have been submitted. Maximum allowed is ".Common::$MAX_SEQUENCE_COUNT);
+            throw new \Exception("Too many sequences have been submitted. Maximum allowed is ".$this->maxUploadedRecords);
          }
 
          // Add the input file to the array.
@@ -316,34 +337,62 @@ class UploadSequences extends ResourceBase {
       try {
          // Get and validate the JSON in the request body.
          $requestJSON = Json::decode($request->getContent());
-         if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
+         if ($requestJSON == null) { throw new BadRequestHttpException("Error in UploadSequences: Invalid JSON request parameter"); }
 
-         $jobName = $requestJSON["jobName"];
+         // Get the job name (optional).
+         $jobName = Common::safeTrim($requestJSON["jobName"]);
 
          // Get and validate the user email.
-         $userEmail = $requestJSON["userEmail"];
-         if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
+         $userEmail = Common::safeTrim($requestJSON["userEmail"]);
+         if (strlen($userEmail) < 1) { throw new BadRequestHttpException("Error in UploadSequences: Invalid user email"); }
 
          // Get and validate the user UID.
-         $userUID = $requestJSON["userUID"];
-         if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
+         $userUID = Common::safeTrim($requestJSON["userUID"]);
+         if (strlen($userUID) < 1) {throw new BadRequestHttpException("Error in UploadSequences: Invalid user UID"); }
+         
+
+         //----------------------------------------------------------------
+         // Get BLAST parameters and provide defaults if necessary.
+         //----------------------------------------------------------------
+
+         // Maximum number of HSPs to return.
+         $maxHSPS = Common::safeTrim($requestJSON["maxHSPS"]);
+         if (!is_int($maxHSPS) || (int)$maxHSPS < 1) {
+            $maxHSPS = Common::$DEFAULT_BLAST_MAX_HSPS;
+         } else {
+            $maxHSPS = (int)$maxHSPS;
+         }
+
+         // Maximum number of target sequences to return.
+         $maxTargetSeqs = Common::safeTrim($requestJSON["maxTargetSeqs"]);
+         if (!is_int($maxTargetSeqs) || (int)$maxTargetSeqs < 1) {
+            $maxTargetSeqs = Common::$DEFAULT_BLAST_MAX_TARGET_SEQS;
+         } else {
+            $maxTargetSeqs = (int)$maxTargetSeqs;
+         }
+
+         // The BLAST task to use.
+         $task = Common::safeTrim($requestJSON["task"]);
+         if (strlen($task) < 1 || !in_array($task, Common::$VALID_BLAST_TASKS)) {
+            $task = Common::$DEFAULT_BLAST_TASK;
+         }
          
          // Get and validate the array of files.
          $files = $requestJSON["files"];
-         if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("No files were uploaded"); }
+         if (!$files || !is_array($files) || sizeof($files) < 1) { throw new BadRequestHttpException("Error in UploadSequences: No files were uploaded"); }
 
 
          // Process the uploaded files and return an array of FastaFile objects.
          $inputFiles = $this->processUploadedJSONFiles($files);
-         if (count($inputFiles) < 1) { throw new \Exception("No valid FASTA records were found in the uploaded files"); }
+         if (count($inputFiles) < 1) { throw new \Exception("Error in UploadSequences: No valid FASTA records were found in the uploaded files"); }
 
          // Create a new job record and get its ID and UID.
          SeqSearchJob::createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
-         if (!$jobID || $jobID < 1 || !$jobUID || strlen($jobUID) < 1) { throw new \Exception("Unable to create job record"); }
+         if (!$jobID || $jobID < 1 || !$jobUID || strlen($jobUID) < 1) { throw new \Exception("Error in UploadSequences: Unable to create job record"); }
 
          // Create the a new job folder and its subdirectories and return the full path of the job directory.
          $jobPath = SeqSearchJob::createJobFolder($this->inputDirectory, $this->jobsPath, $jobUID, $this->outputDirectory);
-         if (Utils::isNullOrEmpty($jobPath)) { throw new \Exception("Unable to create job folder"); }
+         if (Utils::isNullOrEmpty($jobPath)) { throw new \Exception("Error in UploadSequences: Unable to create job folder"); }
 
          // Initialize the job status.
          $jobStatus = JobStatus::pending;
@@ -402,11 +451,20 @@ class UploadSequences extends ResourceBase {
             // The name of the JSON file generated by seqsearch.
             "jsonFilename={$this->jsonResultsFilename} ".
 
+            // The maximum number of HSPs to return.
+            "maxHSPS={$maxHSPS} ".
+
+            // The maximum number of target sequences to return.
+            "maxTargetSeqs={$maxTargetSeqs} ".
+
             // The job's output path
             "outputPath={$outputPath} ".
 
             // The name of the Docker container that runs the seqsearch Python code.
             "scriptName={$this->scriptName} ".
+            
+            // The BLAST task to use.
+            "task={$task} ".
             
             // The user's unique numeric identifier.
             "userUID={$userUID} ".
@@ -420,16 +478,13 @@ class UploadSequences extends ResourceBase {
          // Run the command on the command line.
          $commandResult = exec($command, $output, $resultCode);
 
-      } catch (Exception $e) {
+      } catch (\Throwable $e) {
 
          $jobStatus = JobStatus::crashed;
          $jsonForSQL = null;
 
-         if ($e) { 
-            $errorMessage = $e->getMessage(); 
-         } else {
-            $errorMessage = "Unspecified error";
-         }
+         // Get the error message.
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
          
          // Update the log with the error message.
          \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
@@ -448,9 +503,6 @@ class UploadSequences extends ResourceBase {
          "status" => $jobStatus->value
       ];
    }
-
-
-   
 
 }
 
