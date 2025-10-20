@@ -1,16 +1,17 @@
 
+import { BlastParams } from "../components/TaxaBLAST/BlastParams";
 import { IFileData } from "../models/IFileData";
-import { IOutputFile } from "../components/SequenceSearch/IOutputFile";
-import { ISeqSearchJob } from "../components/SequenceSearch/ISeqSearchJob";
-import { IUploadResult } from "../components/SequenceSearch/IUploadResults";
+import { IOutputFile } from "../components/TaxaBLAST/IOutputFile";
+import { ITaxaBlastJob } from "../components/TaxaBLAST/ITaxaBlastJob";
+import { IUploadResult } from "../components/TaxaBLAST/IUploadResults";
 import { WebService } from "./WebService";
 import { WebServiceKey } from "../global/Types";
 
 
-export class _SequenceSearchService {
+export class _TaxaBlastService {
 
    
-   // Download a binary (zip) file from a TaxaMATCH job.
+   // Download a binary (zip) file from a TaxaBLAST job.
    async downloadFile(authToken_: string, filename_: string, jobUID_: string): Promise<any> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }
@@ -27,7 +28,7 @@ export class _SequenceSearchService {
 
 
    // Get the specified job and result metadata.
-   async getJob(authToken_: string, jobUID_: string): Promise<ISeqSearchJob> {
+   async getJob(authToken_: string, jobUID_: string): Promise<ITaxaBlastJob> {
       
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -39,12 +40,12 @@ export class _SequenceSearchService {
       };
 
       // Get and return the sequence search result.
-      return await WebService.drupalPost<ISeqSearchJob>(WebServiceKey.getSequenceSearchJob, authToken_, data);
+      return await WebService.drupalPost<ITaxaBlastJob>(WebServiceKey.getSequenceSearchJob, authToken_, data);
    }
 
 
    // Search the user's TaxaBLAST jobs.
-   async searchJobs(authToken_: string, searchText_: string, userUID_: string): Promise<ISeqSearchJob[]> {
+   async searchJobs(authToken_: string, searchText_: string, userUID_: string): Promise<ITaxaBlastJob[]> {
       
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -56,11 +57,11 @@ export class _SequenceSearchService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<ISeqSearchJob[]>(WebServiceKey.searchTaxaBlastJobs, authToken_, data);
+      return await WebService.drupalPost<ITaxaBlastJob[]>(WebServiceKey.searchTaxaBlastJobs, authToken_, data);
    }
 
    
-   // Get an output file from a TaxaMATCH job.
+   // Get an output file from a TaxaBLAST job.
    async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }
@@ -101,7 +102,7 @@ export class _SequenceSearchService {
 
 
    // Upload one or more sequences for processing.
-   async uploadSequences(authToken_: string, files_: IFileData[], jobName_: string, userEmail_: string, 
+   async uploadSequences(authToken_: string, blastParams_: BlastParams, files_: IFileData[], jobName_: string, userEmail_: string, 
       userUID_: string): Promise<IUploadResult> {
 
       // Validate parameters
@@ -114,6 +115,9 @@ export class _SequenceSearchService {
          authToken: authToken_,
          files: files_,
          jobName: jobName_,
+         maxHSPS: blastParams_.maxHSPS,
+         maxTargetSeqs: blastParams_.maxTargetSeqs,
+         task: blastParams_.task as string,
          userEmail: userEmail_,
          userUID: userUID_
       };
@@ -123,5 +127,5 @@ export class _SequenceSearchService {
 
 }
 
-// Create a singleton instance of _SequenceSearchService.
-export const SequenceSearchService = new _SequenceSearchService();
+// Create a singleton instance of _TaxaBlastService.
+export const TaxaBlastService = new _TaxaBlastService();

@@ -180,8 +180,9 @@ class GetCuratedNames extends ResourceBase {
          // Run the SQL query.
          $queryResults = $this->connection->query($sql);
       } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_curated_name_service')->error($e);
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_curated_name_service')->error($errorMessage);
          return null;
       }
 

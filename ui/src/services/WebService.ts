@@ -13,7 +13,6 @@ enum RequestMethod {
 
 export class _WebService {
 
-
    // Make an HTTP GET request to the specified web service.
    async drupalGet<T>(webServiceKey_: WebServiceKey, authToken_: string, data_?: any): Promise<T> {
 
@@ -131,9 +130,6 @@ export class _WebService {
                },
                params: data_
             })
-
-            // TESTING
-            console.log("in WebService.performRequest, response is ", response)
             
             break;
 
@@ -204,8 +200,6 @@ export class _WebService {
    }
 
 
-
-   // TESTING 090825
    public async postFiles<T>(authToken_: string, data_: any, files_: FileList, webServiceKey_: WebServiceKey): Promise<T> {
 
       if (!authToken_) { throw new Error("Unable to post files: Invalid auth token"); }

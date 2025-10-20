@@ -8,6 +8,13 @@ import { Utils } from "../../helpers/Utils";
 // Enums
 //----------------------------------------------------------------------------------------------------------------
 
+// The available BLAST programs.
+export enum BlastTask {
+   blastn = "blastn",
+   dcMegablast = "dc-megablast",
+   megablast = "megablast"
+}
+
 // CSS class names for buttons.
 export enum ButtonClass {
    back = "back-button",
@@ -63,7 +70,12 @@ export enum ParameterKey {
    history = "history", // TESTING
    job = "job",
    sequence = "sequence",
-   userUID = "userUID"
+   userUID = "userUID",
+
+   // BLAST parameters
+   maxHSPS = "max_hsps",
+   maxTargetSeqs = "max_target_seqs",
+   task = "task"
 }
 
 export enum ResultFileType {
@@ -94,6 +106,15 @@ export const Constants = {
       TO_DATE: "cccc, LLLL d, y",
       TO_TIME: "h:mm:ss a"
    },
+
+   // The default BLAST program to use.
+   DEFAULT_BLAST_TASK: BlastTask.blastn,
+
+   // The maximum number of HSPS (high-scoring segment pairs) to return per target sequence.
+   DEFAULT_MAX_HSPS: 25,
+
+   // The default maximum number of target sequences to return.
+   DEFAULT_MAX_TARGET_SEQS: 50,
 
    // How long should the upload panel wait to try to load job data?
    JOB_POLLING_INTERVAL: 3000,

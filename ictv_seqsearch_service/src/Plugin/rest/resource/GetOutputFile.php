@@ -112,8 +112,9 @@ class GetOutputFile extends ResourceBase {
          $this->outputDirectory = $config->get("outputDirectory");
          if (Utils::isNullOrEmpty($this->outputDirectory)) { throw new \Exception("The outputDirectory setting is empty"); }
       }
-      catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return;
       }
    }
@@ -214,9 +215,9 @@ class GetOutputFile extends ResourceBase {
          // Get the file contents.
          $fileContents = Common::getFileContents(true, $filename, $outputPath);
       } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_seqsearch_service')->error($e);
-         $errorMessage = $e->getMessage();
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_seqsearch_service')->error($errorMessage);
       }
 
       return [

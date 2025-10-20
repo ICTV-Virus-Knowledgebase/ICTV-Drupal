@@ -95,8 +95,9 @@ class GetSeqSearchJob extends ResourceBase {
          // Get a database connection.
          $this->connection = \Drupal\Core\Database\Database::getConnection("default", $this->databaseName);
       }
-      catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return;
       }
    }

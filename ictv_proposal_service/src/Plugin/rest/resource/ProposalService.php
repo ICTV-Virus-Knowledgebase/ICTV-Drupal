@@ -329,16 +329,11 @@ class ProposalService extends ResourceBase {
          // Run the command on the command line.
          $commandResult = exec($command, $output, $resultCode);
 
-      } catch (Exception $e) {
+      } catch (\Throwable $e) {
 
          $status = JobStatus::crashed;
 
-         $errorMessage = null;
-         if ($e) { 
-            $errorMessage = $e->getMessage(); 
-         } else {
-            $errorMessage = "Unspecified error";
-         }
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
          
          // Update the log with the job UID and this error message.
          \Drupal::logger('ictv_proposal_service')->error($userUID."_".$jobUID.": ".$errorMessage);

@@ -1,14 +1,14 @@
 
-import { SequenceSearch } from '../SequenceSearch';
+import { TaxaBLAST } from '../TaxaBLAST';
 
 
-export interface ISeqSearchPanel {
+export interface ITaxaBlastPanel {
 
    // Is the panel currently active/displayed?
    isActive: boolean;
 
    // The parent page
-   parent: SequenceSearch;
+   parent: TaxaBLAST;
 
    // Load the panel contents and display them on the page.
    load();

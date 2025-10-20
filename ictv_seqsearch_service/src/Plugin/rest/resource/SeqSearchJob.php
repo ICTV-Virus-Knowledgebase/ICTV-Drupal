@@ -65,8 +65,9 @@ class SeqSearchJob {
          $result = $query->fetchAssoc();
          if (!$result) { return false; }
 
-      } catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return false;
       }
 
@@ -218,8 +219,9 @@ class SeqSearchJob {
          $result = $connection->query($sql, $parameters);
          if (!$result) { return null; }
       } 
-      catch (Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
 
@@ -248,8 +250,9 @@ class SeqSearchJob {
          $rows = $connection->query($sql, $parameters)->fetchAll(\PDO::FETCH_ASSOC);
          if (!$rows) { return null; }
       } 
-      catch (Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
 
@@ -287,8 +290,9 @@ class SeqSearchJob {
          $result = $connection->query($sql, $parameters);
          if (!$result) { return null; }
 
-      } catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
    }

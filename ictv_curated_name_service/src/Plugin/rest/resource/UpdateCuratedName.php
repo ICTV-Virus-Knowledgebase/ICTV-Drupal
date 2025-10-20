@@ -236,9 +236,10 @@ class UpdateCuratedName extends ResourceBase {
          // Run the stored procedure.
          $queryResults = $this->connection->query($sql, $parameters);
       } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_curated_name_service')->error($e);
-         return [ "message" => $e->getMessage(), "success" => false ];
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_curated_name_service')->error($errorMessage);
+         return [ "message" => $errorMessage, "success" => false ];
       }
 
       return [ "message" => "The curated name was successfully updated", "success" => true ];

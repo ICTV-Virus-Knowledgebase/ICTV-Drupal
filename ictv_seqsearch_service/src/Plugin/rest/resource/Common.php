@@ -9,6 +9,11 @@ use Drupal\ictv_common\Utils;
 
 class Common {
 
+   // Default BLAST parameters
+   public static int $DEFAULT_BLAST_MAX_HSPS = 25;
+   public static int $DEFAULT_BLAST_MAX_TARGET_SEQS = 50;
+   public static string $DEFAULT_BLAST_TASK = "blastn";
+
    /*
    Standard amino acids: 
    A: Alanine
@@ -71,12 +76,14 @@ class Common {
 
    // A regex for valid nucleotides in a FASTA sequence.
    public static string $FASTA_NT_REGEX = "/^[ABCDGHKMNRSTUVWY\.\-]+$/i";
-
+   
    // The name of the parent module.
    public static string $MODULE_NAME = "ictv_seqsearch_service";
 
-
+   // Valid BLAST task names that can be provided as a parameter to UploadSequences.
+   public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dc-megablast"];
    
+
    /**
     * Decode data from Base64URL (http://base64.guru/developers/php/examples/base64url)
     * @param string $text
@@ -232,8 +239,9 @@ class Common {
          fwrite($newFile, $gzContents);
          fclose($newFile);
       } 
-      catch (Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
    }
@@ -407,8 +415,9 @@ class Common {
          }
          $fileData = fread($handle, filesize($filePathAndName));
    
-      } catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
    
       } finally {
@@ -455,6 +464,15 @@ class Common {
       return $userUID;
    }
 
+   /**
+    * Safely trim a string, returning an empty string if the input is null or empty.
+    */
+   public static function safeTrim(string|null $str): string {
+      if (!$str) { return ""; }
+      $str = trim($str);
+      if (strlen($str) < 1) { return ""; }
+      return $str;
+   }
 
    // Validate a FASTA file's contents and filename.
    public static function validateFASTA(string $fasta, string $filename, int &$invalidCount, int &$recordCount): bool {

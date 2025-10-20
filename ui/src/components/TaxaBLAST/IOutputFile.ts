@@ -1,7 +1,4 @@
 
-import { ResultFileType } from "./Common";
-
-
 export interface IOutputFile {
 
    // Base64 encoded string of the file contents.
