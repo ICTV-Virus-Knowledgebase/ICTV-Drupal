@@ -40,7 +40,7 @@ class TaxonHistory {
    */
    public static function fetch(Connection $connection, int $currentMSL, ?int $ictvID, ?int $MSL, ?int $taxNodeID, ?string $taxonName, ?int $vmrID): array {
 
-      $messages = '';
+      $messages = null;
       $releases = [];
       $taxa = [];
 
@@ -69,7 +69,7 @@ class TaxonHistory {
       $previousYear = NULL;
 
       // selectedTaxon is the taxNodeID that the SP got
-      $selectedTaxon = NULL;
+      // $selectedTaxon = NULL;
 
       foreach ($rows as $r) {
 

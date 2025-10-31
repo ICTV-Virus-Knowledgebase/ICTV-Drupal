@@ -19,8 +19,8 @@ class HistoricalTaxon {
    public int $isRenamed;
    public int $isSelected;
    public int $isSplit;
-   public ?string $lineageIDs;
    public ?string $lineageNames;
+   public ?string $lineageIDs;
    public ?string $lineageRanks;
    public int $mslReleaseNum;
    public ?string $name;
@@ -49,12 +49,12 @@ class HistoricalTaxon {
       $o->isRenamed        = Common::getIntParameter($d, "is_renamed") ?? 0;
       $o->isSelected       = Common::getIntParameter($d, "is_selected") ?? 0;
       $o->isSplit          = Common::getIntParameter($d, "is_split") ?? 0;
-      $o->lineageIDs       = $d["lineage_ids"] ?? null;
       $o->lineageNames     = $d["lineage_names"] ?? null;
+      $o->lineageIDs       = $d["lineage_ids"] ?? null;
       $o->lineageRanks     = $d["lineage_ranks"] ?? null;
       $o->mslReleaseNum    = Common::getIntParameter($d, "msl_release_num") ?? 0;
       $o->name             = $d["name"] ?? null;
-      $o->prevLineageNames = $d["prev_lineage_names"] ?? null;
+      $o->prevLineageNames = $d["prev_lineage_names"] ?? "";
       $o->prevLineageRanks = $d["prev_lineage_ranks"] ?? null;
       $o->prevNames        = $d["prev_names"] ?? null;
       $o->prevNotes        = $d["prev_notes"] ?? null;
@@ -79,8 +79,8 @@ class HistoricalTaxon {
          "isRenamed"        => $this->isRenamed == 1,
          "isSelected"       => $this->isSelected == 1,
          "isSplit"          => $this->isSplit == 1,
-         "lineageIDs"       => $this->lineageIDs,
          "lineageNames"     => $this->lineageNames,
+         "lineageIDs"       => $this->lineageIDs,
          "lineageRanks"     => $this->lineageRanks,
          "mslReleaseNum"    => $this->mslReleaseNum,
          "name"             => $this->name,
