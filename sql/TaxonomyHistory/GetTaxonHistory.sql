@@ -94,7 +94,9 @@ BEGIN
          END AS msl_release_num,
          name,
          MAX(prev_notes) AS prev_notes,
-         MAX(prev_proposal) AS prev_proposal,
+         -- SQL Server version does a CONCAT and not a MAX
+         GROUP_CONCAT(prev_proposal SEPARATOR ';')   AS prev_proposal,
+         -- MAX(prev_proposal) AS prev_proposal,
          taxnode_id,
          tree_id 
 
@@ -160,13 +162,34 @@ BEGIN
             ) AS modifications,
             node.msl_release_num,
             node.name,
-            prev_delta.notes AS prev_notes, 
-            prev_delta.proposal AS prev_proposal,  
+            prev_delta.notes AS prev_notes,
+            -- This case statement was present in the SQL Server version as a fallback for prev_proposal value
+            CASE
+               WHEN prev_delta.proposal IS NOT NULL
+                  THEN prev_delta.proposal
+               WHEN prev_delta.tag_csv2 <> '' THEN (
+                  SELECT d.proposal
+                     FROM taxonomy_node_delta d
+                     JOIN taxonomy_node t ON d.new_taxid = t.taxnode_id
+                     WHERE node.left_idx  > t.left_idx
+                     AND node.right_idx < t.right_idx
+                     AND t.tree_id   = node.tree_id
+                     AND t.level_id  > 100          -- below “tree”
+                     AND d.proposal IS NOT NULL
+                     ORDER BY t.level_id DESC         -- nearest child first
+                     LIMIT 1                          -- MariaDB’s TOP 1
+               )
+        END                         AS prev_proposal,
+            -- prev_delta.proposal AS prev_proposal,  
             node.taxnode_id AS taxnode_id,  
             node.tree_id AS tree_id
 
          FROM taxonomy_node_x AS node  
-         LEFT JOIN taxonomy_node_delta AS prev_delta ON prev_delta.new_taxid = node.taxnode_id
+         -- LEFT JOIN taxonomy_node_delta AS prev_delta ON prev_delta.new_taxid = node.taxnode_id
+         LEFT JOIN taxonomy_node_delta    AS prev_delta
+            ON (    prev_delta.new_taxid = node.taxnode_id
+               OR (prev_delta.is_deleted = 1
+                  AND prev_delta.prev_taxid = node.taxnode_id) )
          WHERE node.tree_id >= 19000000
          AND node.msl_release_num <= currentMSL 
          AND node.target_taxnode_id = taxNodeID
@@ -223,12 +246,28 @@ BEGIN
                CASE WHEN node.species_id IS NOT NULL THEN 'Species;' ELSE '' END 
             ) AS lineage_ranks,
             prev_delta.is_deleted AS modifications,
-            node.msl_release_num + 1 AS msl_release_num,
+            node.msl_release_num AS msl_release_num,
             node.name,
             prev_delta.notes AS prev_notes, 
-            prev_delta.proposal AS prev_proposal,
+            -- This case statement was present in the SQL Server version as a fallback for prev_proposal value
+            CASE
+               WHEN prev_delta.proposal IS NOT NULL
+                  THEN prev_delta.proposal
+               WHEN prev_delta.tag_csv2 <> '' THEN (
+                  SELECT d.proposal
+                     FROM taxonomy_node_delta d
+                     JOIN taxonomy_node t ON d.new_taxid = t.taxnode_id
+                     WHERE node.left_idx  > t.left_idx
+                     AND node.right_idx < t.right_idx
+                     AND t.tree_id   = node.tree_id
+                     AND t.level_id  > 100
+                     AND d.proposal IS NOT NULL
+                     ORDER BY t.level_id DESC
+                     LIMIT 1
+               )
+        END                         AS prev_proposal,
             node.taxnode_id AS taxnode_id,  
-            toc.tree_id
+            node.tree_id
 
          FROM taxonomy_node_x AS node  
          JOIN taxonomy_node_delta AS prev_delta ON (
@@ -241,11 +280,13 @@ BEGIN
          AND node.target_taxnode_id = taxNodeID
       ) taxaAndPrevs
 
+      -- Took out taxaAndPrevs.prev_proposal
+      -- It is calculated as GROUP_CONCAT(prev_proposal SEPARATOR ';') AS prev_proposal above
       GROUP BY taxaAndPrevs.msl_release_num, taxaAndPrevs.taxnode_id, taxaAndPrevs.tree_id, taxaAndPrevs.name, taxaAndPrevs.ictv_id, 
          taxaAndPrevs.is_deleted, taxaAndPrevs.is_demoted, taxaAndPrevs.is_lineage_updated, taxaAndPrevs.is_merged, 
          taxaAndPrevs.is_moved, taxaAndPrevs.is_new, taxaAndPrevs.is_promoted, taxaAndPrevs.is_renamed, taxaAndPrevs.is_split,
          taxaAndPrevs.left_idx, taxaAndPrevs.lineage_ids, taxaAndPrevs.lineage_names, taxaAndPrevs.modifications, taxaAndPrevs.msl_release_num, 
-         taxaAndPrevs.name, taxaAndPrevs.prev_notes, taxaAndPrevs.prev_proposal
+         taxaAndPrevs.name, taxaAndPrevs.prev_notes
    )
 
    SELECT
@@ -423,3 +464,14 @@ BEGIN
 
 END//
 DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
