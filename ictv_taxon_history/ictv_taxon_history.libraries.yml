@@ -5,9 +5,11 @@ taxonHistory:
       assets/css/fa-regular.css: {}
       assets/css/fa-solid.css: {}
       assets/css/fontawesome.css: {}
+      assets/css/MemberSpeciesTable.css: {}
       assets/css/TaxonHistory.css: {} 
       assets/css/tippy.css: {} 
       assets/css/light-border.css: {}
+      assets/css/dataTables.dataTables.min.css: {}
   fonts:
     assets/css/fonts/fa-regular-400.eot: {}
     assets/css/fonts/fa-regular-400.svg: {}

@@ -12,14 +12,7 @@ export enum SearchContext {
 }
 
 
-// An interface for a callback function that handles the selection of a search result.
-/*export interface ISelectionHandler {
-   (dataID_: string, lineage_: string, rank_: string, releaseNumber_: number);
-}*/
-
-
 export class TaxonomySearchPanel {
-
 
    containerSelector: string;
 
@@ -218,12 +211,12 @@ export class TaxonomySearchPanel {
 
          } else if (buttonEl.classList.contains("view-history-button")) {
 
-               // Get the taxon name
-               let taxonName = buttonEl.getAttribute("data-name");
-               if (!taxonName) { throw new Error("Invalid taxon name"); }
+            // Get the taxon name
+            let taxonName = buttonEl.getAttribute("data-name");
+            if (!taxonName) { throw new Error("Invalid taxon name"); }
 
-               // Open a new tab containing the taxon history page.
-               window.open(`${AppSettings.taxonHistoryPage}?taxnode_id=${id}&taxon_name=${taxonName}`, "_blank");
+            // Open a new tab containing the taxon history page.
+            window.open(`${AppSettings.taxonHistoryPage}?taxnode_id=${id}&taxon_name=${taxonName}`, "_blank");
 
          } else { return; }
 
@@ -256,7 +249,7 @@ export class TaxonomySearchPanel {
       let searchResults = null;
 
       // Call the search web service
-      searchResults = await TaxonomyService.search(AppSettings.currentMslRelease, includeAllReleases, searchText);
+      searchResults = await TaxonomyService.search(AppSettings.currentMslRelease, includeAllReleases, searchText, this.selectedRelease);
 
       // Re-enable the search and reset buttons.
       this.elements.searchControl.disabled = false;

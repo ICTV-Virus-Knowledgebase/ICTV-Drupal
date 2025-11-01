@@ -65,7 +65,7 @@ class IctvReleaseHistoryTaxonomyBrowserBlock extends BlockBase {
         '#markup' => $this->t("<div id='release_history_taxonomy_browser_container' class='ictv-custom'></div>"),
         '#attached' => [
             'library' => [
-                'ictv_release_history_taxonomy_browser/ICTV',
+               'ictv_release_history_taxonomy_browser/ICTV_TaxonomyBrowser',
             ],
             'library' => [
               'ictv_release_history_taxonomy_browser/releaseHistoryTaxonomyBrowser',

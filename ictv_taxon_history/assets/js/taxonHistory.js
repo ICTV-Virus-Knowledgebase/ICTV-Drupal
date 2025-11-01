@@ -34,12 +34,11 @@
             // The taxon history page name.
             window.ICTV_TaxonHistory.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
             
-            
-            // The DOM selector of the container Element added to the page.
-            const containerSelector = "#taxon_history_container";
+            // The DOM selectors of the container elements.
+            const historySelector = "#taxon_history_container";
 
             // Create a new TaxonReleaseHistory instance.
-            const taxonHistory = new window.ICTV_TaxonHistory.TaxonHistory(containerSelector, settings_.currentMslRelease);
+            const taxonHistory = new window.ICTV_TaxonHistory.TaxonHistory(historySelector, settings_.currentMslRelease);
 
             // Initialize and display the taxon history.
             taxonHistory.initialize();

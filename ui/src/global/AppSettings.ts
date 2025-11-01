@@ -49,11 +49,22 @@ export class _AppSettings {
       uploadSequences: "upload-sequences",
 
       // Taxonomy
-      taxonomy: "taxonomy.ashx",
+      getByReleasePreExpanded: "get-by-release-pre-expanded",
+      getChildTaxa: "get-child-taxa",
+      getMslRelease: "get-msl-release",
+      getReleaseHistory: "get-release-history",
+      //getReleaseTaxa: "get-release-taxa",
+      getTaxaByName: "get-taxa-by-name",
+      getTaxonDetails: "get-taxon-details",
+      getTreeExpandedToNode: "get-tree-expanded-to-node",
+      getUnassignedChildTaxaByName: "get-unassigned-child-taxa-by-name",
+      searchTaxonomy: "search-taxonomy",
+
+      // Taxonomy history
       taxonomyHistory: "get-taxon-history",
       
       // Member species table
-      virusIsolate: "virusIsolate.ashx",
+      virusIsolate: "get-virus-isolates",
 
       // Virus name lookup
       virusNameLookup: "virus-name-lookup"

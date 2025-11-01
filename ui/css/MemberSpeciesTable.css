@@ -1,0 +1,116 @@
+
+/* The Member Species Table */
+#member_species_table_container .virus-isolates-table {
+   background-color: rgba(255, 255, 255, 1.0) !important;
+   /*border-collapse: collapse;*/
+   border-color: #aaa;
+   border-style: solid;
+   border-width: 1px;
+}
+
+#member_species_table_container .virus-isolates-table th,
+#member_species_table_container .virus-isolates-table td {
+   border-style: solid;
+   border-bottom-color: rgb(164, 185, 195);
+   border-width: 0 0 1px 0;
+}
+
+#member_species_table_container .virus-isolates-table tr.header-row {
+   background-color: #757575 !important;
+}
+
+/*#member_species_table_container.virus-isolates-table tr:first-child td {
+    padding-top: unset;
+}*/
+#member_species_table_container .virus-isolates-table tr.header-row th {
+   color: #fff;
+   font-size: 0.7rem !important;
+   font-weight: normal;
+}
+
+#member_species_table_container .virus-isolates-table .virus-row {
+   background-color: #fff;
+}
+
+#member_species_table_container .virus-isolates-table .alt-virus-row {
+   background-color: #fdfdfd;
+}
+
+#member_species_table_container .virus-isolates-table td {
+   font-size: 0.7rem !important;
+}
+
+/* Column classes (both TH and TD) */
+
+/*#member_species_table_container .virus-isolates-table .col-species {
+}*/
+#member_species_table_container .virus-isolates-table td.col-species {
+   min-width: 15ch;
+}
+#member_species_table_container .virus-isolates-table .col-exemplar i {
+   color: #000;
+}
+/*
+#member_species_table_container .virus-isolates-table .col-species {
+}
+#member_species_table_container .virus-isolates-table .col-alternativeNameCSV {
+}*/
+#member_species_table_container .virus-isolates-table td.col-isolate {
+   word-break: break-word;
+}
+#member_species_table_container .virus-isolates-table td.col-accessionNumber,
+#member_species_table_container .virus-isolates-table td.col-refSeqAccession {
+   font-family: monospace;
+   white-space: nowrap;
+}
+#member_species_table_container .virus-isolates-table .col-accessionNumber a,
+#member_species_table_container .virus-isolates-table .col-refSeqAccession a {
+   color: #2196f3;
+   text-decoration: none;
+}
+#member_species_table_container .virus-isolates-table td.col-abbrev {
+   word-break: normal;
+}
+#member_species_table_container .virus-isolates-lower-hr {
+   margin: 0.25rem 0;
+}
+#member_species_table_container .virus-isolates-disclaimer {
+   font-size: 0.9rem;
+}
+#member_species_table_container .virus-isolates-table-legend {
+   font-size: 0.9rem;
+}
+#member_species_table_container .virus-isolates-table-legend i {
+   color: #000;
+   font-size: 0.75rem;
+}
+
+
+/* The "Show ___ entries" row above the table */
+#member_species_table_container .dt-container .dt-length {
+   margin-bottom: 1.0rem;
+}
+
+#member_species_table_container .dt-container .dt-length label {
+   display: inline-block !important;
+}
+
+#member_species_table_container .dt-container .dt-length select.dt-input {
+   background-color: transparent;
+   border: 1px solid #aaa;
+   border-radius: 3px;
+   font-size: 1.0rem;
+   max-width: 6rem;
+   margin: 0 0.25rem;
+   min-width: 4rem;
+   padding: 0 5px !important;
+   text-align: left;
+}
+
+#member_species_table_container .dt-container .dt-layout-row {
+   font-size: 0.9rem;
+}
+
+#member_species_table_container .dt-container .dt-paging {
+   text-align: right;
+}

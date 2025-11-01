@@ -9,6 +9,9 @@ import { LookupReleaseAction, LookupReleaseActionDefinition, LookupTaxonomyRank,
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 import { Utils } from "../../helpers/Utils";
 
+// TESTING
+import { MemberSpeciesTable } from "../MemberSpeciesTable/MemberSpeciesTable";
+
 // "Forward declarations" for external JavaScript libraries.
 declare var jQuery: any;
 
@@ -27,6 +30,11 @@ enum LineageDisplayFormat {
    vertical = "vertical"
 }
 
+enum TabType {
+   history = "history",
+   isolates = "isolates"
+}
+
 
 export class TaxonHistory {
 
@@ -43,10 +51,16 @@ export class TaxonHistory {
    elements: {
       container: HTMLElement,
       instructions: HTMLElement,
+      historyTabButton: HTMLElement,
+      historyTabPanel: HTMLElement,
+      isolatesTabButton: HTMLElement,
+      isolatesTabPanel: HTMLElement,
       messagePanel: HTMLElement,
       releases: HTMLElement,
       selectedTaxon: HTMLElement,
-      settingsDialog: HTMLElement
+      settingsDialog: HTMLElement,
+      tabButtons: HTMLElement,
+      tabPanels: HTMLElement
    }
 
    // Settings for the lineage export.
@@ -128,11 +142,17 @@ export class TaxonHistory {
 
       this.elements = {
          container: null,
+         historyTabButton: null,
+         historyTabPanel: null,
+         isolatesTabButton: null,
+         isolatesTabPanel: null,
          instructions: null,
          messagePanel: null,
          releases: null,
          selectedTaxon: null,
-         settingsDialog: null
+         settingsDialog: null,
+         tabButtons: null,
+         tabPanels: null
       }
 
       // Default settings for the lineage export.
@@ -945,6 +965,38 @@ export class TaxonHistory {
       return `<div class="spinner-ctrl"><i class="${this.icons.spinner}"></i>${spinnerText}</div>`;
    }
 
+   // Handle a click on a tab button.
+   handleTabClick(tabType_: TabType) {
+
+      const buttons = this.elements.tabButtons.querySelectorAll(".tab-button[data-id]") as NodeListOf<HTMLElement>;
+      if (!buttons) { throw new Error("Unable to handle tab click: Invalid buttons"); }
+
+      buttons.forEach((button_: HTMLElement) => {
+         const dataID = button_.getAttribute("data-id") as TabType;
+         if (!dataID) { throw new Error("Unable to handle tab click: Invalid button"); }
+
+         if (dataID === tabType_) {
+            if (!button_.classList.contains("active")) { button_.classList.add("active"); }
+         } else {
+            button_.classList.remove("active");
+         }
+      })
+
+      const panels = this.elements.tabPanels.querySelectorAll(".tab-panel[data-id]") as NodeListOf<HTMLElement>;
+      if (!panels) { throw new Error("Unable to handle tab click: Invalid panels"); }
+
+      panels.forEach((panel_: HTMLElement) => {
+         const dataID = panel_.getAttribute("data-id") as TabType;
+         if (!dataID) { throw new Error("Unable to handle tab click: Invalid panel"); }
+
+         if (dataID === tabType_) {
+            if (!panel_.classList.contains("active")) { panel_.classList.add("active"); }
+         } else {
+            panel_.classList.remove("active");
+         }
+      })
+   }
+
    // Highlight all changed taxa with this ICTV ID as a data attribute.
    highlightSelectedLineage(selectedIctvID_: number) {
 
@@ -977,17 +1029,30 @@ export class TaxonHistory {
 
       // Generate the component's HTML.
       let html: string =
-         `<div class="message-panel visible"></div>
-         <div class="data-container">
-            <div class="selected-taxon"></div>
-            <div class="instructions">
-               (The history of <span class="selected-name"></span> is <span class="highlighted">highlighted in yellow</span>.
-               Click on a taxon to select it and highlight its history.)
+         `<div class="container-panel">
+            <div class="tab-buttons">
+               <div class="tab-button active" data-id="${TabType.history}">Taxon History</div>
+               <div class="tab-button" data-id="${TabType.isolates}">Virus Isolates</div>
             </div>
-            <div class="releases"></div>
-            ${this.createSettingsDialogHTML()}
+            <div class="tab-panels">
+               <div class="tab-panel active" data-id="${TabType.history}">
+                  <div class="data-container" id="member_species_table_container">
+                     <div class="selected-taxon"></div>
+                     <div class="instructions">
+                        (The history of <span class="selected-name"></span> is <span class="highlighted">highlighted in yellow</span>.
+                        Click on a taxon to select it and highlight its history.)
+                     </div>
+                     <div class="releases"></div>
+                     ${this.createSettingsDialogHTML()}
+                  </div>
+                  </div>
+               </div>
+               <div class="tab-panel" data-id="${TabType.isolates}">
+                  <div class="message-panel visible"></div>
+               </div>
+            </div>
          </div>`;
-
+         
       // Get a reference to the container Element.
       this.elements.container = document.querySelector(this.containerSelector);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
@@ -1010,6 +1075,28 @@ export class TaxonHistory {
       this.elements.settingsDialog = this.elements.container.querySelector("#export_settings_dialog");
       if (!this.elements.settingsDialog) { throw new Error("Invalid settings dialog element"); }
 
+      // Tab containers
+      this.elements.tabButtons = this.elements.container.querySelector(".tab-buttons");
+      if (!this.elements.tabButtons) { return await AlertBuilder.displayError("Invalid tab buttons Element"); }
+
+      this.elements.tabPanels = this.elements.container.querySelector(".tab-panels");
+      if (!this.elements.tabPanels) { return await AlertBuilder.displayError("Invalid tab panels Element"); }
+
+      // Individual tab buttons
+      this.elements.historyTabButton = this.elements.tabButtons.querySelector(`.tab-button[data-id="${TabType.history}"]`) as HTMLElement;
+      if (!this.elements.historyTabButton) { throw new Error("Invalid history tab button"); }
+
+      this.elements.isolatesTabButton = this.elements.tabButtons.querySelector(`.tab-button[data-id="${TabType.isolates}"]`) as HTMLElement;
+      if (!this.elements.isolatesTabButton) { throw new Error("Invalid isolates tab button"); }
+
+      // Tab panels
+      this.elements.historyTabPanel = this.elements.tabPanels.querySelector(`.tab-panel[data-id="${TabType.history}"]`);
+      if (!this.elements.historyTabPanel) { throw new Error("Invalid history tab panel"); }
+
+      this.elements.isolatesTabPanel = this.elements.tabPanels.querySelector(`.tab-panel[data-id="${TabType.isolates}"]`);
+      if (!this.elements.isolatesTabPanel) { throw new Error("Invalid isolates tab panel"); }
+
+
       this.elements.settingsDialog.addEventListener("click", (event_) => {
          
          const target = (event_.target) as HTMLElement;
@@ -1025,6 +1112,18 @@ export class TaxonHistory {
          return;
       })
 
+      this.elements.tabButtons.addEventListener("click", async (event_) => {
+         const tabEl = (event_.target as HTMLElement).closest(".tab-button");
+         if (!tabEl) { return; }
+
+         event_.preventDefault();
+         event_.stopPropagation();
+
+         const tabType = tabEl.getAttribute("data-id") as TabType;
+         this.handleTabClick(tabType);
+         return;
+      })
+
       // Get the query string parameters
       const urlParams = new URLSearchParams(window.location.search);
 
@@ -1035,25 +1134,32 @@ export class TaxonHistory {
       if (!isNaN(this.identifiers.taxNodeID)) {
 
          // Get the history by taxnode ID.
-         return await this.getByTaxNodeID();
+         /*return*/ await this.getByTaxNodeID();
 
       } else if (!isNaN(this.identifiers.ictvID)) {
          
          // Get the history by ICTV ID.
-         return await this.getByIctvID();
+         /*return*/ await this.getByIctvID();
 
       } else if (!isNaN(this.identifiers.vmrID)) {
          
          // Get the history by VMR (isolate) ID.
-         return await this.getByVmrID();
+         /*return*/ await this.getByVmrID();
 
       } else if (this.identifiers.taxonName) {
 
          // Get the history by taxon name.
-         return await this.getByTaxonName();
+         /*return*/ await this.getByTaxonName();
       }
 
-      return await AlertBuilder.displayError("No valid parameters were provideed. The following parameters are accepted: taxnode_id, ictv_id, vmr_id, and taxon_name");
+      
+      // TESTING
+      const msTable = new MemberSpeciesTable("#member_species_table_container");
+      await msTable.initialize();
+      await msTable.loadTable(this.identifiers.vmrID, this.identifiers.msl, false, this.identifiers.taxNodeID, this.identifiers.taxonName);
+
+
+      return; // await AlertBuilder.displayError("No valid parameters were provideed. The following parameters are accepted: taxnode_id, ictv_id, vmr_id, and taxon_name");
    }
 
    // Open the lineage export settings dialog.

@@ -1,4 +1,5 @@
-﻿/*-------------------------------------------------------------------------------------------------------------------------------------------------
+﻿
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
    General-purpose styles
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -1316,7 +1317,39 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
     Overriding DataTables CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+
 /* The "Show ___ entries" row above the table */
+.dt-container .dt-length {
+   margin-bottom: 1.0rem;
+}
+
+.dt-container .dt-length label {
+   display: inline-block !important;
+}
+
+.dt-container .dt-length select.dt-input {
+   background-color: transparent;
+   border: 1px solid #aaa;
+   border-radius: 3px;
+   font-size: 1.0rem;
+   max-width: 6rem;
+   margin: 0 0.25rem;
+   min-width: 4rem;
+   padding: 0 5px !important;
+   text-align: left;
+}
+
+.dt-container .dt-layout-row {
+   font-size: 0.9rem;
+}
+
+.dt-container .dt-paging {
+   text-align: right;
+}
+
+
+
+/* The "Show ___ entries" row above the table 
 .dataTables_length {
    margin-bottom: 1.0rem;
 }
@@ -1338,7 +1371,7 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
    margin: 0 0.25rem;
    min-width: 4rem;
    text-align: left;
-}
+}*/
 
 /* Table TH and TD */
 table.dataTable.compact thead th,

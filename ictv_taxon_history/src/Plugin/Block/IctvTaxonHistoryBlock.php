@@ -61,10 +61,12 @@ class IctvTaxonHistoryBlock extends BlockBase {
       $taxonHistoryPage = $result[0]->taxonHistoryPage;
 
       $build = [
-         '#markup' => $this->t("<div id='taxon_history_container' class='ictv-custom'></div>"),
+         '#markup' => $this->t("<div id='taxon_details_container' class='ictv-custom'>
+            <div id='taxon_history_container' class='ictv-custom'></div>
+         </div>"),
          '#attached' => [
             'library' => [
-                  'ictv_taxon_history/ICTV_TaxonReleaseHistory',
+               'ictv_taxon_history/ICTV_TaxonHistory',
             ],
             'library' => [
                'ictv_taxon_history/taxonHistory',
