@@ -5,11 +5,13 @@ declare var jQuery: any;
 import { AppSettings } from "../../global/AppSettings";
 import { IMslRelease } from "../../models/IMslRelease";
 import { ITaxon } from "../../models/ITaxon";
+import { Identifiers } from "../../models/Identifiers";
 import { IDisplaySettings } from "./IDisplaySettings";
 import { SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
 import { OrderedTaxaLevel, TaxaLevel, TaxaLevelLabel, TaxonomyDisplayType, TopLevelRank } from "../../global/Types";
 import { TaxonomyService } from "../../services/TaxonomyService";
 import tippy, { Props, ReferenceElement } from "tippy.js";
+import { Utils } from "../../helpers/Utils";
 
 // The initial data provided to the taxonomy browser.
 interface IInitialData {
@@ -94,6 +96,9 @@ export class TaxonomyBrowser {
       //spinner: "<div class='spinner-ctrl'><i class='fas fa-spinner fa-spin'></i> {{spinner_text}}</div>",
       star: "<i class='fas fa-star'></i>"
    }
+
+   // Identifiers provided as query string parameters.
+   identifiers: Identifiers;
 
    // Data that specifies how the control is to be initially populated.
    initialData: IInitialData = null;
@@ -593,6 +598,27 @@ export class TaxonomyBrowser {
    }
 
 
+   async getByReleasePreExpanded() {
+
+      let hideAboveRank: TaxaLevel = this.localData.hideAboveRank || <TaxaLevel>this.defaults.hideAboveRank;
+      let preExpandToRank: TaxaLevel = this.localData.preExpandToRank || <TaxaLevel>this.defaults.preExpandToRank;
+
+      // Display the spinner icon
+      let spinner = this.getSpinnerHTML("Loading...");
+
+      // Clear the search results and display the spinner.
+      this.elements.taxonomyBrowser.innerHTML = spinner;
+
+      // Get the taxonomy HTML
+      const taxonomyHTML: string = await TaxonomyService.getByReleasePreExpanded(this.displaySettings, hideAboveRank, preExpandToRank, this.mslRelease.releaseNumber);
+      if (!taxonomyHTML) { throw new Error("Invalid taxonomy HTML"); }
+
+      // Process the release data.
+      this.processReleaseTaxa(taxonomyHTML);
+
+      return;
+   }
+
    async getChildTaxa(taxNodeID_: string) {
 
       const response = await TaxonomyService.getChildTaxa(taxNodeID_);
@@ -667,7 +693,7 @@ export class TaxonomyBrowser {
 
    // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
    // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
-   async getReleaseTaxa() {
+   /*async getReleaseTaxa() {
 
       let hideAboveRank: TaxaLevel = this.localData.hideAboveRank || <TaxaLevel>this.defaults.hideAboveRank;
       let preExpandToRank: TaxaLevel = this.localData.preExpandToRank || <TaxaLevel>this.defaults.preExpandToRank;
@@ -686,7 +712,7 @@ export class TaxonomyBrowser {
       this.processReleaseTaxa(taxonomyHTML);
 
       return;
-   }
+   }*/
 
    // Return a DIV that contains the spinner icon and optional text.
    getSpinnerHTML(spinnerText_: string): string {
@@ -770,6 +796,16 @@ export class TaxonomyBrowser {
       return;
    }
 
+   
+   // Get the query string parameters
+   getUrlParams() {
+
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // Look for identifier parameters in the query string.
+      this.identifiers = Utils.getIdentifiersFromURL(urlParams);
+      return;
+   }
 
    /*
    async getUnassignedChildTaxaByName() {
@@ -887,15 +923,13 @@ export class TaxonomyBrowser {
    // This callback function is provided to the taxonomy search panel (child component) to handle a search result selection.
    async handleSearchResultSelection(taxNodeID_: string, lineage_: string, rank_: string, releaseNumber_: string) {
 
-      //console.log(`inside handleSearchResultSelection with id ${taxNodeID_}, lineage ${lineage_}, rank ${rank_}, release ${releaseNumber_}`)
-
       // Get the specified release
       await this.getRelease(releaseNumber_);
 
       if (!taxNodeID_ || !rank_) {
 
          // If taxnode ID and rank weren't provided, display the entire taxonomy for this release.
-         await this.getReleaseTaxa();
+         await this.getByReleasePreExpanded();
 
       } else {
          // Get the tree expanded to the selected node.
@@ -935,7 +969,7 @@ export class TaxonomyBrowser {
       if (this.displaySettings.displayRankCtrls === true) { html += this.createRankControls(); }
 
       // The taxonomy browser
-      html += `<div class="${this.cssClasses.taxonomyBrowser}"></div>`;
+      html += `<div class="${this.cssClasses.taxonomyBrowser}" id="taxonomy_browser_container"></div>`;
 
       // Add a dialog container to the page.
       html += `<div class="${this.cssClasses.dialogContainer}"></div>`;
@@ -1029,7 +1063,7 @@ export class TaxonomyBrowser {
             // Get the release constrained by the "hide above" and "pre-expand" selections.
             await this.getRelease(this.mslRelease.releaseNumber);
 
-            await this.getReleaseTaxa();
+            await this.getByReleasePreExpanded();
          });
       }
 
@@ -1056,7 +1090,7 @@ export class TaxonomyBrowser {
 
             // Get the requested release and its associated taxonomy.
             await this.getRelease(releaseNumber);
-            await this.getReleaseTaxa();
+            await this.getByReleasePreExpanded();
 
             return false;
          })
@@ -1111,17 +1145,30 @@ export class TaxonomyBrowser {
 
          case TaxonomyDisplayType.display_all:
             await this.getRelease(this.initialData.releaseNumber);
-            await this.getReleaseTaxa();
+            await this.getByReleasePreExpanded();
             break;
 
          case TaxonomyDisplayType.display_release_history:
-            await this.getReleaseHistory();
-            break;
 
-         /*case TaxonomyDisplayType.display_unassigned_child_taxa:
-            await this.getRelease(this.initialData.releaseNumber);
-            await this.getUnassignedChildTaxaByName();
-            break;*/
+            // Get the release history
+            await this.getReleaseHistory();
+
+            // See if an MSL was provided as a query string parameter.
+            this.getUrlParams();
+            if (!!this.identifiers && !isNaN(this.identifiers.msl)) {
+               
+               // Scroll to the release after it is selected.
+               this.scrollToReleaseAfterLoading = true;
+
+               // Update the search panel.
+               this.searchPanel.selectedRelease = this.identifiers.msl;
+               
+               // Get the requested release and its associated taxonomy.
+               await this.getRelease(this.identifiers.msl.toString());
+               await this.getByReleasePreExpanded();
+            }
+
+            break;
 
          default:
             await this.getRelease(this.initialData.releaseNumber);

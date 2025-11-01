@@ -1,12 +1,12 @@
 memberSpeciesTable:
-  version: 20250911
+  version: 20251020
   css:
     theme:
       assets/css/fa-regular.css: {}
       assets/css/fa-solid.css: {}
       assets/css/fontawesome.css: {}
-      assets/css/jquery.dataTables.min.css: {}
-      assets/css/ICTV.css: {} 
+      assets/css/dataTables.dataTables.min.css: {}
+      assets/css/MemberSpeciesTable.css: {}
       assets/css/tippy.css: {} 
       assets/css/light-border.css: {}
   fonts:
@@ -27,7 +27,7 @@ memberSpeciesTable:
     assets/images/sort_desc_disabled.png: {}
     assets/images/sort_desc.png: {}
   js:
-    assets/js/ICTV.js: { preprocess: false }
+    assets/js/ICTV_MemberSpeciesTable.js: { preprocess: false }
     assets/js/memberSpeciesTable.js: { preprocess: false }
   dependencies:
     - core/jquery

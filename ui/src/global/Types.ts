@@ -278,7 +278,18 @@ export enum WebServiceKey {
    uploadSequences = "uploadSequences",
 
    // Taxonomy
-   taxonomy = "taxonomy",
+   getByReleasePreExpanded = "getByReleasePreExpanded",
+   getChildTaxa = "getChildTaxa",
+   getMslRelease = "getMslRelease",
+   getReleaseHistory = "getReleaseHistory",
+   //getReleaseTaxa = "getReleaseTaxa",
+   getTaxaByName = "getTaxaByName",
+   getTaxonDetails = "getTaxonDetails",
+   getTreeExpandedToNode = "getTreeExpandedToNode",
+   getUnassignedChildTaxaByName = "getUnassignedChildTaxaByName",
+   searchTaxonomy = "searchTaxonomy",
+
+   // Taxonomy history
    taxonomyHistory = "taxonomyHistory",
    
    // Member species table

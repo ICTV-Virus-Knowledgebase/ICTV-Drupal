@@ -10,6 +10,49 @@
    --highlight-color: #fff6c4;
 }
 
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Tabs
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#taxon_history_container .tab-buttons {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+}
+#taxon_history_container .tab-button {
+   border-color: #ddd;
+   border-style: solid;
+   border-width: 0 0 3px 0;
+   cursor: pointer;
+   display: block;
+   padding-bottom: 0.25rem;
+   text-align: center;
+   visibility: visible;
+   width: 33.33%;
+}
+#taxon_history_container .tab-button.active {
+   border-color: rgb(13, 110, 253);
+}
+#taxon_history_container .tab-button.disabled {
+   color: #999;
+}
+#taxon_history_container .tab-button.disabled.active {
+   border-color: #999;
+}
+
+#taxon_history_container .tab-panel {
+   display: none;
+   visibility: hidden;
+}
+#taxon_history_container .tab-panel.active {
+   display: block;
+   visibility: visible;
+}
+
+
+
 /* The message panel */
 #taxon_history_container .message-panel.visible {
    margin-top: 2.0rem;

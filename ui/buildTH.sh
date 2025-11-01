@@ -23,7 +23,7 @@ printf "Building the Taxon History component \n\n"
 printf "\n\n"
 
 #------------------------------------------------------------------------------
-# Copy the generated JavaScript file to the module's asset directory.
+# Copy JavaScript files to the module's asset directory.
 #------------------------------------------------------------------------------
 printf "Copying ICTV_TaxonHistory.js to ictv_taxon_history/assets/js\n\n"
 
@@ -35,3 +35,5 @@ cp ./dist/ICTV_TaxonHistory.js ../ictv_taxon_history/assets/js/
 printf "Copying CSS files to ictv_taxon_history/assets/css\n\n"
 
 cp ./css/TaxonHistory.css ../ictv_taxon_history/assets/css/
+cp ./css/MemberSpeciesTable.css ../ictv_taxon_history/assets/css/
+cp ./css/dataTables.dataTables.min.css ../ictv_taxon_history/assets/css/

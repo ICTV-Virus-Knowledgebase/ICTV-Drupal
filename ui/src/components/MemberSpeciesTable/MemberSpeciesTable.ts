@@ -1,5 +1,5 @@
 
-import DataTable from 'datatables.net-dt';
+import DataTables from 'datatables.net-dt';
 import { IVirusIsolate } from "../../models/IVirusIsolate";
 import { Utils } from "../../helpers/Utils";
 import { VirusIsolateService } from "../../services/VirusIsolateService";
@@ -41,7 +41,8 @@ export class MemberSpeciesTable {
    dataTable;
 
    elements: {
-      container: HTMLElement
+      container: HTMLElement,
+      rowContainer: HTMLElement
    }
 
    icons: {
@@ -72,7 +73,8 @@ export class MemberSpeciesTable {
       })
 
       this.elements = {
-         container: null
+         container: null,
+         rowContainer: null
       }
 
       this.icons = {
@@ -152,16 +154,6 @@ export class MemberSpeciesTable {
       // Convert non-empty accession numbers to links.
       let accessionLinks = this.createLinksFromAccession(isolate_.accessionNumber);
 
-      // Update the counts lookup for each column.
-      this.columns.forEach((column_: string) => {
-
-         // Does this column exist and does it have a non-empty value?
-         if (!!isolate_[column_] && isolate_[column_].length > 0) {
-            let currentCount = this.counts.get(column_);
-            this.counts.set(column_, currentCount + 1);
-         }
-      })
-
       const exemplar = isolate_.exemplar === "E" ? this.icons.exemplar : "";
 
       // Lineage names
@@ -210,77 +202,88 @@ export class MemberSpeciesTable {
       return html;
    }
 
-
-   async initialize(taxonName_: string, mslRelease_?: number, onlyUnassigned_?: boolean) {
-
-      if (!taxonName_ || taxonName_.length < 1) { throw new Error("Invalid taxon name"); }
-      this.taxonName = taxonName_;
-
-      if (!mslRelease_) { mslRelease_ = null; }
-
-      if (onlyUnassigned_ !== true) { onlyUnassigned_ = false; }
+   async initialize() {
 
       // Get the container Element.
       this.elements.container = document.querySelector(this.selectors.container);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
 
+      // Begin generating the HTML that will be dynamically added to the page.
+      // <h2 class="virus-isolates-title">Member Species</h2>
+      let html =
+         `<a href="#member_species_table"></a>          
+         <table class="virus-isolates-table compact stripe">
+            <thead>
+               <tr class="header-row">
+                  <th class="col-exemplar" data-orderable="false"></th>
+                  <th class="col-subrealm">Subrealm</th>
+                  <th class="col-kingdom">Kingdom</th>
+                  <th class="col-subkingdom">Subkingdom</th>
+                  <th class="col-phylum">Phylum</th>
+                  <th class="col-subphylum">Subphylum</th>
+                  <th class="col-order">Order</th>
+                  <th class="col-suborder">Suborder</th>
+                  <th class="col-class_">Class</th>
+                  <th class="col-subclass">Subclass</th>
+                  <th class="col-family">Family</th>
+                  <th class="col-subfamily">Subfamily</th>
+                  <th class="col-genus">Genus</th>
+                  <th class="col-subgenus">Subgenus</th>
+                  <th class="col-species">Species</th>
+                  <th class="col-alternativeNameCSV">Virus name</th>
+                  <th class="col-isolate">Isolate</th>
+                  <th class="col-accessionNumber">Accession</th>
+                  <th class="col-availableSequence">Available sequence</th>
+                  <th class="col-abbrev">Abbrev.</th>
+               </tr>
+            </thead>
+            <tbody></tbody>
+         </table>
+         <hr class="virus-isolates-lower-hr" />
+         <div class="virus-isolates-table-legend">${this.icons.exemplar} Exemplar isolate of the species</div>
+         <div class="virus-isolates-disclaimer">Virus names, the choice of exemplar isolates, and virus abbreviations, are not official ICTV designations</div>`;
+
+      this.elements.container.innerHTML = html;
+
+      this.elements.rowContainer = this.elements.container.querySelector("table.virus-isolates-table tbody");
+      if (!this.elements.rowContainer) { throw new Error("Invalid tbody Element"); }
+
+      return;
+   }
+
+   
+   async loadTable(isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string) {
 
       // Get the taxon's virus isolates.
-      const isolates: IVirusIsolate[] = await VirusIsolateService.getVirusIsolates(mslRelease_, onlyUnassigned_, this.taxonName)
+      const isolates: IVirusIsolate[] = await VirusIsolateService.getIsolates(isolateID_, mslRelease_, onlyUnassigned_, taxnodeID_, taxonName_);
       if (isolates == null || isolates.length < 1) {
          this.elements.container.innerHTML = ""; // "No virus isolates were found";
          return;
       }
 
-      let rowCount = 0;
+      let html = "";
 
-      // Begin generating the HTML that will be dynamically added to the page.
-      let html =
-         `<h2 class="virus-isolates-title">Member Species</h2>
-            <a href="#member_species_table"></a>          
-            <table class="virus-isolates-table">
-                <thead>
-                    <tr class="header-row">
-                        <th class="col-exemplar" data-orderable="false"></th>
-                        <th class="col-subrealm">Subrealm</th>
-                        <th class="col-kingdom">Kingdom</th>
-                        <th class="col-subkingdom">Subkingdom</th>
-                        <th class="col-phylum">Phylum</th>
-                        <th class="col-subphylum">Subphylum</th>
-                        <th class="col-order">Order</th>
-                        <th class="col-suborder">Suborder</th>
-                        <th class="col-class_">Class</th>
-                        <th class="col-subclass">Subclass</th>
-                        <th class="col-family">Family</th>
-                        <th class="col-subfamily">Subfamily</th>
-                        <th class="col-genus">Genus</th>
-                        <th class="col-subgenus">Subgenus</th>
-                        <th class="col-species">Species</th>
-                        <th class="col-alternativeNameCSV">Virus name</th>
-                        <th class="col-isolate">Isolate</th>
-                        <th class="col-accessionNumber">Accession</th>
-                        <th class="col-availableSequence">Available sequence</th>
-                        <th class="col-abbrev">Abbrev.</th>
-                    </tr>
-                </thead>
-                <tbody>`;
+      isolates.forEach((isolate_: IVirusIsolate, index_: number) => {
 
-      // Create a row for each virus isolate.
-      isolates.forEach((isolate_: IVirusIsolate) => {
-         html += this.createIsolateRow(isolate_, rowCount);
-         rowCount += 1;
+         // Update the counts lookup for each column.
+         this.columns.forEach((column_: string) => {
+
+            // Does this column exist and does it have a non-empty value?
+            if (!!isolate_[column_] && isolate_[column_].length > 0) {
+               let currentCount = this.counts.get(column_);
+               this.counts.set(column_, currentCount + 1);
+            }
+         })
+
+         // Create a row for each virus isolate.
+         html += this.createIsolateRow(isolate_, index_);
       })
 
-      html += `</tbody></table>
-            <hr class="virus-isolates-lower-hr" />
-            <div class="virus-isolates-table-legend">${this.icons.exemplar} Exemplar isolate of the species</div>
-            <div class="virus-isolates-disclaimer">Virus names, the choice of exemplar isolates, and virus abbreviations, are not official ICTV designations</div>`;
-
-      this.elements.container.innerHTML = html;
+      // Add the rows to the table body.
+      this.elements.rowContainer.innerHTML = html;
 
       // Hide empty columns
       this.columns.forEach((column_: string) => {
-
          const count = this.counts.get(column_);
          if (count < 1) {
             const columnEls: NodeListOf<HTMLElement> = document.querySelectorAll(`${this.selectors.container} .col-${column_}`);
@@ -291,14 +294,22 @@ export class MemberSpeciesTable {
       })
 
       // Convert the table into a DataTable instance.
-      this.dataTable = new DataTable(`${this.selectors.container} table`, {
+      this.dataTable = new DataTables(`${this.selectors.container} table.virus-isolates-table`, {
          autoWidth: false,
-         dom: "t",
+         dom: "lrtip",
+         layout: {
+            topStart: null,
+            topEnd: null,
+            bottomEnd: {
+               paging: {
+                  buttons: 3
+               }
+            }
+         },
          order: [],
-         paging: false,
-         searching: false 
+         pagingType: "full_numbers", // simple, simple_numbers, full, full_numbers
+         searching: false,
+         stripeClasses: []
       });
-
-      return;
    }
 }

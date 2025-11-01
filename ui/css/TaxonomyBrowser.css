@@ -1,0 +1,162 @@
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   General-purpose styles
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#taxonomy_browser_container [data-is-visible='true'] {
+   display: initial;
+}
+
+#taxonomy_browser_container [data-is-visible='false'] {
+   display: none;
+}
+
+
+/* The spinner icon and text */
+#taxonomy_browser_container .spinner-ctrl {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+   width: 100%;
+}
+
+#taxonomy_browser_container .spinner-ctrl i {
+   font-size: 2.0rem;
+   margin-right: 0.5rem;
+}
+
+#taxonomy_browser_container .btn {
+   border: 1px solid transparent;
+   display: inline-block;
+   font-size: 12pt;
+   font-size: 0.9rem;
+   font-weight: 400;
+   padding: .375rem .75rem;
+   text-align: center;
+   user-select: none;
+   vertical-align: middle;
+   white-space: nowrap;
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+}
+
+#taxonomy_browser_container .btn i {
+   margin-right: 5px;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Buttons styles from Bootstrap
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Primary */
+#taxonomy_browser_container .btn-primary {
+   color: #fff;
+   background-color: #007bff;
+   border-color: #007bff;
+}
+
+#taxonomy_browser_container .btn-primary:hover {
+   color: #fff;
+   background-color: #0069d9;
+   border-color: #0062cc;
+}
+
+#taxonomy_browser_container .btn-primary:focus,
+#taxonomy_browser_container .btn-primary.focus {
+   box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
+}
+
+#taxonomy_browser_container .btn-primary.disabled,
+#taxonomy_browser_container .btn-primary:disabled {
+   color: #fff;
+   background-color: #007bff;
+   border-color: #007bff;
+}
+
+/* Success */
+#taxonomy_browser_container .btn-success {
+   color: #fff;
+   background-color: #28a745;
+   border-color: #28a745;
+}
+
+#taxonomy_browser_container .btn-success:hover {
+   color: #fff;
+   background-color: #218838;
+   border-color: #1e7e34;
+}
+
+#taxonomy_browser_container .btn-success:focus,
+#taxonomy_browser_container .btn-success.focus {
+   box-shadow: 0 0 0 0.2rem rgba(72, 180, 97, 0.5);
+}
+
+#taxonomy_browser_container .btn-success.disabled,
+#taxonomy_browser_container .btn-success:disabled {
+   color: #fff;
+   background-color: #28a745;
+   border-color: #28a745;
+}
+
+/* Warning */
+#taxonomy_browser_container .btn-warning {
+   color: #212529;
+   background-color: #ffc107;
+   border-color: #ffc107;
+}
+
+#taxonomy_browser_container .btn-warning:hover {
+   color: #212529;
+   background-color: #e0a800;
+   border-color: #d39e00;
+}
+
+#taxonomy_browser_container .btn-warning:focus,
+#taxonomy_browser_container .btn-warning.focus {
+   box-shadow: 0 0 0 0.2rem rgba(222, 170, 12, 0.5);
+}
+
+#taxonomy_browser_container .btn-warning.disabled,
+#taxonomy_browser_container .btn-warning:disabled {
+   color: #212529;
+   background-color: #ffc107;
+   border-color: #ffc107;
+}
+
+
+
+
+/* The "Show ___ entries" row above the table */
+#taxonomy_browser_container .dt-container .dt-length {
+   margin-bottom: 1.0rem;
+}
+
+#taxonomy_browser_container .dt-container .dt-length label {
+   display: inline-block !important;
+}
+
+#taxonomy_browser_container .dt-container .dt-length select.dt-input {
+   background-color: transparent;
+   border: 1px solid #aaa;
+   border-radius: 3px;
+   font-size: 1.0rem;
+   max-width: 6rem;
+   margin: 0 0.25rem;
+   min-width: 4rem;
+   padding: 0 5px !important;
+   text-align: left;
+}
+
+#taxonomy_browser_container .dt-container .dt-layout-row {
+   font-size: 0.9rem;
+}
+
+#taxonomy_browser_container .dt-container .dt-paging {
+   text-align: right;
+}

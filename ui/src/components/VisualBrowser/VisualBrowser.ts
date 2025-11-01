@@ -91,7 +91,7 @@ export class VisualBrowser {
       if (!this.config.url.taxonDetailsPage) { throw new Error("Invalid taxon details app setting"); }
       
       // Populate the taxonomy web service
-      const taxonomyEndPoint = AppSettings.webServiceLookup[WebServiceKey.taxonomy];
+      const taxonomyEndPoint = AppSettings.webServiceLookup[WebServiceKey.searchTaxonomy];
       this.config.url.taxonomy = `${AppSettings.baseWebServiceURL}${taxonomyEndPoint}`;
 
       this.elements = {

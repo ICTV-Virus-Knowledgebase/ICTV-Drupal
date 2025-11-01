@@ -9,179 +9,194 @@ import { TaxaLevel, WebServiceKey } from "../global/Types";
 
 export class _TaxonomyService {
 
-    async getChildTaxa(taxNodeID_: string) {
+   // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
+   // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
+   async getByReleasePreExpanded(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
+      releaseNumber_: string): Promise<string> {
 
-        const data = {
-            action_code: "get_child_taxa",
-            taxnode_id: taxNodeID_
-        };
+      // TODO: validate displaySettings_
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
-        
-        return responseData;
-    }
+      let data = {
+         display_child_count: displaySettings_.displayChildCount,
+         display_history_controls: displaySettings_.displayHistoryCtrls,
+         display_member_of_controls: displaySettings_.displayMemberOfCtrls,
+         left_align_all: displaySettings_.leftAlignAll,
+         msl_release: releaseNumber_,
+         pre_expand_to_rank: preExpandToRank_,
+         top_level_rank: hideAboveRank_,
+         use_small_font: displaySettings_.useSmallFont
+      }
 
-    async getMslRelease(releaseNumber_: string): Promise<IMslRelease>  {
+      const responseData = await WebService.get<any>(WebServiceKey.getByReleasePreExpanded, data);
 
-        let mslRelease: IMslRelease = null;
+      let taxonomyHTML: string = null;
+      if (responseData && responseData.taxonomyHTML) { taxonomyHTML = responseData.taxonomyHTML; }
 
-        const data = {
-            action_code: "get_msl_release",
-            msl_release: releaseNumber_
-        }
+      return taxonomyHTML;
+   }
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
-        if (responseData && responseData.release) { mslRelease = responseData.release as IMslRelease}
+   async getChildTaxa(taxNodeID_: string) {
 
-        return mslRelease;
-    }
+      const data = {
+         taxnode_id: taxNodeID_
+      };
 
+      const responseData = await WebService.get<any>(WebServiceKey.getChildTaxa, data);
 
-    async getReleaseHistory() {
+      return responseData;
+   }
 
-        const data = {
-            action_code: "get_release_history"
-        }
+   async getMslRelease(releaseNumber_: string): Promise<IMslRelease> {
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+      let mslRelease: IMslRelease = null;
 
-        return responseData;
-    }
+      const data = {
+         msl_release: releaseNumber_
+      }
 
-    // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
-    // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
-    async getReleaseTaxa(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
-        releaseNumber_: string): Promise<string> {
+      const responseData = await WebService.get<any>(WebServiceKey.getMslRelease, data);
+      if (responseData && responseData.release) { mslRelease = responseData.release as IMslRelease }
 
-        // TODO: validate displaySettings_
-
-        let data = {
-            action_code: "get_by_release_pre_expanded",
-            display_child_count: displaySettings_.displayChildCount,
-            display_history_controls: displaySettings_.displayHistoryCtrls,
-            display_member_of_controls: displaySettings_.displayMemberOfCtrls,
-            left_align_all: displaySettings_.leftAlignAll,
-            msl_release: releaseNumber_,
-            pre_expand_to_rank: preExpandToRank_,
-            top_level_rank: hideAboveRank_,
-            use_small_font: displaySettings_.useSmallFont
-        }
-
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
-
-        let taxonomyHTML: string = null;
-        if (responseData && responseData.taxonomyHTML) { taxonomyHTML = responseData.taxonomyHTML; }
-        
-        return taxonomyHTML;
-    }
+      return mslRelease;
+   }
 
 
-    async getTaxaByName(releaseNumber_: string, taxonName_: string) {
+   async getReleaseHistory() {
 
-        const data = {
-            action_code: "get_taxa_by_name",
-            msl_release: releaseNumber_,
-            taxon_name: taxonName_
-        };
+      const responseData = await WebService.get<any>(WebServiceKey.getReleaseHistory);
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+      return responseData;
+   }
 
-        return responseData;
-    }
+   /*
+   // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
+   // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
+   async getReleaseTaxa(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
+      releaseNumber_: string): Promise<string> {
 
+      // TODO: validate displaySettings_
 
-    async getTaxonDetails(taxNodeID_: string): Promise<ITaxonDetailsResult> {
+      let data = {
+         display_child_count: displaySettings_.displayChildCount,
+         display_history_controls: displaySettings_.displayHistoryCtrls,
+         display_member_of_controls: displaySettings_.displayMemberOfCtrls,
+         left_align_all: displaySettings_.leftAlignAll,
+         msl_release: releaseNumber_,
+         pre_expand_to_rank: preExpandToRank_,
+         top_level_rank: hideAboveRank_,
+         use_small_font: displaySettings_.useSmallFont
+      }
 
-        if (!taxNodeID_) { throw new Error("Invalid taxNodeID"); }
-        
-        const data = {
-            action_code: "get_taxon_details",
-            taxnode_id: taxNodeID_
-        };
+      const responseData = await WebService.get<any>(WebServiceKey.getReleaseTaxa, data);
 
-        const responseData = await WebService.post<ITaxonDetailsResult>(WebServiceKey.taxonomy, data);
+      let taxonomyHTML: string = null;
+      if (responseData && responseData.taxonomyHTML) { taxonomyHTML = responseData.taxonomyHTML; }
 
-        console.log(responseData);
-
-        return responseData;
-    }
-
-
-    async getTreeExpandedToNode(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel, 
-        releaseNumber_: string, taxNodeID_: string) {
-        
-        if (!releaseNumber_) { throw new Error("Invalid releaseNumber in getTreeExpandedToNode"); }
-        if (!taxNodeID_) { throw new Error("Invalid taxNodeID in getTreeExpandedToNode"); }
-
-        const data = {
-            action_code: "get_tree_expanded_to_node",
-            display_child_count: displaySettings_.displayChildCount,
-            display_history_controls: displaySettings_.displayHistoryCtrls,
-            display_member_of_controls: displaySettings_.displayMemberOfCtrls,
-            left_align_all: displaySettings_.leftAlignAll,
-            msl_release: releaseNumber_,
-            pre_expand_to_rank: preExpandToRank_,
-            taxnode_id: taxNodeID_,
-            top_level_rank: hideAboveRank_,
-            use_small_font: displaySettings_.useSmallFont
-        }
-        
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
-
-        return responseData;
-    }
+      return taxonomyHTML;
+   }*/
 
 
-    async getUnassignedChildTaxaByName(releaseNumber_: string, taxonName_: string) {
+   async getTaxaByName(releaseNumber_: string, taxonName_: string) {
 
-        const data = {
-            action_code: "get_unassigned_child_taxa_by_name",
-            msl_release: releaseNumber_,
-            taxon_name: taxonName_
-        }
+      const data = {
+         msl_release: releaseNumber_,
+         taxon_name: taxonName_
+      };
 
-        const responseData = await WebService.post<any>(WebServiceKey.taxonomy, data);
+      const responseData = await WebService.get<any>(WebServiceKey.getTaxaByName, data);
 
-        return responseData;
-    }
+      return responseData;
+   }
 
 
-    async search(currentRelease_: number, includeAllReleases_: boolean, searchText_: string, selectedRelease_?: number): Promise<ITaxonSearchResult[]> {
+   async getTaxonDetails(taxNodeID_: string): Promise<ITaxonDetailsResult> {
 
-        // Validate the search text
-        if (!searchText_) { alert("Please enter search text"); return null; }
+      if (!taxNodeID_) { throw new Error("Invalid taxNodeID"); }
 
-        if (!selectedRelease_) { selectedRelease_ = null; }
+      const data = {
+         taxnode_id: taxNodeID_
+      };
 
-        const data = {
-            action_code: "search_taxonomy",
-            current_release: currentRelease_,
-            include_all_releases: includeAllReleases_,
-            search_text: searchText_,
-            selected_release: selectedRelease_
-        };
+      const responseData = await WebService.get<ITaxonDetailsResult>(WebServiceKey.getTaxonDetails, data);
 
-        return await WebService.post<ITaxonSearchResult[]>(WebServiceKey.taxonomy, data);
-    }
+      console.log(responseData);
 
-    
-    async searchVisualTaxonomy(currentRelease_: number, includeAllReleases_: boolean, searchText_: string, selectedRelease_?: number): Promise<ITaxonSearchResult[]> {
+      return responseData;
+   }
 
-        // Validate the search text
-        if (!searchText_) { alert("Please enter search text"); return null; }
 
-        if (!selectedRelease_) { selectedRelease_ = null; }
+   async getTreeExpandedToNode(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
+      releaseNumber_: string, taxNodeID_: string) {
 
-        const data = {
-            action_code: "search_visual_taxonomy",
-            current_release: currentRelease_,
-            include_all_releases: includeAllReleases_,
-            search_text: searchText_,
-            selected_release: selectedRelease_
-        };
+      if (!releaseNumber_) { throw new Error("Invalid releaseNumber in getTreeExpandedToNode"); }
+      if (!taxNodeID_) { throw new Error("Invalid taxNodeID in getTreeExpandedToNode"); }
 
-        return await WebService.post<ITaxonSearchResult[]>(WebServiceKey.taxonomy, data);
-    }
+      const data = {
+         display_child_count: displaySettings_.displayChildCount,
+         display_history_controls: displaySettings_.displayHistoryCtrls,
+         display_member_of_controls: displaySettings_.displayMemberOfCtrls,
+         left_align_all: displaySettings_.leftAlignAll,
+         msl_release: releaseNumber_,
+         pre_expand_to_rank: preExpandToRank_,
+         taxnode_id: taxNodeID_,
+         top_level_rank: hideAboveRank_,
+         use_small_font: displaySettings_.useSmallFont
+      }
+
+      const responseData = await WebService.get<any>(WebServiceKey.getTreeExpandedToNode, data);
+
+      return responseData;
+   }
+
+
+   async getUnassignedChildTaxaByName(releaseNumber_: string, taxonName_: string) {
+
+      const data = {
+         msl_release: releaseNumber_,
+         taxon_name: taxonName_
+      }
+
+      const responseData = await WebService.get<any>(WebServiceKey.getUnassignedChildTaxaByName, data);
+
+      return responseData;
+   }
+
+
+   async search(currentRelease_: number, includeAllReleases_: boolean, searchText_: string, selectedRelease_?: number): Promise<ITaxonSearchResult[]> {
+
+      // Validate the search text
+      if (!searchText_) { alert("Please enter search text"); return null; }
+
+      if (!selectedRelease_) { selectedRelease_ = null; }
+
+      const data = {
+         current_release: currentRelease_,
+         include_all_releases: includeAllReleases_,
+         search_text: searchText_,
+         selected_release: selectedRelease_
+      };
+
+      return await WebService.get<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
+   }
+
+
+   async searchVisualTaxonomy(currentRelease_: number, includeAllReleases_: boolean, searchText_: string, selectedRelease_?: number): Promise<ITaxonSearchResult[]> {
+
+      // Validate the search text
+      if (!searchText_) { alert("Please enter search text"); return null; }
+
+      if (!selectedRelease_) { selectedRelease_ = null; }
+
+      const data = {
+         action_code: "search_visual_taxonomy",
+         current_release: currentRelease_,
+         include_all_releases: includeAllReleases_,
+         search_text: searchText_,
+         selected_release: selectedRelease_
+      };
+
+      return await WebService.post<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
+   }
 
 
 }
