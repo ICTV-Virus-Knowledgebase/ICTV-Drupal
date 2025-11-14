@@ -94,8 +94,9 @@ class ProposalFileSummary {
                $fileSummaries[$filename] = $fileSummary;
             }
         }
-        catch (\Exception $e) {
-            throw new \Exception("Error in ProposalFileSummary.getFileSummaries: ".$e->getMessage());
+        catch (\Throwable $e) {
+            $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+            throw new \Exception("Error in ProposalFileSummary.getFileSummaries: ".$errorMessage);
         }
         finally {
             if ($handle) { fclose($handle); }

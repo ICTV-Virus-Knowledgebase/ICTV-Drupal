@@ -58,9 +58,10 @@ class TaxonHistory {
       try {
          $rows = $connection->query($sql, $params)->fetchAll(\PDO::FETCH_ASSOC);
       }
-      catch (\Exception $e) {
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
          return [
-            "messages" => $e->getMessage(),
+            "messages" => $errorMessage,
             "releases" => [],
             "taxa"     => []
          ];

@@ -3,58 +3,116 @@
 namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaRecord;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Utils;
 
 
 class Common {
 
+   // Default BLAST parameters
+   public static int $DEFAULT_BLAST_MAX_HSPS = 25;
+   public static int $DEFAULT_BLAST_MAX_TARGET_SEQS = 50;
+   public static string $DEFAULT_BLAST_TASK = "blastn";
+
+   /*
+   Standard amino acids: 
+   A: Alanine
+   C: Cysteine
+   D: Aspartic acid
+   E: Glutamic acid
+   F: Phenylalanine
+   G: Glycine
+   H: Histidine
+   I: Isoleucine
+   K: Lysine
+   L: Leucine
+   M: Methionine
+   N: Asparagine
+   P: Proline
+   Q: Glutamine
+   R: Arginine
+   S: Serine
+   T: Threonine
+   V: Valine
+   W: Tryptophan
+   Y: Tyrosine
+
+   Ambiguous Codes
+   B: Aspartic acid or Asparagine (Asp/Asn) 
+   J: Leucine or Isoleucine (Leu/Ile) 
+   X: Any amino acid 
+   Z: Glutamic acid or Glutamine (Glu/Gln) - Note: Some tools use this for glutamic acid or glutamine, though it's less common in standard FASTA formats for protein sequences, which typically rely on other standard codes. 
+   U: Selenocysteine - This is a standard amino acid, but it is also sometimes represented with the code for Uridine if dealing with RNA or modified nucleotides. However, for protein sequences, U is typically not a valid amino acid, but a nucleic acid base. 
+   */
+
    // A regex for valid amino acids (proteins) in a FASTA sequence.
+   // NOTE: We are not currently including ambiguous codes!
    public static string $FASTA_AA_REGEX = "/^[ACDEFGHIKLMNPQRSTVWY]+$/i";
 
-   // A regex for valid nucleotides in a FASTA sequence.
-   public static string $FASTA_NT_REGEX = "/^[ACGTURYSWKMBDHVN\.\-]+$/i";
+   /*
+   Standard Bases: 
+   A (adenine), 
+   C (cytosine), 
+   G (guanine), 
+   T (thymine) for DNA
+   U (uracil) for RNA. 
 
+   Ambiguity Codes: These represent multiple possibilities or unknown nucleotides, such as:
+   N: Any nucleotide. 
+   R: Purine (A or G). 
+   Y: Pyrimidine (C or T). 
+   W: Weak (A or T). 
+   S: Strong (G or C). 
+   K: Keto (G or T). 
+   M: Amino (A or C). 
+   B: Not A (C or G or T). 
+   D: Not C (A or G or T). 
+   H: Not G (A or C or T). 
+   V: Not T (A or C or G).
+
+   Other Allowed Characters
+   Hyphen/Dash (-): Used to represent a gap in a sequence alignment. 
+   */
+
+   // A regex for valid nucleotides in a FASTA sequence.
+   public static string $FASTA_NT_REGEX = "/^[ABCDGHKMNRSTUVWY\.\-]+$/i";
+   
    // The name of the parent module.
    public static string $MODULE_NAME = "ictv_seqsearch_service";
 
-
+   // Valid BLAST task names that can be provided as a parameter to UploadSequences.
+   public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dc-megablast"];
    
+
    /**
     * Decode data from Base64URL (http://base64.guru/developers/php/examples/base64url)
-    * @param string $data
-    * @param boolean $strict
+    * @param string $text
     * @return boolean|string
     */
-   public static function base64url_decode($data, $strict = false) {
+   public static function base64url_decode(string $text) {
 
       // Convert Base64URL to Base64 by replacing "-" with "+" and "_" with "/".
-      $b64 = strtr($data, '-_', '+/');
-
-      // Decode Base64 string and return the original data
-      return base64_decode($b64, $strict);
+      return base64_decode(str_pad(strtr($text, '-_', '+/'), strlen($text) + (4 - strlen($text) % 4) % 4));
    }
    
 
    /**
     * Encode data to Base64URL (http://base64.guru/developers/php/examples/base64url)
-    * @param string $data
+    * @param string $text
     * @return boolean|string
     */
-   public static function base64url_encode($data) {
-      
+   public static function base64url_encode(string $text) {
+
       // Encode $data to a Base64 string.
-      $b64 = base64_encode($data);
+      $b64 = base64_encode($text);
 
       // Make sure you get a valid result. Otherwise, return FALSE.
       if ($b64 === false) { return false; }
 
       // Convert Base64 to Base64URL by replacing "+" with "-" and "/" with "_".
-      $url = strtr($b64, '+/', '-_');
+      $encoded = strtr($b64, '+/', '-_');
 
-      // Remove padding characters from the end of line and return the Base64URL result.
-      return rtrim($url, '=');
+      return $encoded;
    }
 
 
@@ -181,8 +239,9 @@ class Common {
          fwrite($newFile, $gzContents);
          fclose($newFile);
       } 
-      catch (Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
    }
@@ -255,13 +314,6 @@ class Common {
          $extension = "";
       }
 
-      // Does the basename end with a suffix of the form "_seqNNNN" where NNNN is a 4 digit number?
-      if (preg_match("/_seq\d{4}$/", $basename)) {
-
-         // Remove the suffix.
-         $basename = substr($basename, 0, strlen($basename) - 8);
-      }
-
       return Common::base64url_decode($basename).$extension;
    }
 
@@ -287,10 +339,13 @@ class Common {
       rmdir($dir);
    }
 
+
    /**
     * Encode a filename using Base64URL encoding and append a suffix based on the record number.
+    *
+    * @param string $filename (required) The filename to encode as url and filename safe base64
     */ 
-   public static function encodeFilenameAsBase64URL(string $filename, int $recordNumber = 1): string {
+   public static function encodeFilenameAsBase64URL(string $filename): string {
       
       $filename = trim($filename);
       if (strlen($filename) < 1) { return ""; }
@@ -309,12 +364,10 @@ class Common {
          $basename = $filename;
          $extension = "";
       }
-
-      // Generate a suffix for the basename based on the record number.
-      $suffix = Common::generateFastaBasenameSuffix($recordNumber);
       
-      return Common::base64url_encode($basename).$suffix.$extension;
+      return Common::base64url_encode($basename).$extension;
    }
+
 
    /**
     * Generate a suffix for the basename based on the record number.
@@ -362,8 +415,9 @@ class Common {
          }
          $fileData = fread($handle, filesize($filePathAndName));
    
-      } catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
    
       } finally {
@@ -408,6 +462,98 @@ class Common {
       $userUID = $result->fetchField(0);
 
       return $userUID;
+   }
+
+   /**
+    * Safely trim a string, returning an empty string if the input is null or empty.
+    */
+   public static function safeTrim(string|null $str): string {
+      if (!$str) { return ""; }
+      $str = trim($str);
+      if (strlen($str) < 1) { return ""; }
+      return $str;
+   }
+
+   // Validate a FASTA file's contents and filename.
+   public static function validateFASTA(string $fasta, string $filename, int &$invalidCount, int &$recordCount): bool {
+
+      $isValid = true;
+
+      // The number of invalid records and total records.
+      $invalidCount = 0;
+      $recordCount = 0;
+   
+      $fasta = trim($fasta);
+      if (strlen($fasta) < 1) { return false; }
+
+      if (strlen($filename) < 1) { return false; }
+
+      $header = null;
+      $sequenceLines = [];
+
+      $lines = preg_split('/\r\n|\r|\n/', $fasta);
+
+      foreach ($lines as $line) {
+
+         $line = trim($line);
+         if ($line === "") continue;
+
+         if ($line[0] === ">") {
+
+            $recordCount += 1;
+
+            // If we have a previous record, validate it.
+            if ($header !== null) {
+               if (!Common::validateFastaRecord($header, $sequenceLines)) {
+                  $isValid = false;
+                  $invalidCount += 1;
+               }
+            }
+
+            $header = substr($line, 1);  // remove '>'
+            $sequenceLines = [];
+
+         } else {
+
+            // NOTE: We shouldn't have to initialize this array here, so this is just in case.
+            if ($sequenceLines == null) { $sequenceLines = []; }
+
+            // Append the sequence line.
+            array_push($sequenceLines, $line);
+         }
+      }
+
+      // Is there a last record to validate?
+      if ($header !== null) { 
+         if (!Common::validateFastaRecord($header, $sequenceLines)) {
+            $isValid = false;
+            $invalidCount += 1;
+         }
+      }
+
+      return $isValid;
+   }
+
+   // Validate a FASTA record's header and sequence lines.
+   public static function validateFastaRecord(string $header, array $sequenceLines): bool {
+
+      $isValid = true;
+
+      // TODO: Validate the header line.
+
+      // Validate the sequence lines.
+      foreach ($sequenceLines as $line) {
+
+         if (strlen($line) < 1) continue;
+
+         // Are there any bases that aren't a nucleotide?
+         if (!preg_match(Common::$FASTA_NT_REGEX, $line)) {
+            $isValid = false;
+            break;
+         }
+      }
+
+      return $isValid;
    }
 
 }

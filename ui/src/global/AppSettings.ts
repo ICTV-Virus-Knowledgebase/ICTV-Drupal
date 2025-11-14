@@ -41,7 +41,7 @@ export class _AppSettings {
       // Proposal service
       proposal: "proposal-api",
 
-      // Sequence search / TaxaBLAST
+      // TaxaBLAST
       downloadTaxaBlastFile: "download-taxablast-file",
       getSeqSearchOutputFile: "get-seqsearch-output-file",
       getSequenceSearchJob: "get-seqsearch-job",

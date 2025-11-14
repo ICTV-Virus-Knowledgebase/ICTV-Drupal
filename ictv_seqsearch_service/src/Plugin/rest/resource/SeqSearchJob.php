@@ -52,7 +52,7 @@ class SeqSearchJob {
 
       try {
          // Populate the stored procedure's parameters.
-         $parameters = [":filename" => $filename, ":jobID" => $jobID, ":uploadOrder" => $uploadOrder];
+         $parameters = [":fileName" => $fileName, ":jobID" => $jobID, ":uploadOrder" => $uploadOrder];
 
          // Generate SQL to call the "createJobFile" stored procedure.
          $sql = "CALL createJobFile(:fileName, :jobID, :uploadOrder);";
@@ -65,8 +65,9 @@ class SeqSearchJob {
          $result = $query->fetchAssoc();
          if (!$result) { return false; }
 
-      } catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return false;
       }
 
@@ -74,7 +75,15 @@ class SeqSearchJob {
    }
 
 
-   // Create the job directory and subdirectories.
+   /**
+    * Create the job directory and subdirectories.
+    *
+    * @param string $inputDirName   The input directory name (from the config file)
+    * @param string $jobsPath       The parent directory where job folders are created (from the config file)
+    * @param string $jobUID         A job's unique identifier (UUID)
+    * @param string $outputDirName  The output directory name (from the config file)
+    * @return string                The full path of the newly-created job folder
+    */
    public static function createJobFolder(string $inputDirName, string $jobsPath, string $jobUID, string $outputDirName): string {
 
       // Validate input parameters
@@ -210,8 +219,9 @@ class SeqSearchJob {
          $result = $connection->query($sql, $parameters);
          if (!$result) { return null; }
       } 
-      catch (Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
 
@@ -240,8 +250,9 @@ class SeqSearchJob {
          $rows = $connection->query($sql, $parameters)->fetchAll(\PDO::FETCH_ASSOC);
          if (!$rows) { return null; }
       } 
-      catch (Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
 
@@ -279,8 +290,9 @@ class SeqSearchJob {
          $result = $connection->query($sql, $parameters);
          if (!$result) { return null; }
 
-      } catch (\Exception $e) {
-         \Drupal::logger(Common::$MODULE_NAME)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
          return null;
       }
    }

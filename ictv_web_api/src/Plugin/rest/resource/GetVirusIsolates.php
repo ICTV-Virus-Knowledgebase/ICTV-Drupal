@@ -112,8 +112,11 @@ final class GetVirusIsolates extends ResourceBase {
     try {
       $rows = $this->connection->query($sql, $params)->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\Throwable $e) {
+      
+      $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+
       // log & bubble a 500
-      \Drupal::logger('ictv_web_api')->error($e->getMessage());
+      \Drupal::logger('ictv_web_api')->error($errorMessage);
       throw new \RuntimeException('Database error while fetching virus isolates.');
     }
 

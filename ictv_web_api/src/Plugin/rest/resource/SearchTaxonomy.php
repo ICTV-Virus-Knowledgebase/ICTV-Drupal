@@ -177,8 +177,9 @@ class SearchTaxonomy extends ResourceBase {
          $queryResults = $this->connection->query($sql, $parameters)->fetchAll(\PDO::FETCH_ASSOC);
       } 
       
-      catch (\Exception $e) {
-         \Drupal::logger('ictv_web_api')->error($e);
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_web_api')->error($errorMessage);
          return null;
       }
 

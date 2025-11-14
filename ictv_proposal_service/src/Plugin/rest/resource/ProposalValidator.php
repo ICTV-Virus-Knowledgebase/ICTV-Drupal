@@ -75,14 +75,14 @@ class ProposalValidator {
          $fileSummaries = ProposalFileSummary::getFileSummaries($resultsPath);
          if (!$fileSummaries || sizeof($fileSummaries) < 1) { throw new \Exception("File summaries are invalid"); }
 
-      } 
-      catch (Exception $e) {
+      } catch (\Throwable $e) {
 
          $jobStatus = JobStatus::crashed;
 
          if ($e) { 
+            $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
             if (isset($stdError) && $stdError !== '') { $stdError = $stdError . "; "; }
-            $stdError = $stdError.$e->getMessage(); 
+            $stdError = $stdError.$errorMessage; 
          }
 
          \Drupal::logger('ictv_proposal_service')->error("An error occurred in ProposalValidator: ".$stdError);

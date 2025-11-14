@@ -5,13 +5,13 @@ import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from ".
 import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
 import { IBlastHitScore } from "../IBlastHitScore";
-import { ISeqSearchPanel } from "./ISeqSearchPanel";
-import { SequenceSearch } from "../SequenceSearch";
+import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
+import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
 
-export class BlastHitsPanel implements ISeqSearchPanel {
+export class BlastHitsPanel implements ITaxaBlastPanel {
 
    // DOM elements
    elements: {
@@ -25,11 +25,11 @@ export class BlastHitsPanel implements ISeqSearchPanel {
    isActive: boolean;
 
    // The parent page
-   parent: SequenceSearch = null;
+   parent: TaxaBLAST = null;
 
 
    // C-tor
-   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: TaxaBLAST) {
 
       if (!containerEl_) { throw new Error("Invalid container element"); }
 

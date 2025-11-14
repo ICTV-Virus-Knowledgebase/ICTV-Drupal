@@ -1,16 +1,16 @@
-sequenceSearch:
-  version: 20250911
+taxaBLAST:
+  version: 20251015
   css:
     theme:
       assets/css/ictv_common.css: {}
       assets/css/jquery.dataTables.min.css: {}
-      assets/css/SequenceSearch.css: {}
+      assets/css/TaxaBLAST.css: {}
       assets/css/tippy.css: {}
       assets/css/light-border.css: {}
   js:
     assets/js/jquery.dataTables.min.js: { preprocess: false }
-    assets/js/ICTV_SequenceSearch.js: { preprocess: false }
-    assets/js/sequenceSearch.js: { preprocess: false }
+    assets/js/ICTV_TaxaBLAST.js: { preprocess: false }
+    assets/js/taxaBLAST.js: { preprocess: false }
   dependencies:
     - core/jquery
     - core/drupal

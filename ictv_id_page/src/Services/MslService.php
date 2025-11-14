@@ -47,8 +47,9 @@ class MslService {
          $query = $connection->query($sql, $parameters);
          $result = $query->fetchAssoc();
       } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_id_page')->error($e);
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_id_page')->error($errorMessage);
          return null;
       }
 

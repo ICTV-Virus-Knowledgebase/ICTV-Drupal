@@ -1,16 +1,16 @@
 
 import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelKey, ParameterKey } from "../Common";
 import DataTables from "datatables.net-dt";
-import { ISeqSearchJob } from "../ISeqSearchJob";
-import { ISeqSearchPanel } from "./ISeqSearchPanel";
+import { ITaxaBlastJob } from "../ITaxaBlastJob";
+import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { DateTime } from "luxon";
-import { SequenceSearch } from "../SequenceSearch";
-import { SequenceSearchService } from "../../../services/SequenceSearchService";
+import { TaxaBLAST } from "../TaxaBLAST";
+import { TaxaBlastService } from "../../../services/TaxaBlastService";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
 
-export class JobHistoryPanel implements ISeqSearchPanel {
+export class JobHistoryPanel implements ITaxaBlastPanel {
    
    // DOM elements
    elements: {
@@ -24,15 +24,15 @@ export class JobHistoryPanel implements ISeqSearchPanel {
    // Is the panel currently active/displayed?
    isActive: boolean;
 
-   jobs: ISeqSearchJob[] = null;
+   jobs: ITaxaBlastJob[] = null;
 
    // The parent page
-   parent: SequenceSearch = null;
+   parent: TaxaBLAST = null;
 
 
 
    // C-tor
-   constructor(containerEl_: HTMLElement, parent_: SequenceSearch) {
+   constructor(containerEl_: HTMLElement, parent_: TaxaBLAST) {
 
       if (!containerEl_) { throw new Error("Invalid container element"); }
 
@@ -69,7 +69,7 @@ export class JobHistoryPanel implements ISeqSearchPanel {
    }
 
    // Create a table row for a job.
-   createJobRow(job_: ISeqSearchJob, index_: number): string {
+   createJobRow(job_: ITaxaBlastJob, index_: number): string {
 
       // Alternate the CSS class every row.
       const rowClass = index_ % 2 === 0 ? "odd" : "even";
@@ -147,7 +147,7 @@ export class JobHistoryPanel implements ISeqSearchPanel {
       testButton.addEventListener("click", async (event_) => {
    
          const filename = "TaxaBLAST_6329ac558aa411f0940c1273ccd16f87.zip";
-         const testResult = await SequenceSearchService.downloadFile(this.parent.authToken, filename, "6329ac558aa411f0940c1273ccd16f87");
+         const testResult = await TaxaBlastService.downloadFile(this.parent.authToken, filename, "6329ac558aa411f0940c1273ccd16f87");
          //console.log("testResult = ", testResult)
 
          let file = new Blob([testResult]);
@@ -174,7 +174,7 @@ export class JobHistoryPanel implements ISeqSearchPanel {
         const searchText = Utils.safeTrim(this.elements.searchText.value);
         console.log("TODO: searching for ", searchText)
 
-        this.jobs = await SequenceSearchService.searchJobs(this.parent.authToken, searchText, this.parent.user.uid);
+        this.jobs = await TaxaBlastService.searchJobs(this.parent.authToken, searchText, this.parent.user.uid);
 
         if (!Array.isArray(this.jobs) || this.jobs.length < 1) {
             this.elements.jobsPanel.innerHTML = `<div class="no-data">You have no submitted jobs</div>`;
@@ -183,7 +183,7 @@ export class JobHistoryPanel implements ISeqSearchPanel {
 
         let rowsHTML = "";
 
-        this.jobs.forEach((job_: ISeqSearchJob, index_: number) => {
+        this.jobs.forEach((job_: ITaxaBlastJob, index_: number) => {
             rowsHTML += this.createJobRow(job_, index_);
         })
 

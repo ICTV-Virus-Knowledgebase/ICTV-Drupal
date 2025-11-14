@@ -3,7 +3,7 @@
 # https://devhints.io/bash
 
 #------------------------------------------------------------------------------
-# Run webpack for the Sequence Search component.
+# Run webpack for the TaxaBLAST component.
 #------------------------------------------------------------------------------
 
 # The subdirectory for ICTV components.
@@ -17,23 +17,23 @@ printf "\n"
 #------------------------------------------------------------------------------
 # Build the TypeScript component.
 #------------------------------------------------------------------------------
-printf "Building the Sequence Search component \n\n"
-"${webpack}" --config "$componentPath/SequenceSearch/webpack.config.js"
+printf "Building the TaxaBLAST component \n\n"
+"${webpack}" --config "$componentPath/TaxaBLAST/webpack.config.js"
 
 printf "\n\n"
 
 #------------------------------------------------------------------------------
 # Copy the generated JavaScript file to the module's asset directory.
 #------------------------------------------------------------------------------
-printf "Copying ICTV_SequenceSearch.js to ictv_seqsearch_ui/assets/js\n\n"
+printf "Copying ICTV_TaxaBLAST.js to ictv_seqsearch_ui/assets/js\n\n"
 
-cp ./dist/ICTV_SequenceSearch.js ../ictv_seqsearch_ui/assets/js/
+cp ./dist/ICTV_TaxaBLAST.js ../ictv_seqsearch_ui/assets/js/
 
 #------------------------------------------------------------------------------
-# Copy the Sequence Search CSS files to the module's asset directory.
+# Copy the TaxaBLAST CSS files to the module's asset directory.
 #------------------------------------------------------------------------------
 printf "Copying CSS files to ictv_seqsearch_ui/assets/css\n\n"
 
-cp ./css/SequenceSearch.css ../ictv_seqsearch_ui/assets/css/
+cp ./css/TaxaBLAST.css ../ictv_seqsearch_ui/assets/css/
 cp ./css/tippy.css ../ictv_seqsearch_ui/assets/css/
 cp ./css/ictv_common.css ../ictv_seqsearch_ui/assets/css/
