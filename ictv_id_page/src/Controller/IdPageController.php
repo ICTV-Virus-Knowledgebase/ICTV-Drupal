@@ -81,8 +81,9 @@ class IdPageController extends ControllerBase {
          // Get the latest taxon for this ID.
          $taxon = IctvIdService::getLatestTaxon($this->connection, $ictv_id);
       }
-      catch (\Exception $e) {
-         \Drupal::logger('ictv_id_page')->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_id_page')->error($errorMessage);
          $ictvID = null;
       }
 
@@ -111,8 +112,9 @@ class IdPageController extends ControllerBase {
          // Get the MSL release for this ID.
          $mslRelease = MslService::getRelease($this->connection, $msl_id);
       }
-      catch (\Exception $e) {
-         \Drupal::logger('ictv_id_page')->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_id_page')->error($errorMessage);
          $mslRelease = null;
       }
 

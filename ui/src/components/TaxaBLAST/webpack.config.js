@@ -6,7 +6,7 @@ module.exports = {
    mode: "production",
    target: "web",
    entry: {
-      "ICTV_SequenceSearch": [
+      "ICTV_TaxaBLAST": [
          path.resolve(__dirname, "./") + "/index.ts"
       ]
    },

@@ -23,19 +23,19 @@
             //----------------------------------------------------------------------------------------
 
             // The Drupal web service base URL.
-            window.ICTV_SequenceSearch.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+            window.ICTV_TaxaBLAST.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
 
             // The taxonomy details/history page.
-            window.ICTV_SequenceSearch.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
+            window.ICTV_TaxaBLAST.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
 
             // The DOM selector of the container Element added to the page.
-            const containerSelector = "#ictv_seqsearch_container";
+            const containerSelector = "#ictv_taxablast_container";
 
-            // Create a new SequenceSearch instance.
-            const sequenceSearch = new window.ICTV_SequenceSearch.SequenceSearch(authToken, containerSelector, userEmail, userName, userUID);
+            // Create a new TaxaBLAST instance.
+            const taxaBLAST = new window.ICTV_TaxaBLAST.TaxaBLAST(authToken, containerSelector, userEmail, userName, userUID);
 
             // Initialize and display the UI.
-            sequenceSearch.initialize();
+            taxaBLAST.initialize();
         }
     };
     

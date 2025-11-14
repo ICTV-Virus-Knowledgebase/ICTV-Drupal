@@ -22,11 +22,20 @@
  *  @param string $jsonFilename
  *    (required) The JSON results file.
  * 
+ *  @param int $maxHSPS
+ *    The maximum number of HSPs to return per query sequence.
+ * 
+ *  @param int $maxTargetSeqs
+ *    The maximum number of target sequences to return per query sequence.
+ * 
  *  @param string $outputPath
  *    (required) The location where result files will be created.
  * 
  *  @param string $scriptName
  *    (required) The Docker script to run.
+ * 
+ *  @param string $task
+ *    The BLAST task to use. Valid values are "blastn", "megablast", and "dc-megablast".
  * 
  *  @param string $userUID
  *    (required) The user's unique numeric identifier.
@@ -67,11 +76,22 @@ try {
    $jsonFilename = $_GET["jsonFilename"];
    if (!$jsonFilename) { throw new \Exception("Invalid jsonFilename parameter"); }
 
+   $maxHSPS = $_GET["maxHSPS"];
+   if (!$maxHSPS || !is_numeric($maxHSPS) || (int)$maxHSPS < 1) { throw new \Exception("Invalid maxHSPS parameter"); }
+   $maxHSPS = (int)$maxHSPS;
+
+   $maxTargetSeqs = $_GET["maxTargetSeqs"];
+   if (!$maxTargetSeqs || !is_numeric($maxTargetSeqs) || (int)$maxTargetSeqs < 1) { throw new \Exception("Invalid maxTargetSeqs parameter"); }
+   $maxTargetSeqs = (int)$maxTargetSeqs;
+   
    $outputPath = $_GET["outputPath"];
    if (!$outputPath) { throw new \Exception("Invalid outputPath parameter"); }
 
    $scriptName = $_GET["scriptName"];
    if (!$scriptName) { throw new \Exception("Invalid scriptName parameter"); }
+
+   $task = $_GET["task"];
+   if (strlen($task) < 1 || !in_array($task, Common::$VALID_BLAST_TASKS)) { throw new \Exception("Invalid task parameter"); }
 
    $userUID = $_GET["userUID"];
    if (!$userUID) { throw new \Exception("Invalid userUID parameter"); }
@@ -188,9 +208,9 @@ try {
          $fileResult = $fileQuery->execute();
       }  
       
-   } catch (\Exception $ex) {
+   } catch (\Throwable $ex) {
 
-      $errorMessage = $ex->getMessage();
+      $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
 
       // Update the log with the error message.
       \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
@@ -206,10 +226,9 @@ try {
    
    fwrite(STDOUT, "Processing is complete");
 
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
 
-   $errorMessage = "Unspecified error";
-   if ($e) { $errorMessage = $e->getMessage(); }
+   $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
 
    // Write the error message to stderr.
    fwrite(STDERR, $errorMessage);

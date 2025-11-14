@@ -123,8 +123,9 @@ class JobService {
                 return null;
             }
         }
-        catch (\FileException $e) {
-            \Drupal::logger($this->parentModule)->error($e->getMessage());
+        catch (\Throwable $e) {
+            $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+            \Drupal::logger($this->parentModule)->error($errorMessage);
         }
 
         return $fileID;
@@ -237,8 +238,9 @@ class JobService {
          $handle = fopen($fileID, "r");
          $fileData = fread($handle, filesize($fileID));
 
-      } catch (\Exception $e) {
-         \Drupal::logger($this->parentModule)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger($this->parentModule)->error($errorMessage);
          return null;
 
       } finally {
@@ -343,8 +345,9 @@ class JobService {
          $query = $connection->query($sql);
          $result = $query->fetchAll();
 
-      } catch (\Exception $e) {
-         \Drupal::logger($this->parentModule)->error($e->getMessage());
+      } catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger($this->parentModule)->error($errorMessage);
          return null;
       }
    }

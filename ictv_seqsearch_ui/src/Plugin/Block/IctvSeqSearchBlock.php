@@ -6,11 +6,11 @@ use Drupal\Core\Block\BlockBase;
 
 
 /**
- * A Block for the ICTV SeqSearch form.
+ * A Block for the ICTV TaxaBLAST form.
  *
  * @Block(
  *   id = "ictv_seqsearch_ui_block",
- *   admin_label = @Translation("ICTV SeqSearch UI block"),
+ *   admin_label = @Translation("ICTV TaxaBLAST UI block"),
  *   category = @Translation("ICTV"),
  * )
  */
@@ -53,18 +53,18 @@ class IctvSeqSearchBlock extends BlockBase {
       $userUID = $user->get('uid')->value;
 
       $build = [
-         '#markup' => $this->t("<div id=\"ictv_seqsearch_container\" class=\"ictv-custom\"></div>"),
+         '#markup' => $this->t("<div id=\"ictv_taxablast_container\" class=\"ictv-custom\"></div>"),
          '#attached' => [
                'library' => [
-                  'ictv_seqsearch_ui/ICTV_SequenceSearch',
+                  'ictv_seqsearch_ui/ICTV_TaxaBLAST',
                ],
                'library' => [
-                  'ictv_seqsearch_ui/sequenceSearch',
+                  'ictv_seqsearch_ui/taxaBLAST',
                ],
          ],
       ];
 
-      // Populate drupalSettings with variables needed by the ICTV_SequenceSearch object.
+      // Populate drupalSettings with variables needed by the ICTV_TaxaBLAST object.
       $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
       $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
       $build['#attached']['drupalSettings']['taxonHistoryPage'] = $this->taxonHistoryPage;

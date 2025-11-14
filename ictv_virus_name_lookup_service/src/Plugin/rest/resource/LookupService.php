@@ -89,8 +89,9 @@ class LookupService extends ResourceBase {
          $this->databaseName = $config->get("databaseName");
          if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); } 
       }
-      catch (\Exception $e) {
-         \Drupal::logger('ictv_virus_name_lookup_service')->error($e->getMessage());
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_virus_name_lookup_service')->error($errorMessage);
          return;
       }
 
@@ -257,8 +258,9 @@ class LookupService extends ResourceBase {
          // Run the query
          $results = $this->connection->query($sql, $parameters);
       } 
-      catch (Exception $e) {
-         \Drupal::logger('ictv_virus_name_lookup_service')->error($e);
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_virus_name_lookup_service')->error($errorMessage);
          return null;
       }
 
