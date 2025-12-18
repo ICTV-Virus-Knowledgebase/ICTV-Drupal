@@ -154,7 +154,7 @@ class DownloadFile extends ResourceBase {
 
       // Make sure the output directory isn't included in the filename.
       if (str_starts_with($filename_, $this->outputDirectory.'/')) {
-         $filename = substr($filename_, strlen($this->outputDirectory) + 1);
+         $filename = substr($filename_, mb_strlen($this->outputDirectory) + 1);
       }
 
       if (Utils::isNullOrEmpty($jobUID_)) { throw new BadRequestHttpException("Invalid job UID"); }
@@ -261,7 +261,7 @@ class DownloadFile extends ResourceBase {
 
       // Make sure the output directory isn't included in the filename.
       if (str_starts_with($filename, $this->outputDirectory.'/')) {
-         $filename = substr($filename, strlen($this->outputDirectory) + 1);
+         $filename = substr($filename, mb_strlen($this->outputDirectory) + 1);
       }
 
       if (Utils::isNullOrEmpty($jobUID)) { throw new BadRequestHttpException("Invalid job UID"); }

@@ -1,12 +1,35 @@
 
 
+:root {
+   --ictv-border-color: #aaa;
+   --ictv-border-focus-color: #80bdff;
+   --ictv-danger-color: #dc3545;
+   --ictv-dark-grey-color: #555;
+   --ictv-lightest-grey-color: #bbb;
+   --ictv-light-grey-color: #888;
+   --ictv-primary-color: #007bff;
+   --ictv-secondary-color: #6c757d;
+   --ictv-success-color: #198754;
+   --ictv-warning-color: #ffc107;
+}
+
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    TaxaBLAST
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* General purpose button styles */
 #ictv_taxablast_container button {
-   border: 1px solid transparent;
+   background-color: #ddd;
+   border-color: var(--ictv-border-color);
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   font-size: 0.9rem;
+   margin-right: 0.5rem;
+   padding: .2rem .5rem;
+   text-align: center;
+   /*border: 1px solid transparent;
    display: inline-block;
    font-size: 0.9rem;
    font-weight: 400;
@@ -17,29 +40,71 @@
    white-space: nowrap;
    -webkit-user-select: none;
    -moz-user-select: none;
-   -ms-user-select: none;
+   -ms-user-select: none;*/
 }
 #ictv_taxablast_container button i {
+   color: var(--ictv-light-grey-color);
+   font-weight: normal;
    margin-right: 0.25rem;
+   pointer-events: none;
 }
 
-#ictv_taxablast_container button.download-button {
-   background-color: #0d6efd;
-   color: #fff;
+#ictv_taxablast_container i.success {
+   color: var(--ictv-success-color);
+}
+#ictv_taxablast_container i.error {
+   color: var(--ictv-danger-color);
+}
+
+#ictv_taxablast_container input,
+#ictv_taxablast_container textarea,
+#ictv_taxablast_container select {
+   background-color: #fff;
+   border: 1px solid var(--ictv-border-color);
+   border-radius: 0;
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+   color: #555;
+   height: max-content;
+   line-height: 1.0rem;
+   margin: 0 0 0 0.25rem;
+   padding: 0.25rem 0.25rem;
+   vertical-align: middle;
+}
+#ictv_taxablast_container input:focus,
+#ictv_taxablast_container textarea:focus,
+#ictv_taxablast_container select:focus  {
+   background-color: #fff;
+   border-color: var(--ictv-border-focus-color);
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
+   color: #495057;
+   outline: 0;
+}
+#ictv_taxablast_container input[type="radio"] {
+   height: 1.1rem;
+   padding: 0;
+   margin: 0;
+   width: 1.1rem;
+}
+
+#ictv_taxablast_container .link-button {
+   background: none;
+   border: none;
+   color: #0066cc;
    cursor: pointer;
-   min-width: 100px;
+   font: inherit;
+   margin: 0;
+   padding: 0;
+   text-decoration: underline;
+}
+#ictv_taxablast_container .link-button:hover {
+  color: #004999;
+  text-decoration: underline;
+}
+#ictv_taxablast_container .link-button:focus-visible {
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
 }
 
-#ictv_taxablast_container button.close-button {
-   background-color: #eee;
-   color: #000;
-   cursor: pointer;
-   min-width: 100px;
-}
-
-#ictv_taxablast_container button.close-button i {
-   color: #000;
-}
 
 /* Containers */
 #ictv_taxablast_container .container {
@@ -49,13 +114,15 @@
 #ictv_taxablast_container .container.active {
    display: block;
    margin-left: 0;
+   margin-bottom: 3.0rem;
    padding-left: 0;
    visibility: visible;
+   width: 100%;
 }
 
 /* Common styles for panels */
 #ictv_taxablast_container .no-results {
-   color: red;
+   color: var(--ictv-danger-color);
    font-size: 1.2rem;
    margin-bottom: 0.5rem;
 }
@@ -63,7 +130,7 @@
 /* Button styles */
 #ictv_taxablast_container button.btn-generic {
    background-color: #ddd;
-   border-color: #aaa;
+   border-color: var(--ictv-border-color);
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
@@ -75,8 +142,8 @@
 }
 #ictv_taxablast_container button.btn-generic:hover {
    color: #fff;
-   background-color: #007bff;
-   border-color: #007bff;
+   background-color: var(--ictv-primary-color);
+   border-color: #007bff; /* TODO: use variable */
    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
 }
 #ictv_taxablast_container button.btn-generic:hover i {
@@ -85,39 +152,24 @@
 }
 
 #ictv_taxablast_container button.btn-generic i {
-   color: #555;
+   color: var(--ictv-light-grey-color);
    margin-right: 0.25rem;
 }
 
-#ictv_taxablast_container button.new-search-button {
-   background-color: #198754;
+#ictv_taxablast_container button.new-search-button,
+#ictv_taxablast_container button.next-button {
+   background-color: var(--ictv-success-color);
    color: #fff;
    cursor: pointer;
 }
 
-/* Sub-panels of the main panels. */
-#ictv_taxablast_container .sub-panel {
-   display: none;
-   visibility: hidden;
+#ictv_taxablast_container input::placeholder,
+#ictv_taxablast_container textarea::placeholder {
+   color: var(--ictv-light-grey-color);
+   font-size: 0.9rem;
+   font-style: italic;
+   opacity: 0.75;
 }
-#ictv_taxablast_container .sub-panel.active {
-   align-items: center;
-   border-collapse: separate;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
-   line-height: 1.5;
-   margin: 0;
-   visibility: visible;
-}
-
-/*
-#ictv_taxablast_container table {
-   border-style: none;
-   font-size: 1.0rem;
-   margin-bottom: 1.5rem;
-   width: 100%;
-}*/
 
 
 /* The navigation panel */
@@ -185,7 +237,7 @@
 }
 
 #ictv_taxablast_container .ictv-accordion-control {
-   color: #777;
+   color: var(--ictv-dark-grey-color);
    font-weight: 400;
    padding: 1.0rem;
    transition: ease .3s transform;
@@ -394,7 +446,7 @@
    background-color: inherit;
    border-color: #ddd;
    border-width: 0 0 1px 0;
-   color: #5b616b;
+   color: var(--ictv-dark-grey-color);
    font-size: 1.0rem;
    padding: 0.5rem;
    vertical-align: top;
@@ -429,14 +481,14 @@
    min-width: 0;
 }
 #ictv_taxablast_container .link-panel i {
-   color: #888;
+   color: var(--ictv-light-grey-color);
    margin-right: 0.25rem;
 }
 #ictv_taxablast_container .link-panel button.copy-url-button {
    margin-left: 0.5rem;
 }
 #ictv_taxablast_container .link-panel .copy-url-link:hover {
-   color: #007bff;
+   color: var(--ictv-primary-color);
    transition: color 0.2s;
 }
 
@@ -474,21 +526,21 @@
 #ictv_taxablast_container .search-controls .search-text {
    background-color: #fff;
    background-image: none;
-   border-color: #ccc;
+   border-color: var(--ictv-lightest-grey-color);
    padding-left: 0.75rem;
    width: 345px;
 }
 #ictv_taxablast_container .search-controls .search-text:focus {
    color: #495057;
    background-color: #fff;
-   border-color: #80bdff;
+   border-color: var(--ictv-border-focus-color);
    outline: 0;
    box-shadow: 0 0 0 1px rgba(0, 123, 255, .15);
 }
 
 #ictv_taxablast_container .search-controls .search-button {
-   background-color: #0062cc;
-   border-color: #005cbf;
+   background-color: var(--ictv-primary-color);
+   border-color: #005cbf; /* TODO: use variable */
    color: #fff;
    cursor: pointer;
 }
@@ -513,7 +565,7 @@
    width: 800px;
 }
 #ictv_taxablast_container table.jobs tr.header-row {
-   background-color: #aaa;
+   background-color: var(--ictv-light-grey-color);
    color: #fff;
 }
 #ictv_taxablast_container table.jobs tr.header-row th {
@@ -542,7 +594,7 @@
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Modal dialog
--------------------------------------------------------------------------------------------------------------------------------------------------*/
+-------------------------------------------------------------------------------------------------------------------------------------------------
 #ictv_taxablast_container .modal-background {
    align-items: center;
    background-attachment: scroll;
@@ -592,7 +644,6 @@
 
 #ictv_taxablast_container .modal-title {
    font-size: 1.5rem;
-   margin: 0 0 1.0rem;
 }
 
 #ictv_taxablast_container .modal-body {
@@ -626,7 +677,7 @@
 
 #ictv_taxablast_container .modal-button-row .close-button {
    background-color: #eee;
-   border-color: #999;
+   border-color: var(--ictv-border-color);
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
@@ -634,7 +685,7 @@
    cursor: pointer;
    font-size: 0.9rem;
    min-width: 100px;
-}
+}*/
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -687,14 +738,14 @@
    width: 100%;
 }
 #ictv_taxablast_container table.sequences-table .header-row {
-   background-color: #757575 !important;
+   background-color: var(--ictv-dark-grey-color) !important;
 }
 #ictv_taxablast_container table.sequences-table th,
 #ictv_taxablast_container table.sequences-table td {
    font-size: 1.0rem !important;
 }
 #ictv_taxablast_container table.sequences-table th {
-   background-color: #757575 !important;
+   background-color: var(--ictv-dark-grey-color) !important;
    color: #fff !important;
    font-weight: 400 !important;
 }
@@ -732,47 +783,191 @@
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   The upload panel
+   The FASTA input panel
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_taxablast_container .upload-panel.active {
-   align-items: center;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
-   margin-bottom: 3.0rem;
+
+#ictv_taxablast_container .fasta-input-panel {
+   font-size: 1.0rem;
 }
 
-/* The upload panel's file selection section. */
-#ictv_taxablast_container .upload-panel .file-selection {
-   display: none;
-   visibility: hidden;
+#ictv_taxablast_container .fasta-input-panel .input-section {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
 }
-#ictv_taxablast_container .upload-panel .file-selection.active {
-   display: block;
-   visibility: visible;
+#ictv_taxablast_container .fasta-input-panel .input-section .number-column {
+   width: 1.0rem;
 }
-#ictv_taxablast_container .upload-panel .file-selection.active .selection-controls {
+#ictv_taxablast_container .fasta-input-panel .input-section .content-column {
+   flex-grow: 1;
+   flex-shrink: 1;
+}
+
+#ictv_taxablast_container .fasta-input-panel .control-row {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
+   margin-bottom: 1.0rem;
 }
-#ictv_taxablast_container .upload-panel .file-selection .upload-message {
-   font-size: 1.2rem;
-   margin-right: 0.5rem;
+#ictv_taxablast_container .fasta-input-panel .control-row label {
+   font-weight: normal;
+   /*margin-right: 0.25rem;*/
+   width: 200px;
 }
-#ictv_taxablast_container .upload-panel .file-selection .file-control {
-   background-color: #0d6efd;
+
+/* Selected files */
+#ictv_taxablast_container .fasta-input-panel .select-files-button {
+   margin-left: 0.25rem;
+   padding: 0.25rem 0.5rem;
+}
+#ictv_taxablast_container .fasta-input-panel .select-files-button:hover {
+   background-color: var(--ictv-primary-color);
    color: #fff;
-   margin-right: 1.0rem;
+}
+#ictv_taxablast_container .fasta-input-panel .select-files-button:hover i {
+   color: #fff;
 }
 #ictv_taxablast_container #file_input {
    opacity: 0;
    position: absolute;
    left: -1000px;
 }
+#ictv_taxablast_container .selected-files-section {
+   display: none;
+   visibility: hidden;
+}
+#ictv_taxablast_container .selected-files-section.active {
+   display: block;
+   visibility: visible;
+}
 
-#ictv_taxablast_container .file-selection .ios-warning:not(:empty) {
+/* The selected files title */
+#ictv_taxablast_container .selected-files-section .title {
+   margin: 0.5rem 0; /* TEST */
+}
+#ictv_taxablast_container .selected-files-section .title .title-text {
+   font-weight: 700;
+}
+#ictv_taxablast_container .selected-files-section .title .toggle-button:hover {
+   background-color: var(--ictv-primary-color);
+   color: #fff;
+}
+#ictv_taxablast_container .selected-files-section .title .toggle-button:hover i {
+   color: #fff;
+}
+#ictv_taxablast_container .selected-files-section .title .remove-files-button:hover {
+   background-color: var(--ictv-danger-color);
+   color: #fff;
+}
+#ictv_taxablast_container .selected-files-section .title .remove-files-button:hover i {
+   color: #fff;
+}
+
+
+#ictv_taxablast_container .selected-files-section .contents {
+   margin: 0 0 0.5rem 0; /* TEST */
+}
+
+/* The selected files table */
+#ictv_taxablast_container .fasta-input-panel table.selected-files {
+   width: 100%;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files td {
+   font-size: 0.9rem;
+   padding: 0.5rem;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row {
+   background-color: var(--ictv-dark-grey-color);
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th {
+   color: #fff;
+   font-size: 0.9rem;
+   font-weight: normal;
+   padding: 0.5rem;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th.select {
+   width: 40px;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th.filename {
+   max-width: 500px;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th.status {
+   max-width: 160px;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th.size {
+   max-width: 200px;
+}
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th.sequences {
+   max-width: 130px;
+}
+
+
+/*
+#ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th.remove {
+   width: fit-content;
+}
+#ictv_taxablast_container .fasta-input-panel .remove-file-button {
+   background-color: var(--ictv-danger-color);
+   color: #fff;
+}
+#ictv_taxablast_container .fasta-input-panel .remove-file-button i {
+   color: #fff;
+}*/
+
+
+
+/* The FASTA textarea control and message */
+#ictv_taxablast_container textarea.fasta-control {
+   font-family: monospace;
+   font-size: 0.9rem !important;
+   margin-top: 0.5rem;
+}
+#ictv_taxablast_container .fasta-control-message {
+   color: default;
+   font-size: 0.9rem;
+}
+#ictv_taxablast_container .fasta-control-message[data-status="invalid"] {
+   color: var(--ictv-danger-color);
+}
+#ictv_taxablast_container .fasta-control-message[data-status="valid"] {
+   color: var(--ictv-success-color);
+}
+
+/* The BLAST tasks table */
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks {
+   margin: 0.5rem 0 0 0;
+   width: 100%;
+}
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks td {
+   font-size: 0.9rem;
+   padding: 0.5rem;
+}
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks .header-row {
+   background-color: var(--ictv-dark-grey-color);
+}
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks .header-row th {
+   color: #fff;
+   font-size: 0.9rem;
+   font-weight: normal;
+   padding: 0.5rem;
+}
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks .header-row th.control-column {
+   width: 24px;
+}
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks .header-row th.task-column {
+   width: 310px;
+}
+#ictv_taxablast_container .fasta-input-panel table.blast-tasks .task-row {
+   font-size: 1.0rem;
+}
+
+
+
+/* The warning for iOS devices */
+#ictv_taxablast_container .ios-warning:not(:empty) {
    align-items: flex-start;
    background-color: rgba(255, 0, 0, 0.05);
    border-color: rgba(255, 0, 0, 0.15);
@@ -786,14 +981,161 @@
    max-width: 700px;
    padding: 1.0rem; 
 }
-#ictv_taxablast_container .file-selection .ios-warning i.warning {
-   color: red;
+#ictv_taxablast_container .ios-warning i.warning {
+   color: var(--ictv-danger-color);
    font-size: 1.3rem;
    margin: 0.25rem 0.75rem 0 0;
 }
-#ictv_taxablast_container .file-selection .ios-warning .filename {
+#ictv_taxablast_container .ios-warning .filename {
    font-style: italic;
+
 }
+
+/* The max HSPs and max target seqs input boxes */
+#ictv_taxablast_container .fasta-input-panel .max-hsps,
+#ictv_taxablast_container .fasta-input-panel .max-target-seqs { 
+   padding: 0.5rem 0.25rem;
+   text-align: center;
+   width: 4.0rem;
+}
+
+/* TODO: how is this different from the standard input box style above? */
+#ictv_taxablast_container .fasta-input-panel .job-name {
+   /*background-color: #fff;
+   border: 1px solid #ccc;*/
+   border-radius: 0;
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+   color: #555;
+   height: max-content;
+   line-height: 1.0rem;
+   margin: 0 0 0 0.25rem;
+   padding: 0.25rem 0.25rem;
+   vertical-align: middle;
+   width: 300px;
+}
+
+#ictv_taxablast_container .fasta-input-panel .job-name:focus {
+   background-color: #fff;
+   border-color: #80bdff;
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
+   color: #495057;
+   outline: 0;
+}
+
+#ictv_taxablast_container .fasta-input-panel button.upload-button {
+   background-color: var(--ictv-success-color);
+   border-radius: 5px;
+   color: #fff;
+   margin-left: 0.25rem;
+   width: 70px;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Modal dialog for "Enter FASTA text"
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The dialog background */
+#ictv_taxablast_container .modal-dialog {
+   background-color: rgba(0,0,0,0.4);
+   display: none; /* Hidden by default */
+   height: 100%; /* Full height */
+   left: 0;
+   overflow: auto; /* Enable scroll if needed */
+   pointer-events: auto;
+   position: fixed; /* Stay in place */
+   top: 0;
+   width: 100%; /* Full width */
+}
+#ictv_taxablast_container .modal-content {
+   background-color: #efefef;
+   border-color: #999;
+   border-radius: 10px;
+   border-style: solid;
+   border-width: 1px;
+   height: fit-content;
+   margin: 15% auto; /* 15% from the top and centered */
+   width: 700px;
+   z-index: 200;
+}
+#ictv_taxablast_container .modal-header {
+   align-items: center;
+   background-color: var(--ictv-dark-grey-color);
+   border-radius: 10px 10px 0 0;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: center;
+   padding: 0.5rem;
+   width: 100%;
+}
+#ictv_taxablast_container .modal-title {
+   color: #fff;
+   font-size: 1.2rem;
+}
+#ictv_taxablast_container .modal-body {
+   padding: 0.5rem 1.0rem 1.0rem 1.0rem;
+}
+
+#ictv_taxablast_container .modal-body .dialog-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin: 0 0 0.5rem 0;
+   width: 100%;
+}
+#ictv_taxablast_container .modal-body .dialog-row label {
+   font-weight: normal;
+}
+#ictv_taxablast_container .modal-body .dialog-row input.dialog-filename {
+   width: 100%;
+}
+#ictv_taxablast_container .modal-body .dialog-row textarea {
+   font-family: monospace;
+   font-size: 0.9rem;
+   width: 100%;
+}
+
+
+#ictv_taxablast_container .modal-footer {
+   padding: 0 0.5rem 0.5rem 0.5rem;
+}
+#ictv_taxablast_container .modal-footer {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+}
+#ictv_taxablast_container .modal-footer .btn {
+   cursor: pointer; 
+   font-size: 1.0rem;
+   padding: .2rem .5rem;
+   text-align: center;
+}
+#ictv_taxablast_container .modal-footer .btn i {
+   margin-right: 0.25rem;
+}
+
+#ictv_taxablast_container .modal-footer .dialog-save-button {
+   margin-right: 0.5rem;
+}
+#ictv_taxablast_container .modal-footer .dialog-save-button:hover {
+   background-color: var(--ictv-success-color);
+   color: #fff;
+}
+#ictv_taxablast_container .modal-footer .dialog-save-button:hover i {
+   color: #fff;
+}
+#ictv_taxablast_container .modal-footer .dialog-close-button {
+   border-color: var(--ictv-light-grey-color);
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+}
+#ictv_taxablast_container .modal-footer .dialog-close-button:hover {
+   background-color: var(--ictv-warning-color);
+}
+
 
 
 /* The upload panel's job submission sub-panel */
@@ -854,19 +1196,19 @@
 
 
 
-/* The upload panel's job submission sub-panel */
-#ictv_taxablast_container .upload-panel .job-submission .job-name-row {
+/* The job submission panel 
+#ictv_taxablast_container .job-submission-panel .job-submission .job-name-row {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
    margin-bottom: 1.0rem;
 }
-#ictv_taxablast_container .upload-panel .job-submission .job-name-label {
+#ictv_taxablast_container .job-submission-panel .job-submission .job-name-label {
    font-weight: 700;
    margin-right: 0.5rem;
 }
-#ictv_taxablast_container .upload-panel .job-submission .job-name {
+#ictv_taxablast_container .job-submission-panel .job-submission .job-name {
    background-color: #fff;
    border: 1px solid #ccc;
    border-radius: 0;
@@ -879,11 +1221,11 @@
    vertical-align: middle;
    width: 300px;
 }
-#ictv_taxablast_container .upload-panel .job-submission .job-name::placeholder {
+#ictv_taxablast_container .job-submission-panel .job-submission .job-name::placeholder {
    font-size: 1.0rem;
    opacity: 0.75;
 }
-#ictv_taxablast_container .upload-panel .job-submission .job-name:focus {
+#ictv_taxablast_container .job-submission-panel .job-submission .job-name:focus {
    background-color: #fff;
    border-color: #80bdff;
    box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
@@ -891,22 +1233,22 @@
    outline: 0;
 }
 
-#ictv_taxablast_container .upload-panel .job-submission .controls {
+#ictv_taxablast_container .job-submission-panel .job-submission .controls {
    margin-top: 1.0rem;
 }
 
-#ictv_taxablast_container .upload-panel .job-submission button.upload-button {
+#ictv_taxablast_container .job-submission-panel .job-submission button.upload-button {
    background-color: #198754;
    border-radius: 5px;
    color: #fff;
    margin-right: 0.5rem;
 }
-#ictv_taxablast_container .upload-panel .job-submission button.cancel-button {
+#ictv_taxablast_container .job-submission-panel .job-submission button.cancel-button {
    background-color: #999;
    border-radius: 5px;
    color: #fff;
    min-width: 90px;
-}
+}*/
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------

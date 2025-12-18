@@ -1,6 +1,5 @@
 
 
-
 //----------------------------------------------------------------------------------------------------------------
 // Enums
 //----------------------------------------------------------------------------------------------------------------
@@ -8,6 +7,16 @@
 export enum CuratedNameType {
    disease = "disease",
    other = "other"
+}
+
+
+// The validation status of a FASTA record.
+export enum FastaStatus {
+   empty = "empty",
+   invalid = "invalid",
+   unvalidated = "unvalidated",
+   valid = "valid",
+   validated = "validated"
 }
 
 // Commonly used URL query string parameter names for identifiers.
@@ -127,6 +136,15 @@ export enum SearchModifier {
    contains = "contains",
    exact_match = "exact_match"
 }
+
+/*
+export enum SequenceType {
+   ambiguous = "ambiguous",
+   invalid = "invalid",
+   nucleotide = "nucleotide",
+   protein = "protein",
+   undefined = "undefined"
+}*/
 
 export enum TaxaLevel {
    tree = "tree",
@@ -268,8 +286,10 @@ export enum WebServiceKey {
    csrfToken = "csrfToken",
    
    // Proposal service
-   proposal = "proposal",
-
+   getProposalJobs = "getProposalJobs",
+   getProposalValidationSummary = "getProposalValidationSummary",
+   uploadProposals = "uploadProposals",
+   
    // TaxaBLAST
    downloadTaxaBlastFile = "downloadTaxaBlastFile", //download-taxablast-file
    getSeqSearchOutputFile = "getSeqSearchOutputFile",
@@ -303,6 +323,15 @@ export enum WebServiceKey {
 export enum WebStorageKey {
    lineageExportSettings = "lineage_export_settings",
    taxaBlastUserUID = "taxa_blast_user_uid"
+}
+
+//----------------------------------------------------------------------------------------------------------------
+// Regular expressions
+//----------------------------------------------------------------------------------------------------------------
+export const REGEX = {
+
+   // Symbols that aren't IUPAC approved nucleotide or protein bases.
+   FASTA_INVALID_BASES: /[^ABCDEFGHIKLMNPQRSTUVWY\.\-]+/img
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------

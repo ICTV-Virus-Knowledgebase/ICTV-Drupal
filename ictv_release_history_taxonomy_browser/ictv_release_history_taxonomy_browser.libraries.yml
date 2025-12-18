@@ -6,7 +6,7 @@ releaseHistoryTaxonomyBrowser:
       assets/css/fa-solid.css: {attributes:{type: "text/html"}}
       assets/css/fontawesome.css: {attributes:{type: "text/html"}}
       assets/css/jquery.dataTables.min.css: {}
-      assets/css/TaxonomyBrowser.css: {} 
+      assets/css/ICTV.css: {} 
       assets/css/tippy.css: {attributes:{type: "text/html"}}
       assets/css/light-border.css: {}
   js:

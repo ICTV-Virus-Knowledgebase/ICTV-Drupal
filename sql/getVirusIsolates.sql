@@ -2,6 +2,7 @@
 DELIMITER //
 
 CREATE OR REPLACE PROCEDURE getVirusIsolates(
+   IN ictvID INT,
    IN isolateID INT,
    IN mslRelease INT,
    IN onlyUnassigned BOOLEAN,
@@ -9,7 +10,7 @@ CREATE OR REPLACE PROCEDURE getVirusIsolates(
    IN taxnodeID INT
 )
 main:BEGIN
-   DECLARE familyLevelID INT;
+
    DECLARE speciesLevelID INT;
    DECLARE targetLeftIndex INT;
    DECLARE targetLevelID INT;
@@ -19,21 +20,52 @@ main:BEGIN
    
 
    -- Normalize input parameters to simplify later processing.
-   IF isolateID IS NULL OR isolateID < 1 THEN
+   IF ictvID IS NOT NULL AND ictvID < 1 THEN
+      SET ictvID = NULL;
+   END IF;
+
+   IF isolateID IS NOT NULL AND isolateID < 1 THEN
       SET isolateID = NULL;
    END IF;
 	
+   IF mslRelease IS NOT NULL AND mslRelease < 1 THEN
+      SET mslRelease = NULL;
+   END IF;
+
    SET searchTaxon = TRIM(searchTaxon);
-	IF LENGTH(searchTaxon) < 1 THEN
+	IF searchTaxon IS NOT NULL AND LENGTH(searchTaxon) < 1 THEN
 		SET searchTaxon = NULL;
 	END IF;
 
-   IF taxnodeID IS NULL OR taxnodeID < 1 THEN
+   IF taxnodeID IS NOT NULL AND taxnodeID < 1 THEN
       SET taxnodeID = NULL;
    END IF;
 
+
+   -- If an ICTV ID was provided, use it to look up the target node.
+   IF ictvID IS NOT NULL AND ictvID > 0 THEN
+
+      SELECT 
+         tn.left_idx, 
+         tn.level_id,
+         tn.msl_release_num,
+         tn.right_idx,
+         tn.taxnode_id
+      INTO 
+         targetLeftIndex,
+         targetLevelID,
+         mslRelease,
+         targetRightIndex,
+         targetTaxNodeID
+         
+      FROM taxonomy_node tn
+      WHERE tn.ictv_id = ictvID
+      AND (mslRelease IS NULL OR (mslRelease IS NOT NULL AND tn.msl_release_num = mslRelease))
+      ORDER BY tn.msl_release_num DESC
+      LIMIT 1;
+
    -- If an isolate ID was provided, use it to look up the target node.
-   IF taxnodeID IS NULL AND isolateID IS NOT NULL AND isolateID > 0 THEN
+   ELSEIF isolateID IS NOT NULL AND isolateID > 0 THEN
 
       SELECT 
          tn.left_idx, 
@@ -59,7 +91,7 @@ main:BEGIN
 
       SET mslRelease = tempMslRelease;
 
-   -- If a search taxon was provided, use it to look up the target node.
+   -- If a search taxon was provided (but not a taxnodeID), use it to look up the target node.
    ELSEIF taxnodeID IS NULL AND searchTaxon IS NOT NULL THEN
 
       -- Default the MSL release number to the most recent if not provided.
@@ -115,17 +147,6 @@ main:BEGIN
    -- Validate the target node values.
    IF targetLeftIndex IS NULL OR targetLevelID IS NULL OR targetRightIndex IS NULL OR targetTaxNodeID IS NULL THEN
       SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 1644, MESSAGE_TEXT = 'Invalid target node values';
-   END IF;
-
-   -- Get family level ID
-   SELECT id INTO familyLevelID FROM taxonomy_level WHERE name = 'family' LIMIT 1;
-   IF familyLevelID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 1644, MESSAGE_TEXT = 'Could not find family level ID';
-   END IF;
-
-   -- Don't return results if the target level (rank) is higher than Family.
-   IF targetLevelID < familyLevelID THEN
-      LEAVE main;
    END IF;
 
    -- Get species level ID

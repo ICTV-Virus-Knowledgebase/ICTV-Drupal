@@ -1,6 +1,6 @@
 name: ICTV Proposal Service
 type: module
-description: 'A custom module that provides a RESTful web service for taxonomy proposal validation'
+description: 'A custom module for MSL proposal validation'
 package: ICTV
 configure: ictv_proposal_service.settings
 core_version_requirement: ^9 || ^10 || ^11

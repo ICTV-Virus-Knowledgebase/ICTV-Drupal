@@ -295,7 +295,7 @@ class ConfigForm extends FormBase {
       // The application URL
       $value = $form_state->getValue($this->CONTROL_APPLICATION_URL);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_APPLICATION_URL, $this->t('Please enter a valid application URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -305,7 +305,7 @@ class ConfigForm extends FormBase {
       // The JWT auth token
       $value = $form_state->getValue($this->CONTROL_AUTH_TOKEN);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_AUTH_TOKEN, $this->t('Please enter a valid JWT auth token.'));
       } else {
          // Replace the value with the trimmed version.
@@ -315,7 +315,7 @@ class ConfigForm extends FormBase {
       // The base web service URL
       $value = $form_state->getValue($this->CONTROL_BASE_WEB_SERVICE_URL);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_BASE_WEB_SERVICE_URL, $this->t('Please enter a valid base web service URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -325,7 +325,7 @@ class ConfigForm extends FormBase {
       // The current MSL release
       $value = $form_state->getValue($this->CONTROL_CURRENT_MSL_RELEASE);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_CURRENT_MSL_RELEASE, $this->t('Please enter a valid current MSL release.'));
       } else {
          // Replace the value with the trimmed version.
@@ -335,7 +335,7 @@ class ConfigForm extends FormBase {
       // The current VMR
       $value = $form_state->getValue($this->CONTROL_CURRENT_VMR);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_CURRENT_VMR, $this->t('Please enter a valid current VMR.'));
       } else {
          // Replace the value with the trimmed version.
@@ -345,7 +345,7 @@ class ConfigForm extends FormBase {
       // The Drupal web service URL
       $value = $form_state->getValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $this->t('Please enter a valid Drupal web service URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -355,7 +355,7 @@ class ConfigForm extends FormBase {
       // The release proposals URL
       $value = $form_state->getValue($this->CONTROL_RELEASE_PROPOSALS_URL);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_RELEASE_PROPOSALS_URL, $this->t('Please enter a valid release proposals URL.'));
       } else {
          // Replace the value with the trimmed version.
@@ -365,7 +365,7 @@ class ConfigForm extends FormBase {
       // The taxon history page
       $value = $form_state->getValue($this->CONTROL_TAXON_HISTORY_PAGE);
       $value = trim($value); 
-      if (is_null($value) || strlen($value) < 1) {
+      if (is_null($value) || mb_strlen($value) < 1) {
          $form_state->setErrorByName($this->CONTROL_TAXON_HISTORY_PAGE, $this->t('Please enter a valid taxon history page.'));
       } else {
          // Replace the value with the trimmed version.

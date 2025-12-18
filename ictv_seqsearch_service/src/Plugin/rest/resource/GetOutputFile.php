@@ -185,7 +185,7 @@ class GetOutputFile extends ResourceBase {
 
       // Make sure the output directory isn't included in the filename.
       if (str_starts_with($filename, $this->outputDirectory.'/')) {
-         $filename = substr($filename, strlen($this->outputDirectory) + 1);
+         $filename = substr($filename, mb_strlen($this->outputDirectory) + 1);
       }
 
       // Get and validate the job UID.

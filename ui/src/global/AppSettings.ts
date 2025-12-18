@@ -39,7 +39,9 @@ export class _AppSettings {
       csrfToken: "session/token",
       
       // Proposal service
-      proposal: "proposal-api",
+      getProposalJobs: "get-proposal-jobs",
+      getProposalValidationSummary: "get-proposal-validation-summary",
+      uploadProposals: "upload-proposals",
 
       // TaxaBLAST
       downloadTaxaBlastFile: "download-taxablast-file",

@@ -1,5 +1,5 @@
 
-import { ButtonClass, Constants, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
+import { ButtonClass, Constants, DisplayMessageForIncompleteJob, FormatDate, FormatDuration, Icon, PanelKey } from "../Common";
 import { ITaxaBlastJob } from "../ITaxaBlastJob";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { TaxaBLAST } from "../TaxaBLAST";
@@ -49,6 +49,8 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
    // Load the panel contents and display them on the page.
    async load() {
 
+      console.info("LOADING job details panel")
+
       this.isActive = true;
 
       // Make the container visible.
@@ -57,10 +59,12 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       // Make a local copy of the job data.
       this.job = this.parent.job;
 
-      if (!this.job || !this.job.data) {
-         this.elements.container.innerHTML = `<div class="no-results">Invalid job</div>`;
-         return;
-      }
+      console.log("in jobDetailsPanel.load()")
+      
+      // If the job is invalid or has a status other than "complete", display an appropriate message in
+      // the container element. The boolean value that's returned indicates whether a job doesn't have a 
+      // completed status (and also, if a message was displayed).
+      if (DisplayMessageForIncompleteJob(this.elements.container, this.job)) { return; }
 
       // Clear any existing content in the container.
       this.elements.container.innerHTML = "";
@@ -79,7 +83,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       let programName = "taxablast"; // this.job.data.program_name;
 
       // Create the link panel HTML containing a link to this job's details.
-      const linkPanelHTML = this.parent.createLinkPanel(PanelKey.jobDetails);
+      const linkPanelHTML = this.parent.createLinkRow(PanelKey.jobDetails);
 
       //----------------------------------------------------------------------------------------------------------------
       // Generate the HTML for the job details
@@ -90,7 +94,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
             ${linkPanelHTML}
             <button class="btn ${ButtonClass.newSearch} has-tooltip"
                data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
-               data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
+               data-url="${this.parent.createUrlFromState(PanelKey.fastaInput)}"
             >${Icon.search} New search</button>
          </div>
          <table class="job-details">

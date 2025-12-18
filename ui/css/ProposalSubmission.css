@@ -1,0 +1,44 @@
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Proposal Submission Page CSS
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+/* TODO */
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+    Overriding DataTables CSS
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The "Show ___ entries" row above the table */
+#ictv_proposal_submission_container .dt-length {
+   display: flex;
+   flex-flow: row nowrap;
+   margin-bottom: 1.0rem;
+}
+#ictv_proposal_submission_container .dt-length label {
+   align-items: center;
+   font-weight: normal;
+   display: flex !important;
+   flex-flow: row nowrap !important;
+   justify-content: flex-start;
+}
+#ictv_proposal_submission_container .dt-length select.dt-input {
+   border: 1px solid #aaa;
+   border-radius: 5px;
+   display: inline-block;
+   font-size: 0.8rem;
+   padding: 0 0 0 3px !important;
+   margin: 0 0.25rem;
+   text-align: left;
+   width: 50px;
+}
+#ictv_proposal_submission_container .dt-paging .dt-paging-button {
+   border-color: #aaa;
+   border-width: 1px;
+}
+#ictv_proposal_submission_container .dt-type-numeric {
+   padding: 3px 6px;
+}

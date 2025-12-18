@@ -294,7 +294,7 @@ class TaxonomyHelper {
         if ($taxon->parentLevelID >= $topLevelRankID) { throw new \Exception("Found a taxon that shouldn't be top-level: " . $taxon->taxonName); }
 
         // Have we been populating HTML for a previous top-level parent?
-        if ($mostRecentTopLevelID > 0 && strlen($html) > 0) { 
+        if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) { 
           
           $topLevelHtmlLookup[$mostRecentTopLevelID] = $html; 
         }
@@ -308,7 +308,7 @@ class TaxonomyHelper {
     }
 
     // If we have a final top-level parent with leftover HTML.
-    if ($mostRecentTopLevelID > 0 && strlen($html) > 0) {
+    if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
 
       // Clear the stack
       while (!empty($levelStack)) {
@@ -578,7 +578,7 @@ class TaxonomyHelper {
       // If parent is not found in the stack, it's a new top-level node.
       if (!$foundParentInStack) {
         // If building a previous top-level node, finalize it.
-        if ($mostRecentTopLevelID > 0 && strlen($html) > 0) {
+        if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
           $finalHTML .= $html;
         }
 
@@ -591,7 +591,7 @@ class TaxonomyHelper {
     }
 
     // Once done with all taxa, pop any remaining open nodes.
-    if ($mostRecentTopLevelID > 0 && strlen($html) > 0) {
+    if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
       while (!empty($levelStack)) {
         array_pop($levelStack);
         $html .= "</div></div>";

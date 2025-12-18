@@ -5,7 +5,6 @@ namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
 use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
-use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\ictv_common\Utils;

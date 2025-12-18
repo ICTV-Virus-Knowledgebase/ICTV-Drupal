@@ -1,7 +1,5 @@
 
-import { AlertBuilder } from "../../../helpers/AlertBuilder";
-import { AppSettings } from "../../../global/AppSettings";
-import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
+import { ButtonClass, Constants, CreateTaxonDetailsURL, DisplayMessageForIncompleteJob, Icon, PanelKey } from "../Common";
 import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
 import { IBlastHitScore } from "../IBlastHitScore";
@@ -231,12 +229,17 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Validate the state
       if (isNaN(this.parent.state.fileIndex) || isNaN(this.parent.state.sequenceIndex)) { return this.displayErrorMessage("The panel state is invalid"); }
       
-      // Validate the job and ensure that it has files.
-      if (!this.parent.job || !this.parent.job.data || 
-         !Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
+      
+      // If the job is invalid or has a status other than "complete", display an appropriate message in
+      // the container element. The boolean value that's returned indicates whether a job doesn't have a 
+      // completed status (and also, if a message was displayed).
+      if (DisplayMessageForIncompleteJob(this.elements.container, this.parent.job)) { return; }
+
+      // Make sure the job has files.
+      if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
          this.parent.job.data.files.length < this.parent.state.fileIndex + 1) {
 
-         return this.displayErrorMessage("The specified job is invalid");
+         return this.displayErrorMessage("The data files for this job are invalid");
       }
 
       // Get the specified file.
@@ -272,10 +275,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
       // Create a URL for the job details/results page.
-      const jobDetailsURL = this.parent.createUrlUsingState(PanelKey.jobDetails);
+      const jobDetailsURL = this.parent.createUrlFromState(PanelKey.jobDetails);
 
       // Create the link panel HTML containing a link to this job's details.
-      const linkPanelHTML = this.parent.createLinkPanel(PanelKey.blastHits);
+      const linkPanelHTML = this.parent.createLinkRow(PanelKey.blastHits);
 
       // Create the panel's HTML.
       this.elements.container.innerHTML = 
@@ -307,7 +310,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
                <button class="btn ${ButtonClass.newSearch} has-tooltip"
                   data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
-                  data-url="${this.parent.createUrlUsingState(PanelKey.upload)}"
+                  data-url="${this.parent.createUrlFromState(PanelKey.fastaInput)}"
                >${Icon.search}<span class="btn-label">New search</span></button>
             </div>
          </div>

@@ -1,5 +1,5 @@
 
 export interface IFileData {
-    name: string;
-    contents: string
+   name: string;
+   contents: string;
 }

@@ -572,6 +572,7 @@
 
 .ictv-custom .search-results-table .view-ctrl-column {
    max-width: 70px;
+   width: fit-content;
 }
 
 .ictv-custom .search-results-table .view-search-result-ctrl {
@@ -594,6 +595,7 @@
 
 .ictv-custom .search-results-table td {
    font-size: 0.9rem;
+   padding: 0.5rem;
 }
 
 .ictv-custom .search-results-table .release-name {

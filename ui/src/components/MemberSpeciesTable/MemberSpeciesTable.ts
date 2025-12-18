@@ -3,6 +3,7 @@ import DataTables from 'datatables.net-dt';
 import { IVirusIsolate } from "../../models/IVirusIsolate";
 import { Utils } from "../../helpers/Utils";
 import { VirusIsolateService } from "../../services/VirusIsolateService";
+import { Identifiers } from '../../models/Identifiers';
 
 
 export class MemberSpeciesTable {
@@ -209,7 +210,6 @@ export class MemberSpeciesTable {
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
 
       // Begin generating the HTML that will be dynamically added to the page.
-      // <h2 class="virus-isolates-title">Member Species</h2>
       let html =
          `<a href="#member_species_table"></a>          
          <table class="virus-isolates-table compact stripe">
@@ -251,11 +251,12 @@ export class MemberSpeciesTable {
       return;
    }
 
-   
-   async loadTable(isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string) {
+   async loadTable(ictvID_: number, isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string | null) {
+
+      console.log("in loadTable ictvID_ = ", ictvID_, ", isolateID_ = ", isolateID_, ", mslRelease_ = ", mslRelease_)
 
       // Get the taxon's virus isolates.
-      const isolates: IVirusIsolate[] = await VirusIsolateService.getIsolates(isolateID_, mslRelease_, onlyUnassigned_, taxnodeID_, taxonName_);
+      const isolates: IVirusIsolate[] = await VirusIsolateService.getIsolates(ictvID_, isolateID_, mslRelease_, onlyUnassigned_, taxnodeID_, taxonName_);
       if (isolates == null || isolates.length < 1) {
          this.elements.container.innerHTML = ""; // "No virus isolates were found";
          return;

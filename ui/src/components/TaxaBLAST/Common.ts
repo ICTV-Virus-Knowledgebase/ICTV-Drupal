@@ -1,7 +1,9 @@
 
 import { AppSettings } from "../../global/AppSettings";
 import { DateTime } from "luxon";
+import { JobStatus } from "../../global/Types";
 import { Utils } from "../../helpers/Utils";
+import { ITaxaBlastJob } from "./ITaxaBlastJob";
 
 
 //----------------------------------------------------------------------------------------------------------------
@@ -10,9 +12,10 @@ import { Utils } from "../../helpers/Utils";
 
 // The available BLAST programs.
 export enum BlastTask {
-   blastn = "blastn",
+   megablast = "megablast",
    dcMegablast = "dc-megablast",
-   megablast = "megablast"
+   blastn = "blastn",
+   blastp = "blastp"
 }
 
 // CSS class names for buttons.
@@ -22,6 +25,8 @@ export enum ButtonClass {
    copyURL = "copy-url-button",
    downloadCSV = "download-csv-button",
    newSearch = "new-search-button",
+   openDialog = "open-dialog-button",
+   selectFiles = "select-files-button",
    upload = "upload-button",
    viewHits = "view-hits",
    viewHTML = "view-html-button"
@@ -34,34 +39,49 @@ export enum Icon {
    cancel = `<i class=\"fa-solid fa-xmark\"></i>`,
    chevronDown = `<i class=\"fa fa-chevron-down expanded\"></i>`,
    chevronRight = `<i class=\"fa fa-chevron-up collapsed\"></i>`,
+   clear = `<i class=\"fa-solid fa-broom\"></i>`,
    close = `<i class=\"fa fa-xmark\"></i>`,
    copy = `<i class=\"fa-regular fa-clipboard\"></i>`,
    csv = `<i class=\"fa-regular fa-file-csv\"></i>`,
+   delete = `<i class=\"fa-solid fa-x\"></i>`,
    dna = `<i class=\"fa-solid fa-dna\"></i>`,
+   edit = `<i class=\"fa-solid fa-pen-to-square\"></i>`,
+   error = `<i class=\"fa-solid fa-triangle-exclamation error\"></i>`,
    download = `<i class=\"fa fa-download\"></i>`,
    html = `<i class=\"fa-regular fa-file-lines\"></i>`,
    info = `<i class=\"fa-solid fa-circle-info\"></i>`,
    lineageDelimiter = `<i class=\"fa-solid fa-chevron-right\"></i>`,
    link = `<i class=\"fa-solid fa-link\"></i>`,
+   next = `<i class=\"fa-regular fa-angle-right\"></i>`,
+   paste = `<i class=\"fa-solid fa-paste\"></i>`,
+   run = `<i class="fa-sharp fa-circle-play"></i>`,
    repeat = `<i class=\"fa-solid fa-repeat\"></i>`,
+   save = `<i class=\"fa-solid fa-floppy-disk\"></i>`,
    search = `<i class=\"fa-solid fa-magnifying-glass\"></i>`,
    spinner = `<i class=\"fa fa-spinner fa-spin spinner-icon\"></i>`,
+   success = `<i class=\"fa-solid fa-circle-check success\"></i>`,
+   toggle = `<i class=\"fa-solid fa-toggle-off\"></i>`,
    upload = `<i class=\"fa fa-upload\"></i>`
 }
 
 export enum PanelAction {
+   displayError = "displayError",
    displayHistory = "displayHistory",
    displayJob = "displayJob",
    displayBlastHits = "displayBlastHits",
-   displayUpload = "displayUpload"
+   displayInput = "displayInput"
 }
 
+// The order of panels is FASTA input, job submission, pending job, jobDetails, blastHits (short circuiting
+// to the error panel as necessary).
 export enum PanelKey {
-   blastHits = "blastHits",
+   blastHits = "blastHits", 
+   fastaInput = "fastaInput",
    jobDetails = "jobDetails",
    jobHistory = "jobHistory",
-   searchResults = "searchResults",
-   upload = "upload"
+   jobSubmission = "jobSubmission",
+   message = "message",
+   pendingJob = "pendingJob"
 }
 
 export enum ParameterKey {
@@ -146,17 +166,38 @@ export function CreateTaxonDetailsURL(ictvID_: string, name_: string) {
 }
 
 
-export function FormatBytes(bytes_: number, decimals_: number): string {
+// If the job is invalid or has a status other than "complete" (or valid), display an appropriate message in
+// the container element provided. The boolean value that's returned indicates whether a message was displayed.
+export function DisplayMessageForIncompleteJob(containerEl_: HTMLElement, job_: ITaxaBlastJob): boolean {
 
-    if (!bytes_) return "0 B";
+   console.log("in DisplayMessageForIncompleteJob")
+   
+   let isIncomplete = true;
+   let message = "";
 
-    const k = 1024
-    const dm = decimals_ < 0 ? 0 : decimals_
-    const sizes = ['B', 'KB', 'MB', 'GB']
+   if (!job_ || !job_.status) {
+      // TODO: Include a "return to upload panel" button.
+      message = `An unknown error occurred and the job data is invalid.`;
 
-    const i = Math.floor(Math.log(bytes_) / Math.log(k))
+   } else if ([JobStatus.crashed, JobStatus.error, JobStatus.invalid].includes(job_.status as JobStatus)) {
+      // TODO: Include a "return to upload panel" button.
+      message = `Job \"${job_.name}\" has status \"${job_.status}\"`;
+      if (job_.message !== null && job_.message.length > 0) { message += `with message \"${job_.message}\"`; }
 
-    return `${parseFloat((bytes_ / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+   } else if (job_.status as JobStatus === JobStatus.pending) {
+      // TODO: Include a "copy URL" control?
+      message = `Job \"${job_.name}\" is in pending status. Please return to this page later to see the completed results.`;
+
+   } else if (!job_.data) { 
+      message = `Job \"${job_.name}\" has completed but did not return any data`;
+      
+   } else {
+      isIncomplete = false;
+   }
+
+   if (isIncomplete) { containerEl_.innerHTML = `<div class="no-results">${message}</div>`; }
+
+   return isIncomplete;
 }
 
 
@@ -200,6 +241,7 @@ export function FormatDuration(start_: string, end_: string): string {
 }
 
 
+
 // Generate a universally unique identifier (UUID).
 export function GenerateUUID() {
 
@@ -217,11 +259,74 @@ export function GenerateUUID() {
 }
 
 
+// Labels for the available BLAST programs.
+export function GetBlastTaskDescription(task_: BlastTask) {
+
+   let label = "";
+
+   switch (task_) {
+      case BlastTask.blastn:
+         label = "somewhat similar nucleotide sequences";
+         break;
+      case BlastTask.blastp:
+         label = "somewhat similar protein sequences";
+         break;
+      case BlastTask.dcMegablast:
+         label = "more dissimilar sequences";
+         break;
+      case BlastTask.megablast:
+         label = "highly similar sequences";
+         break;
+      default:
+         label = "unknown";
+   }
+
+   return label;
+}
+
+
+// Get a label for a BLAST task.
+export function GetBlastTaskLabel(task_: BlastTask) {
+
+   let label = "";
+
+   switch (task_) {
+      case BlastTask.blastn:
+         label = "blastn";
+         break;
+      case BlastTask.blastp:
+         label = "blastp";
+         break;
+      case BlastTask.dcMegablast:
+         label = "dc-megablast (discontiguous megablast)";
+         break;
+      case BlastTask.megablast:
+         label = "megablast";
+         break;
+      default:
+         label = "unknown";
+   }
+
+   return label;
+}
+
 // Return a spinner icon and a message.
 export function GetSpinnerHTML(message_: string): string {
    return `<span class="spinner-message">${Icon.spinner} ${message_}</span>`;
 }
 
+
+// Read the contents of a file asynchronously and return it as a base64-encoded string.
+export async function ReadFileAsync(file_): Promise<string> {
+   return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+         resolve(<string>reader.result);
+      };
+      reader.onerror = reject;
+      reader.readAsText(file_);
+   })
+}
 
 // Expand or collapse a specific accordion widget.
 export function ToggleAccordion(containerEl: HTMLElement, itemID_: string) {

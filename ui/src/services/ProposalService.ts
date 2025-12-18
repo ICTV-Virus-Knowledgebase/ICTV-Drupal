@@ -1,6 +1,7 @@
 
 import { IFileData } from "../models/IFileData";
 import { IJob } from "../components/ProposalSubmission/IJob";
+import { IResult } from "../models/IResult";
 import { IUploadResult } from "../components/ProposalSubmission/IUploadResult";
 import { IValidationSummary } from "../components/ProposalSubmission/IValidationSummary";
 import { WebService } from "./WebService";
@@ -10,28 +11,18 @@ import { WebServiceKey } from "../global/Types";
 export class _ProposalService {
 
    // Get all of this user's submitted jobs.
-   async getJobs(authToken_: string, userEmail_: string, userUID_: number): Promise<IJob[]> {
+   async getJobs(authToken_: string, userEmail_: string, userUID_: number): Promise<IResult> {
 
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
       if (!userUID_ || isNaN(userUID_)) { throw new Error("The user UID parameter is invalid"); }
 
       const data = {
-         actionCode: "get_jobs",
          userEmail: userEmail_,
          userUID: userUID_
       };
 
-      let jobs: IJob[] = null;
-
-      let jobsJSON = await WebService.drupalPost<string>(WebServiceKey.proposal, authToken_, data);
-      if (!!jobsJSON) { 
-         jobsJSON.replace("\u0022", "\""); 
-         jobs = JSON.parse(jobsJSON);
-         if (!jobs || !Array.isArray(jobs) || jobs.length < 1) { jobs = null; }
-      }
-      
-      return jobs;
+      return await WebService.drupalPost<IResult>(WebServiceKey.getProposalJobs, authToken_, data);
    }
 
 
@@ -45,14 +36,13 @@ export class _ProposalService {
       if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
 
       const data = {
-         actionCode: "get_validation_summary",
          jobUID: jobUID_,
          userEmail: userEmail_,
          userUID: userUID_
       };
 
       // Get and return the validation summary
-      return await WebService.drupalPost<IValidationSummary>(WebServiceKey.proposal, authToken_, data);
+      return await WebService.drupalPost<IValidationSummary>(WebServiceKey.getProposalValidationSummary, authToken_, data);
    }
 
 
@@ -66,14 +56,13 @@ export class _ProposalService {
       if (!userUID_ || isNaN(userUID_)) { throw new Error("The user UID parameter is invalid"); }
 
       const data = {
-         actionCode: "upload_proposals",
          files: files_,
          jobName: jobName_,
          userEmail: userEmail_,
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<IUploadResult>(WebServiceKey.proposal, authToken_, data);
+      return await WebService.drupalPost<IUploadResult>(WebServiceKey.uploadProposals, authToken_, data);
    }
 
 }

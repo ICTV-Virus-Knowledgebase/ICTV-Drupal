@@ -30,10 +30,10 @@ class FastaFile {
 
       // Validate the input parameters.
       $fasta = trim($fasta);
-      if (strlen($fasta) < 1) { throw new \InvalidArgumentException("Invalid FASTA parameter"); }
+      if (mb_strlen($fasta) < 1) { throw new \InvalidArgumentException("Invalid FASTA parameter"); }
 
       $filename = trim($filename);
-      if (strlen($filename) < 1) { throw new \InvalidArgumentException("Invalid filename parameter"); }
+      if (mb_strlen($filename) < 1) { throw new \InvalidArgumentException("Invalid filename parameter"); }
 
       $this->encodedFilename = Common::encodeFilenameAsBase64URL($filename);
       $this->fasta = $fasta;

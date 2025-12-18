@@ -1,7 +1,7 @@
 databaseName: 'ictv_apps'
-drupalRoot: '/var/www/dapp/web'
+drupalRoot: '/var/www/drupal/site'
 inputDirectory: 'seq_in'
-jobsPath: '/var/www/dapp/files/jobs'
+jobsPath: '/var/www/drupal/files/jobs'
 jsonResultsFilename: 'tax_results.json'
 maxTotalUploadSize: 500000000
 maxUploadedRecords: 100

@@ -31,7 +31,6 @@
 
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\File\FileSystemInterface;
-use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
@@ -137,23 +136,19 @@ try {
       }
 
       // Update a job file based on the contents of the summary TSV file.
-      $sql = "CALL updateJobFile(".
-         "{$fileSummary->errors}, ".
-         "'{$fileSummary->filename}', ".
-         "{$fileSummary->notes}, ".
-         "'{$jobUID}', ".
-         "{$fileSummary->successes}, ".
-         "{$fileSummary->warnings} ".
-      ");";
+      $parameters = [":errors" => $fileSummary->errors, ":filename" => $fileSummary->filename, ":notes" => $fileSummary->notes, 
+         ":jobUID" => $jobUID, ":successes" => $fileSummary->successes, ":warnings" => $fileSummary->warnings];
 
-      $fileQuery = $connection->query($sql);
+      $sql = "CALL updateJobFile(:errors, :filename, :notes, :jobUID, :successes, :warnings);";
+
+      $fileQuery = $connection->query($sql, $parameters);
       $fileResult = $fileQuery->execute();
    }
 
    //-------------------------------------------------------------------------------------------------------
    // Update the job record in the database.
    //-------------------------------------------------------------------------------------------------------
-   JobService::updateJob($connection, $stdError, $jobUID, $jobStatus, $userUID); 
+   Common::updateJob($connection, $stdError, $jobUID, $jobStatus, $userUID); 
 
    fwrite(STDOUT, "Validation is complete");
 

@@ -7,13 +7,15 @@ import { WebServiceKey } from "../global/Types";
 
 export class _VirusIsolateService {
 
-   async getIsolates(isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string): Promise<IVirusIsolate[]> {
+   async getIsolates(ictvID_: number, isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, 
+      taxnodeID_: number, taxonName_: string | null): Promise<IVirusIsolate[]> {
 
       const data = {
-         isolate_id: isolateID_,
-         msl_release: mslRelease_,
+         ictv_id: ictvID_ || null,
+         isolate_id: isolateID_ || null,
+         msl_release: mslRelease_|| null,
          only_unassigned: onlyUnassigned_,
-         taxnode_id: taxnodeID_,
+         taxnode_id: taxnodeID_ || null,
          taxon_name: Utils.safeTrim(taxonName_)
       }
 
@@ -21,6 +23,7 @@ export class _VirusIsolateService {
       return responseData;
    }
 
+   /*
    // NOTE: This is the old version
    async getVirusIsolates(mslRelease_: number, onlyUnassigned_: boolean, taxonName_: string): Promise<IVirusIsolate[]> {
 
@@ -37,7 +40,7 @@ export class _VirusIsolateService {
       const responseData = await WebService.post<IVirusIsolate[]>(WebServiceKey.virusIsolate, data);
 
       return responseData;
-   }
+   } */
 
 }
 
