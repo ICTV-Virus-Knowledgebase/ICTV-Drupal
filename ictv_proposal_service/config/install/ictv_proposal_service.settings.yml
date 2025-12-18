@@ -1,4 +1,6 @@
 databaseName: 'ictv_apps'
 drupalRoot: '/var/drupal/site'
+inputDirName: 'input'
 jobsPath: '/var/drupal/files/jobs'
+outputDirName: 'output'
 summaryFilename: 'QC.pretty_summary.all.xlsx'

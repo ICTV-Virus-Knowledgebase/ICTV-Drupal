@@ -91,7 +91,7 @@ try {
    if (!$scriptName) { throw new \Exception("Invalid scriptName parameter"); }
 
    $task = $_GET["task"];
-   if (strlen($task) < 1 || !in_array($task, Common::$VALID_BLAST_TASKS)) { throw new \Exception("Invalid task parameter"); }
+   if (mb_strlen($task) < 1) { throw new \Exception("Invalid task parameter"); }
 
    $userUID = $_GET["userUID"];
    if (!$userUID) { throw new \Exception("Invalid userUID parameter"); }
@@ -112,13 +112,35 @@ try {
    //-------------------------------------------------------------------------------------------------------
    // Initialize an instance of Drupal.
    //-------------------------------------------------------------------------------------------------------
-   $autoloader = require_once 'autoload.php';
+   try {
+      $autoloader = require_once 'autoload.php';
 
-   $request = Request::createFromGlobals();
+      // NOTE: This was the previous version, but creating a request instance without using global 
+      // environment variables should work in both web and command line scenarios.
+      //$request = Request::createFromGlobals();
+      $request = \Symfony\Component\HttpFoundation\Request::create('/');
+      $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
 
-   $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
+      $kernel->boot();
 
-   $kernel->boot();
+   } catch (\Throwable $initError) {
+      $initErrorMessage = method_exists($initError, "getMessage") ? $initError->getMessage() : get_class($initError);
+      fwrite(STDERR, "Drupal initialization failed: " . $initErrorMessage);
+      exit(1);
+   }
+
+   // Display an error in the Drupal log - only if Drupal is initialized
+   if (!class_exists("\Drupal\Core\DrupalKernel")) { 
+      fwrite(STDERR, "Drupal could not be initialized");
+      exit(1); 
+   }
+
+   // dmd testing
+   \Drupal::logger("ictv_seqsearch_service")->info("In RunSeqSearch.php");
+
+   // Now that Drupal has been initialized, validate the task parameter.
+   if (!in_array($task, Common::$VALID_BLAST_TASKS)) { throw new \Exception("Invalid task parameter"); }
+
 
    // Return to the original working directory.
    chdir($cwd);
@@ -139,7 +161,7 @@ try {
    //-------------------------------------------------------------------------------------------------------
    // Run the TaxaBLAST script and return a job status.
    //-------------------------------------------------------------------------------------------------------
-   $jobStatus = SequenceSearch::runSearch($inputPath, $outputPath, $scriptName, $workingDirectory);
+   $jobStatus = SequenceSearch::runSearch($inputPath, $maxHSPS, $maxTargetSeqs, $outputPath, $scriptName, $task, $workingDirectory);
 
    // TODO: Delete the input files after TaxaBLAST completes.
 
@@ -210,10 +232,10 @@ try {
       
    } catch (\Throwable $ex) {
 
-      $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+      $errorMessage = method_exists($ex, "getMessage") ? $ex->getMessage() : get_class($ex);
 
       // Update the log with the error message.
-      \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage);
+      \Drupal::logger("ictv_seqsearch_service")->error($errorMessage);
 
       // Update the job's job_files as unsuccessful.
       $sql = "UPDATE job_file SET 
@@ -233,12 +255,18 @@ try {
    // Write the error message to stderr.
    fwrite(STDERR, $errorMessage);
 
-   // Display an error in the Drupal log.
-   \Drupal::logger(Common::$MODULE_NAME)->error($errorMessage); 
+   // Display an error in the Drupal log - only if Drupal is initialized
+   if (class_exists("\Drupal\Core\DrupalKernel")) {
+      try {
+         \Drupal::logger("ictv_seqsearch_service")->error($errorMessage);
+      } catch (\Throwable $logError) {
+         // If logging fails, just continue
+      }
+   }
 
-   if (strlen($jobUID) > 0) {
+   if (mb_strlen($jobUID) > 0) {
 
-      if (strlen($jobStatus->value) < 1) { $jobStatus = JobStatus::error; }
+      if ($jobStatus === null || mb_strlen($jobStatus->value) < 1) { $jobStatus = JobStatus::error; }
 
       // Update the job's JSON and status.
       SeqSearchJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);

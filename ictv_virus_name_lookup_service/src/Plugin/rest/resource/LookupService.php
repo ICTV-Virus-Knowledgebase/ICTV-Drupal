@@ -220,7 +220,7 @@ class LookupService extends ResourceBase {
             $modifiedText = "";
             $tokens = explode(" ", $searchText);
             foreach ($tokens as $token) {
-               if ($token == null || strlen($token) < 1) { continue; }
+               if ($token == null || mb_strlen($token) < 1) { continue; }
                $modifiedText = $modifiedText."+".$token." ";
             }
 

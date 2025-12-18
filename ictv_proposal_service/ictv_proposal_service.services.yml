@@ -1,0 +1,18 @@
+services:
+  ictv_proposal_service.GetJobs:
+    class: '\Drupal\ictv_proposal_service\Plugin\rest\resource\GetJobs'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_proposal_service.GetValidationSummary:
+    class: '\Drupal\ictv_proposal_service\Plugin\rest\resource\GetValidationSummary'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_proposal_service.UploadProposals:
+    class: '\Drupal\ictv_proposal_service\Plugin\rest\resource\UploadSequences'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

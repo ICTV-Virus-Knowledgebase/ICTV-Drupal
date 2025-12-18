@@ -2,7 +2,6 @@
 /* The Member Species Table */
 #member_species_table_container .virus-isolates-table {
    background-color: rgba(255, 255, 255, 1.0) !important;
-   /*border-collapse: collapse;*/
    border-color: #aaa;
    border-style: solid;
    border-width: 1px;
@@ -18,13 +17,9 @@
 #member_species_table_container .virus-isolates-table tr.header-row {
    background-color: #757575 !important;
 }
-
-/*#member_species_table_container.virus-isolates-table tr:first-child td {
-    padding-top: unset;
-}*/
 #member_species_table_container .virus-isolates-table tr.header-row th {
    color: #fff;
-   font-size: 0.7rem !important;
+   font-size: 1.0rem !important;
    font-weight: normal;
 }
 
@@ -37,24 +32,18 @@
 }
 
 #member_species_table_container .virus-isolates-table td {
-   font-size: 0.7rem !important;
+   font-size: 1.0rem !important;
 }
 
 /* Column classes (both TH and TD) */
 
-/*#member_species_table_container .virus-isolates-table .col-species {
-}*/
 #member_species_table_container .virus-isolates-table td.col-species {
    min-width: 15ch;
 }
 #member_species_table_container .virus-isolates-table .col-exemplar i {
    color: #000;
 }
-/*
-#member_species_table_container .virus-isolates-table .col-species {
-}
-#member_species_table_container .virus-isolates-table .col-alternativeNameCSV {
-}*/
+
 #member_species_table_container .virus-isolates-table td.col-isolate {
    word-break: break-word;
 }

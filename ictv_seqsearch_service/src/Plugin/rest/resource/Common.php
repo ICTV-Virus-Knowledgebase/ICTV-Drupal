@@ -122,9 +122,9 @@ class Common {
    public static function copyOutputFilesAndZip(string $jobPath, string $jobUID, string $outputPath) {
 
       // Validate input parameters.
-      if (strlen($jobPath) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid job path parameter"); }
-      if (strlen($jobUID) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid job UID parameter"); }
-      if (strlen($outputPath) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid output path parameter"); }
+      if (mb_strlen($jobPath) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid job path parameter"); }
+      if (mb_strlen($jobUID) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid job UID parameter"); }
+      if (mb_strlen($outputPath) < 1) { throw new \Exception("Error in copyAndZipJobDirectory: Invalid output path parameter"); }
 
    
       // Get the path of the system's tmp directory.
@@ -213,7 +213,7 @@ class Common {
       }
 
       // TODO: This will be unnecessary when the output folder is removed from the JSON values.
-      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, strlen("tax_out/"));  }
+      if (str_starts_with($filename, "tax_out/")) { $filename = substr($filename, mb_strlen("tax_out/"));  }
 
       // Make sure the file path ends with a slash.
       if (!str_ends_with($filePath, "/")) { $filePath = $filePath."/"; }
@@ -267,7 +267,7 @@ class Common {
       foreach ($iterator as $file) {
 
          $filePath = $file->getRealPath();
-         $relativePath = substr($filePath, strlen($sourceDir) + 1);
+         $relativePath = substr($filePath, mb_strlen($sourceDir) + 1);
          
          if ($file->isDir()) {
 
@@ -297,7 +297,7 @@ class Common {
       
       // Trim and validate the encoded filename.
       $encodedFilename = trim($encodedFilename);
-      if (strlen($encodedFilename) < 1) { return ""; }
+      if (mb_strlen($encodedFilename) < 1) { return ""; }
       
       $basename = null;
       $extension = null;
@@ -348,7 +348,7 @@ class Common {
    public static function encodeFilenameAsBase64URL(string $filename): string {
       
       $filename = trim($filename);
-      if (strlen($filename) < 1) { return ""; }
+      if (mb_strlen($filename) < 1) { return ""; }
       
       $basename = null;
       $extension = null;
@@ -470,7 +470,7 @@ class Common {
    public static function safeTrim(string|null $str): string {
       if (!$str) { return ""; }
       $str = trim($str);
-      if (strlen($str) < 1) { return ""; }
+      if (mb_strlen($str) < 1) { return ""; }
       return $str;
    }
 
@@ -484,9 +484,9 @@ class Common {
       $recordCount = 0;
    
       $fasta = trim($fasta);
-      if (strlen($fasta) < 1) { return false; }
+      if (mb_strlen($fasta) < 1) { return false; }
 
-      if (strlen($filename) < 1) { return false; }
+      if (mb_strlen($filename) < 1) { return false; }
 
       $header = null;
       $sequenceLines = [];
@@ -544,7 +544,7 @@ class Common {
       // Validate the sequence lines.
       foreach ($sequenceLines as $line) {
 
-         if (strlen($line) < 1) continue;
+         if (mb_strlen($line) < 1) continue;
 
          // Are there any bases that aren't a nucleotide?
          if (!preg_match(Common::$FASTA_NT_REGEX, $line)) {

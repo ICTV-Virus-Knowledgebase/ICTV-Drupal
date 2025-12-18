@@ -1,0 +1,53 @@
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Taxon details component CSS
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Tabs
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#taxon_details_container .tab-buttons {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   width: 100%;
+}
+#taxon_details_container .tab-button {
+   border-color: #ddd;
+   border-style: solid;
+   border-width: 0 0 3px 0;
+   cursor: pointer;
+   display: block;
+   padding-bottom: 0.25rem;
+   text-align: center;
+   transition: border-color 0.3s ease;
+   visibility: visible;
+   width: 50%;
+}
+#taxon_details_container .tab-button.active {
+   border-color: rgb(13, 110, 253);
+}
+#taxon_details_container .tab-button.disabled {
+   color: #999;
+}
+#taxon_details_container .tab-button.disabled.active {
+   border-color: #999;
+}
+
+#taxon_details_container .tab-panel {
+   display: none;
+   margin-top: 2.0rem;
+   visibility: hidden;
+}
+#taxon_details_container .tab-panel.active {
+   display: block;
+   visibility: visible;
+}
+
+
+
+
+

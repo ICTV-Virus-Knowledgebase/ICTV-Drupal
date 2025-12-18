@@ -293,7 +293,7 @@ class UploadSequences extends ResourceBase {
          if (Utils::isNullOrEmpty($contents)) { throw new \Exception("File #{$fileRecordCount} is empty"); }
 
          // Update the total size of all uploaded files.
-         $totalFileSize += strlen($contents);
+         $totalFileSize += mb_strlen($contents);
          if ($totalFileSize > $this->maxTotalUploadSize) {
             // TODO: add commas when displaying maxTotalUploadSize.
             throw new \Exception("The total size of all uploaded files exceeds the maximum allowed (".$this->maxTotalUploadSize." bytes)");
@@ -344,11 +344,11 @@ class UploadSequences extends ResourceBase {
 
          // Get and validate the user email.
          $userEmail = Common::safeTrim($requestJSON["userEmail"]);
-         if (strlen($userEmail) < 1) { throw new BadRequestHttpException("Error in UploadSequences: Invalid user email"); }
+         if (mb_strlen($userEmail) < 1) { throw new BadRequestHttpException("Error in UploadSequences: Invalid user email"); }
 
          // Get and validate the user UID.
          $userUID = Common::safeTrim($requestJSON["userUID"]);
-         if (strlen($userUID) < 1) {throw new BadRequestHttpException("Error in UploadSequences: Invalid user UID"); }
+         if (mb_strlen($userUID) < 1) {throw new BadRequestHttpException("Error in UploadSequences: Invalid user UID"); }
          
 
          //----------------------------------------------------------------
@@ -356,25 +356,24 @@ class UploadSequences extends ResourceBase {
          //----------------------------------------------------------------
 
          // Maximum number of HSPs to return.
-         $maxHSPS = Common::safeTrim($requestJSON["maxHSPS"]);
-         if (!is_int($maxHSPS) || (int)$maxHSPS < 1) {
-            $maxHSPS = Common::$DEFAULT_BLAST_MAX_HSPS;
-         } else {
-            $maxHSPS = (int)$maxHSPS;
+         $maxHSPS = Common::$DEFAULT_BLAST_MAX_HSPS;
+         if (isset($requestJSON["maxHSPS"])) {
+            $testValue = Common::safeTrim($requestJSON["maxHSPS"]);
+            if (is_int($testValue) && (int)$testValue > 0) { $maxHSPS = (int)$testValue; }
          }
-
+         
          // Maximum number of target sequences to return.
-         $maxTargetSeqs = Common::safeTrim($requestJSON["maxTargetSeqs"]);
-         if (!is_int($maxTargetSeqs) || (int)$maxTargetSeqs < 1) {
-            $maxTargetSeqs = Common::$DEFAULT_BLAST_MAX_TARGET_SEQS;
-         } else {
-            $maxTargetSeqs = (int)$maxTargetSeqs;
+         $maxTargetSeqs = Common::$DEFAULT_BLAST_MAX_TARGET_SEQS;
+         if (isset($requestJSON["maxTargetSeqs"])) {
+            $testValue = Common::safeTrim($requestJSON["maxTargetSeqs"]);
+            if (is_int($testValue) && (int)$testValue > 0) { $maxTargetSeqs = (int)$testValue; }
          }
-
+         
          // The BLAST task to use.
-         $task = Common::safeTrim($requestJSON["task"]);
-         if (strlen($task) < 1 || !in_array($task, Common::$VALID_BLAST_TASKS)) {
-            $task = Common::$DEFAULT_BLAST_TASK;
+         $task = Common::$DEFAULT_BLAST_TASK;
+         if (isset($requestJSON["task"])) {
+            $testValue = Common::safeTrim($requestJSON["task"]);
+            if (mb_strlen($task) > 0 && in_array($task, Common::$VALID_BLAST_TASKS)) { $task = $testValue; }
          }
          
          // Get and validate the array of files.
@@ -388,7 +387,7 @@ class UploadSequences extends ResourceBase {
 
          // Create a new job record and get its ID and UID.
          SeqSearchJob::createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
-         if (!$jobID || $jobID < 1 || !$jobUID || strlen($jobUID) < 1) { throw new \Exception("Error in UploadSequences: Unable to create job record"); }
+         if (!$jobID || $jobID < 1 || !$jobUID || mb_strlen($jobUID) < 1) { throw new \Exception("Error in UploadSequences: Unable to create job record"); }
 
          // Create the a new job folder and its subdirectories and return the full path of the job directory.
          $jobPath = SeqSearchJob::createJobFolder($this->inputDirectory, $this->jobsPath, $jobUID, $this->outputDirectory);
@@ -474,6 +473,9 @@ class UploadSequences extends ResourceBase {
 
          $output = null;
          $resultCode = -1;
+
+         // dmd testing
+         \Drupal::logger(Common::$MODULE_NAME)->info("command = ".$command);
 
          // Run the command on the command line.
          $commandResult = exec($command, $output, $resultCode);

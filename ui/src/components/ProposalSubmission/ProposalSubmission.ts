@@ -1,12 +1,12 @@
 
+import { AlertBuilder } from "../../helpers/AlertBuilder";
 import DataTables from "datatables.net-dt";
 import { DateTime } from "luxon";
 import { decode } from "base64-arraybuffer";
 import { IFileData } from "../../models/IFileData";
 import { IJob } from "./IJob";
-import { ProposalService } from "../../services/ProposalService";
 import { IJobFile } from "./IJobFile";
-import Swal from "sweetalert2";
+import { ProposalService } from "../../services/ProposalService";
 
 
 export class ProposalSubmission {
@@ -233,10 +233,19 @@ export class ProposalSubmission {
                { target: 2, orderable: true, type: "date" },
                { targets: [3,4,5,6], orderable: true }
          ],
-         dom: "ltip",
+         info: true,
+         layout: {
+            bottomEnd: {
+               paging: { buttons: 4}
+            }
+         },
+         ordering: true,
+         paging: true,
+         searching: false
+         /*dom: "ltip",
          order: [], // Important: If this isn't an empty array it will move the child rows to the end!
          searching: false,
-         stripeClasses: []
+         stripeClasses: []*/
       });
 
       // Handle an event that's triggered when a new child row is added to the DataTable.
@@ -303,10 +312,16 @@ export class ProposalSubmission {
    // Get this user's jobs from the web service.
    async getJobs() {
 
-      this.jobs = await ProposalService.getJobs(this.authToken, this.user.email, this.user.uid);
+      const result = await ProposalService.getJobs(this.authToken, this.user.email, this.user.uid);
+      if (result.success && result.data) { 
+         result.data = result.data.replace("\u0022", "\""); 
+         this.jobs = JSON.parse(result.data) as IJob[];
+      } else { 
+         this.jobs = null;
+         await AlertBuilder.displayError(`Unable to get jobs: ${result.message}`);
+      }
 
-      await this.displayJobs();
-      return;
+      return await this.displayJobs();
    }
 
 
@@ -466,13 +481,7 @@ export class ProposalSubmission {
       }
 
       // Display a "success" dialog.
-      await Swal.fire({
-         title: title,
-         text: content,
-         icon: "success"
-      });
-
-      return;
+      return await AlertBuilder.displaySuccess(content, title);
    }
 
    async updateChildRowVisibility(jobUID_: string) {
@@ -538,13 +547,7 @@ export class ProposalSubmission {
          }
          
          if (files.length < 1) { 
-            
-            // Display an error dialog.
-            return await Swal.fire({
-               title: "Error",
-               text: "Unable to upload: no valid files were found",
-               icon: "error"
-            });
+            return await AlertBuilder.displayError("Unable to upload: no valid files were found", "Error");
          }
 
          await Promise.allSettled([
@@ -568,13 +571,7 @@ export class ProposalSubmission {
          await this.getJobs();
 
       } catch (error_) {
-
-         // Display an error dialog.
-         await Swal.fire({
-            title: "Error",
-            text: error_,
-            icon: "error"
-         });
+         return await AlertBuilder.displayError(error_, "Error");
       }
 
       // Re-initialize the upload controls.

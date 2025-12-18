@@ -117,6 +117,18 @@ export class Utils {
       return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${displayText}</a>`;
    }
 
+   static formatBytes(bytes_: number, decimals_?: number): string {
+   
+       if (!bytes_) return "0 B";
+   
+       const k = 1024
+       const dm = isNaN(decimals_) || decimals_ < 0 ? 0 : decimals_
+       const sizes = ['B', 'KB', 'MB', 'GB']
+   
+       const i = Math.floor(Math.log(bytes_) / Math.log(k))
+   
+       return `${parseFloat((bytes_ / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+   }
 
    // Is the user's browser on iOS?
    static isIOS() {

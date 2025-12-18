@@ -175,7 +175,7 @@ class Common {
     }
 
     // matchEnd = matchStart + searchText_.Length - 1
-    $matchEnd = $matchStart + strlen($searchText) - 1;
+    $matchEnd = $matchStart + mb_strlen($searchText) - 1;
 
     // preMatch = name.Substring(0, matchStart)
     $preMatch = substr($name, 0, $matchStart);

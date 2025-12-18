@@ -8,6 +8,15 @@ ictv_proposal_service.settings:
     drupalRoot:
       type: string
       label: 'The Drupal website root'
+    inputDirName:
+      type: string
+      label: 'The name of a proposal job input directory'
     jobsPath:
       type: string
       label: 'The directory where job files are maintained'
+    outputDirName:
+      type: string
+      label: 'The name of a proposal job output directory'
+    summaryFilename:
+      type: string
+      label: 'The name of the summary file generated for proposal job'

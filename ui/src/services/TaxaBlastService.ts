@@ -60,7 +60,7 @@ export class _TaxaBlastService {
       return await WebService.drupalPost<ITaxaBlastJob[]>(WebServiceKey.searchTaxaBlastJobs, authToken_, data);
    }
 
-   
+
    // Get an output file from a TaxaBLAST job.
    async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
 
@@ -79,28 +79,6 @@ export class _TaxaBlastService {
    }
 
    
-   /* Not currently used.
-   
-   // Upload one or more sequence files.
-   async uploadFiles(authToken_: string, files_: FileList, jobName_: string, userEmail_: string, userUID_: string): Promise<IUploadResult> {
-
-      // Validate parameters
-      if (!authToken_) { throw new Error("Invalid auth token"); }
-      if (!files_ || files_.length < 1) { throw new Error("There are no files to upload"); }
-      if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
-      if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
-
-      const data = {
-         authToken: authToken_,
-         jobName: jobName_,
-         userEmail: userEmail_,
-         userUID: userUID_
-      };
-
-      return await WebService.postFiles<IUploadResult>(authToken_, data, files_, WebServiceKey.uploadSequences);
-   }*/
-
-
    // Upload one or more sequences for processing.
    async uploadSequences(authToken_: string, blastParams_: BlastParams, files_: IFileData[], jobName_: string, userEmail_: string, 
       userUID_: string): Promise<IUploadResult> {

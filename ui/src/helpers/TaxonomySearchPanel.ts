@@ -136,10 +136,10 @@ export class TaxonomySearchPanel {
       this.elements.searchText.addEventListener("keypress", async (event_: KeyboardEvent) => {
          if (event_.key === "Enter") {
 
-               event_.preventDefault();
-               event_.stopPropagation();
+            event_.preventDefault();
+            event_.stopPropagation();
 
-               await this.search();
+            await this.search();
          }
          return true;
       })
@@ -149,10 +149,10 @@ export class TaxonomySearchPanel {
       this.elements.includeAllReleasesCtrl.addEventListener("keypress", async (event_: KeyboardEvent) => {
          if (event_.key === "Enter") {
                
-               event_.preventDefault();
-               event_.stopPropagation();
+            event_.preventDefault();
+            event_.stopPropagation();
 
-               await this.search();
+            await this.search();
          }
          return true;
       })
@@ -290,7 +290,7 @@ export class TaxonomySearchPanel {
             if (this.searchContext === SearchContext.CuratedNames) {
                html +=
                   `<tr>
-                     <td class="view-ctrl">
+                     <td class="view-ctrl-column">
                         <button class="slim-btn view-search-result-button"
                            data-id="${dataID}" 
                            data-name="${searchResult_.name}" 
@@ -304,7 +304,7 @@ export class TaxonomySearchPanel {
             } else {
                html +=
                   `<tr>
-                     <td class="view-ctrl">
+                     <td class="view-ctrl-column">
                         <button class="slim-btn view-search-result-button"
                            data-id="${dataID}" 
                            data-lineage="${dataLineage}" 

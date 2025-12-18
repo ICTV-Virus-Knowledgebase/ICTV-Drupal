@@ -796,7 +796,7 @@ export class TaxonomyBrowser {
       return;
    }
 
-   
+
    // Get the query string parameters
    getUrlParams() {
 
@@ -1085,6 +1085,9 @@ export class TaxonomyBrowser {
             event_.preventDefault();
             event_.stopPropagation();
 
+            // Set the search panel's selected release so it will be used when searching.
+            this.searchPanel.selectedRelease = parseInt(releaseNumber);
+
             // Scroll to the release after it is selected.
             this.scrollToReleaseAfterLoading = true;
 
@@ -1153,6 +1156,9 @@ export class TaxonomyBrowser {
             // Get the release history
             await this.getReleaseHistory();
 
+            // Default the selected release.
+            let selectedRelease = this.initialData.releaseNumber;
+
             // See if an MSL was provided as a query string parameter.
             this.getUrlParams();
             if (!!this.identifiers && !isNaN(this.identifiers.msl)) {
@@ -1163,10 +1169,13 @@ export class TaxonomyBrowser {
                // Update the search panel.
                this.searchPanel.selectedRelease = this.identifiers.msl;
                
-               // Get the requested release and its associated taxonomy.
-               await this.getRelease(this.identifiers.msl.toString());
-               await this.getByReleasePreExpanded();
+               // Set the selected release.
+               selectedRelease = this.identifiers.msl.toString();
             }
+
+            // Get the requested release and its associated taxonomy.
+            await this.getRelease(selectedRelease);
+            await this.getByReleasePreExpanded();
 
             break;
 
@@ -1357,127 +1366,7 @@ export class TaxonomyBrowser {
       sessionStorage.setItem(this.webStorageKey, json);
    }
 
-
-   /*
-   async search() {
-
-       // Get search text
-       let searchText = jQuery(this.selectors.searchText).val();
-       if (!searchText) { alert("Please enter search text"); return false; }
-
-       let includeAllReleases: boolean = jQuery(this.selectors.includeAllReleasesCtrl).prop("checked");
-
-       // Disable the search and reset buttons.
-       jQuery(this.selectors.searchControl).prop("disabled", true);
-       jQuery(this.selectors.clearSearchControl).prop("disabled", true);
-
-       // The spinner icon and label.
-       let spinner = this.getSpinnerHTML("Searching...");
-
-       // Clear the search results and display the spinner.
-       jQuery(this.selectors.searchResults).html(spinner);
-       jQuery(this.selectors.searchResults).show();
-       
-       let releaseNumber = null;
-       if (!!this.mslRelease && !!this.mslRelease.releaseNumber) { releaseNumber = this.mslRelease.releaseNumber; }
-
-       // Call the search web service
-       const searchResults: ITaxonomySearchResult[] = await TaxonomyService.search(includeAllReleases, searchText, releaseNumber);
-       
-       // Re-enable the search and reset buttons.
-       jQuery(this.selectors.searchControl).prop("disabled", false);
-       jQuery(this.selectors.clearSearchControl).prop("disabled", false);
-
-       let resultCount: number = 0;
-
-       let html: string =
-           `<table class="${this.cssClasses.searchResultsTable} cell-border compact stripe">
-               <thead>
-                   <tr class="header-row">
-                       <th data-orderable="false"></th>
-                       <th>Release</th>
-                       <th>Rank</th>
-                       <th>Name</th>
-                   </tr>
-               </thead>
-               <tbody>`;  
-
-       if (searchResults) {
-           searchResults.forEach((searchResult_) => {
-               html +=
-                   `<tr>
-                       <td class="view-ctrl">
-                           <button class="slim-btn view-search-result-ctrl"
-                               data-id="${searchResult_.taxnodeID}" 
-                               data-rank="${searchResult_.levelName}" 
-                               data-release="${searchResult_.releaseNumber}">View</button>
-                       </td>
-                       <td class="release-name">${searchResult_.treeName}</td>
-                       <td class="level-name">${searchResult_.levelName}</td>
-                       <td class="result-html">${searchResult_.lineageHTML}</td>
-                   </tr>`;
-                   
-               resultCount += 1;
-           });
-       }
-
-       html += "</tbody></table>";
-
-       if (resultCount < 1) { html = "No results"; }
-       
-
-       // Get the search results Element.
-       const searchResultsEl: HTMLDivElement = document.querySelector(this.selectors.searchResults);
-       if (!searchResultsEl) { throw new Error("Invalid search results Element"); }
-
-       // Display the search results HTML.
-       searchResultsEl.innerHTML = html;
-       
-       if (resultCount > 0) {
-           
-           searchResultsEl.addEventListener("click", async (event_: MouseEvent) => {
-
-               // Get the closest TR Element to the target Element.
-               const buttonEl = (event_.target as HTMLElement).closest(`button`);
-               if (!buttonEl) { return; }
-               
-               event_.preventDefault();
-               event_.stopPropagation();
-
-               const strTaxNodeID = buttonEl.getAttribute("data-id");
-               if (!strTaxNodeID) { throw new Error("Unable to select search result: Empty taxNodeID"); }
-
-               const taxNodeID: number = parseInt(strTaxNodeID);
-               if (isNaN(taxNodeID)) { throw new Error("Unable to select search result: Invalid taxNodeID"); }
-
-               const rank = buttonEl.getAttribute("data-rank") as TaxaLevel;
-               if (!rank) { throw new Error("Invalid rank attribute"); }
-
-               const releaseNumber = buttonEl.getAttribute("data-release");
-               if (!releaseNumber) { throw new Error("Invalid releaseNumber attribute"); }
-
-               // Get the release
-               await this.getRelease(releaseNumber);
-
-               // Get the tree expanded to the selected node.
-               await this.getTreeExpandedToNode(rank, releaseNumber, taxNodeID);
-
-               return false;
-           })
-
-           // Convert the table into a DataTable instance.
-           jQuery(this.selectors.searchResultsTable).DataTable({
-
-               dom: "ltip",
-               
-               // No ordering applied by DataTables during initialisation
-               "order": [],
-               searching: false
-           });
-       }    
-   }*/
-
-
+   
    // Set the local data's "pre-expand to" rank, possibly updating the controls.
    async setPreExpandRank(preExpandToRank_: TaxaLevel, updateHideAboveControl_: boolean, updatePreExpandControl_: boolean) {
 

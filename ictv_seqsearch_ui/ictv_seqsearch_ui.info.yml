@@ -1,8 +1,0 @@
-name: ICTV TaxaBLAST UI
-type: module
-description: 'A custom module that displays the TaxaBLAST UI'
-package: ICTV
-configure: ictv_seqsearch_ui.settings
-core_version_requirement: ^9 || ^10 || ^11
-dependencies:
-  - drupal:block

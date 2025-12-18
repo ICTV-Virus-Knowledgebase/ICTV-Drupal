@@ -10,7 +10,6 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\ictv_common\Jobs\JobService;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;

@@ -20,7 +20,7 @@ class SequenceSearch {
 
       if (!is_int($maxHSPS) || $maxHSPS < 1) { throw new \Exception("Invalid maxHSPS parameter in runSearch"); }
       if (!is_int($maxTargetSeqs) || $maxTargetSeqs < 1) { throw new \Exception("Invalid maxTargetSeqs parameter in runSearch"); }
-      if (strlen($task) < 1) { throw new \Exception("Invalid task parameter in runSearch"); }
+      if (mb_strlen($task) < 1) { throw new \Exception("Invalid task parameter in runSearch"); }
 
       // Declare variables used below.
       $exitCode = 0;
