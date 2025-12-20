@@ -880,7 +880,7 @@
    padding: 0.5rem;
 }
 #ictv_taxablast_container .fasta-input-panel table.selected-files .header-row {
-   background-color: var(--ictv-dark-grey-color);
+   background-color: var(--ictv-light-grey-color);
 }
 #ictv_taxablast_container .fasta-input-panel table.selected-files .header-row th {
    color: #fff;
@@ -946,7 +946,7 @@
    padding: 0.5rem;
 }
 #ictv_taxablast_container .fasta-input-panel table.blast-tasks .header-row {
-   background-color: var(--ictv-dark-grey-color);
+   background-color: var(--ictv-light-grey-color);
 }
 #ictv_taxablast_container .fasta-input-panel table.blast-tasks .header-row th {
    color: #fff;

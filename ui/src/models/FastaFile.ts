@@ -33,6 +33,9 @@ export class FastaFile {
       this.records = [];
       this.size = size_;
       this.status = FastaStatus.unvalidated;
+
+      // Use the FASTA to populate the collection of records.
+      this.populateRecords();
    }
 
    // Add a record to the collection.
@@ -43,6 +46,7 @@ export class FastaFile {
       // Validate the record before adding it.
       record_.validate();
 
+      // Update the file's error count.
       this.errorCount += record_.errors.length;
       this.records.push(record_);
    }
@@ -53,6 +57,8 @@ export class FastaFile {
       let errors = [];
 
       if (this.errorCount < 1) { return errors; }
+
+      const recordCount = this.records.length;
 
       this.records.forEach((record, index) => {
 
@@ -68,7 +74,12 @@ export class FastaFile {
             recordErrors += `${error.message}${lineNumber}`;
          })
 
-         if (recordErrors.length > 0) { errors.push(`Sequence ${index + 1}: ${recordErrors}`); }
+         if (recordErrors.length > 0) {
+
+            // If there are multiple records, preface the message with the record number.
+            let sequenceLabel = recordCount > 1 ? `Sequence ${index + 1}: ` : "";
+            errors.push(`${sequenceLabel}${recordErrors}`); 
+         }
       })
 
       return errors;
@@ -110,7 +121,11 @@ export class FastaFile {
          }
    
          if (record == null) {
+            
+            console.log("record is null and line = ", line)
+
             record = new FastaRecord();
+            record.addError("Invalid header/defline", lineNumber);
             continue;
          }
    
