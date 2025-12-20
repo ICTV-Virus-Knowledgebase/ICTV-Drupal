@@ -20,13 +20,19 @@ export enum BlastTask {
 
 // CSS class names for buttons.
 export enum ButtonClass {
+   add = "add-button",
    back = "back-button",
    cancel = "cancel-button",
    copyURL = "copy-url-button",
    downloadCSV = "download-csv-button",
+   enterFASTA = "enter-fasta-button",
+   link = "link-button",
    newSearch = "new-search-button",
    openDialog = "open-dialog-button",
+   removeFiles = "remove-files-button",
    selectFiles = "select-files-button",
+   start = "start-button",
+   toggle = "toggle-button",
    upload = "upload-button",
    viewHits = "view-hits",
    viewHTML = "view-html-button"
@@ -61,7 +67,8 @@ export enum Icon {
    spinner = `<i class=\"fa fa-spinner fa-spin spinner-icon\"></i>`,
    success = `<i class=\"fa-solid fa-circle-check success\"></i>`,
    toggle = `<i class=\"fa-solid fa-toggle-off\"></i>`,
-   upload = `<i class=\"fa fa-upload\"></i>`
+   upload = `<i class=\"fa fa-upload\"></i>`,
+   valid = `<i class=\"fa-regular fa-badge-check\"></i>`
 }
 
 export enum PanelAction {

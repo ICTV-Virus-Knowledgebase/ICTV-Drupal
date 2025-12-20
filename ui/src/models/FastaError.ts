@@ -6,8 +6,8 @@ export class FastaError {
    message: string;
 
    // C-tor
-   constructor(message_: string, lineNumber_: number = NaN) {
-      this.lineNumber = lineNumber_;
+   constructor(message_: string, lineNumber_?: number) {
+      this.lineNumber = lineNumber_ ;
       this.message = message_ || "Unknown error";
    }
 }

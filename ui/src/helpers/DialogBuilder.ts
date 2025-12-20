@@ -1,20 +1,29 @@
 
 export class DialogBuilder {
 
+   static Classes = {
+      dialog: "modal-dialog",
+
+      // Add one of these two classes to display or hide an element.
+      visible: "visible",
+      hidden: "hidden"
+
+      // TODO: others?
+   }
+
    // Create HTML for a dialog button.
-   static createButtonHTML(cssClasses_: string, label_: string, iconHTML_?: string) {
+   static CreateButtonHTML(cssClasses_: string, label_: string, iconHTML_?: string, isDisabled_?: boolean) {
 
-      if (!iconHTML_) { 
-         iconHTML_ = ""; 
-      } else {
-         iconHTML_ += " ";
-      }
+      iconHTML_ = !iconHTML_ ? "" : iconHTML_ += " ";
 
-      return `<button class="btn ${cssClasses_}">${iconHTML_}${label_}</button>`;
+      // Is the button initially disabled?
+      const disabled = isDisabled_ ? " disabled" : "";
+
+      return `<button class="btn ${cssClasses_}"${disabled}>${iconHTML_}${label_}</button>`;
    }
 
    // Create HTML for a dialog.
-   static createDialogHTML(footerHTML_: string, bodyHTML_: string, id_: string, title_: string) {
+   static CreateDialogHTML(footerHTML_: string, bodyHTML_: string, id_: string, title_: string) {
       
       return `<div id="${id_}" class="modal-dialog">
          <div class="modal-content">

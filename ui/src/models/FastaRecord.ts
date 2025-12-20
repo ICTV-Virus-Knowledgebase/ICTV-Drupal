@@ -53,16 +53,23 @@ export class FastaRecord {
    // Validate the object. Note that the addError() method sets the status to "invalid".
    validate() {
 
-      // Do we already know that it's invalid or empty?
-      if (this.status === FastaStatus.invalid || this.status === FastaStatus.empty) { return; }
+      console.log(`in validate the record is `, this)
+
+      // Do we already know that it's invalid?
+      if (this.status === FastaStatus.invalid) { return; }
 
       let isHeaderEmpty = false;
+      let isHeaderValid = true;
       let isSequenceEmpty = false;
       let isSequenceValid = true;
 
       // Validate the FASTA header/defline
       this.header = Utils.safeTrim(this.header);
-      if (this.header.length < 2) { isHeaderEmpty = true; }
+      if (this.header.length === 1) {
+         isHeaderValid = false;
+      } else if (this.header.length < 1) { 
+         isHeaderEmpty = true; 
+      }
 
       // Trim the sequence, remove whitespace, and validate it.
       this.sequence = Utils.safeTrim(this.sequence).replace(/\s+/g, "");
@@ -74,7 +81,7 @@ export class FastaRecord {
 
       if (isHeaderEmpty && isSequenceEmpty) {
          this.status = FastaStatus.empty;
-      } else if (isHeaderEmpty) {
+      } else if (isHeaderEmpty || !isHeaderValid) {
          this.addError("The header/defline is invalid", this.headerLineNumber);
       } else if (isSequenceEmpty) {
          this.addError("No sequence data was provided", this.headerLineNumber);
@@ -83,6 +90,8 @@ export class FastaRecord {
       } else {
          this.status = FastaStatus.valid;
       }
+
+      return;
    }
 
 }
