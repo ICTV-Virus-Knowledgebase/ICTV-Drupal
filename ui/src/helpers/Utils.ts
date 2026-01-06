@@ -117,17 +117,19 @@ export class Utils {
       return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${displayText}</a>`;
    }
 
+   // Format a number of bytes as Bytes, KB, MB, etc.
    static formatBytes(bytes_: number, decimals_?: number): string {
    
-       if (!bytes_) return "0 B";
-   
-       const k = 1024
-       const dm = isNaN(decimals_) || decimals_ < 0 ? 0 : decimals_
-       const sizes = ['B', 'KB', 'MB', 'GB']
-   
-       const i = Math.floor(Math.log(bytes_) / Math.log(k))
-   
-       return `${parseFloat((bytes_ / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+      if (!bytes_ || bytes_ < 0) return '0 Bytes';
+    
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const index = Math.floor(Math.log(bytes_) / Math.log(1024));
+
+      decimals_ = isNaN(decimals_) || decimals_ < 0 || index === 0 ? 0 : decimals_;
+
+      const formattedSize = (bytes_ / Math.pow(1024, index)).toFixed(decimals_);
+
+      return `${formattedSize} ${sizes[index]}`;
    }
 
    // Is the user's browser on iOS?

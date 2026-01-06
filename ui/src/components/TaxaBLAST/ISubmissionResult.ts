@@ -2,7 +2,7 @@
 import { JobStatus } from "../../global/Types";
 
 
-export interface IUploadResult {
+export interface ISubmissionResult {
    errorMessage: string,
    jobUID: string,
    status: JobStatus

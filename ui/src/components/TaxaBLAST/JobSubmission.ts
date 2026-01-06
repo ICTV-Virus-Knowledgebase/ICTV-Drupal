@@ -18,12 +18,6 @@ export class JobSubmission {
 
    validFiles: IFileData[];
 
-   // TEST
-   countsByType: {
-      nucleotide: number,
-      protein: number
-   }
-
 
    // C-tor
    constructor() {
@@ -50,12 +44,6 @@ export class JobSubmission {
       this.totalSize = 0;
 
       this.validFiles = [];
-
-      // TEST
-      this.countsByType = {
-         nucleotide: 0,
-         protein: 0
-      }
    }
 
    // The job has been submitted.

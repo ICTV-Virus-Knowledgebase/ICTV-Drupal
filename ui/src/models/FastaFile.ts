@@ -52,9 +52,9 @@ export class FastaFile {
    }
 
    // Return an array of error messages by record number.
-   getErrors(): string[] {
+   getErrors(includeFilename_: boolean): Array<string> {
 
-      let errors = [];
+      let errors = Array<string>();
 
       if (this.errorCount < 1) { return errors; }
 
@@ -64,22 +64,21 @@ export class FastaFile {
 
          if (record.errors.length < 1) { return; }
 
-         let recordErrors = "";
-
          record.errors.forEach((error) => {
             
+            // Include the line number of the error?
             let lineNumber = isNaN(error.lineNumber) ? "" : ` (line ${error.lineNumber})`;
 
-            if (recordErrors.length > 0) { recordErrors += "; "; }
-            recordErrors += `${error.message}${lineNumber}`;
-         })
-
-         if (recordErrors.length > 0) {
+            // Should we include the filename?
+            let location = includeFilename_ ? `File ${this.filename}` : "";
 
             // If there are multiple records, preface the message with the record number.
-            let sequenceLabel = recordCount > 1 ? `Sequence ${index + 1}: ` : "";
-            errors.push(`${sequenceLabel}${recordErrors}`); 
-         }
+            location += recordCount > 1 ? `, Sequence ${index + 1}` : "";
+            
+            if (location.length > 0) { location += ": "; }
+ 
+            errors.push(`${location}${error.message}${lineNumber}`);
+         })
       })
 
       return errors;

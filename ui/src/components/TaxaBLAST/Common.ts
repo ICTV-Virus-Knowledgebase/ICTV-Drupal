@@ -26,6 +26,7 @@ export enum ButtonClass {
    copyURL = "copy-url-button",
    downloadCSV = "download-csv-button",
    enterFASTA = "enter-fasta-button",
+   errorLink = "error-link-button",
    link = "link-button",
    newSearch = "new-search-button",
    openDialog = "open-dialog-button",
@@ -49,7 +50,7 @@ export enum Icon {
    close = `<i class=\"fa fa-xmark\"></i>`,
    copy = `<i class=\"fa-regular fa-clipboard\"></i>`,
    csv = `<i class=\"fa-regular fa-file-csv\"></i>`,
-   delete = `<i class=\"fa-solid fa-x\"></i>`,
+   delete = `<i class=\"fa-solid fa-trash\"></i>`,
    dna = `<i class=\"fa-solid fa-dna\"></i>`,
    edit = `<i class=\"fa-solid fa-pen-to-square\"></i>`,
    error = `<i class=\"fa-solid fa-triangle-exclamation error\"></i>`,
@@ -66,7 +67,8 @@ export enum Icon {
    search = `<i class=\"fa-solid fa-magnifying-glass\"></i>`,
    spinner = `<i class=\"fa fa-spinner fa-spin spinner-icon\"></i>`,
    success = `<i class=\"fa-solid fa-circle-check success\"></i>`,
-   toggle = `<i class=\"fa-solid fa-toggle-off\"></i>`,
+   toggleOn = `<i class=\"fa-solid fa-toggle-on\"></i>`,
+   toggleOff = `<i class=\"fa-solid fa-toggle-off\"></i>`,
    upload = `<i class=\"fa fa-upload\"></i>`,
    valid = `<i class=\"fa-regular fa-badge-check\"></i>`
 }

@@ -53,8 +53,6 @@ export class FastaRecord {
    // Validate the object. Note that the addError() method sets the status to "invalid".
    validate() {
 
-      console.log(`in validate the record is `, this)
-
       // Do we already know that it's invalid?
       if (this.status === FastaStatus.invalid) { return; }
 

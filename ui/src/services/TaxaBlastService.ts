@@ -3,7 +3,7 @@ import { BlastParams } from "../components/TaxaBLAST/BlastParams";
 import { IFileData } from "../models/IFileData";
 import { IOutputFile } from "../components/TaxaBLAST/IOutputFile";
 import { ITaxaBlastJob } from "../components/TaxaBLAST/ITaxaBlastJob";
-import { IUploadResult } from "../components/TaxaBLAST/IUploadResults";
+import { ISubmissionResult } from "../components/TaxaBLAST/ISubmissionResult";
 import { WebService } from "./WebService";
 import { WebServiceKey } from "../global/Types";
 
@@ -81,7 +81,7 @@ export class _TaxaBlastService {
    
    // Upload one or more sequences for processing.
    async uploadSequences(authToken_: string, blastParams_: BlastParams, files_: IFileData[], jobName_: string, userEmail_: string, 
-      userUID_: string): Promise<IUploadResult> {
+      userUID_: string): Promise<ISubmissionResult> {
 
       // Validate parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -100,7 +100,7 @@ export class _TaxaBlastService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<IUploadResult>(WebServiceKey.uploadSequences, authToken_, data);
+      return await WebService.drupalPost<ISubmissionResult>(WebServiceKey.uploadSequences, authToken_, data);
    } 
 
 }
