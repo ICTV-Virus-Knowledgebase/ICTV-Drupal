@@ -5,13 +5,14 @@ import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription, GetBlastTas
 import { DialogBuilder } from "../../../helpers/DialogBuilder";
 import { FastaError } from "../../../models/FastaError";
 import { FastaFile } from "../../../models/FastaFile";
-import { FastaStatus } from "../../../global/Types";
+import { FastaStatus, JobStatus } from "../../../global/Types";
 import { IFileData } from "../../../models/IFileData";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
+import { ISubmissionResult } from "../ISubmissionResult";
 import { JobSubmission } from "../JobSubmission";
 import { SelectedFiles } from "../SelectedFiles";
 import { TaxaBLAST } from "../TaxaBLAST";
-//import { TaxaBlastService } from "../../../services/TaxaBlastService";
+import { TaxaBlastService } from "../../../services/TaxaBlastService";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 
@@ -121,22 +122,22 @@ export class FastaInputPanel implements ITaxaBlastPanel {
                </tr>
             </thead>
             <tbody>
-               <tr class="task-row">
+               <tr class="task-row even">
                   <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" checked /></td>
                   <td>${GetBlastTaskLabel(BlastTask.blastn)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
                </tr>
-               <tr class="task-row">
+               <tr class="task-row odd">
                   <td><input type="radio" name="blast-task" value="${BlastTask.dcMegablast}" /></td>
                   <td>${GetBlastTaskLabel(BlastTask.dcMegablast)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.dcMegablast)}</td>
                </tr>
-               <tr class="task-row">
+               <tr class="task-row even">
                   <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" /></td>
                   <td>${GetBlastTaskLabel(BlastTask.megablast)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
                </tr>
-               <tr class="task-row">
+               <tr class="task-row odd">
                   <td><input type="radio" name="blast-task" value="${BlastTask.blastp}" /></td>
                   <td>${GetBlastTaskLabel(BlastTask.blastp)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.blastp)}</td>
@@ -157,7 +158,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       let body = 
          `<div class="dialog-row">
             <label>Filename</label>
-            <input type="text" class="${ControlClass.fastaFilename}" placeholder="(optional)">
+            <input type="text" class="${ControlClass.fastaFilename}" placeholder="Optional">
          </div>
          <div class="dialog-row">
             <textarea class="${ControlClass.fastaText}" rows="15" placeholder="Enter FASTA here"  
@@ -204,6 +205,10 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       return `<div class="error-title">${Icon.error} ${title}</div>${body}`;
    }
    
+   /* 
+   NOTE: This is not currently used because file errors are displayed in a tool tip. If they need to be displayed
+   in a bulleted list, we would want to use this function.
+
    // Display errors associated with a FASTA file.
    displayFileSelectionErrors(filename_: string) {
 
@@ -213,8 +218,9 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          if (!file) { throw new Error(`File ${filename_} is invalid`); }
 
          let bullets = "";
+         const includeFilename = false;
 
-         let errors = file.getErrors();
+         let errors = file.getErrors(includeFilename);
          if (!Array.isArray(errors) || errors.length < 1) { throw new Error(`No errors were found for file ${filename_}`); }
 
          errors.forEach((error_) => {
@@ -228,57 +234,82 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       }
       
       return;
-   }
+   }*/
 
    // Display the list of selected files and their metadata.
    displaySelectedFiles() {
 
-      if (this.selectedFiles.isEmpty) {
+      if (this.selectedFiles.isEmpty()) {
          this.elements.selectedFilesContents.innerHTML = "";
          this.elements.selectedFilesSection.classList.remove("active");
          return;
       }
 
-      //console.log("in displaySelectedFiles this.selectedFiles = ", this.selectedFiles)
-
       // Populate the title row
       let sequenceText = this.selectedFiles.recordCount === 1 ? "1 sequence" : `${this.selectedFiles.recordCount} sequences`;
-      let sizeText = Utils.formatBytes(this.selectedFiles.totalSize);
+      let sizeText = Utils.formatBytes(this.selectedFiles.totalSize, 2);
 
-      this.elements.selectedFilesTitle.innerHTML = `<span class="title-text">Files to upload</span> (${sizeText}, ${sequenceText})
-         <button class="${ButtonClass.removeFiles}">${Icon.delete} Remove selected files</button>
-         <button class="${ButtonClass.toggle}">${Icon.toggle} Toggle selection</button>`;
+      this.elements.selectedFilesTitle.innerHTML = 
+         `<div class="title-row">
+            <div class="left-side">
+               <span class="title-text">Files to upload</span> (${sizeText}, ${sequenceText})
+            </div>
+            <div class="right-side">
+               <button class="${ButtonClass.toggle} has-tooltip" 
+                  data-all-selected="false"
+                  data-tippy-content=\"To remove files from the list below, click the checkbox on individual files or click "Select all" and then click "Remove selected files"\"
+               >${Icon.toggleOn} Select all</button>
+               <button class="${ButtonClass.removeFiles} has-tooltip" 
+                  disabled
+                  data-tippy-content=\"Remove every file with a checkmark from the list below\"
+               >${Icon.delete} Remove selected files</button>
+            </div>
+         </div>`;
       
+      const includeFilename = false;
       let rows = "";
 
       // Add a row element for every selected file.
-      this.selectedFiles.files.forEach((file_) => {
+      this.selectedFiles.files.forEach((file_: FastaFile, index_: number) => {
 
+         let errorClass = "";
          let status = "";
          if (file_.errorCount < 1) {
+
+            // If there are no errors, the file is valid.
             status = "Valid";
+
          } else {
+
+            errorClass = " error";
+
+            let errorText = file_.getErrors(includeFilename).join("; ");
             let errorsLabel = file_.errorCount == 1 ? "1 error" : `${file_.errorCount} errors`;
-            status = `<button class="${ButtonClass.link}" data-filename="${file_.filename}">${errorsLabel}</button>`
+            status = `<button class="${ButtonClass.errorLink} has-tooltip" 
+               data-filename="${file_.filename}"
+               data-tippy-content="${errorText}"
+               >${errorsLabel}</button>`
          }
 
-         rows += `<tr class="selected-file">
-            <td class="select"><input type="checkbox" data-filename="${file_.filename}" /></td>
-            <td class="filename">${file_.filename}</td>
-            <td class="size">${Utils.formatBytes(file_.size)}</td>
+         const rowClass = index_ % 2 === 0 ? "even" : "odd";
+
+         rows += `<tr class="selected-file ${rowClass}">
+            <td class="filename${errorClass}">${file_.filename}</td>
+            <td class="size">${Utils.formatBytes(file_.size, 2)}</td>
             <td class="status">${status}</td> 
             <td class="sequences">${file_.records.length}</td>
+            <td class="select"><input type="checkbox" data-filename="${file_.filename}" /></td>
          </li>`;
       })
 
       let html = `<table class="selected-files">
          <thead>
             <tr class="header-row">
-               <th class="select"></th>
                <th class="filename">Filename</th>
                <th class="size">Size</th>
                <th class="status">Status</th>
                <th class="sequences">Sequences</th>
+               <th class="select"></th>
             </tr>
          </thead>
          <tbody>${rows}</tbody>
@@ -286,6 +317,9 @@ export class FastaInputPanel implements ITaxaBlastPanel {
 
       this.elements.selectedFilesContents.innerHTML = html;
       this.elements.selectedFilesSection.classList.add("active");
+
+      // Initialize tippy tooltips for buttons.
+      tippy(".has-tooltip");
    }
 
    // Get BLAST parameters from the panel.
@@ -312,36 +346,114 @@ export class FastaInputPanel implements ITaxaBlastPanel {
 
       const target = event_.target as HTMLElement;
 
-      const button = target.closest("button");
+      const button = target.closest("button") as HTMLButtonElement;
       if (button) {
          if (button.classList.contains(ButtonClass.toggle)) {
-            this.toggleFileSelections();
+
+            // Select or deselect all file checkboxes.
+            this.toggleFileSelections(button);
 
          } else if (button.classList.contains(ButtonClass.removeFiles)) {
+
+            // Remove the selected files.
             this.removeFileSelections();
 
-         } else if (button.classList.contains(ButtonClass.link)) {
-
+         } /*else if (button.classList.contains(ButtonClass.link)) {
             const filename = button.getAttribute("data-filename");
             this.displayFileSelectionErrors(filename);
 
-         } else {
+         } */ else {
             console.log("unknown button")
          }
 
          return;
       }
 
-      const checkbox = target.closest("input");
+      const checkbox = target.closest("input") as HTMLInputElement;
       if (checkbox) {
 
-         console.log("closest checkbox = ", checkbox)
-
          let filename = checkbox.getAttribute("data-filename");
-         console.log("checkbox filename = ", filename)
+         if (!filename) { return; }
+
+         // Get the "remove selected" button.
+         const removeButton = this.elements.selectedFilesTitle.querySelector(`.${ButtonClass.removeFiles}`) as HTMLButtonElement;
+         if (!removeButton) { throw new Error("Unable to find the \"remove selected files\" button")}
+         
+         if (checkbox.checked) {
+
+            // If any checkboxes are checked, enable the "remove files" button.
+            removeButton.disabled = false;
+
+         } else {
+
+            let selectionCount = 0;
+
+            // Get all file selection checkboxes that have been checked.
+            const checkedControls: NodeListOf<HTMLInputElement> = this.elements.selectedFilesContents.querySelectorAll(`input[type="checkbox"][data-filename]:checked`);
+            if (checkedControls && checkedControls.length > 0) { selectionCount = Array.from(checkedControls).length; }
+            
+            // If any of the file selection checkboxes have been checked, enable the "remove files" button. Otherwise, disable the button.
+            removeButton.disabled = selectionCount > 0 ? false : true;
+         }
 
          return;
       }  
+   }
+
+   // Handle the web service's response to the job submission.
+   async handleSubmissionResult(result_: ISubmissionResult) {
+
+      // Validate the result object.
+      if (!result_ || result_.status !== JobStatus.pending || !result_.jobUID) {
+
+         let errorMessage = "Job submission error";
+
+         if (result_ && result_.errorMessage) { 
+            errorMessage += `: ${result_.errorMessage}`; 
+         } else if (!result_.jobUID) {
+            errorMessage += ": No job UID was returned";
+         }
+
+         // Reset the parent component's state.
+         this.parent.state.jobUID = null;
+         this.parent.state.fileIndex = NaN;
+         this.parent.state.sequenceIndex = NaN;
+
+         await AlertBuilder.displayError(errorMessage);
+
+         // TODO: What needs to happen here?
+
+         //await this.changePanelMode(PanelMode.file_selection);
+         return;
+      }
+
+      // Update the parent component's state with the new job UID.
+      this.parent.state.jobUID = result_.jobUID;
+      this.parent.state.fileIndex = NaN;
+      this.parent.state.sequenceIndex = NaN;
+
+      // Update the URL parameters without reloading the page.
+      this.parent.updateUrlFromState();
+
+      /*
+      // Display the "pending results" sub-panel.
+      await this.changePanelMode(PanelMode.pending_results);
+
+      // Load the pending job to see if it has completed.
+      await this.getJobStatus();
+
+      if (!this.submissionStatus.isComplete) {
+
+         // Check for the job results every few seconds.
+         this.submissionStatus.intervalID = window.setInterval(async () => {
+
+            // Load the pending job to see if it has completed.
+            return this.getJobStatus();
+
+         }, Constants.JOB_POLLING_INTERVAL);
+      }*/
+      
+      return;
    }
 
    // Populate the panel and make it visible.
@@ -585,7 +697,6 @@ export class FastaInputPanel implements ITaxaBlastPanel {
 
       this.elements.startButton.addEventListener("click", async () => await this.submitJob());
 
-
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
 
@@ -600,23 +711,27 @@ export class FastaInputPanel implements ITaxaBlastPanel {
 
    removeFileSelections() {
 
-      const allFiles: NodeListOf<HTMLInputElement> = this.elements.selectedFilesContents.querySelectorAll(`input[type="checkbox"][data-filename]`);
+      // Get all file selection checkboxes that have been checked.
+      const checkedControls: NodeListOf<HTMLInputElement> = this.elements.selectedFilesContents.querySelectorAll(`input[type="checkbox"][data-filename]:checked`);
+      if (!checkedControls || checkedControls.length < 1) { return AlertBuilder.displayErrorSync("No files were selected for removal"); }
 
-      if (!allFiles || allFiles.length < 1) { return AlertBuilder.displayErrorSync("No files were selected for removal"); }
+      let filenames = new Array<string>();
 
-      console.log(`TODO: remove file selections (${allFiles.length})`)
+      checkedControls.forEach((checkbox_: HTMLInputElement) => {
 
-      // Clear the name lookup so we can rebuild it.
-      let newLookup = new Map<string, number>();
+         let filename = checkbox_.getAttribute("data-filename");
+         if (!filename) { return; }
 
-      
-
-      allFiles.forEach((checkbox_: HTMLInputElement) => {
-         if (!checkbox_.checked) {
-
-         }
+         filenames.push(filename);
       })
       
+      // Remove files with these filenames.
+      this.selectedFiles.removeFiles(filenames);
+
+      // Update the table of selected files.
+      this.displaySelectedFiles();
+
+      return;
    }
 
    // Reset / clear the contents of the FASTA dialog.
@@ -640,14 +755,6 @@ export class FastaInputPanel implements ITaxaBlastPanel {
    async submitJob(): Promise<boolean> {
 
       try {
-         // Does the FASTA control contain valid FASTA text?
-         const fastaCtrlStatus = this.elements.dialogFasta.getAttribute("data-status") as FastaStatus;
-
-         console.log("fastaCtrlStatus = ", fastaCtrlStatus)
-         
-         // Validate the FASTA text.
-         //await this.validateFastaText();
-
          // Get the (optional) job name.
          let jobName = this.elements.jobName.value;
          if (!jobName) { jobName = null; }
@@ -655,57 +762,43 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          // Get BLAST parameters from the URL.
          const blastParams = await this.getBlastParams();
 
-         console.log("blastParams = ", blastParams)
+         // Include the errors found during validation.
+         const includeFilename = true;
+         const errors = this.selectedFiles.getErrors(includeFilename);
 
-         console.log("selected files = ", this.selectedFiles)
+         if (errors.length > 0) {
 
-         // Get and validate file selections.
-         //await this.validateFastaFiles();
+            // Create the error title.
+            let s = errors.length === 1 ? "" : "s";
+            let errorTitle = `Please resolve the following error${s}:`;
 
-         /*
-         // Were any valid files selected?
-         if (!Array.isArray(this.parent.jobSubmission.validFiles) || this.parent.jobSubmission.validFiles.length < 1) { 
-            await AlertBuilder.displayError("No valid FASTA files were selected for upload");
+            let bullets = "";
+            errors.forEach((error_) => {
+               bullets += `<li class="bullet">${error_}</li>`;
+            })
+
+            let errorHTML = `<div class="alert-details">
+               <div class="title">${errorTitle}</div>
+               <ol class="bullets">${bullets}</ol>
+            </div>`;
+
+            await AlertBuilder.displayError(errorHTML);
             return false;
          }
-
-         // Have we exceeded the maxiumum total file size?
-         if (this.parent.jobSubmission.totalSize > Constants.MAX_FILE_SIZE_TOTAL) { 
-            await AlertBuilder.displayError(`The total size of all uploaded files must be less than ${Constants.MAX_FILE_SIZE_TOTAL}`);
-            return false;
-         }
-
-         const recordCount = this.parent.jobSubmission.recordCount;
-
-         // Validate the number of FASTA records/sequences found in the file(s).
-         if (recordCount > Constants.MAX_SEQUENCE_COUNT) {
-
-            const s = recordCount === 1 ? "" : "s";
-
-            // Create an error message.
-            const errorMessage = `Unable to process your file${s}: The maximum number of sequences that can be run is ${Constants.MAX_SEQUENCE_COUNT} ` +
-            `(you tried to upload ${recordCount} sequence${s})`
-
-            await AlertBuilder.displayError(errorMessage);
-            return false;
-
-         } else if (recordCount < 1) {
-            await AlertBuilder.displayError(`Your selected file(s) do not contain any valid FASTA sequences`);
-            return false;
-         }
-         */
-         
-         //console.log("job submission = ", this.parent.jobSubmission)
 
          // Start the job submission.
          //this.parent.jobSubmission.start();
 
+         const files = this.selectedFiles.getValidFiles();
+         console.log("files = ", files)
          
-         // Upload the sequence file(s) to the web service for processing.
-         //const result = await TaxaBlastService.uploadSequences(this.parent.authToken, blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
+         // Upload the FASTA file(s) to the web service for processing.
+         const result = await TaxaBlastService.uploadSequences(this.parent.authToken, blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
+
+         console.log("result = ", result)
 
          // Handle the upload result and display the correct sub-panel.
-         //await this.handleUploadResult(result);
+         await this.handleSubmissionResult(result);
        
       } catch (error_) {
          await AlertBuilder.displayError(error_);
@@ -714,9 +807,51 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       return;
    }
    
-   toggleFileSelections() {
+   toggleFileSelections(button_: HTMLButtonElement) {
 
-      console.log("TODO")
+      let allSelected = button_.getAttribute("data-all-selected");
+      if (!allSelected) { throw new Error("Invalid all-selected attribute on the toggle button"); }
+
+      // Get all file selection checkboxes.
+      const checkboxes: NodeListOf<HTMLInputElement> = this.elements.selectedFilesContents.querySelectorAll(`input[type="checkbox"][data-filename]`);
+      if (!checkboxes || checkboxes.length < 1) { return AlertBuilder.displayErrorSync("No files have been selected"); }
+
+      // Get the "remove selected" button.
+      const removeButton = this.elements.selectedFilesTitle.querySelector(`.${ButtonClass.removeFiles}`) as HTMLButtonElement;
+      if (!removeButton) { throw new Error("Unable to find the \"remove selected files\" button")}
+
+      let checked: boolean;
+      let label = "";
+
+      if (allSelected === "false") {
+
+         // Select all files
+         allSelected = "true";
+         checked = true;
+         label = `${Icon.toggleOff} Deselect all files`;
+
+         // Enable the "remove files" button.
+         removeButton.disabled = false;
+
+      } else {
+
+         // Deselect all files
+         allSelected = "false";
+         checked = false;
+         label = `${Icon.toggleOn} Select all`;
+
+         // Disable the "remove files" button.
+         removeButton.disabled = true;
+      }
+
+      // Update the checked status of all file selection checkboxes.
+      checkboxes.forEach((checkbox_: HTMLInputElement) => {
+         checkbox_.checked = checked;
+      })
+
+      // Update the data attribute and button label.
+      button_.setAttribute("data-all-selected", allSelected);
+      button_.innerHTML = label;
    }
 
    // Unload and hide the panel.
@@ -745,7 +880,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          message = this.createFastaErrorHTML(errors_);
 
       } else if (status_ === FastaStatus.valid) {
-         message = `${Icon.success} The FASTA sequence is valid (${recordCount_} record${recordCount_ === 1 ? "" : "s"}, ${Utils.formatBytes(fileSize_)})`;
+         message = `${Icon.success} The FASTA sequence is valid (${recordCount_} record${recordCount_ === 1 ? "" : "s"}, ${Utils.formatBytes(fileSize_, 2)})`;
 
       } else {
          // TODO?
@@ -782,7 +917,8 @@ export class FastaInputPanel implements ITaxaBlastPanel {
    
          if (this.dialogFile.errorCount > 0) { 
             status = FastaStatus.invalid;
-            errors = this.dialogFile.getErrors();
+            const includeFilename = false;
+            errors = this.dialogFile.getErrors(includeFilename);
 
          } else if (this.dialogFile.records.length < 1) {
             status = FastaStatus.empty;
@@ -846,16 +982,17 @@ export class FastaInputPanel implements ITaxaBlastPanel {
 
             // Create a FastaFile object.
             const fastaFile = new FastaFile(contents, file.name, file.size);
-            //fastaFile.populateRecords();
             
-            console.log(fastaFile)
+            console.log(`file ${file.name} has size ${file.size}`)
 
             // Update the collection of selected files.
             this.selectedFiles.addFile(fastaFile);
-
-            // Display the selected files.
-            this.displaySelectedFiles();
          }
+
+         console.log("before display selectedFiles = ", this.selectedFiles)
+
+         // Display the selected files.
+         this.displaySelectedFiles();
       }
       catch (error_) {
          await AlertBuilder.displayError(error_);

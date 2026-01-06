@@ -1,21 +1,20 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { BlastTask, ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ITaxaBlastJob } from "./ITaxaBlastJob";
 import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
+import { JobStatus, WebStorageKey } from "../../global/Types";
 import { JobSubmission } from "./JobSubmission";
 import * as pako from "pako";
 import { TaxaBlastService } from "../../services/TaxaBlastService";
 import { Utils } from "../../helpers/Utils";
-import { WebStorageKey } from "../../global/Types";
 
 // Panels
 import { FastaInputPanel } from "./panels/FastaInputPanel";
 import { JobDetailsPanel } from "./panels/JobDetailsPanel";
 import { JobHistoryPanel } from "./panels/JobHistoryPanel";
-import { JobSubmissionPanel } from "./panels/JobSubmissionPanel";
 import { MessagePanel } from "./panels/MessagePanel";
 import { PendingJobPanel } from "./panels/PendingJobPanel";
 
@@ -35,7 +34,6 @@ export class TaxaBLAST {
       fastaInputPanel: HTMLElement,
       jobDetailsPanel: HTMLElement,
       jobHistoryPanel: HTMLElement,
-      jobSubmissionPanel: HTMLElement,
       messagePanel: HTMLElement,
       pendingJobPanel: HTMLElement
    }
@@ -45,6 +43,7 @@ export class TaxaBLAST {
    // This keeps track of a submitted job and its status.
    jobSubmission: JobSubmission = null;
 
+   // The collection of panels used by this component.
    panels: Map<PanelKey, ITaxaBlastPanel>;
 
    state: {
@@ -58,10 +57,8 @@ export class TaxaBLAST {
       // The currently-selected sequence index associated with the input filename.
       sequenceIndex: number,
 
-      // BLAST parameters (temporary?)
-      maxHSPS: number,
-      maxTargetSeqs: number,
-      task: string
+      // The job's current status
+      status: JobStatus
    }
 
    // User information
@@ -102,7 +99,6 @@ export class TaxaBLAST {
          fastaInputPanel: null,
          jobDetailsPanel: null,
          jobHistoryPanel: null,
-         jobSubmissionPanel: null,
          messagePanel: null,
          pendingJobPanel: null
       }
@@ -113,11 +109,7 @@ export class TaxaBLAST {
          fileIndex: NaN,
          jobUID: null,
          sequenceIndex: NaN,
-
-         // BLAST parameters (temporary?)
-         maxHSPS: NaN,
-         maxTargetSeqs: NaN,
-         task: null
+         status: JobStatus.notSubmitted
       }
    }
 
@@ -200,6 +192,7 @@ export class TaxaBLAST {
             this.state.fileIndex = NaN;
             this.state.jobUID = null;
             this.state.sequenceIndex = NaN;
+            this.state.status = JobStatus.notSubmitted
             break;
       }
 
@@ -262,30 +255,6 @@ export class TaxaBLAST {
       return;
    }
 
-   // Look for BLAST parameters in the URL query string.
-   getUrlBlastParameters(urlParams_: URLSearchParams) {
-
-      if (!urlParams_) { return; }
-      
-      // Max HSPS
-      this.state.maxHSPS = NaN;
-      let strMaxHSPS = Utils.safeTrim(urlParams_.get(ParameterKey.maxHSPS));
-      if (strMaxHSPS.length > 0) { this.state.maxHSPS = parseInt(strMaxHSPS); }
-      if (isNaN(this.state.maxHSPS)) { this.state.maxHSPS = Constants.DEFAULT_MAX_HSPS; }
-
-      // Max target sequences
-      this.state.maxTargetSeqs = NaN;
-      let strMaxTargetSeqs = Utils.safeTrim(urlParams_.get(ParameterKey.maxTargetSeqs));
-      if (strMaxTargetSeqs.length > 0) { this.state.maxTargetSeqs = parseInt(strMaxTargetSeqs); }
-      if (isNaN(this.state.maxTargetSeqs)) { this.state.maxTargetSeqs = Constants.DEFAULT_MAX_TARGET_SEQS; }
-
-      // BLAST task
-      this.state.task = null;
-      let strTask = Utils.safeTrim(urlParams_.get(ParameterKey.task));
-      if (strTask.length > 0) { this.state.task = strTask; }
-      if (!this.state.task) { this.state.task = Constants.DEFAULT_BLAST_TASK; }
-   }
-
    // Use the current state to generate URL search parameters.
    getUrlParamsFromState(panelKey_?: PanelKey): URLSearchParams {
       
@@ -294,13 +263,6 @@ export class TaxaBLAST {
       
       // TESTING: Remove the history parameter.
       if (params.has(ParameterKey.history)) { params.delete(ParameterKey.history); }
-
-      // Note: The FASTA input panel can only have BLAST parameters.
-      if (panelKey_ && panelKey_ === PanelKey.fastaInput) {
-         const newParams = new URLSearchParams();
-         this.populateUrlBlastParams(newParams);
-         return newParams;
-      }
 
       // If the job UID is valid, update its URL parameter.
       if (this.state.jobUID && this.state.jobUID.length > 0) {
@@ -327,9 +289,6 @@ export class TaxaBLAST {
          params.delete(ParameterKey.file);
       }
 
-      // BLAST parameters (temporary?)
-      this.populateUrlBlastParams(params);
-      
       return params;
    }
 
@@ -537,8 +496,6 @@ export class TaxaBLAST {
    // Initialize the TaxaBLAST component.
    async initialize() {
 
-      console.info("in TaxaBLAST.initialize()")
-      
       // If the user UID is empty, look for one in web storage or generate a new one.
       if (!this.user.uid || this.user.uid === "0") { this.setDefaultUserUID(); } 
 
@@ -578,10 +535,6 @@ export class TaxaBLAST {
       this.elements.jobHistoryPanel = this.elements.container.querySelector(".job-history-panel") as HTMLElement;
       if (!this.elements.jobHistoryPanel) { throw new Error("Invalid job history panel Element"); }
 
-      // The job submission panel
-      this.elements.jobSubmissionPanel = this.elements.container.querySelector(".job-submission-panel") as HTMLElement;
-      if (!this.elements.jobSubmissionPanel) { throw new Error("Invalid job submission panel Element"); }
-
       // The message panel
       this.elements.messagePanel = this.elements.container.querySelector(".message-panel") as HTMLElement;
       if (!this.elements.messagePanel) { throw new Error("Invalid message panel Element"); }
@@ -596,36 +549,12 @@ export class TaxaBLAST {
       this.panels.set(PanelKey.fastaInput, new FastaInputPanel(this.elements.fastaInputPanel, this));
       this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
       this.panels.set(PanelKey.jobHistory, new JobHistoryPanel(this.elements.jobHistoryPanel, this));
-      this.panels.set(PanelKey.jobSubmission, new JobSubmissionPanel(this.elements.jobSubmissionPanel, this));
       this.panels.set(PanelKey.message, new MessagePanel(this.elements.messagePanel, this));
       this.panels.set(PanelKey.pendingJob, new PendingJobPanel(this.elements.pendingJobPanel, this));
 
       // Use URL parameters to determine which panel to display.
       return this.processURL();
    }
-
-   // Populate URL search params with BLAST parameters (temporary?)
-   populateUrlBlastParams(params_: URLSearchParams) {
-
-      if (!isNaN(this.state.maxHSPS)) { 
-         params_.set(ParameterKey.maxHSPS, this.state.maxHSPS.toString()); 
-      } else {
-         params_.delete(ParameterKey.maxHSPS);
-      }
-
-      if (!isNaN(this.state.maxTargetSeqs)) { 
-         params_.set(ParameterKey.maxTargetSeqs, this.state.maxTargetSeqs.toString()); 
-      } else {
-         params_.delete(ParameterKey.maxTargetSeqs);
-      }
-
-      if (this.state.task !== null) { 
-         params_.set(ParameterKey.task, this.state.task); 
-      } else {
-         params_.delete(ParameterKey.task);
-      }
-   }
-
 
    // Process the URL parameters to determine which panel to load.
    async processURL() {
@@ -640,20 +569,13 @@ export class TaxaBLAST {
       this.state.jobUID = null;
       this.state.fileIndex = NaN;
       this.state.sequenceIndex = NaN;
-
-      // BLAST parameters (temporary?)
-      this.state.maxHSPS = NaN;
-      this.state.maxTargetSeqs = NaN;
-      this.state.task = null;
+      this.state.status = JobStatus.notSubmitted; // TODO: maybe we shouldn't reset this...
 
       // TESTING
       let history = Utils.safeTrim(urlParams.get(ParameterKey.history));
       if (history === "display") {
          return await this.displayPanel(PanelKey.jobHistory);
       }
-
-      // Look for BLAST parameters (temporary?)
-      this.getUrlBlastParameters(urlParams);
 
       // Was a job UID provided in the query string?
       this.state.jobUID = Utils.safeTrim(urlParams.get(ParameterKey.job));

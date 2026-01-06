@@ -68,6 +68,7 @@ export enum JobStatus {
    crashed = "crashed",
    error = "error",
    invalid = "invalid",
+   notSubmitted = "notSubmitted",
    pending = "pending",
    valid = "valid"
 }
