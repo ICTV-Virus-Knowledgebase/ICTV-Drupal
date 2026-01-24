@@ -17,6 +17,7 @@ namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
       public bool   $familyOrSubfamilySearch = false;
       public ?string $genus = null;
       public ?string $isolate = null;
+      public ?int $isolateID = null;
       public ?string $refSeqAccession = null;
       public ?string $species = null;
       public ?string $subfamily = null;
@@ -47,6 +48,7 @@ namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
         $o->availableSequence = $db["available_sequence"];
         $o->exemplar = $db["exemplar"];
         $o->isolate = $db["isolate"];
+        $o->isolateID = $db["isolate_id"];
         $o->refSeqAccession = $db["refseq_accession"];
         $o->taxNodeID = $db["taxnode_id"];
         $o->subrealm = $db["subrealm"];
@@ -83,6 +85,7 @@ namespace Drupal\ictv_web_api\Plugin\rest\resource\models;
             "availableSequence" => $this->availableSequence,
             "exemplar" => $this->exemplar,
             "isolate" => $this->isolate,
+            "isolateID" => $this->isolateID,
             "refSeqAccession" => $this->refSeqAccession,
             "taxNodeID" => $this->taxNodeID,
             "subrealm" => $this->subrealm,

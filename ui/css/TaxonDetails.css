@@ -3,7 +3,36 @@
    Taxon details component CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+/* A backup for the block that displays the taxon name. */
+#taxon_details_container .taxon-title {
+   display: none;
+   margin-bottom: 0;
+   visibility: hidden;
+}
+#taxon_details_container .taxon-title.active {
+   display: block;
+   font-size: 1.5rem;
+   margin-bottom: 3.0rem;
+   visibility: visible;
+}
 
+.modified-taxon-title {
+   font-size: 1.5rem;
+}
+
+/* The rank, name, and release sections of the title */
+#taxon_details_container .taxon-title.active .title-rank,
+.modified-taxon-title .title-rank {
+   font-weight: 700;
+}
+#taxon_details_container .taxon-title.active .title-name,
+.modified-taxon-title .title-name {
+   font-weight: 700;
+}
+#taxon_details_container .taxon-title.active .title-release,
+.modified-taxon-title .title-release {
+   font-weight: normal;
+}
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Tabs

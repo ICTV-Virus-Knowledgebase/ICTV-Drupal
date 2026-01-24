@@ -2,17 +2,19 @@
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
 import { Identifiers } from "../../models/Identifiers";
+import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { MemberSpeciesTable } from "../MemberSpeciesTable/MemberSpeciesTable";
 import { TaxonHistory } from "../TaxonHistory/TaxonHistory";
 import { Utils } from "../../helpers/Utils";
 
-enum ComponentKey {
+export enum ComponentKey {
    history = "history",
    isolates = "isolates"
 }
 
 export class TaxonDetails {
 
+   // The tabbed components
    components: Map<ComponentKey, any> = null;
 
    // The DOM selector for the container element.
@@ -40,7 +42,10 @@ export class TaxonDetails {
       isolatesTabPanel: HTMLElement,
 
       tabButtons: HTMLElement,
-      tabPanels: HTMLElement
+      tabPanels: HTMLElement,
+
+      // The taxon name at the top of the page.
+      taxonName: HTMLElement
    }
 
    identifiers: Identifiers = null;
@@ -67,8 +72,29 @@ export class TaxonDetails {
          isolatesTabButton: null,
          isolatesTabPanel: null,
          tabButtons: null,
-         tabPanels: null
+         tabPanels: null,
+         taxonName: null
       }
+   }
+
+   // Get taxa from the current release from the taxon history component.
+   getCurrentTaxa(): ITaxon[] | null {
+
+      const taxonHistory = this.components.get(ComponentKey.history) as TaxonHistory;
+      if (!taxonHistory) { 
+         throw new Error("Unable to get current taxa: Taxon history component is not initialized.");
+      }
+
+      return taxonHistory.getCurrentTaxa();
+   }
+
+   // Get the selected taxon from the taxon history component.
+   getSelectedTaxon(): ITaxon {
+
+      const taxonHistory = this.components.get(ComponentKey.history) as TaxonHistory;
+      if (!taxonHistory) { throw new Error("Unable to get selected taxon: Taxon history component is not initialized"); }
+
+      return taxonHistory.selectedTaxon;
    }
 
    // Handle a click on a tab button.
@@ -108,7 +134,8 @@ export class TaxonDetails {
       
       // Generate the component's HTML.
       let html: string =
-         `<div class="container-panel">
+         `<h4 class="taxon-title"></h4>
+         <div class="container-panel">
             <div class="tab-buttons">
                <div class="tab-button active" data-id="${ComponentKey.history}">Taxon History</div>
                <div class="tab-button" data-id="${ComponentKey.isolates}">Virus Isolates</div>
@@ -160,23 +187,40 @@ export class TaxonDetails {
          event_.stopPropagation();
 
          const tabType = tabEl.getAttribute("data-id") as ComponentKey;
-         
-         console.log("tab clicked: ", tabType)
 
          this.handleTabClick(tabType);
          return;
       })
+
+      // Look for the taxon name element, but it might not have been added to the page.
+      this.elements.taxonName = document.querySelector(".view-taxon-etymology .view-header");
+      if (!this.elements.taxonName) {
+
+         // Get a reference to the "backup" taxon title element.
+         this.elements.taxonName = this.elements.container.querySelector(".taxon-title");
+         if (this.elements.taxonName) { 
+            this.elements.taxonName.classList.add("active");
+         }
+
+      } else {
+
+         // Replace the H4 element for consistency with our alternative "taxon title" element.
+         // NOTE: We won't need to do this if we can 1) figure out a way to display the taxon name block 
+         // even if the taxon_name parameter is missing, or 2) if we populate the etymology using a web service
+         // and can get rid of the block that currently handles this.
+         this.elements.taxonName.innerHTML = `<div class="modified-taxon-title"></div>`;
+         this.elements.taxonName = this.elements.taxonName.querySelector(".modified-taxon-title");
+         if (!this.elements.taxonName) { console.error("An error occurred replacing the h4 element with the taxon title element"); }
+      }
 
       // Get the URL parameters
       const urlParams = new URLSearchParams(window.location.search);
 
       // Look for identifier parameters in the query string.
       this.identifiers = Utils.getIdentifiersFromURL(urlParams);
-      
-      console.log("Identifiers: ", this.identifiers)
 
-      // Was a VMR ID parameter provided? This determines which tab is displayed by default.
-      if (!isNaN(this.identifiers.vmrID)) {
+      // Was a VMR ID or "view=isolates" parameter provided? If so, this will override the default tab selection.
+      if (!isNaN(this.identifiers.vmrID) || urlParams.has("view", ComponentKey.isolates)) {
 
          // Hide the history tab and panel.
          this.elements.historyTabButton.classList.remove("active");
@@ -188,17 +232,42 @@ export class TaxonDetails {
       }
   
       // Initialize the taxon history component.
-      const taxonHistory = new TaxonHistory(`#${this.elementIDs.historyContainer}`, this.currentReleaseNum);
-      taxonHistory.initialize(this.identifiers);
+      const taxonHistory = new TaxonHistory(`#${this.elementIDs.historyContainer}`, this.currentReleaseNum, this);
+      await taxonHistory.initialize(this.identifiers);
       this.components.set(ComponentKey.history, taxonHistory);
 
       // Initialize the member species (isolates) table.
-      const isolatesTable = new MemberSpeciesTable(`#${this.elementIDs.isolatesContainer}`);
+      const isolatesTable = new MemberSpeciesTable(`#${this.elementIDs.isolatesContainer}`, this);
       await isolatesTable.initialize();
       await isolatesTable.loadTable(this.identifiers.ictvID, this.identifiers.vmrID, this.identifiers.msl, false, this.identifiers.taxNodeID, this.identifiers.taxonName);
-      this.components.set(ComponentKey.isolates, isolatesTable);
-      
+      this.components.set(ComponentKey.isolates, isolatesTable); 
    }
 
-   
+   // Populate the taxon name, rank, and release details at the top of the page.
+   populateTaxonPageTitle(title_: string) {
+
+      if (!this.elements.taxonName) { return; }
+
+      title_ = Utils.safeTrim(title_);
+      if (!title_) { return; }
+
+      this.elements.taxonName.innerHTML = title_;
+   }
+
+   // Reload the virus isolates table.
+   async reloadIsolatesTable(taxNodeID_: number) {
+
+      if (isNaN(taxNodeID_)) { throw new Error("Unable to reload isolates table: Invalid taxNodeID"); }
+
+      // Get the member species (isolates) table component.
+      const isolatesTable = this.components.get(ComponentKey.isolates) as MemberSpeciesTable;
+      if (!isolatesTable) { throw new Error("Unable to reload isolates table: Isolates table component is not initialized"); }
+
+      const ictvID = NaN;
+      const vmrID = NaN;
+      const msl = NaN;
+      const taxonName = null;
+
+      return await isolatesTable.loadTable(ictvID, vmrID, msl, false, taxNodeID_, taxonName);
+   }
 }

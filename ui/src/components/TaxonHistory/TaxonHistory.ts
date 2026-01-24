@@ -6,6 +6,7 @@ import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { ITaxonHistoryResult } from "../../models/TaxonHistory/ITaxonHistoryResult";
 import { Identifiers } from "../../models/Identifiers";
 import { LookupReleaseAction, LookupReleaseActionDefinition, LookupTaxonomyRank, ReleaseAction, TaxaLevel, WebStorageKey } from "../../global/Types";
+import { TaxonDetails } from "../TaxonDetails";
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 import { Utils } from "../../helpers/Utils";
 
@@ -28,12 +29,14 @@ enum LineageDisplayFormat {
 }
 
 
-
-
+// The Taxon History component
 export class TaxonHistory {
 
    // All possible rank names in the latest release, excluding "tree".
    allRankNamesArray: string[] = null;
+
+   // The page's URL without subdirectories, page names, or parameters.
+   baseURL: string;
 
    // The DOM selector for the container element.
    containerSelector: string = null;
@@ -117,10 +120,15 @@ export class TaxonHistory {
    // A lookup from taxnode ID to taxon object.
    taxaLookup: Map<number, ITaxon>;
 
-   
+   // An optional reference to the parent TaxonDetails component.
+   taxonDetails: TaxonDetails = null;
+
+   // The style can be customized.
+   useCustomStyle = false;
+
 
    // C-tor
-   constructor(containerSelector_: string, currentMslRelease_: number) {
+   constructor(containerSelector_: string, currentMslRelease_: number, taxonDetails_?: TaxonDetails) {
 
       if (!containerSelector_) { throw new Error("Invalid container selector"); }
       this.containerSelector = containerSelector_;
@@ -128,6 +136,10 @@ export class TaxonHistory {
       if (!currentMslRelease_) { throw new Error("Invalid current MSL release"); }
       this.settings.currentReleaseNum = currentMslRelease_;
 
+      // Set the optional TaxonDetails reference.
+      this.taxonDetails = taxonDetails_ || null;
+
+      // Initialize the important DOM elements.
       this.elements = {
          container: null,
          instructions: null,
@@ -154,12 +166,16 @@ export class TaxonHistory {
 
       // Initialize the taxa lookup.
       this.taxaLookup = new Map<number, ITaxon>();
+
+      // Get the window's base URL: The protocol, host name, and port (optional) without subdirectories, page names, or query parameters.
+      this.baseURL = Utils.getBaseURL();
+
    }
 
    addEventHandlers() {
 
       // Add a click event handler to the "releases" panel.
-      this.elements.releases.addEventListener("click", (event_) => {
+      this.elements.releases.addEventListener("click", async (event_) => {
 
          let target = (event_.target as HTMLElement);
 
@@ -195,7 +211,7 @@ export class TaxonHistory {
                this.highlightSelectedLineage(ictvID);
 
                // Update the selected taxon.
-               this.updateSelectedTaxon(taxNodeID);
+               //this.updateSelectedTaxon(taxNodeID);
             }
          }
 
@@ -230,6 +246,7 @@ export class TaxonHistory {
       this.elements.releases.appendChild(releaseEl);
    }
 
+   /*
    // Add the selected taxon to the page.
    addSelectedTaxon(mostRecentMSL_: number, mostRecentYear_: string, taxon_: ITaxon) {
 
@@ -278,7 +295,7 @@ export class TaxonHistory {
       selectedNameEl.innerHTML = taxon_.name;
 
       return;
-   }
+   }*/
 
    // Add the taxon, a summary of its changes, and its lineage to the associated release.
    addTaxonChanges(index_: number, parentEl_: HTMLElement, taxon_: ITaxon) {
@@ -650,8 +667,11 @@ export class TaxonHistory {
       if (taxon_.lineageNameArray.length !== taxon_.lineageRankArray.length) { throw new Error("The number of lineage names and ranks don't match"); }
       if (taxon_.lineageIDArray.length !== taxon_.lineageNameArray.length) { throw new Error("The number of lineage IDs and names don't match"); }
 
+      // The index of the last (rightmost) name in the lineage.
+      let lastIndex = taxon_.lineageNameArray.length - 1;
       let leftOffset = 0;
 
+      // Iterate over the taxon's lineage names.
       taxon_.lineageNameArray.forEach((taxonName_: string, index_: number) => {
 
          const formattedName = Utils.italicizeTaxonName(taxonName_);
@@ -661,10 +681,12 @@ export class TaxonHistory {
          let rankName = taxon_.lineageRankArray[index_];
 
          // The taxon details URL for this lineage entry.
-         const lineageURL = `${AppSettings.applicationURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${lineageID}&taxon_name=${taxonName_}"`;
+         const lineageURL = `${this.baseURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${lineageID}&taxon_name=${taxonName_}"`;
 
-         // The taxon name as a link.
-         const linkedName = `<a href="${lineageURL}" target="_blank">${formattedName}</a>`;
+         // The taxon name as a link (with the exception of the rightmost taxon).
+         const linkedName = index_ < lastIndex || this.useCustomStyle
+            ? `<a href="${lineageURL}" target="_blank">${formattedName}</a>`
+            : formattedName;
 
          if (this.settings.lineageDisplayFormat === LineageDisplayFormat.horizontal) {
 
@@ -694,7 +716,6 @@ export class TaxonHistory {
 
       // Initialize the delimiter and final result.
       let delimiter = "";
-      let result = "";
 
       // The export format will either be "tsv" or "csv".
       switch (this.exportSettings.format) {
@@ -709,75 +730,52 @@ export class TaxonHistory {
             return null;
       }
 
-      // Should we include rank names?
-      if (this.exportSettings.includeRanks && taxon_.lineageRankArray.length > 0) {
+      let rankLine = "";
+      let nameLine = "";
+      let taxonIndex = 0;
 
-         if (this.exportSettings.includeEmptyRanks) {
+      // Iterate over all possible ranks, even if the taxon doesn't have them in its lineage.
+      this.allRankNamesArray.forEach((rankName_: string) => {
 
-            // Include all rank names, even if not available in this release.
-            this.allRankNamesArray.forEach((rankName_: string) => {
-               result += `${rankName_.trim()}${delimiter}`;
-            })
+         const taxonRank = !taxon_.lineageRankArray || !taxon_.lineageRankArray[taxonIndex]
+            ? "empty"
+            : taxon_.lineageRankArray[taxonIndex].trim().toLowerCase();
+
+         // Is this rank in the taxon's lineage?
+         if (rankName_ === taxonRank) {
+
+            // If we're including ranks, add this rank to the ranks line.
+            if (this.exportSettings.includeRanks) {
+               if (rankLine) { rankLine += delimiter; }
+               rankLine += LookupTaxonomyRank(rankName_);
+            }
+
+            // There should be a name for this rank.
+            let name = Utils.safeTrim(taxon_.lineageNameArray[taxonIndex]).trim();
+
+            if (nameLine) { nameLine += delimiter; }
+            nameLine += name;
+
+            // Increment the taxon index.
+            taxonIndex += 1;
 
          } else {
 
-            // Only include the rank names that were provided.
-            taxon_.lineageRankArray.forEach((rankName_: string) => {
-               if (rankName_) { result += `${rankName_.trim()}${delimiter}`; }
-            })
+            // If we're including ranks, update the ranks line.
+            if (this.exportSettings.includeRanks && this.exportSettings.includeEmptyRanks) {
+               if (rankLine) { rankLine += delimiter; }
+               rankLine += LookupTaxonomyRank(rankName_);
+            }
+            
+            if (nameLine) { nameLine += delimiter; }
+            nameLine += ``;
          }
+      })
 
-         result += "\n";
-      }
+      // If there's a rank line, append a new line to the end.
+      if (this.exportSettings.includeRanks) { rankLine += "\n"; }
 
-      // Include the taxa names
-      if (this.exportSettings.includeEmptyRanks) {
-
-         let rankIndex = 0;
-
-         // Iterate over all rank names, including ranks without names.
-         this.allRankNamesArray.forEach((rankName_: string) => {
-
-            rankName_ = rankName_.toLowerCase();
-
-            let includedRankName = null;
-
-            if (taxon_.lineageRankArray.length >= (rankIndex + 1)) {
-               includedRankName = taxon_.lineageRankArray[rankIndex];
-               if (includedRankName) { includedRankName = includedRankName.toLowerCase(); }
-            }
-
-            // Is there a valid "included" rank name that matches the rank name from "all" rank names?
-            if (includedRankName && rankName_ === includedRankName) {
-
-               // Since the "included" rank exists, there should also be a name at this index.
-               let name = "";
-
-               if (taxon_.lineageNameArray.length >= (rankIndex + 1)) {
-                  name = taxon_.lineageNameArray[rankIndex];
-               } else {
-                  // This shouldn't be reached!
-                  console.error(`Invalid name at rank index ${rankIndex}`)
-               }
-
-               result += `${name.trim()}${delimiter}`
-
-               rankIndex += 1;
-
-            } else {
-               result += `${delimiter}`
-            }
-         })
-
-      } else {
-
-         // Only include the specified names.
-         taxon_.lineageNameArray.forEach((name_: string) => {
-            result += `${name_.trim()}${delimiter}`
-         })
-      }
-
-      return result;
+      return `${rankLine}${nameLine}\n`;
    }
 
    // Format the comma-delimited list of previous names so that each name is italicized and the 
@@ -833,6 +831,20 @@ export class TaxonHistory {
       if (taxon_.lineageNameArray.includes(parentName) || parentName === taxon_.name) { return ""; }
 
       return ` from <span class="subtle-rank-name">${parentRank}</span> <span class="subtle-taxon-name">${parentName}</span>`;
+   }
+
+   // Format the page's "Taxon name" title text using this taxon.
+   formatTaxonForPageTitle(taxon_: ITaxon): string {
+
+      let name = Utils.italicizeTaxonName(taxon_.name);
+
+      let year = Utils.convertTreeIdToYear(taxon_.treeID);
+
+      let releaseText = taxon_.mslReleaseNum === this.settings.currentReleaseNum
+         ? "current release"
+         : `release ${year}, MSL ${taxon_.mslReleaseNum}`;
+
+      return `<span class="title-rank">${taxon_.rankName}</span> <span class="title-name">${name}</span> <span class="title-release">(${releaseText})</span>`;
    }
 
    // Get the history of taxa with this ictv_id over all releases.
@@ -911,6 +923,27 @@ export class TaxonHistory {
       return this.processHistory();
    }
 
+   // Get taxa from the current release. Note that this is only used by the taxon details component.
+   getCurrentTaxa(): ITaxon[] {
+
+      if (!this.data || !this.data.taxa || this.data.taxa.length === 0) {
+         throw new Error("Unable to get current taxa: No taxon data is available");
+      }
+
+      // Get the current release number.
+      const currentReleaseNum = this.settings.currentReleaseNum;
+      if (isNaN(currentReleaseNum)) { 
+         throw new Error("Unable to get current taxa: Invalid current release number");
+      }
+
+      // Get taxa from the current release.
+      const currentTaxa = this.data.taxa.filter((taxon_: ITaxon) => {
+         return taxon_.mslReleaseNum === currentReleaseNum && taxon_.ictvID === this.selectedTaxon.ictvID;
+      });
+
+      return currentTaxa;
+   }
+
    // Get the icon class that matches the filename's extension.
    getFileIconClass(filename_: string): string {
 
@@ -946,8 +979,6 @@ export class TaxonHistory {
 
       return `<div class="spinner-ctrl"><i class="${this.icons.spinner}"></i>${spinnerText}</div>`;
    }
-
-   
 
    // Highlight all changed taxa with this ICTV ID as a data attribute.
    highlightSelectedLineage(selectedIctvID_: number) {
@@ -1031,12 +1062,15 @@ export class TaxonHistory {
          return;
       })
 
+
+      // Get the query string parameters
+      const urlParams = new URLSearchParams(window.location.search);
+
+      if (urlParams.has("custom_style")) { this.useCustomStyle = true; } 
+
       if (identifiers_ && Identifiers.isValid(identifiers_)) {
          this.identifiers = identifiers_;
       } else {
-         // Get the query string parameters
-         const urlParams = new URLSearchParams(window.location.search);
-
          // Look for identifier parameters in the query string.
          this.identifiers = Utils.getIdentifiersFromURL(urlParams);
       }
@@ -1046,25 +1080,25 @@ export class TaxonHistory {
       if (!isNaN(this.identifiers.taxNodeID)) {
 
          // Get the history by taxnode ID.
-         /*return*/ await this.getByTaxNodeID();
+         return await this.getByTaxNodeID();
 
       } else if (!isNaN(this.identifiers.ictvID)) {
          
          // Get the history by ICTV ID.
-         /*return*/ await this.getByIctvID();
+         return await this.getByIctvID();
 
       } else if (!isNaN(this.identifiers.vmrID)) {
          
          // Get the history by VMR (isolate) ID.
-         /*return*/ await this.getByVmrID();
+         return await this.getByVmrID();
 
       } else if (this.identifiers.taxonName) {
 
          // Get the history by taxon name.
-         /*return*/ await this.getByTaxonName();
+         return await this.getByTaxonName();
       }
 
-      return; // await AlertBuilder.displayError("No valid parameters were provideed. The following parameters are accepted: taxnode_id, ictv_id, vmr_id, and taxon_name");
+      return await AlertBuilder.displayError("No valid parameters were provided.");
    }
 
    // Open the lineage export settings dialog.
@@ -1166,8 +1200,14 @@ export class TaxonHistory {
             // Update the selected taxon variable.
             this.selectedTaxon = taxon_;
 
-            // Display the selected taxon.
-            this.addSelectedTaxon(mostRecentMSL, mostRecentYear, taxon_);
+            if (this.taxonDetails) {
+
+               // Format the page's "Taxon name" title text using this taxon.
+               const taxonTitle = this.formatTaxonForPageTitle(this.selectedTaxon);
+
+               // Update the page with the title text.
+               this.taxonDetails.populateTaxonPageTitle(taxonTitle);
+            }
          }  
       })
 
@@ -1250,18 +1290,4 @@ export class TaxonHistory {
       return;
    }
 
-   // Update the selected taxon.
-   updateSelectedTaxon(taxNodeID_: number) {
-
-      // Get the taxon from the lookup.
-      this.selectedTaxon = this.taxaLookup.get(taxNodeID_);
-      if (!this.selectedTaxon) { console.error("Invalid taxon in updateSelectedTaxon"); return; }
-
-      // Get its MSL release.
-      const release = this.releaseLookup.get(this.selectedTaxon.mslReleaseNum);
-      if (!release) { console.error("Invalid release in updateSelectedTaxon"); return; }
-
-      // Repopulate the selected taxon panel.
-      return this.addSelectedTaxon(release.releaseNumber, release.year, this.selectedTaxon);
-   }
 }

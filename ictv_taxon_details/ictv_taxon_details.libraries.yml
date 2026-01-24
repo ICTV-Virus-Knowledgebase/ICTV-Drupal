@@ -1,27 +1,12 @@
 taxonDetails:
-  version: 20251204
+  version: 20260120
   css:
     theme:
-      assets/css/fa-regular.css: {}
-      assets/css/fa-solid.css: {}
-      assets/css/fontawesome.css: {}
       assets/css/MemberSpeciesTable.css: {}
       assets/css/TaxonHistory.css: {}
       assets/css/TaxonDetails.css: {} 
-      assets/css/tippy.css: {} 
-      assets/css/light-border.css: {}
+      assets/css/tippy.css: {}
       assets/css/dataTables.dataTables.min.css: {}
-  fonts:
-    assets/css/fonts/fa-regular-400.eot: {}
-    assets/css/fonts/fa-regular-400.svg: {}
-    assets/css/fonts/fa-regular-400.ttf: {}
-    assets/css/fonts/fa-regular-400.woff: {}
-    assets/css/fonts/fa-regular-400.woff2: {}
-    assets/css/fonts/fa-solid-900.eot: {}
-    assets/css/fonts/fa-solid-900.svg: {}
-    assets/css/fonts/fa-solid-900.ttf: {}
-    assets/css/fonts/fa-solid-900.woff: {}
-    assets/css/fonts/fa-solid-900.woff2: {}
   js:
     assets/js/ICTV_TaxonDetails.js: { preprocess: false }
     assets/js/taxonDetails.js: { preprocess: false }

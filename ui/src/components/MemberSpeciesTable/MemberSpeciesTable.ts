@@ -1,9 +1,12 @@
 
 import DataTables from 'datatables.net-dt';
+import { ITaxon } from '../../models/TaxonHistory/ITaxon';
 import { IVirusIsolate } from "../../models/IVirusIsolate";
+import { ComponentKey, TaxonDetails } from '../TaxonDetails';
 import { Utils } from "../../helpers/Utils";
 import { VirusIsolateService } from "../../services/VirusIsolateService";
-import { Identifiers } from '../../models/Identifiers';
+
+//import { Identifiers } from '../../models/Identifiers';
 
 
 export class MemberSpeciesTable {
@@ -43,7 +46,9 @@ export class MemberSpeciesTable {
 
    elements: {
       container: HTMLElement,
-      rowContainer: HTMLElement
+      messagePanel: HTMLElement,
+      rowContainer: HTMLElement,
+      tableContainer: HTMLElement
    }
 
    icons: {
@@ -55,16 +60,22 @@ export class MemberSpeciesTable {
       container: null
    }
 
+   // An optional reference to the parent TaxonDetails component.
+   taxonDetails: TaxonDetails = null;
+
    // The taxon name
    taxonName: string;
 
 
    // C-tor
-   constructor(containerSelector_: string) {
+   constructor(containerSelector_: string, taxonDetails_?: TaxonDetails) {
 
       if (!containerSelector_) { throw new Error("Invalid container selector"); }
 
       this.selectors.container = containerSelector_;
+
+      // Set the optional TaxonDetails reference.
+      this.taxonDetails = taxonDetails_ || null;
 
       // Initialize the counts collections.
       this.counts = new Map<string, number>();
@@ -75,7 +86,9 @@ export class MemberSpeciesTable {
 
       this.elements = {
          container: null,
-         rowContainer: null
+         messagePanel: null,
+         rowContainer: null,
+         tableContainer: null
       }
 
       this.icons = {
@@ -177,30 +190,77 @@ export class MemberSpeciesTable {
       if (rowCount_ % 2 != 0) { rowClass = "alt-virus-row"; }
 
       const html =
-         `<tr class="${rowClass}">
-                <td class="col-exemplar">${exemplar}</td>
-                <td class="col-subrealm">${subrealm}</td>
-                <td class="col-kingdom">${kingdom}</td>
-                <td class="col-subkingdom">${subkingdom}</td>
-                <td class="col-phylum">${phylum}</td>
-                <td class="col-subphylum">${subphylum}</td>
-                <td class="col-order">${order}</td>
-                <td class="col-suborder">${suborder}</td>
-                <td class="col-class_">${class_}</td>
-                <td class="col-subclass">${subclass}</td>
-                <td class="col-family">${family}</td>
-                <td class="col-subfamily">${subfamily}</td>
-                <td class="col-genus">${genus}</td>
-                <td class="col-subgenus">${subgenus}</td>
-                <td class="col-species">${species}</td>
-                <td class="col-alternativeNameCSV">${isolate_.alternativeNameCSV}</td>
-                <td class="col-isolate">${isolate_.isolate}</td>
-                <td class="col-accessionNumber">${accessionLinks}</td>
-                <td class="col-availableSequence">${isolate_.availableSequence}</td>
-                <td class="col-abbrev">${isolate_.abbrev}</td>
-            </tr>`
+         `<tr class="${rowClass}" data-isolate-id="${isolate_.isolateID}">
+            <td class="col-exemplar">${exemplar}</td>
+            <td class="col-subrealm">${subrealm}</td>
+            <td class="col-kingdom">${kingdom}</td>
+            <td class="col-subkingdom">${subkingdom}</td>
+            <td class="col-phylum">${phylum}</td>
+            <td class="col-subphylum">${subphylum}</td>
+            <td class="col-order">${order}</td>
+            <td class="col-suborder">${suborder}</td>
+            <td class="col-class_">${class_}</td>
+            <td class="col-subclass">${subclass}</td>
+            <td class="col-family">${family}</td>
+            <td class="col-subfamily">${subfamily}</td>
+            <td class="col-genus">${genus}</td>
+            <td class="col-subgenus">${subgenus}</td>
+            <td class="col-species">${species}</td>
+            <td class="col-alternativeNameCSV">${isolate_.alternativeNameCSV}</td>
+            <td class="col-isolate">${isolate_.isolate}</td>
+            <td class="col-accessionNumber">${accessionLinks}</td>
+            <td class="col-availableSequence">${isolate_.availableSequence}</td>
+            <td class="col-abbrev">${isolate_.abbrev}</td>
+         </tr>`
 
       return html;
+   }
+
+   // Create the HTML that is displayed when no isolates are found for the taxon and release.
+   createNoIsolatesHTML(): string {
+
+      // If there is no TaxonDetails component reference, return a generic message.
+      if (!this.taxonDetails) { return "<div class=\"error\">No isolates have been defined for earlier releases of this taxon, but isolates might be available for the current taxon</div>"; }
+
+      let currentTaxa: ITaxon[] = null;
+      
+      // TODO: Consider sleeping for a moment to ensure that the TaxonHistory component is initialized.
+
+      try {
+         // Get the current taxa from the TaxonDetails component.
+         currentTaxa = this.taxonDetails.getCurrentTaxa();
+      } catch (error_) {
+         return `<div class=\"error\">Unable to get current taxa: ${error_ instanceof Error ? error_.message : String(error_)}</div>`;
+      }
+      
+      if (!Array.isArray(currentTaxa) || currentTaxa.length < 1) {
+         return `<div class=\"isolate-message\">This taxon was abolished and no isolates are defined.</div>`;
+      }
+
+      // The message that explains that isolates might be available for the current taxon/taxa.
+      let message = `No isolates have been defined for earlier releases of this taxon, but isolates might be available for the current ${currentTaxa.length == 1 ? "taxon" : "taxa"}: `;
+
+      // Get the current URL without any query string parameters.
+      let url = window.location.pathname;
+      const qIndex = url.indexOf("?");
+      if (qIndex > -1) { url = url.substring(0, qIndex); }
+
+      let linkRows = "";
+
+      currentTaxa.forEach((taxon_: ITaxon) => {
+
+         // The link's URL parameters
+         let parameters = `taxnode_id=${taxon_.taxnodeID}&taxon_name=${encodeURIComponent(taxon_.name)}&view=${ComponentKey.isolates}`;
+
+         const year = Utils.convertTreeIdToYear(taxon_.treeID);
+
+         linkRows += `<li>
+            <span class="taxon-rank">${taxon_.rankName}</span> 
+            <a href="${url}?${parameters}" target="_blank"><span class="taxon-name">${taxon_.name}</span></a> (${year}, MSL Release ${taxon_.mslReleaseNum})
+         </li>`;
+      })
+      
+      return `<div class="isolate-message">${message}</div><ul class="taxa-links">${linkRows}</ul>`;
    }
 
    async initialize() {
@@ -211,58 +271,78 @@ export class MemberSpeciesTable {
 
       // Begin generating the HTML that will be dynamically added to the page.
       let html =
-         `<a href="#member_species_table"></a>          
-         <table class="virus-isolates-table compact stripe">
-            <thead>
-               <tr class="header-row">
-                  <th class="col-exemplar" data-orderable="false"></th>
-                  <th class="col-subrealm">Subrealm</th>
-                  <th class="col-kingdom">Kingdom</th>
-                  <th class="col-subkingdom">Subkingdom</th>
-                  <th class="col-phylum">Phylum</th>
-                  <th class="col-subphylum">Subphylum</th>
-                  <th class="col-order">Order</th>
-                  <th class="col-suborder">Suborder</th>
-                  <th class="col-class_">Class</th>
-                  <th class="col-subclass">Subclass</th>
-                  <th class="col-family">Family</th>
-                  <th class="col-subfamily">Subfamily</th>
-                  <th class="col-genus">Genus</th>
-                  <th class="col-subgenus">Subgenus</th>
-                  <th class="col-species">Species</th>
-                  <th class="col-alternativeNameCSV">Virus name</th>
-                  <th class="col-isolate">Isolate</th>
-                  <th class="col-accessionNumber">Accession</th>
-                  <th class="col-availableSequence">Available sequence</th>
-                  <th class="col-abbrev">Abbrev.</th>
-               </tr>
-            </thead>
-            <tbody></tbody>
-         </table>
-         <hr class="virus-isolates-lower-hr" />
-         <div class="virus-isolates-table-legend">${this.icons.exemplar} Exemplar isolate of the species</div>
-         <div class="virus-isolates-disclaimer">Virus names, the choice of exemplar isolates, and virus abbreviations, are not official ICTV designations</div>`;
+         `<a href="#member_species_table"></a>
+         <div class="message-panel"></div>
+         <div class="table-container active">     
+            <table class="virus-isolates-table compact">
+               <thead>
+                  <tr class="header-row">
+                     <th class="col-exemplar" data-orderable="false"></th>
+                     <th class="col-subrealm">Subrealm</th>
+                     <th class="col-kingdom">Kingdom</th>
+                     <th class="col-subkingdom">Subkingdom</th>
+                     <th class="col-phylum">Phylum</th>
+                     <th class="col-subphylum">Subphylum</th>
+                     <th class="col-order">Order</th>
+                     <th class="col-suborder">Suborder</th>
+                     <th class="col-class_">Class</th>
+                     <th class="col-subclass">Subclass</th>
+                     <th class="col-family">Family</th>
+                     <th class="col-subfamily">Subfamily</th>
+                     <th class="col-genus">Genus</th>
+                     <th class="col-subgenus">Subgenus</th>
+                     <th class="col-species">Species</th>
+                     <th class="col-alternativeNameCSV">Virus name</th>
+                     <th class="col-isolate">Isolate</th>
+                     <th class="col-accessionNumber">Accession</th>
+                     <th class="col-availableSequence">Available sequence</th>
+                     <th class="col-abbrev">Abbrev.</th>
+                  </tr>
+               </thead>
+               <tbody></tbody>
+            </table>
+            <hr class="virus-isolates-lower-hr" />
+            <div class="virus-isolates-table-legend">${this.icons.exemplar} Exemplar isolate of the species</div>
+            <div class="virus-isolates-disclaimer">Virus names, the choice of exemplar isolates, and virus abbreviations, are not official ICTV designations</div>
+         </div>`;
 
       this.elements.container.innerHTML = html;
 
+      // Get references to important DOM elements.
+      this.elements.messagePanel = this.elements.container.querySelector(".message-panel");
+      if (!this.elements.messagePanel) { throw new Error("Invalid messagePanel Element"); }
+
       this.elements.rowContainer = this.elements.container.querySelector("table.virus-isolates-table tbody");
       if (!this.elements.rowContainer) { throw new Error("Invalid tbody Element"); }
+
+      this.elements.tableContainer = this.elements.container.querySelector(".table-container");
+      if (!this.elements.tableContainer) { throw new Error("Invalid tableContainer Element"); }
 
       return;
    }
 
    async loadTable(ictvID_: number, isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string | null) {
 
-      console.log("in loadTable ictvID_ = ", ictvID_, ", isolateID_ = ", isolateID_, ", mslRelease_ = ", mslRelease_)
-
       // Get the taxon's virus isolates.
       const isolates: IVirusIsolate[] = await VirusIsolateService.getIsolates(ictvID_, isolateID_, mslRelease_, onlyUnassigned_, taxnodeID_, taxonName_);
       if (isolates == null || isolates.length < 1) {
-         this.elements.container.innerHTML = ""; // "No virus isolates were found";
+
+         // Show the message panel and hide the table container.
+         this.elements.messagePanel.classList.add("active");
+         this.elements.tableContainer.classList.remove("active");
+
+         this.elements.messagePanel.innerHTML = `<div class="no-isolates-panel">${this.createNoIsolatesHTML()}</div>`;
          return;
       }
 
+      // Hide the message panel and show the table container.
+      this.elements.messagePanel.classList.remove("active");
+      this.elements.tableContainer.classList.add("active");
+
       let html = "";
+
+      // If an isolate ID parameter was provided, this is its display index in the result data. 
+      let isolateIndex = NaN;
 
       isolates.forEach((isolate_: IVirusIsolate, index_: number) => {
 
@@ -275,6 +355,9 @@ export class MemberSpeciesTable {
                this.counts.set(column_, currentCount + 1);
             }
          })
+
+         // Is this the isolate ID parameter that was provided (if one was provided)? 
+         if (!isNaN(isolateID_) && isolateID_ === isolate_.isolateID) { isolateIndex = index_; }
 
          // Create a row for each virus isolate.
          html += this.createIsolateRow(isolate_, index_);
@@ -294,13 +377,23 @@ export class MemberSpeciesTable {
          }
       })
 
+      // If the data table instance isn't destroyed here, it will raise an exception when re-initialized.
+      if (!!this.dataTable) { 
+         this.dataTable.destroy();
+         this.dataTable = null;
+      }
+
       // Convert the table into a DataTable instance.
       this.dataTable = new DataTables(`${this.selectors.container} table.virus-isolates-table`, {
          autoWidth: false,
-         dom: "lrtip",
+         language: {
+            lengthLabels: { "-1": "All"}
+         },
+         lengthMenu: [25, 50, 100, 500, 1000, -1],
          layout: {
-            topStart: null,
+            topStart: "pageLength",
             topEnd: null,
+            bottomStart: "info",
             bottomEnd: {
                paging: {
                   buttons: 3
@@ -308,9 +401,9 @@ export class MemberSpeciesTable {
             }
          },
          order: [],
+         pageLength: 50,
          pagingType: "full_numbers", // simple, simple_numbers, full, full_numbers
-         searching: false,
-         stripeClasses: []
+         searching: false
       });
    }
 }

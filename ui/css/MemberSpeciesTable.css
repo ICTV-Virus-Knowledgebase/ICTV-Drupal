@@ -1,5 +1,28 @@
 
-/* The Member Species Table */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The Member Species Table (virus isolates) CSS styles.
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* The message panel */
+#member_species_table_container .message-panel {
+   display: none;
+   visibility: hidden;
+}
+#member_species_table_container .message-panel.active {
+   display: block;
+   visibility: visible;
+}
+
+#member_species_table_container .table-container {
+   display: none;
+   visibility: hidden;
+}
+#member_species_table_container .table-container.active {
+   display: block;
+   visibility: visible;
+}
+
+/* The member species / virus isolates table */
 #member_species_table_container .virus-isolates-table {
    background-color: rgba(255, 255, 255, 1.0) !important;
    border-color: #aaa;
@@ -19,7 +42,7 @@
 }
 #member_species_table_container .virus-isolates-table tr.header-row th {
    color: #fff;
-   font-size: 1.0rem !important;
+   font-size: 0.9rem !important;
    font-weight: normal;
 }
 
@@ -28,20 +51,30 @@
 }
 
 #member_species_table_container .virus-isolates-table .alt-virus-row {
-   background-color: #fdfdfd;
+   background-color: #efefef;
 }
 
+#member_species_table_container .virus-isolates-table th {
+   font-size: 0.9rem !important;
+}
 #member_species_table_container .virus-isolates-table td {
-   font-size: 1.0rem !important;
+   border-color: #ddd;
+   border-width: 0 1px 1px 0;
+   font-size: 0.9rem !important;
+   padding: 0.5rem 0.25rem;
 }
 
-/* Column classes (both TH and TD) */
+/* Column classes */
+#member_species_table_container .virus-isolates-table td:last-of-type {
+   border-right: none;
+}
 
 #member_species_table_container .virus-isolates-table td.col-species {
    min-width: 15ch;
 }
 #member_species_table_container .virus-isolates-table .col-exemplar i {
    color: #000;
+   font-size: 0.75rem;
 }
 
 #member_species_table_container .virus-isolates-table td.col-isolate {
@@ -74,6 +107,27 @@
    font-size: 0.75rem;
 }
 
+/* Styles for the "no isolates" panel */
+#member_species_table_container .no-isolates-panel {
+   margin-top: 1.0rem;
+}
+#member_species_table_container .no-isolates-panel .error {
+   color: red;
+}
+#member_species_table_container .no-isolates-panel .isolate-message {
+   margin-bottom: 1.0rem;
+}
+#member_species_table_container .no-isolates-panel .taxon-rank {
+   font-weight: normal;
+}
+#member_species_table_container .no-isolates-panel .taxon-name {
+   font-style: italic;
+}
+#member_species_table_container .no-isolates-panel ul.taxa-links {
+   margin-left: 0;
+}
+
+
 
 /* The "Show ___ entries" row above the table */
 #member_species_table_container .dt-container .dt-length {
@@ -96,6 +150,9 @@
    text-align: left;
 }
 
+#member_species_table_container .dt-container .dt-info {
+   font-size: 0.9rem;
+}
 #member_species_table_container .dt-container .dt-layout-row {
    font-size: 0.9rem;
 }
