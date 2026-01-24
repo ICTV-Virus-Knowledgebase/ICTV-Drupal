@@ -6,6 +6,7 @@ export interface IVirusIsolate {
    availableSequence: string;
    exemplar: string;
    isolate: string;
+   isolateID: number;
    refSeqAccession: string;
    taxNodeID: string;
 

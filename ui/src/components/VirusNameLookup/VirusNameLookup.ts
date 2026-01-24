@@ -1003,7 +1003,8 @@ export class VirusNameLookup {
    async initializeMinimalComponent() {
 
       // Set the "Find the Species" URL.
-      this.findTheSpeciesURL = `${AppSettings.applicationURL}/taxonomy/find_the_species`;
+      const baseURL = Utils.getBaseURL();
+      this.findTheSpeciesURL = `${baseURL}/taxonomy/find_the_species`;
       
       // Get the container Element.
       this.elements.container = document.querySelector(this.containerSelector);

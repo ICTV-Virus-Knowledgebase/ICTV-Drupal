@@ -132,23 +132,17 @@ export class Utils {
       return `${formattedSize} ${sizes[index]}`;
    }
 
-   // Is the user's browser on iOS?
-   static isIOS() {
+   // Get the window's base URL: The protocol, host name, and port (optional) without subdirectories, page names, or query parameters.
+   static getBaseURL(): string {
 
-      // Try modern API first
-      if ("userAgentData" in navigator) {
-         const platform = (navigator as any).userAgentData.platform || "unknown";
-         return platform === "iOS";
-      } 
-      
-      const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Macintosh") && "ontouchend" in document); 
-      //const isMac = /Macintosh/.test(ua) && !("ontouchend" in document);
+      let url = `${window.location.protocol}//${window.location.host}`;
+      const qIndex = url.indexOf("?");
+      if (qIndex > 0) { url = url.substring(0, qIndex); }
 
-      return isIOS; // || isMac;
+      return url;
    }
 
-
+   
    // Look for URL query string parameters that represent identifiers.
    static getIdentifiersFromURL(params_: URLSearchParams) {
 
@@ -199,6 +193,23 @@ export class Utils {
 
       return identifiers;
    }
+
+   // Is the user's browser on iOS?
+   static isIOS() {
+
+      // Try modern API first
+      if ("userAgentData" in navigator) {
+         const platform = (navigator as any).userAgentData.platform || "unknown";
+         return platform === "iOS";
+      } 
+      
+      const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Macintosh") && "ontouchend" in document); 
+      //const isMac = /Macintosh/.test(ua) && !("ontouchend" in document);
+
+      return isIOS; // || isMac;
+   }
+
 
    // Italicize the taxon name, if appropriate.
    static italicizeTaxonName(taxonName_: string) {
