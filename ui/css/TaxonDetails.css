@@ -3,6 +3,10 @@
    Taxon details component CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+#taxon_details_container {
+   margin-top: 1.5rem;
+}
+
 /* A backup for the block that displays the taxon name. */
 #taxon_details_container .taxon-title {
    display: none;
@@ -18,6 +22,7 @@
 
 .modified-taxon-title {
    font-size: 1.5rem;
+   margin-bottom: 0.5rem;
 }
 
 /* The rank, name, and release sections of the title */

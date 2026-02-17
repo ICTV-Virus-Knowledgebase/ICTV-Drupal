@@ -137,26 +137,6 @@ class GetTaxaByName extends ResourceBase {
       ];
 
     $sql = "
-      SET @treeID = udf_getTreeID(:releaseNumber);
-
-      SET @taxNodeID = (
-        SELECT taxnode_id
-        FROM taxonomy_node
-        WHERE name = :taxonName
-          AND tree_id = @treeID
-        LIMIT 1
-      );
-
-      SELECT
-        tn.*  -- or generatePartialQuery snippet
-      FROM taxonomy_node tn
-      WHERE (tn.parent_id = @taxNodeID OR tn.taxnode_id = @taxNodeID)
-        AND tn.is_hidden = 0
-        AND tn.is_deleted = 0
-      ORDER BY tn.left_idx ASC
-    ";
-
-    $sql = "
       SELECT
         " . TaxonomyHelper::generatePartialQuery() . "
       WHERE (

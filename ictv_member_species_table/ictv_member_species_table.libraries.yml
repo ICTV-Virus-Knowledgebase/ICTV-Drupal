@@ -1,5 +1,5 @@
 memberSpeciesTable:
-  version: 20251020
+  version: 20260126
   css:
     theme:
       assets/css/fa-regular.css: {}

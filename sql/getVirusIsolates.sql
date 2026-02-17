@@ -200,7 +200,7 @@ main:BEGIN
    LEFT JOIN taxonomy_node subkingdom ON (
       species.subkingdom_id IS NOT NULL
       AND subkingdom.taxnode_id = species.subkingdom_id
-        AND subkingdom.level_id > targetLevelID
+      AND subkingdom.level_id > targetLevelID
    )
 
    LEFT JOIN taxonomy_node phylum ON (
@@ -274,7 +274,7 @@ main:BEGIN
          AND species.parent_id = targetTaxNodeID
       )
    )
-   ORDER BY species.left_idx, si.isolate_sort;
+   ORDER BY si.species_sort, si.isolate_sort;
 
 END//
 

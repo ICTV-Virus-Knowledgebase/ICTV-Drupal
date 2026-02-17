@@ -1,15 +1,33 @@
 
+/* CSS variables used in this component. */
+#taxon_history_container {
+   --ictv-abolished-color: #cf2222;
+   --ictv-alt-row-bg: #efefef;
+   --ictv-border-color: #aaa;
+   --ictv-border-focus-color: #80bdff;
+   --ictv-button-bg: #ddd;
+   --ictv-button-border-color: #aaa;
+   --ictv-danger-color: #dc3545;
+   --ictv-dark-grey-color: #555;
+   --ictv-disabled-color: #999;
+   --ictv-highlight-color: #fff6c4;
+   --ictv-highlight-color-darker: #ffe770;
+   --ictv-icon-color: #888;
+   --ictv-lightest-grey-color: #bbb;
+   --ictv-light-grey-color: #888;
+   --ictv-link-color: #0066cc;
+   --ictv-link-hover-color: #004999;
+   --ictv-modal-header-bg: rgb(0, 104, 240);
+   --ictv-panel-header-color: #4aa3df;
+   --ictv-primary-color: #007bff;
+   --ictv-secondary-color: #6c757d;
+   --ictv-success-color: #198754;
+   --ictv-warning-color: #ffc107;
+}
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    Taxon release history
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-
-/* CSS variables used in this component. */
-#taxon_history_container {
-   --abolished-color: #cf2222; /* #f22727; */
-   --darker-highlight-color: #ffe770;
-   --highlight-color: #fff6c4;
-}
-
 
 /* The message panel */
 #taxon_history_container .message-panel.visible {
@@ -45,7 +63,7 @@
    font-style: italic;
 }
 #taxon_history_container .instructions .highlighted {
-   background-color: var(--highlight-color);
+   background-color: var(--ictv-highlight-color);
 }
 
 /* The title above a taxon */
@@ -94,7 +112,7 @@
 }*/
 
 #taxon_history_container .lineage .lineage-chevron {
-   color: #999;
+   color: var(--ictv-disabled-color);
    font-size: 1.0rem;
    font-weight: normal;
    margin: 0 0.25rem;
@@ -134,7 +152,7 @@
 
 #taxon_history_container .release .release-header {
    align-items: center;
-   background-color: #4aa3df;
+   background-color: var(--ictv-panel-header-color);
    border-radius: 10px 10px 0 0;
    color: #fff;
    display: flex;
@@ -153,7 +171,7 @@
 }
 
 #taxon_history_container .release .release-header .is-current {
-   color: var(--darker-highlight-color);
+   color: var(--ictv-highlight-color-darker);
    display: block;
    flex-grow: 1;
    margin-right: 2.0rem;
@@ -181,12 +199,12 @@
    padding: 1.0rem;
 }
 #taxon_history_container .release .release-body .changed-taxon.highlighted {
-   background-color: var(--highlight-color);
+   background-color: var(--ictv-highlight-color);
 }
 
 /* The taxon rank and name are displayed in red for abolished taxa. */
 #taxon_history_container .release .release-body .changed-taxon.abolished .taxon-rank-and-name {
-   color: var(--abolished-color);
+   color: var(--ictv-abolished-color);
 }
 
 #taxon_history_container .release .taxon-rank-and-name {
@@ -226,26 +244,21 @@
 #taxon_history_container .release .taxon-rank-and-name .new,
 #taxon_history_container .release .taxon-rank-and-name .split,
 #taxon_history_container .release .taxon-rank-and-name .renamed  {
-   /*color: rgb(25, 135, 84);*/
    font-weight: normal;
 }
 #taxon_history_container .release .taxon-rank-and-name .promoted,
 #taxon_history_container .release .taxon-rank-and-name .moved,
 #taxon_history_container .release .taxon-rank-and-name .lineage-updated,
 #taxon_history_container .release .taxon-rank-and-name .merged {
-   /*color: rgb(23, 162, 184);*/
    font-weight: normal;
 }
 #taxon_history_container .release .taxon-rank-and-name .unchanged {
-   /*color: #777;*/
    font-weight: normal;
 }
 #taxon_history_container .release .taxon-rank-and-name .demoted {
-   /*color: rgb(255, 193, 7);*/
    font-weight: normal;
 }
 #taxon_history_container .release .taxon-rank-and-name .abolished {
-   /*color: rgb(220, 53, 69);*/
    font-weight: normal;
 }
 
@@ -264,10 +277,9 @@
 }
 #taxon_history_container .release .taxon-lineage-row .lineage {
    font-size: 1.0rem;
-   /* margin: 0.25rem 0 1.0rem 2.0rem; */
 }
 #taxon_history_container .release .taxon-lineage-row .lineage .lineage-chevron {
-   color: #aaa;
+   color: var(--ictv-border-color);
    font-size: 1.0rem;
    font-weight: normal;
    margin: 0 0.25rem;
@@ -293,8 +305,8 @@
 }
 
 #taxon_history_container .release .lineage-export-row button {
-   background-color: #ddd;
-   border-color: #aaa;
+   background-color: var(--ictv-button-bg);
+   border-color: var(--ictv-button-border-color);
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
@@ -311,7 +323,7 @@
 }
 
 #taxon_history_container .release .lineage-export-row .copy-status i {
-   color: rgb(40, 167, 69);
+   color: var(--ictv-success-color); /*rgb(40, 167, 69);*/
 }
 
 #taxon_history_container .release .lineage-export-row .copy-status {
@@ -424,7 +436,7 @@
 
 #taxon_history_container .modal-header {
    align-items: center;
-   background-color: rgb(0, 104, 240);
+   background-color: var(--ictv-modal-header-bg);
    border-radius: 10px 10px 0 0;
    display: flex;
    flex-flow: row nowrap;
@@ -495,4 +507,46 @@
 }
 #taxon_history_container .modal-footer .save-button {
    margin-right: 0.5rem;
+}
+
+
+
+/*----------------------------------------------------------------------------------------------------------------
+  The lineage tooltip 
+----------------------------------------------------------------------------------------------------------------*/
+#taxon_history_container .tippy-box[data-theme~='ICTV-Tooltip'] {
+   background-color: #fff;
+   border-color: #aaa;
+   border-style: solid;
+   border-width: 1px;
+   color: #000;
+}
+
+#taxon_history_container .tippy-box[data-theme~='ICTV-Tooltip'] .tippy-arrow {
+   color: #ccc;
+   z-index: -1;
+}
+
+#taxon_history_container .lineage-tooltip {
+   min-width: 260px;
+   z-index: 1000;
+}
+#taxon_history_container .lineage-tooltip .name-row {
+   border-color: #aaa;
+   border-style: solid;
+   border-width: 0 0 1px 0;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   margin-bottom: 0.5rem;
+}
+#taxon_history_container .lineage-tooltip .name-row .rank-name {
+   margin-right: 0.25rem;
+}
+#taxon_history_container .lineage-tooltip .name-row .taxon-name {
+   font-style: italic;
+}
+#taxon_history_container .lineage-tooltip .link-row {
+   font-size: 0.9rem;
+   margin-bottom: 0.5rem;
 }

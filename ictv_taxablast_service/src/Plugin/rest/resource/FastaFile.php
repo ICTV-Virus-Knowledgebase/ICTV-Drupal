@@ -1,8 +1,8 @@
 <?php
 
-namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Utils;
 

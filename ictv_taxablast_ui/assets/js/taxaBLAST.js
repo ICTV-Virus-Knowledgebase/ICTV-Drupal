@@ -3,7 +3,7 @@
 
     let initialized = false;
 
-    Drupal_.behaviors.ictv_seqsearch_ui = {
+    Drupal_.behaviors.ictv_taxablast_ui = {
 
         // This function will be run on page load and ajax load.
         attach: function (context_, settings_) {

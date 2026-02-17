@@ -45,8 +45,8 @@ export class _AppSettings {
 
       // TaxaBLAST
       downloadTaxaBlastFile: "download-taxablast-file",
-      getSeqSearchOutputFile: "get-seqsearch-output-file",
-      getSequenceSearchJob: "get-seqsearch-job",
+      getTaxaBlastOutputFile: "get-taxablast-output-file",
+      getTaxaBlastJob: "get-taxablast-job",
       searchTaxaBlastJobs: "search-taxablast-jobs",
       uploadSequences: "upload-sequences",
 

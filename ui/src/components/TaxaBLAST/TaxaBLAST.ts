@@ -16,7 +16,6 @@ import { FastaInputPanel } from "./panels/FastaInputPanel";
 import { JobDetailsPanel } from "./panels/JobDetailsPanel";
 import { JobHistoryPanel } from "./panels/JobHistoryPanel";
 import { MessagePanel } from "./panels/MessagePanel";
-import { PendingJobPanel } from "./panels/PendingJobPanel";
 
 
 export class TaxaBLAST {
@@ -34,8 +33,7 @@ export class TaxaBLAST {
       fastaInputPanel: HTMLElement,
       jobDetailsPanel: HTMLElement,
       jobHistoryPanel: HTMLElement,
-      messagePanel: HTMLElement,
-      pendingJobPanel: HTMLElement
+      messagePanel: HTMLElement
    }
 
    job: ITaxaBlastJob = null;
@@ -99,8 +97,7 @@ export class TaxaBLAST {
          fastaInputPanel: null,
          jobDetailsPanel: null,
          jobHistoryPanel: null,
-         messagePanel: null,
-         pendingJobPanel: null
+         messagePanel: null
       }
 
       this.panels = new Map<PanelKey, ITaxaBlastPanel>();
@@ -138,12 +135,6 @@ export class TaxaBLAST {
             instructions = `Save this page's URL to view these results later`;
             break;
 
-         case PanelKey.pendingJob:
-
-            // Specify the instructions for the "pending job" panel.
-            instructions = `Save this page's URL to view the completed results later`;
-            break;
-
          default:
             AlertBuilder.displayErrorSync(`Unable to create a link panel for the unhandled panel key: ${panelKey_}`);
             break;
@@ -161,7 +152,7 @@ export class TaxaBLAST {
    // Create a URL with parameters derived from the state.
    createUrlFromState(panelKey_?: PanelKey): string {
       
-      let url = window.location.pathname;
+      let url = window.location.href;
       const qIndex = url.indexOf("?");
       if (qIndex > -1) { url = url.substring(0, qIndex); }
 
@@ -512,9 +503,7 @@ export class TaxaBLAST {
          <div class=\"fasta-input-panel container\"></div>
          <div class=\"job-details-panel container\"></div>
          <div class=\"job-history-panel container\"></div>
-         <div class=\"job-submission-panel container\"></div>
-         <div class=\"message-panel container active\">${spinnerHTML}</div>
-         <div class=\"pending-job-panel container\"></div>`;
+         <div class=\"message-panel container active\">${spinnerHTML}</div>`;
 
       this.elements.container.innerHTML = html;
 
@@ -539,10 +528,7 @@ export class TaxaBLAST {
       this.elements.messagePanel = this.elements.container.querySelector(".message-panel") as HTMLElement;
       if (!this.elements.messagePanel) { throw new Error("Invalid message panel Element"); }
 
-      // The pending job panel
-      this.elements.pendingJobPanel = this.elements.container.querySelector(".pending-job-panel") as HTMLElement;
-      if (!this.elements.pendingJobPanel) { throw new Error("Invalid pending job panel Element"); }
-
+      
    
       // Create the panel instances.
       this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this.elements.blastHitsPanel, this));
@@ -550,7 +536,6 @@ export class TaxaBLAST {
       this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
       this.panels.set(PanelKey.jobHistory, new JobHistoryPanel(this.elements.jobHistoryPanel, this));
       this.panels.set(PanelKey.message, new MessagePanel(this.elements.messagePanel, this));
-      this.panels.set(PanelKey.pendingJob, new PendingJobPanel(this.elements.pendingJobPanel, this));
 
       // Use URL parameters to determine which panel to display.
       return this.processURL();

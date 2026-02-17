@@ -254,8 +254,7 @@ export enum TaxonomyRank {
    varietas = "Varietas"
 }
 
-// All taxa that can be displayed in the "top-level rank" control (for now we're only excluding "tree").
-export enum TopLevelRank {
+export enum IctvRank {
    realm = "realm",
    subrealm = "subrealm",
    kingdom = "kingdom",
@@ -271,6 +270,24 @@ export enum TopLevelRank {
    genus = "genus",
    subgenus = "subgenus",
    species = "species"
+}
+
+export enum IctvRankLabel {
+   realm = "Realm",
+   subrealm = "Subrealm",
+   kingdom = "Kingdom",
+   subkingdom = "Subkingdom",
+   phylum = "Phylum",
+   subphylum = "Subphylum",
+   class = "Class",
+   subclass = "Subclass",
+   order = "Order",
+   suborder = "Suborder",
+   family = "Family",
+   subfamily = "Subfamily",
+   genus = "Genus",
+   subgenus = "Subgenus",
+   species = "Species"
 }
 
 // Keys representing all available web services.
@@ -293,8 +310,8 @@ export enum WebServiceKey {
    
    // TaxaBLAST
    downloadTaxaBlastFile = "downloadTaxaBlastFile", //download-taxablast-file
-   getSeqSearchOutputFile = "getSeqSearchOutputFile",
-   getSequenceSearchJob = "getSequenceSearchJob",
+   getTaxaBlastOutputFile = "getTaxaBlastOutputFile",
+   getTaxaBlastJob = "getTaxaBlastJob",
    searchTaxaBlastJobs = "searchTaxaBlastJobs",
    uploadSequences = "uploadSequences",
 
@@ -323,7 +340,9 @@ export enum WebServiceKey {
 // Keys used to set and retrieve data in local (web) storage.
 export enum WebStorageKey {
    lineageExportSettings = "lineage_export_settings",
-   taxaBlastUserUID = "taxa_blast_user_uid"
+   releaseHistoryData = "release_history_data",
+   taxaBlastUserUID = "taxa_blast_user_uid",
+   taxonomyBrowserData = "taxonomy_browser_data"
 }
 
 //----------------------------------------------------------------------------------------------------------------

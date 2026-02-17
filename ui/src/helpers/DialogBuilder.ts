@@ -2,7 +2,7 @@
 export class DialogBuilder {
 
    static Classes = {
-      dialog: "modal-dialog",
+      dialog: "ictv-modal-dialog",
 
       // Add one of these two classes to display or hide an element.
       visible: "visible",
@@ -25,13 +25,13 @@ export class DialogBuilder {
    // Create HTML for a dialog.
    static CreateDialogHTML(footerHTML_: string, bodyHTML_: string, id_: string, title_: string) {
       
-      return `<div id="${id_}" class="modal-dialog">
-         <div class="modal-content">
-            <div class="modal-header">
-               <div class="modal-title">${title_}</div>
+      return `<div id="${id_}" class="ictv-modal-dialog">
+         <div class="ictv-modal-content">
+            <div class="ictv-modal-header">
+               <div class="ictv-modal-title">${title_}</div>
             </div>
-            <div class="modal-body">${bodyHTML_}</div>
-            <div class="modal-footer">${footerHTML_}</div>
+            <div class="ictv-modal-body">${bodyHTML_}</div>
+            <div class="ictv-modal-footer">${footerHTML_}</div>
          </div>
       </div>`;
    }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\File\FileSystemInterface;
@@ -78,7 +78,7 @@ class Common {
    public static string $FASTA_NT_REGEX = "/^[ABCDGHKMNRSTUVWY\.\-]+$/i";
    
    // The name of the parent module.
-   public static string $MODULE_NAME = "ictv_seqsearch_service";
+   public static string $MODULE_NAME = "ictv_taxablast_service";
 
    // Valid BLAST task names that can be provided as a parameter to UploadSequences.
    public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dc-megablast"];
@@ -546,8 +546,8 @@ class Common {
 
          if (mb_strlen($line) < 1) continue;
 
-         // Are there any bases that aren't a nucleotide?
-         if (!preg_match(Common::$FASTA_NT_REGEX, $line)) {
+         // Are there any bases that aren't a nucleotide or amino acid?
+         if (!preg_match(Common::$FASTA_NT_REGEX, $line) && !preg_match(Common::$FASTA_AA_REGEX, $line)) {
             $isValid = false;
             break;
          }

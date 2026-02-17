@@ -3,7 +3,7 @@
 
 /**
  * 
- * Run the SeqSearch script and update the database with the results.
+ * Run the TaxaBLAST script and update the database with the results.
  *
  *  The following are the command line arguments that are expected by this script:
  * 
@@ -42,12 +42,12 @@
  * 
 */
 
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Types\JobStatus;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SequenceSearch;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBLAST;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBlastJob;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\ictv_common\Utils;
 
@@ -63,6 +63,9 @@ try {
    // Get and validate the command line arguments.
    $dbName = $_GET["dbName"];
    if (!$dbName) { throw new \Exception("Invalid dbName parameter"); }
+
+   $dockerContainer = $_GET["dockerContainer"];
+   if (!$dockerContainer) { throw new \Exception("Invalid dockerContainer parameter"); }
 
    $drupalRoot = $_GET["drupalRoot"];
    if (!$drupalRoot) { throw new \Exception("Invalid drupalRoot parameter"); }
@@ -136,7 +139,7 @@ try {
    }
 
    // dmd testing
-   \Drupal::logger("ictv_seqsearch_service")->info("In RunSeqSearch.php");
+   \Drupal::logger("ictv_taxablast_service")->info("In RunTaxaBLAST.php");
 
    // Now that Drupal has been initialized, validate the task parameter.
    if (!in_array($task, Common::$VALID_BLAST_TASKS)) { throw new \Exception("Invalid task parameter"); }
@@ -161,8 +164,8 @@ try {
    //-------------------------------------------------------------------------------------------------------
    // Run the TaxaBLAST script and return a job status.
    //-------------------------------------------------------------------------------------------------------
-   $jobStatus = SequenceSearch::runSearch($inputPath, $maxHSPS, $maxTargetSeqs, $outputPath, $scriptName, $task, $workingDirectory);
-
+   $jobStatus = TaxaBLAST::runSearch($dockerContainer, $inputPath, $maxHSPS, $maxTargetSeqs, $outputPath, $scriptName, $task, $workingDirectory);
+   
    // TODO: Delete the input files after TaxaBLAST completes.
 
    if ($jobStatus !== JobStatus::complete) { throw new \Exception("TaxaBLAST exited with status ".$jobStatus->value); }
@@ -175,6 +178,9 @@ try {
       throw new \Exception("Error reading the JSON results file: ".$jsonFilename);
    }
 
+   // dmd testing
+   \Drupal::logger("ictv_taxablast_service")->info($json);
+
    // Convert the JSON text into a Taxonomy result (nested array).
    $taxResult = json_decode($json, true);
    if ($taxResult === null && json_last_error() !== JSON_ERROR_NONE) {
@@ -186,7 +192,7 @@ try {
    $jsonForSQL = bin2hex($json);
 
    // Update the job's JSON and status.
-   SeqSearchJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $message, $jobStatus);
+   TaxaBlastJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $message, $jobStatus);
 
    // Get the job directory/path using the output path (one level below the job directory)
    $jobPath = dirname($outputPath);
@@ -235,7 +241,7 @@ try {
       $errorMessage = method_exists($ex, "getMessage") ? $ex->getMessage() : get_class($ex);
 
       // Update the log with the error message.
-      \Drupal::logger("ictv_seqsearch_service")->error($errorMessage);
+      \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
 
       // Update the job's job_files as unsuccessful.
       $sql = "UPDATE job_file SET 
@@ -246,11 +252,14 @@ try {
       $fileResult = $fileQuery->execute();
    }
    
-   fwrite(STDOUT, "Processing is complete");
-
 } catch (\Throwable $e) {
 
+   $jobStatus = JobStatus::error;
+
    $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+
+   // dmd test
+   \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
 
    // Write the error message to stderr.
    fwrite(STDERR, $errorMessage);
@@ -258,7 +267,7 @@ try {
    // Display an error in the Drupal log - only if Drupal is initialized
    if (class_exists("\Drupal\Core\DrupalKernel")) {
       try {
-         \Drupal::logger("ictv_seqsearch_service")->error($errorMessage);
+         \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
       } catch (\Throwable $logError) {
          // If logging fails, just continue
       }
@@ -269,7 +278,11 @@ try {
       if ($jobStatus === null || mb_strlen($jobStatus->value) < 1) { $jobStatus = JobStatus::error; }
 
       // Update the job's JSON and status.
-      SeqSearchJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
+      TaxaBlastJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
+
+   } else {
+      // dmd test
+      \Drupal::logger("ictv_taxablast_service")->error("Invalid jobUID in RunTaxaBLAST.php");
    }
 
    exit(1);

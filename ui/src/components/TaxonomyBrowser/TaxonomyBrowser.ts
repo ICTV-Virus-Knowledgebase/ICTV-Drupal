@@ -3,12 +3,13 @@
 declare var jQuery: any;
 
 import { AppSettings } from "../../global/AppSettings";
+import DataTables from 'datatables.net-dt';
 import { IMslRelease } from "../../models/IMslRelease";
 import { ITaxon } from "../../models/ITaxon";
 import { Identifiers } from "../../models/Identifiers";
 import { IDisplaySettings } from "./IDisplaySettings";
 import { SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
-import { OrderedTaxaLevel, TaxaLevel, TaxaLevelLabel, TaxonomyDisplayType, TopLevelRank } from "../../global/Types";
+import { OrderedTaxaLevel, TaxaLevel, TaxaLevelLabel, TaxonomyDisplayType, IctvRank } from "../../global/Types";
 import { TaxonomyService } from "../../services/TaxonomyService";
 import tippy, { Props, ReferenceElement } from "tippy.js";
 import { Utils } from "../../helpers/Utils";
@@ -59,6 +60,8 @@ export class TaxonomyBrowser {
       treeNode: "tree-node"
    }
 
+   dataTable;
+
    // Display settings (with defaults)
    displaySettings: IDisplaySettings = {
       displayChildCount: true,
@@ -79,8 +82,18 @@ export class TaxonomyBrowser {
    }
 
    elements: {
+      container: HTMLElement,
+      dialogContainer: HTMLElement,
+      filterRanksControl: HTMLButtonElement,
       hideAboveRankControl: HTMLSelectElement,
       preExpandToRankControl: HTMLSelectElement,
+      rankControlsContainer: HTMLElement,
+      releaseDescription: HTMLElement,
+      releaseHistory: HTMLElement,
+      releasePanel: HTMLElement,
+      releaseTaxaStats: HTMLElement,
+      releaseTitle: HTMLElement,
+      searchPanelContainer: HTMLElement,
       taxonomyBrowser: HTMLElement,
       toolTip: HTMLElement,
       toolTipText: HTMLElement
@@ -187,13 +200,25 @@ export class TaxonomyBrowser {
 
       // Initialize the DOM element references
       this.elements = {
+         container: null,
+         dialogContainer: null,
+         filterRanksControl: null,
          hideAboveRankControl: null,
          preExpandToRankControl: null,
+         rankControlsContainer: null,
+         releaseDescription: null,
+         releaseHistory: null,
+         releasePanel: null,
+         releaseTaxaStats: null,
+         releaseTitle: null,
+         searchPanelContainer: null,
          taxonomyBrowser: null,
          toolTip: null,
          toolTipText: null
       }
 
+
+      /*
       //--------------------------------------------------------------------------------------------------------------
       // Create CSS selectors using the container and standard CSS class names.
       //--------------------------------------------------------------------------------------------------------------
@@ -225,6 +250,7 @@ export class TaxonomyBrowser {
       // The toolTip and its text
       this.selectors.toolTip = `${this.selectors.container} .${this.cssClasses.toolTip}`;
       this.selectors.toolTipText = `${this.selectors.toolTip} .${this.cssClasses.toolTipText}`;
+      */
 
       // Create the web storage key from the current URL and control key.
       this.webStorageKey = `${window.location.href}__${this.controlKey}`;
@@ -246,13 +272,13 @@ export class TaxonomyBrowser {
    // Create the "hide above" rank control, "pre-expand to" rank control, and the "go" button that retrieves the taxonomy data.
    createRankControls(): string {
 
-      // Options for the "hide above rank" list with an empty option at the top.
+      // Options for the "hide above rank" list, initialized with an empty option.
       let hideAboveOptions: string = `<option value=""></option>`;
 
-      // Options for the "pre-expand to rank" list with an empty option at the top.
+      // Options for the "pre-expand to rank" list, initialized with an empty option.
       let preExpandOptions: string = `<option value=""></option>`;
 
-      Object.keys(TopLevelRank).forEach((rank_: string) => {
+      Object.keys(IctvRank).forEach((rank_: string) => {
 
          // The "hide above" control
          let hideAboveSelected: string = "";
@@ -269,16 +295,16 @@ export class TaxonomyBrowser {
 
       let html: string =
          `<div class="${this.cssClasses.rankControlsContainer}">
-                <div class="${this.cssClasses.rankControl}">
-                    <label>Expand ranks to show</label>
-                    <select class="${this.cssClasses.preExpandToRankControl}">${preExpandOptions}</select>
-                </div>
-                <div class="${this.cssClasses.rankControl}">
-                    <label>Hide ranks above</label>
-                    <select class="${this.cssClasses.hideAboveRankControl}">${hideAboveOptions}</select>
-                </div>
-                <button class="btn btn-success ${this.cssClasses.filterRanksControl}" type="button">Go</button>
-            </div>`;
+            <div class="${this.cssClasses.rankControl}">
+               <label>Expand ranks to show</label>
+               <select class="${this.cssClasses.preExpandToRankControl}">${preExpandOptions}</select>
+            </div>
+            <div class="${this.cssClasses.rankControl}">
+               <label>Hide ranks above</label>
+               <select class="${this.cssClasses.hideAboveRankControl}">${hideAboveOptions}</select>
+            </div>
+            <button class="btn btn-success ${this.cssClasses.filterRanksControl}" type="button">Go</button>
+         </div>`;
 
       return html;
    }
@@ -288,39 +314,39 @@ export class TaxonomyBrowser {
       if (!release_ || !release_.year) {
 
          // Clear the title and description, then hide the release panel and exit.
-         jQuery(this.selectors.releaseTitle).html("");
-         jQuery(this.selectors.releaseDescription).html("");
-         jQuery(this.selectors.releaseTaxaStats).html("");
-         jQuery(this.selectors.releasePanel).hide();
+         this.elements.releaseTitle.innerHTML = "";
+         this.elements.releaseDescription.innerHTML = "";
+         this.elements.releaseTaxaStats.innerHTML = "";
+         this.elements.releasePanel.style.display = "none";
          return false;
       }
 
-      let title: string = `Virus Taxonomy: ${release_.year} Release`;
+      let title = `Virus Taxonomy: ${release_.year} Release`;
 
       let notes = release_.notes || "";
       if (notes) { notes = notes.replace(";", "<br/>"); }
 
       // Populate the title and description
-      jQuery(this.selectors.releaseTitle).html(title);
-      jQuery(this.selectors.releaseDescription).html(notes);
+      this.elements.releaseTitle.innerHTML = title;
+      this.elements.releaseDescription.innerHTML = notes;
 
       // Should we display the release rank count? Generally, this will only be hidden
       // when the minimal Taxonomy Control is used on wiki pages.
       if (this.displaySettings.useParentTaxonForReleaseRankCount) {
 
          // Clear the rank counts.
-         jQuery(this.selectors.releaseTaxaStats).html("");
+         this.elements.releaseTaxaStats.innerHTML = "";
 
       } else {
 
          // Format the release's rank counts and populate the panel.
          let ranks = this.formatTaxaRanks(release_);
 
-         jQuery(this.selectors.releaseTaxaStats).html(ranks);
+         this.elements.releaseTaxaStats.innerHTML = ranks;
       }
 
       // Display the release panel
-      jQuery(this.selectors.releasePanel).show();
+      this.elements.releasePanel.style.display = "block";
    }
 
 
@@ -390,20 +416,25 @@ export class TaxonomyBrowser {
                 <div class="tc-children" data-id="${taxon_.taxnodeID}" data-expanded="false" data-populated="false"></div>
             </div>`;
 
-      jQuery(`.tc-children[data-id="${taxon_.parentID}"]`).append(html);
+      // Append the taxon HTML to the parent's child container.
+      document.querySelector(`.tc-children[data-id="${taxon_.parentID}"]`).append(html);
+      //jQuery(`.tc-children[data-id="${taxon_.parentID}"]`).append(html);
    }
 
 
    async expandCollapse(taxNodeID_: string, animate_: boolean): Promise<boolean> {
 
-      let childContainer = jQuery(`.tc-children[data-id="${taxNodeID_}"]`);
-      if (!childContainer) { throw new Error("Invalid childContainer in expandCollapse"); }
+      let childContainerEl = this.elements.taxonomyBrowser.querySelector(`.tc-children[data-id="${taxNodeID_}"]`) as HTMLElement;
+      if (!childContainerEl) { throw new Error("Invalid childContainer in expandCollapse"); }
 
-      let isExpanded = jQuery(childContainer).attr("data-expanded");
-      let isPopulated = jQuery(childContainer).attr("data-populated");
+      let isExpanded = childContainerEl.getAttribute("data-expanded");
+      let isPopulated = childContainerEl.getAttribute("data-populated");
 
       let animationDuration = this.animationDuration;
       if (!animate_) { animationDuration = 0; }
+
+      const iconEl = this.elements.taxonomyBrowser.querySelector(`.tc-ctrl[data-id="${taxNodeID_}"]`);
+      if (!iconEl) { throw new Error("Invalid iconEl in expandCollapse"); }
 
       if (isExpanded == "true") {
 
@@ -412,13 +443,14 @@ export class TaxonomyBrowser {
          //------------------------------------------------------------------------------------------
 
          // Toggle the icon
-         jQuery(`.tc-ctrl[data-id="${taxNodeID_}"]`).html(this.icons.expand);
+         iconEl.innerHTML = this.icons.expand;
 
          // Toggle "is expanded"
-         jQuery(childContainer).attr("data-expanded", "false");
+         childContainerEl.setAttribute("data-expanded", "false");
 
          // Hide the children
-         jQuery(childContainer).hide(animationDuration);
+         childContainerEl.style.display = "none";
+         //jQuery(childContainerEl).hide(animationDuration);
 
       } else if (isPopulated == "false") {
 
@@ -432,13 +464,14 @@ export class TaxonomyBrowser {
          //------------------------------------------------------------------------------------------
 
          // Toggle the icon
-         jQuery(`.tc-ctrl[data-id="${taxNodeID_}"]`).html(this.icons.collapse);
+         iconEl.innerHTML = this.icons.collapse;
 
          // Toggle "is expanded"
-         jQuery(childContainer).attr("data-expanded", "true");
+         childContainerEl.setAttribute("data-expanded", "true");
 
          // Display the children
-         jQuery(childContainer).show(animationDuration);
+         childContainerEl.style.display = "block";
+         //jQuery(childContainerEl).show(animationDuration);
       }
 
       return true;
@@ -655,7 +688,6 @@ export class TaxonomyBrowser {
       this.validateLocalData(null, null, false);
    }
 
-
    // Get the specified MSL release (defaulting to the most-recent, if empty).
    async getRelease(releaseNumber_?: string) {
 
@@ -722,7 +754,6 @@ export class TaxonomyBrowser {
       return `<div class="spinner-ctrl">${this.icons.spinner} ${spinnerText_}</div>`;
    }
 
-
    async getTaxaByName() {
 
       // Clear the taxonomy control
@@ -734,7 +765,6 @@ export class TaxonomyBrowser {
 
       return;
    }
-
 
    async getTreeExpandedToNode(rank_: TaxaLevel, releaseNumber_: string, taxNodeID_: string) {
 
@@ -795,31 +825,6 @@ export class TaxonomyBrowser {
 
       return;
    }
-
-
-   // Get the query string parameters
-   getUrlParams() {
-
-      const urlParams = new URLSearchParams(window.location.search);
-
-      // Look for identifier parameters in the query string.
-      this.identifiers = Utils.getIdentifiersFromURL(urlParams);
-      return;
-   }
-
-   /*
-   async getUnassignedChildTaxaByName() {
-
-      // Clear the taxonomy control
-      this.elements.taxonomyBrowser.innerHTML = "";
-
-      const response = await TaxonomyService.getUnassignedChildTaxaByName(this.mslRelease.releaseNumber, this.initialData.taxonName);
-
-      this.processTaxaByName(response.parentID, response.taxa, response.taxNodeID);
-
-      return;
-   }*/
-
 
    // Handle a change to the "hide above" rank control.
    async handleHideAboveChange() {
@@ -883,7 +888,6 @@ export class TaxonomyBrowser {
       this.saveLocalData();
    }
 
-
    // Handle a change to the "pre-expand to" rank control.
    async handlePreExpandChange() {
 
@@ -933,7 +937,7 @@ export class TaxonomyBrowser {
 
       } else {
          // Get the tree expanded to the selected node.
-         await this.getTreeExpandedToNode(<TaxaLevel>rank_, releaseNumber_, taxNodeID_);
+         await this.getTreeExpandedToNode(rank_ as TaxaLevel, releaseNumber_, taxNodeID_);
       }
 
       return;
@@ -941,11 +945,16 @@ export class TaxonomyBrowser {
 
    async initialize() {
 
+      // Look for identifiers as query string parameters.
+      this.setIdentifiersFromURL();
+
       // Look for the local data in web storage.
       this.getLocalData();
 
-      // The HTML that will be added to the "container" Element.
-      let html: string = "";
+      //--------------------------------------------------------------------------------------------------------------
+      // Create the taxonomy browser's HTML.
+      //--------------------------------------------------------------------------------------------------------------
+      let html = "";
 
       if (this.displaySettings.displayReleaseHistory) {
 
@@ -960,10 +969,10 @@ export class TaxonomyBrowser {
       // The release panel
       html +=
          `<div class="${this.cssClasses.releasePanel}">
-                <div class="${this.cssClasses.releaseTitle}"></div>
-                <div class="${this.cssClasses.releaseDescription}"></div>
-                <div class="${this.cssClasses.releaseTaxaStats}"></div>
-            </div>`;
+            <div class="${this.cssClasses.releaseTitle}"></div>
+            <div class="${this.cssClasses.releaseDescription}"></div>
+            <div class="${this.cssClasses.releaseTaxaStats}"></div>
+         </div>`;
 
       // Rank controls
       if (this.displaySettings.displayRankCtrls === true) { html += this.createRankControls(); }
@@ -975,20 +984,74 @@ export class TaxonomyBrowser {
       html += `<div class="${this.cssClasses.dialogContainer}"></div>`;
 
       // Add the HTML to the page.
-      jQuery(this.selectors.container).html(html);
+      this.elements.container.innerHTML = html;
 
+      //--------------------------------------------------------------------------------------------------------------
+      // Get and validate the page elements.
+      //--------------------------------------------------------------------------------------------------------------
+
+      // Get the container Element.
+      this.elements.container = document.querySelector(this.selectors.container);
+      if (!this.elements.container) { throw new Error("Invalid container element"); }
+
+      // The dialog container
+      this.elements.dialogContainer = this.elements.container.querySelector(`.${this.cssClasses.dialogContainer}`);
+      if (!this.elements.dialogContainer) { throw new Error("Invalid dialog container element"); }
+
+      // Rank controls
+      this.elements.filterRanksControl = this.elements.container.querySelector(`.${this.cssClasses.filterRanksControl}`) as HTMLButtonElement;
+      if (!this.elements.filterRanksControl) { throw new Error("Invalid filterRanks control element"); }
+
+      this.elements.hideAboveRankControl = this.elements.container.querySelector(`.${this.cssClasses.hideAboveRankControl}`) as HTMLSelectElement;
+      if (!this.elements.hideAboveRankControl) { throw new Error("Invalid hideAboveRank control element"); }
+
+      this.elements.preExpandToRankControl = this.elements.container.querySelector(`.${this.cssClasses.preExpandToRankControl}`) as HTMLSelectElement;
+      if (!this.elements.preExpandToRankControl) { throw new Error("Invalid preExpandToRank control element"); }
+
+      this.elements.rankControlsContainer = this.elements.container.querySelector(`.${this.cssClasses.rankControlsContainer}`);
+      if (!this.elements.rankControlsContainer) { throw new Error("Invalid rankControlsContainer element"); }
+      
+      // The release history
+      this.elements.releaseHistory = this.elements.container.querySelector(`.${this.cssClasses.releaseHistory}`);
+      if (!this.elements.releaseHistory) { throw new Error("Invalid releaseHistory element"); }
+
+      // The MSL release info
+      this.elements.releasePanel = this.elements.container.querySelector(`.${this.cssClasses.releasePanel}`);
+      if (!this.elements.releasePanel) { throw new Error("Invalid releasePanel element"); }
+
+      this.elements.releaseDescription = this.elements.container.querySelector(`.${this.cssClasses.releaseDescription}`);
+      if (!this.elements.releaseDescription) { throw new Error("Invalid releaseDescription element"); }
+
+      this.elements.releaseTaxaStats = this.elements.container.querySelector(`.${this.cssClasses.releaseTaxaStats}`);
+      if (!this.elements.releaseTaxaStats) { throw new Error("Invalid releaseTaxaStats element"); }
+
+      this.elements.releaseTitle = this.elements.container.querySelector(`.${this.cssClasses.releaseTitle}`);
+      if (!this.elements.releaseTitle) { throw new Error("Invalid releaseTitle element"); }
+      
+      // The search panel
+      this.elements.searchPanelContainer = this.elements.container.querySelector(`.${this.cssClasses.searchPanelContainer}`);
+      if (!this.elements.searchPanelContainer) { throw new Error("Invalid searchPanelContainer element"); }
+
+      // The taxonomy browser
+      this.elements.taxonomyBrowser = this.elements.container.querySelector(`.${this.cssClasses.taxonomyBrowser}`);
+      if (!this.elements.taxonomyBrowser) { throw new Error("Invalid taxonomyBrowser element"); }
+
+      // The toolTip and its text
+      this.elements.toolTip = this.elements.container.querySelector(`.${this.cssClasses.toolTip}`);
+      if (!this.elements.toolTip) { throw new Error("Invalid toolTip element"); }
+
+      this.elements.toolTipText = this.elements.container.querySelector(`.${this.cssClasses.toolTipText}`);
+      if (!this.elements.toolTipText) { throw new Error("Invalid toolTipText element"); }
+      
+
+      // Initialize page components.
       if (this.displaySettings.displaySearchPanel) {
          this.searchPanel.initialize();
       }
 
-
       //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
       // Add event handlers.
       //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-      // Get the taxonomy control Element.
-      this.elements.taxonomyBrowser = document.querySelector(this.selectors.taxonomyBrowser);
-      if (!this.elements.taxonomyBrowser) { throw new Error("Invalid taxonomy control Element"); }
 
       // Clicking on a node control expands/collapses the node's child taxa.
       this.elements.taxonomyBrowser.addEventListener("click", async (event_: MouseEvent) => {
@@ -1021,20 +1084,11 @@ export class TaxonomyBrowser {
             event_.stopPropagation();
 
             return await this.expandCollapse(taxNodeID, true);
-
          }
       })
 
       // If rank controls are added, add event handlers.
       if (this.displaySettings.displayRankCtrls) {
-
-         // Get a reference to the "hide above rank" control Element.
-         this.elements.hideAboveRankControl = document.querySelector(this.selectors.hideAboveRankControl);
-         if (!this.elements.hideAboveRankControl) { throw new Error("Invalid hideAboveRank control"); }
-
-         // Get a reference to the "pre-expand to rank" control Element.
-         this.elements.preExpandToRankControl = document.querySelector(this.selectors.preExpandToRankControl);
-         if (!this.elements.preExpandToRankControl) { throw new Error("Invalid preExpandToRank control"); }
 
          // Handle a click on the "hide above rank" control.
          this.elements.hideAboveRankControl.addEventListener("change", async () => {
@@ -1047,14 +1101,14 @@ export class TaxonomyBrowser {
          })
 
          // A click event on the "go" button.
-         jQuery(this.selectors.filterRanksControl).click(async () => {
+         this.elements.filterRanksControl.addEventListener("click", async () => {
 
             // Get the new top-level rank.
-            let hideAboveRank = <TaxaLevel>this.elements.hideAboveRankControl.value;
+            let hideAboveRank = this.elements.hideAboveRankControl.value as TaxaLevel;
             this.localData.hideAboveRank = hideAboveRank || this.defaults.hideAboveRank;
 
             // Get the new "pre-expand to rank"
-            let preExpandToRank = <TaxaLevel>this.elements.preExpandToRankControl.value;
+            let preExpandToRank = this.elements.preExpandToRankControl.value as TaxaLevel;
             this.localData.preExpandToRank = preExpandToRank || this.defaults.preExpandToRank;
 
             // Persist the modified local data in web storage.
@@ -1069,13 +1123,10 @@ export class TaxonomyBrowser {
 
       if (this.initialData.displayType === TaxonomyDisplayType.display_release_history) {
 
-         const releaseHistoryEl = document.querySelector(this.selectors.releaseHistory);
-         if (!releaseHistoryEl) { throw new Error("Invalid release history Element"); }
-
          // Add a click event handler for the release history table entries.
-         releaseHistoryEl.addEventListener("click", async (event_: MouseEvent) => {
+         this.elements.releaseHistory.addEventListener("click", async (event_: MouseEvent) => {
 
-            const releaseControl = <HTMLElement>event_.target;
+            const releaseControl = event_.target as HTMLElement;
             if (!releaseControl.classList.contains("release-ctrl")) { return false; }
 
             // Get the link's release number.
@@ -1102,7 +1153,7 @@ export class TaxonomyBrowser {
       // Handle mouseover events in the taxonomy control.
       this.elements.taxonomyBrowser.addEventListener("mouseover", (event_: MouseEvent) => {
 
-         const target = <HTMLElement>event_.target;
+         const target = event_.target as HTMLElement;
 
          // Get the closest node Element to the target Element.
          const nodeEl = target.closest(`.${this.cssClasses.node}`);
@@ -1160,7 +1211,7 @@ export class TaxonomyBrowser {
             let selectedRelease = this.initialData.releaseNumber;
 
             // See if an MSL was provided as a query string parameter.
-            this.getUrlParams();
+            this.setIdentifiersFromURL();
             if (!!this.identifiers && !isNaN(this.identifiers.msl)) {
                
                // Scroll to the release after it is selected.
@@ -1187,10 +1238,7 @@ export class TaxonomyBrowser {
       return;
    }
 
-
    processReleaseHistory(releases_: IMslRelease[]) {
-
-      jQuery(this.selectors.releaseHistory).html("");
 
       let resultCount: number = 0;
 
@@ -1233,18 +1281,17 @@ export class TaxonomyBrowser {
 
       if (resultCount < 1) { html = "No results"; }
 
-      jQuery(this.selectors.releaseHistory).html(html);
+      this.elements.releaseHistory.innerHTML = html;
 
-      if (resultCount > 0) {
-
-         // Convert the table into a DataTable instance.
-         jQuery(`${this.selectors.releaseHistory} table`).DataTable({
-            dom: "t",
-            order: [],
-            paging: false,
-            searching: false
-         });
-      }
+      // Convert the table into a DataTable instance.
+      this.dataTable = new DataTables(`${this.selectors.container} ${this.selectors.releaseHistory} table`, {
+         autoWidth: false,
+         dom: "t",
+         order: [],
+         paging: false,
+         searching: false,
+         stripeClasses: []
+      });
    }
 
    processReleaseTaxa(taxonomyHTML_: string) {
@@ -1272,7 +1319,6 @@ export class TaxonomyBrowser {
       }
    }
 
-
    processTaxaByName(parentID_: string, taxa_: ITaxon[], taxNodeID_: string) {
 
       this.elements.taxonomyBrowser.innerHTML = "";
@@ -1284,24 +1330,24 @@ export class TaxonomyBrowser {
       this.elements.taxonomyBrowser.innerHTML = `<div class="tc-children" data-id="${parentID_}"></div>`;
 
       // Display the parent's "children panel".
-      jQuery(`.tc-children[data-id="${parentID_}"]`).show();
+      const childPanelEl = this.elements.taxonomyBrowser.querySelector(`.tc-children[data-id="${parentID_}"]`) as HTMLElement;
+      if (!childPanelEl) { throw new Error("Invalid childPanel element"); }
+
+      childPanelEl.style.display = "block";
+      //jQuery(`.tc-children[data-id="${parentID_}"]`).show();
 
       if (this.displaySettings.useParentTaxonForReleaseRankCount) {
 
          // Populate the MSL release rank count panel with the parent taxon's name and rank count.
          let parentTaxon = taxa_[0];
 
-         const releaseStatsEl = document.querySelector(this.selectors.releaseTaxaStats);
-         if (!releaseStatsEl) { throw new Error("Invalid release tax stats Element"); }
-
-         releaseStatsEl.innerHTML = `${parentTaxon.taxonName}: ${parentTaxon.childTaxaCount}`;
+         this.elements.releaseTaxaStats.innerHTML = `${parentTaxon.taxonName}: ${parentTaxon.childTaxaCount}`;
       }
 
       // Display the taxa
       taxa_.forEach((taxon_) => {
          this.displayTaxon(taxon_);
       });
-
 
       // Get the child container Element.
       const childContainerEl = document.querySelector(`.tc-children[data-id="${taxNodeID_}"]`);
@@ -1313,7 +1359,6 @@ export class TaxonomyBrowser {
       // Expand it
       return this.expandCollapse(taxNodeID_, false);
    }
-
 
    async processTreeExpandedToNode(parentTaxNodeID_: string, subTreeHTML_: string, taxNodeID_: string, taxonomyHTML_: string) {
 
@@ -1356,7 +1401,6 @@ export class TaxonomyBrowser {
       return;
    }
 
-
    // Use web storage to persist local data for this TaxonomyControl instance.
    saveLocalData() {
 
@@ -1366,7 +1410,16 @@ export class TaxonomyBrowser {
       sessionStorage.setItem(this.webStorageKey, json);
    }
 
-   
+   // Populate identifiers using the query string parameters.
+   setIdentifiersFromURL() {
+
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // Look for identifier parameters in the query string.
+      this.identifiers = Utils.getIdentifiersFromURL(urlParams);
+      return;
+   }
+
    // Set the local data's "pre-expand to" rank, possibly updating the controls.
    async setPreExpandRank(preExpandToRank_: TaxaLevel, updateHideAboveControl_: boolean, updatePreExpandControl_: boolean) {
 
@@ -1435,6 +1488,7 @@ export class TaxonomyBrowser {
 
       let isModified: boolean = false;
 
+      // If no local data exists, populate it with defaults.
       if (!this.localData || !this.localData.hideAboveRank || !this.localData.preExpandToRank) {
          this.localData = {
             hideAboveRank: this.defaults.hideAboveRank,
@@ -1462,9 +1516,8 @@ export class TaxonomyBrowser {
       let hideAboveIndex: number = OrderedTaxaLevel[this.localData.hideAboveRank];
       let preExpandIndex: number = OrderedTaxaLevel[this.localData.preExpandToRank];
 
-      // What's the highest rank index?
-      let maxRankIndex: number = -1;
-      for (let rank in OrderedTaxaLevel) { maxRankIndex += 1; }
+      // Calculate the highest rank index.
+      let maxRankIndex: number = Object.keys(OrderedTaxaLevel).length - 1;
 
       // If pre-expand is above "hide above", set it to either 2 ranks above, or the highest index rank (species).
       if (preExpandIndex < hideAboveIndex) {

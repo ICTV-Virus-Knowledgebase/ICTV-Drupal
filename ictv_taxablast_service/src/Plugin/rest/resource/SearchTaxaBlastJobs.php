@@ -1,10 +1,10 @@
 <?php
 
-namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database;
@@ -19,22 +19,22 @@ use Drupal\rest\ModifiedResourceResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBlastJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
 /**
- * A web service to retrieve a user's TaxaBLAST jobs.
+ * A web service to search a user's TaxaBLAST jobs.
  * @RestResource(
- *   id = "get-taxablast-jobs",
- *   label = @Translation("ICTV TaxaBLAST: Get a user's jobs"),
+ *   id = "search-taxablast-jobs",
+ *   label = @Translation("ICTV TaxaBLAST: Search a user's TaxaBLAST jobs"),
  *   uri_paths = {
- *      "canonical" = "/get-taxablast-jobs",
- *      "create" = "/get-taxablast-jobs"
+ *      "canonical" = "/search-taxablast-jobs",
+ *      "create" = "/search-taxablast-jobs"
  *   }
  * )
  */
-class GetTaxaBlastJobs extends ResourceBase {
+class SearchTaxaBlastJobs extends ResourceBase {
 
    // The connection to the ictv_apps database.
    protected Connection $connection;
@@ -83,9 +83,9 @@ class GetTaxaBlastJobs extends ResourceBase {
       $this->currentUser = $currentUser;
 
       // Access the module's configuration object.
-      $config = $configFactory->get('ictv_seqsearch_service.settings');
+      $config = $configFactory->get('ictv_taxablast_service.settings');
 
-      // Get configuration settings from the ictv_seqsearch_service.settings file.
+      // Get configuration settings from the ictv_taxablast_service.settings file.
       try {
          // Get the database name.
          $this->databaseName = $config->get("databaseName");
@@ -118,15 +118,20 @@ class GetTaxaBlastJobs extends ResourceBase {
    }
 
    /**
-    * Respond to a GET request.
-    * Passes the HTTP Request to the lookupName method and returns the result.
+    * Responds to GET request.
+    * Search a user's TaxaBLAST jobs.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
     public function get(Request $request) {
       
-      // Get the user's TaxaBLAST jobs.
-      $data = $this->getJobs($request);
+      $searchText = $request->get("searchText");
+
+      $userUID = $request->get("userUID");
+      if (Utils::isNullOrEmpty($userUID)) { throw new BadRequestHttpException("Invalid user UID"); }
+
+      // Search a user's TaxaBLAST jobs.
+      $data = TaxaBlastJob::searchJobs($this->connection, $searchText, $userUID);
 
       $build = array(
          '#cache' => array(
@@ -149,26 +154,6 @@ class GetTaxaBlastJobs extends ResourceBase {
       return 2;
    }
 
-
-   // Get the user's TaxaBLAST jobs.
-   public function getJobs(Request $request) {
-
-      // Get and validate the JSON in the request body.
-      $requestJSON = Json::decode($request->getContent());
-      if ($requestJSON == null) { throw new BadRequestHttpException("Invalid JSON request parameter"); }
-
-      // Get and validate the user email.
-      $userEmail = $requestJSON["userEmail"];
-      if (Utils::isNullOrEmpty($userEmail)) { throw new BadRequestHttpException("Invalid user email"); }
-
-      // Get and validate the user UID.
-      $userUID = $requestJSON["userUID"];
-      if (!$userUID) { throw new BadRequestHttpException("Invalid user UID"); }
-
-      // Retrieve SeqSearch job data.
-      return SeqSearchJob::getJobs($this->connection, $userEmail, $userUID);
-   }
-
    /** 
     * {@inheritdoc} 
     * This function has to exist in order for the admin to assign user permissions 
@@ -179,15 +164,25 @@ class GetTaxaBlastJobs extends ResourceBase {
    } 
 
    /**
-    * Respond to a POST request.
-    * Passes the HTTP Request to the lookupName method and returns the result.
+    * Responds to POST request.
+    * Search a user's TaxaBLAST jobs.
     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
     * Throws exception expected.
     */
    public function post(Request $request) {
 
-      // Get metadata for a specific job.
-      $data = $this->getJobs($request);
+      // Get and validate the JSON in the request body.
+      $json = Json::decode($request->getContent());
+      if ($json == null) { throw new BadRequestHttpException("Invalid JSON parameter"); }
+
+      $searchText = $json["searchText"];
+
+      // Get and validate the user UID.
+      $userUID = $json["userUID"];
+      if (Utils::isNullOrEmpty($userUID)) { throw new BadRequestHttpException("Invalid user UID"); }
+
+      // Search a user's TaxaBLAST jobs.
+      $data = TaxaBlastJob::searchJobs($this->connection, $searchText, $userUID);
 
       $build = array(
          '#cache' => array(

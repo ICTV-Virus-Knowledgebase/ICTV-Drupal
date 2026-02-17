@@ -3,7 +3,7 @@
 namespace Drupal\ictv_taxon_details\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-use Drupal\ictv_config\ConfigSettings;
+use Drupal\ictv_taxon_details\Plugin\Block\ConfigSettings;
 
 /**
  * 

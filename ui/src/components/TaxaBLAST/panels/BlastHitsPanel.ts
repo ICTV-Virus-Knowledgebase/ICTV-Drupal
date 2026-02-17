@@ -1,9 +1,10 @@
 
-import { ButtonClass, Constants, CreateTaxonDetailsURL, DisplayMessageForIncompleteJob, Icon, PanelKey } from "../Common";
+import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
 import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
 import { IBlastHitScore } from "../IBlastHitScore";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
+import { JobStatus } from "../../CuratedNameManager";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
@@ -219,7 +220,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       return html;
    }
 
-   load() {
+   async load() {
      
       this.isActive = true;
 
@@ -229,11 +230,17 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Validate the state
       if (isNaN(this.parent.state.fileIndex) || isNaN(this.parent.state.sequenceIndex)) { return this.displayErrorMessage("The panel state is invalid"); }
       
-      
-      // If the job is invalid or has a status other than "complete", display an appropriate message in
-      // the container element. The boolean value that's returned indicates whether a job doesn't have a 
-      // completed status (and also, if a message was displayed).
-      if (DisplayMessageForIncompleteJob(this.elements.container, this.parent.job)) { return; }
+      // Get the job associated with the job UID.
+      await this.parent.getJob();
+
+      // Validate the job and its data.
+      if (!this.parent.job || !this.parent.job.data) {
+         return this.displayErrorMessage("The specified job is invalid");
+      }
+
+      if (this.parent.job.status !== JobStatus.complete) {
+         return this.displayErrorMessage("The specified job has not yet completed");
+      }
 
       // Make sure the job has files.
       if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
@@ -372,20 +379,6 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
             ordering: ordering,
             paging: paging,
             searching: false
-            
-            /*columnDefs: [{ orderable: true, targets: [0,1,2,3,4] }],*/
-            /*layout: {
-               topStart: null,
-               topEnd: null,
-               bottomEnd: {
-                  paging: {
-                     buttons: 4
-                  }
-               }
-            },
-            order: [], // Important: If this isn't an empty array it will move the child rows to the end!
-            pagingType: "full", // simple, simple_numbers, full, full_numbers
-            searching: false*/
          });
       })
    }
