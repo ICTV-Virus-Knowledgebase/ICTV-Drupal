@@ -1,11 +1,11 @@
 <?php
 
-namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
@@ -98,9 +98,9 @@ class DownloadFile extends ResourceBase {
       $this->currentUser = $currentUser;
 
       // Access the module's configuration object.
-      $config = $configFactory->get('ictv_seqsearch_service.settings');
+      $config = $configFactory->get('ictv_taxablast_service.settings');
 
-      // Get configuration settings from the ictv_seqsearch_service.settings file.
+      // Get configuration settings from the ictv_taxablast_service.settings file.
       try {
          // Get the database name.
          $this->databaseName = $config->get("databaseName");

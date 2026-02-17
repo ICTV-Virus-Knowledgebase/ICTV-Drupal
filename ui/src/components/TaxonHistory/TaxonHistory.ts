@@ -8,7 +8,11 @@ import { Identifiers } from "../../models/Identifiers";
 import { LookupReleaseAction, LookupReleaseActionDefinition, LookupTaxonomyRank, ReleaseAction, TaxaLevel, WebStorageKey } from "../../global/Types";
 import { TaxonDetails } from "../TaxonDetails";
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
+//import { TooltipBuilder } from "../../helpers/TooltipBuilder";
 import { Utils } from "../../helpers/Utils";
+
+// TEST
+import { Props, ReferenceElement } from 'tippy.js';
 
 // "Forward declarations" for external JavaScript libraries.
 declare var jQuery: any;
@@ -20,12 +24,8 @@ enum ExportAction {
 
 enum ExportFormat {
    csv = "csv",
+   semicolon = "semicolon",
    tsv = "tsv"
-}
-
-enum LineageDisplayFormat {
-   horizontal = "horizontal",
-   vertical = "vertical"
 }
 
 
@@ -104,9 +104,6 @@ export class TaxonHistory {
       // The number of distinct ICTV IDs from all displayed taxa.
       distinctIctvIDs: 0,
 
-      // Should lineages be displayed horizontally or vertically?
-      lineageDisplayFormat: LineageDisplayFormat.horizontal,
-
       // Each lineage rank will be indented by this amount when displayed vertically.
       lineageLeftOffset: 0.75,
 
@@ -122,6 +119,9 @@ export class TaxonHistory {
 
    // An optional reference to the parent TaxonDetails component.
    taxonDetails: TaxonDetails = null;
+
+   // TODO: uncomment this when taxonomy browser can accept taxnodeID as a URL parameter.
+   //tooltipBuilder: TooltipBuilder;
 
    // The style can be customized.
    useCustomStyle = false;
@@ -170,6 +170,8 @@ export class TaxonHistory {
       // Get the window's base URL: The protocol, host name, and port (optional) without subdirectories, page names, or query parameters.
       this.baseURL = Utils.getBaseURL();
 
+      // TODO: uncomment this when taxonomy browser can accept taxnodeID as a URL parameter.
+      //this.tooltipBuilder = new TooltipBuilder("[data-taxid]", this.createLineageTooltipHTML.bind(this));
    }
 
    addEventHandlers() {
@@ -496,6 +498,11 @@ export class TaxonHistory {
       return summary;
    }
 
+   // Create a link to the taxon details page for this taxon.
+   createLineageURL(taxnodeID_: string, taxonName_: string): string {
+      return `${this.baseURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${taxnodeID_}&taxon_name=${taxonName_}"`;
+   }
+
    createProposalPanel(prevProposal_: string) {
 
       prevProposal_ = Utils.safeTrim(prevProposal_);
@@ -552,6 +559,7 @@ export class TaxonHistory {
       
       // Which export format should be selected?
       let csvSelected = this.exportSettings.format === ExportFormat.csv ? "selected" : "";
+      let semicolonSelected = this.exportSettings.format === ExportFormat.semicolon ? "selected" : "";
       let tsvSelected = this.exportSettings.format === ExportFormat.tsv ? "selected" : "";
 
       // Should empty ranks be included?
@@ -573,6 +581,7 @@ export class TaxonHistory {
                   <select class="lineage-export-format">
                      <option value="${ExportFormat.tsv}" ${tsvSelected}>tab-separated text</option>
                      <option value="${ExportFormat.csv}" ${csvSelected}>comma-separated text</option>
+                     <option value="${ExportFormat.semicolon}" ${semicolonSelected}>semicolon-separated text</option>
                   </select>
                   <select class="lineage-export-ranks">
                      <option value="true" ${ranksSelected}>with rank names</option>
@@ -591,6 +600,33 @@ export class TaxonHistory {
          </div>
       </div>`;
    }
+
+   /* TODO: uncomment this when taxonomy browser can accept taxnodeID as a URL parameter.
+   // Create HTML to display in the lineage tooltip.
+   createLineageTooltipHTML(el_: ReferenceElement<Props>): string {
+
+      let rankName = Utils.safeTrim(el_.getAttribute("data-rank"));
+      if (!rankName) { return "An error occurred: Invalid rank name"; }
+
+      let taxnodeID = Utils.safeTrim(el_.getAttribute("data-taxid"));
+      if (!taxnodeID) { return "An error occurred: Invalid taxnode ID"; }
+
+      let taxonName = Utils.safeTrim(el_.getAttribute("data-name"));
+      if (!taxonName) { return "An error occurred: Invalid taxon name"; }
+
+      return `<div class="lineage-tooltip">
+         <div class="name-row">
+            <span class="rank-name">${rankName}</span>
+            <span class="taxon-name">${taxonName}</span>
+         </div>
+         <div class="link-row">
+            <a href="${this.baseURL}/taxonomy?taxnode_id=${taxnodeID}&taxon_name=${taxonName}" target="_blank">View in the taxonomy browser</a>
+         </div>
+         <div class="link-row">
+            <a href="${this.baseURL}/taxonomy/taxondetails?taxnode_id=${taxnodeID}&taxon_name=${taxonName}" target="_blank">View taxon details</a>
+         </div>
+      </div>`;
+   }*/
 
    // Display an HTML message in the message panel.
    displayMessage(message_: string) {
@@ -671,6 +707,9 @@ export class TaxonHistory {
       let lastIndex = taxon_.lineageNameArray.length - 1;
       let leftOffset = 0;
 
+      // Is this taxon from the current MSL release?
+      const isCurrentRelease = taxon_.mslReleaseNum === this.settings.currentReleaseNum;
+      
       // Iterate over the taxon's lineage names.
       taxon_.lineageNameArray.forEach((taxonName_: string, index_: number) => {
 
@@ -681,29 +720,30 @@ export class TaxonHistory {
          let rankName = taxon_.lineageRankArray[index_];
 
          // The taxon details URL for this lineage entry.
-         const lineageURL = `${this.baseURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${lineageID}&taxon_name=${taxonName_}"`;
+         const lineageURL = this.createLineageURL(lineageID, taxonName_); // `${this.baseURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${lineageID}&taxon_name=${taxonName_}"`;
 
-         // The taxon name as a link (with the exception of the rightmost taxon).
-         const linkedName = index_ < lastIndex || this.useCustomStyle
+         // The name will be linked if we're using a custom style or it's not the rightmost name.
+         const displayLink = this.useCustomStyle || index_ < lastIndex || (taxon_.isSelected && taxon_.mslReleaseNum < this.settings.currentReleaseNum);
+         
+         // If the taxon is from the current release and is the rightmost name, we will re-evaluate it later to determine whether it should be linked.
+         const reevaluateName = isCurrentRelease && index_ === lastIndex ? "data-reevaluate-name " : "";
+
+         // The taxon name as either a link or plain text.
+         const nameControl = displayLink
             ? `<a href="${lineageURL}" target="_blank">${formattedName}</a>`
             : formattedName;
 
-         if (this.settings.lineageDisplayFormat === LineageDisplayFormat.horizontal) {
+         // Add an icon to delimit the lineage entries.
+         if (index_ > 0) { html += `<span class="lineage-chevron" aria-hidden="true"><i class="${this.icons.lineage}"></i></span>`; }
 
-            // Add an icon to delimit the lineage entries.
-            if (index_ > 0) { html += `<span class="lineage-chevron" aria-hidden="true"><i class="${this.icons.lineage}"></i></span>`; }
-
-            // Add the rank and linked name.
-            html += `<span class="horizontal-lineage" title="${rankName}">${linkedName}</span>`;
-
-         } else {
-
-            // Add the rank and linked name.
-            html += `<div class="lineage-row" style="margin-left: ${leftOffset}rem">
-               <div class="rank-name">${rankName}</div> 
-               <div class="taxon-name">${linkedName}</div>
-            </div>`;
-         }
+         // Add the rank and linked name.
+         html += `<span class="lineage-name"
+            data-name="${taxonName_}" 
+            data-rank="${rankName}" 
+            data-taxid="${lineageID}" 
+            title="${rankName}"
+            ${reevaluateName}
+         >${nameControl}</span>`;
 
          leftOffset += this.settings.lineageLeftOffset;
       })
@@ -721,6 +761,9 @@ export class TaxonHistory {
       switch (this.exportSettings.format) {
          case ExportFormat.csv:
             delimiter = ",";
+            break;
+         case ExportFormat.semicolon:
+            delimiter = ";";
             break;
          case ExportFormat.tsv:
             delimiter = "\t";
@@ -844,7 +887,7 @@ export class TaxonHistory {
          ? "current release"
          : `release ${year}, MSL ${taxon_.mslReleaseNum}`;
 
-      return `<span class="title-rank">${taxon_.rankName}</span> <span class="title-name">${name}</span> <span class="title-release">(${releaseText})</span>`;
+      return `<span class="title-rank">${taxon_.rankName}</span>: <span class="title-name">${name}</span> <span class="title-release">(${releaseText})</span>`;
    }
 
    // Get the history of taxa with this ictv_id over all releases.
@@ -1211,6 +1254,9 @@ export class TaxonHistory {
          }  
       })
 
+      // Re-evaluate lineage names tagged for re-evaluation to see if they should be converted to links.
+      this.reevaluateCurrentNames();
+
       // Add event handlers to all controls.
       this.addEventHandlers();
 
@@ -1255,6 +1301,32 @@ export class TaxonHistory {
       return taxon_;
    }
 
+   // Re-evaluate lineage names tagged for re-evaluation to see if they should be converted to links.
+   reevaluateCurrentNames() {
+
+      // We wil only re-evaluate lineage names if the selected taxon is from an older release.
+      if (this.selectedTaxon.mslReleaseNum === this.settings.currentReleaseNum) { return; }
+
+      // Get the name elements to re-evaluate.
+      const nodesToEvaluate = this.elements.releases.querySelectorAll(".lineage-name[data-reevaluate-name]") as NodeListOf<HTMLElement>;
+      if (!nodesToEvaluate || nodesToEvaluate.length < 1) { return; }
+
+      nodesToEvaluate.forEach((node_: HTMLElement) => {
+
+         const taxonName = node_.getAttribute("data-name");
+         if (!taxonName) { return; }
+
+         const formattedName = Utils.italicizeTaxonName(taxonName);
+
+         const taxnodeID = node_.getAttribute("data-taxid");
+         if (!taxnodeID) { return; }
+         
+         const url = this.createLineageURL(taxnodeID, taxonName);
+
+         node_.innerHTML = `<a href="${url}" target="_blank">${formattedName}</a>`;
+      })
+   }
+
    // Remove a trailing semicolon from a delimited list.
    removeTrailingSemicolon(value_: string) {
       value_ = Utils.safeTrim(value_);
@@ -1289,5 +1361,5 @@ export class TaxonHistory {
 
       return;
    }
-
+   
 }

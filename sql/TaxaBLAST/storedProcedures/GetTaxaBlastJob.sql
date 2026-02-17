@@ -1,9 +1,9 @@
 
-DROP PROCEDURE IF EXISTS `getSeqSearchJob`;
+DROP PROCEDURE IF EXISTS `getTaxaBlastJob`;
 
 DELIMITER //
 
-CREATE PROCEDURE `getSeqSearchJob`(
+CREATE PROCEDURE `getTaxaBlastJob`(
    IN `jobType` VARCHAR(60),
    IN `jobUID` VARCHAR(100)
 )

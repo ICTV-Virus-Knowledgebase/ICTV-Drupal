@@ -88,9 +88,8 @@ export enum PanelKey {
    fastaInput = "fastaInput",
    jobDetails = "jobDetails",
    jobHistory = "jobHistory",
-   jobSubmission = "jobSubmission",
-   message = "message",
-   pendingJob = "pendingJob"
+   //jobSubmission = "jobSubmission",
+   message = "message"
 }
 
 export enum ParameterKey {
@@ -123,8 +122,8 @@ export enum ResultFileType {
 export const Constants = {
 
    // Accepted file types for sequence uploads.
-   // TODO: Make sure this list is consistent with the seqsearch Python file in the ICTVseqsearch GitHub repo.
-   ACCEPTED_FILE_TYPES: [".fa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"],
+   // TODO: Make sure this list is consistent with the seqsearch Python file in the ICTVtaxaBlast GitHub repo.
+   ACCEPTED_FILE_TYPES: [".fasta", ".fa", ".fas", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"],
 
    // The application name
    APPLICATION_NAME: "TaxaBLAST",
@@ -146,7 +145,7 @@ export const Constants = {
    DEFAULT_MAX_TARGET_SEQS: 50,
 
    // How long should the upload panel wait to try to load job data?
-   JOB_POLLING_INTERVAL: 3000,
+   JOB_POLLING_INTERVAL: 5000,
 
    // The maximum total file size that can be uploaded.
    MAX_FILE_SIZE_TOTAL: 1e+9,
@@ -167,46 +166,18 @@ export function CreateKeyFromName(name_: string): string {
    return name_.toLowerCase().replace(/\W+/g, '_');
 }
 
+// Create a URL for a new search.
+export function CreateNewSearchURL() {
+   let url = window.location.href;
+   const qIndex = url.indexOf("?");
+   if (qIndex > -1) { url = url.substring(0, qIndex); }
+   return url;
+}
 
 // Create a URL for the ICTV taxon details page.
 export function CreateTaxonDetailsURL(ictvID_: string, name_: string) {
    const url = AppSettings.taxonHistoryPage;
    return `${url}?ictv_id=${ictvID_}&taxon_name=${name_}`;
-}
-
-
-// If the job is invalid or has a status other than "complete" (or valid), display an appropriate message in
-// the container element provided. The boolean value that's returned indicates whether a message was displayed.
-export function DisplayMessageForIncompleteJob(containerEl_: HTMLElement, job_: ITaxaBlastJob): boolean {
-
-   console.log("in DisplayMessageForIncompleteJob")
-   
-   let isIncomplete = true;
-   let message = "";
-
-   if (!job_ || !job_.status) {
-      // TODO: Include a "return to upload panel" button.
-      message = `An unknown error occurred and the job data is invalid.`;
-
-   } else if ([JobStatus.crashed, JobStatus.error, JobStatus.invalid].includes(job_.status as JobStatus)) {
-      // TODO: Include a "return to upload panel" button.
-      message = `Job \"${job_.name}\" has status \"${job_.status}\"`;
-      if (job_.message !== null && job_.message.length > 0) { message += `with message \"${job_.message}\"`; }
-
-   } else if (job_.status as JobStatus === JobStatus.pending) {
-      // TODO: Include a "copy URL" control?
-      message = `Job \"${job_.name}\" is in pending status. Please return to this page later to see the completed results.`;
-
-   } else if (!job_.data) { 
-      message = `Job \"${job_.name}\" has completed but did not return any data`;
-      
-   } else {
-      isIncomplete = false;
-   }
-
-   if (isIncomplete) { containerEl_.innerHTML = `<div class="no-results">${message}</div>`; }
-
-   return isIncomplete;
 }
 
 
@@ -223,7 +194,6 @@ export function FormatDate(date_: string) {
 
    return `${datePart} at ${timePart}`;
 }
-
 
 // Format the duration between two date/times.
 export function FormatDuration(start_: string, end_: string): string {
@@ -275,16 +245,16 @@ export function GetBlastTaskDescription(task_: BlastTask) {
 
    switch (task_) {
       case BlastTask.blastn:
-         label = "somewhat similar nucleotide sequences";
+         label = "Best with similar sequences from closely-related species.";
          break;
       case BlastTask.blastp:
-         label = "somewhat similar protein sequences";
+         label = "Detects conserved functional domains and more distant evolutionary relationships";
          break;
       case BlastTask.dcMegablast:
-         label = "more dissimilar sequences";
+         label = "Uses discontiguous word matches optimized for cross-species nucleotide alignments";
          break;
       case BlastTask.megablast:
-         label = "highly similar sequences";
+         label = "Highly-efficient algorithms optimized for very similar nucleotide sequences";
          break;
       default:
          label = "unknown";
@@ -341,16 +311,35 @@ export async function ReadFileAsync(file_): Promise<string> {
 export function ToggleAccordion(containerEl: HTMLElement, itemID_: string) {
       
    const accordionItemEl = containerEl.querySelector(`.ictv-accordion-item[data-id="${itemID_}"]`);
-   if (!accordionItemEl) { return; }
+   if (!accordionItemEl) { throw new Error("Invalid accordion item element"); }
 
    const bodyEl = containerEl.querySelector(`.ictv-accordion-body[data-id="${itemID_}"]`) as HTMLElement;
-   if (!bodyEl) { return; }
+   if (!bodyEl) { throw new Error("Invalid accordion body element"); }
 
    if (accordionItemEl.classList.contains("active")) {
       accordionItemEl.classList.remove("active");
       bodyEl.style.maxHeight = "0";
    } else {
       accordionItemEl.classList.add("active");
-      bodyEl.style.maxHeight = bodyEl.scrollHeight + "px";
+      bodyEl.style.maxHeight = `${bodyEl.scrollHeight}px`;
    }
+
+   return;
+}
+
+// Is this a valid FASTA filename?
+export function ValidateFastaFilename(filename_: string): boolean {
+
+   filename_ = Utils.safeTrim(filename_);
+
+   // An empty filename is valid.
+   if (!filename_) { return true; }
+
+   let dotIndex = filename_.lastIndexOf(".");
+   if (dotIndex < 1) { return false; }
+
+   let extension = Utils.safeTrim(filename_.substring(dotIndex));
+   if (!extension) { return false; }
+
+   return Constants.ACCEPTED_FILE_TYPES.includes(extension);
 }

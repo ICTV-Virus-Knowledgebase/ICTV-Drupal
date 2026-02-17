@@ -1,16 +1,16 @@
 <?php
 
-namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\Common;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
 use Drupal\Core\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\FastaFile;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\FastaFile;
 use Drupal\ictv_common\Types\JobStatus;
 use Drupal\ictv_common\Types\JobType;
 use Drupal\Component\Serialization\Json;
@@ -19,8 +19,8 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SequenceSearch;
-use Drupal\ictv_seqsearch_service\Plugin\rest\resource\SeqSearchJob;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBLAST;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBlastJob;
 use Drupal\Serialization;
 use Drupal\ictv_common\Utils;
 
@@ -31,7 +31,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * A web service for uploading sequence files and searching.
  * @RestResource(
  *   id = "upload-sequences",
- *   label = @Translation("ICTV SeqSearch: Upload Sequences"),
+ *   label = @Translation("ICTV TaxaBLAST: Upload Sequences"),
  *   uri_paths = {
  *      "canonical" = "/upload-sequences",
  *      "create" = "/upload-sequences"
@@ -45,6 +45,9 @@ class UploadSequences extends ResourceBase {
 
    // The name of the database used by this web service.
    protected ?string $databaseName;
+
+   // The docker container that contains the TaxaBLAST Python code.
+   protected string $dockerContainer;
 
    // The path of the Drupal installation.
    protected string $drupalRoot;
@@ -111,14 +114,18 @@ class UploadSequences extends ResourceBase {
       $this->currentUser = $currentUser;
 
       // Access the module's configuration object.
-      $config = $configFactory->get('ictv_seqsearch_service.settings');
+      $config = $configFactory->get('ictv_taxablast_service.settings');
 
-      // Get configuration settings from the ictv_seqsearch_service.settings file.
+      // Get configuration settings from the ictv_taxablast_service.settings file.
       try {
          // Get the database name.
          $this->databaseName = $config->get("databaseName");
          if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
          
+         // Get the docker container.
+         $this->dockerContainer = $config->get("dockerContainer");
+         if (Utils::isNullOrEmpty($this->dockerContainer)) { throw new \Exception("The dockerContainer setting is empty"); }
+
          // Get the Drupal root.
          $this->drupalRoot = $config->get("drupalRoot");
          if (Utils::isNullOrEmpty($this->drupalRoot)) { throw new \Exception("The drupalRoot setting is empty"); }
@@ -386,11 +393,11 @@ class UploadSequences extends ResourceBase {
          if (count($inputFiles) < 1) { throw new \Exception("Error in UploadSequences: No valid FASTA records were found in the uploaded files"); }
 
          // Create a new job record and get its ID and UID.
-         SeqSearchJob::createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
+         TaxaBlastJob::createJob($this->connection, $jobID, $jobName, $jobUID, $userEmail, $userUID);
          if (!$jobID || $jobID < 1 || !$jobUID || mb_strlen($jobUID) < 1) { throw new \Exception("Error in UploadSequences: Unable to create job record"); }
 
          // Create the a new job folder and its subdirectories and return the full path of the job directory.
-         $jobPath = SeqSearchJob::createJobFolder($this->inputDirectory, $this->jobsPath, $jobUID, $this->outputDirectory);
+         $jobPath = TaxaBlastJob::createJobFolder($this->inputDirectory, $this->jobsPath, $jobUID, $this->outputDirectory);
          if (Utils::isNullOrEmpty($jobPath)) { throw new \Exception("Error in UploadSequences: Unable to create job folder"); }
 
          // Initialize the job status.
@@ -412,7 +419,7 @@ class UploadSequences extends ResourceBase {
             FastaFile::createInputFile($inputFile, $inputPath, true);
 
             // Create a job file record.
-            SeqSearchJob::createJobFileRecord($this->connection, $inputFile->encodedFilename, $jobID, $uploadOrder);
+            TaxaBlastJob::createJobFileRecord($this->connection, $inputFile->encodedFilename, $jobID, $uploadOrder);
 
             $uploadOrder = $uploadOrder + 1;
          }
@@ -433,11 +440,14 @@ class UploadSequences extends ResourceBase {
          //-------------------------------------------------------------------------------------------------------
          // Create the command that will be run on the command line.
          //-------------------------------------------------------------------------------------------------------
-         $command = "nohup php -f {$fullPath}/RunSeqSearch.php ".
+         $command = "nohup php -f {$fullPath}/RunTaxaBLAST.php ".
 
             // The name of the MySQL database (probably "ictv_apps").
             "dbName={$this->databaseName} ".
          
+            // The docker container that contains the TaxaBLAST Python code.
+            "dockerContainer={$this->dockerContainer} ".
+
             // The path of the Drupal installation (Ex. "/var/www/drupal/site").
             "drupalRoot={$this->drupalRoot} ".
 
@@ -447,7 +457,7 @@ class UploadSequences extends ResourceBase {
             // The job's unique alphanumeric identifier (UUID).
             "jobUID={$jobUID} ".
 
-            // The name of the JSON file generated by seqsearch.
+            // The name of the JSON file generated by TaxaBLAST.
             "jsonFilename={$this->jsonResultsFilename} ".
 
             // The maximum number of HSPs to return.
@@ -459,7 +469,7 @@ class UploadSequences extends ResourceBase {
             // The job's output path
             "outputPath={$outputPath} ".
 
-            // The name of the Docker container that runs the seqsearch Python code.
+            // The name of the Docker container that runs the TaxaBLAST Python code.
             "scriptName={$this->scriptName} ".
             
             // The BLAST task to use.
@@ -468,17 +478,21 @@ class UploadSequences extends ResourceBase {
             // The user's unique numeric identifier.
             "userUID={$userUID} ".
 
+            // dmd testing 021126
+            "> /dev/null 2>&1 ".
+            // TODO: consider redirecting stderr and stdout to files in $outputPath
+
             // Run in the background.
             "&";
 
-         $output = null;
-         $resultCode = -1;
+         //$output = null;
+         //$resultCode = -1;
 
          // dmd testing
          \Drupal::logger(Common::$MODULE_NAME)->info("command = ".$command);
 
          // Run the command on the command line.
-         $commandResult = exec($command, $output, $resultCode);
+         $commandResult = exec($command); //, $output, $resultCode);
 
       } catch (\Throwable $e) {
 
@@ -494,9 +508,12 @@ class UploadSequences extends ResourceBase {
          if (isset($jobID) && $jobID > 0) {
 
             // Update the job record's JSON and status.
-            SeqSearchJob::updateJobJSON($this->connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
+            TaxaBlastJob::updateJobJSON($this->connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
          }
       }
+
+      // dmd testing
+      \Drupal::logger(Common::$MODULE_NAME)->info("About to return from upload sequences");
 
       // Return the job UID and status and an error message (if an error occurred).
       return [

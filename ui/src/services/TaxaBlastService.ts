@@ -40,7 +40,7 @@ export class _TaxaBlastService {
       };
 
       // Get and return the sequence search result.
-      return await WebService.drupalPost<ITaxaBlastJob>(WebServiceKey.getSequenceSearchJob, authToken_, data);
+      return await WebService.drupalPost<ITaxaBlastJob>(WebServiceKey.getTaxaBlastJob, authToken_, data);
    }
 
 
@@ -75,7 +75,7 @@ export class _TaxaBlastService {
       };
 
       // Get and return the result files.
-      return await WebService.drupalPost<IOutputFile>(WebServiceKey.getSeqSearchOutputFile, authToken_, data);
+      return await WebService.drupalPost<IOutputFile>(WebServiceKey.getTaxaBlastOutputFile, authToken_, data);
    }
 
    

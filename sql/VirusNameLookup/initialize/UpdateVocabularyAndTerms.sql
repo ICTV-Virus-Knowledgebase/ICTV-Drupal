@@ -13,7 +13,7 @@ BEGIN
    -- they should be added below.
 
    /*
-   Updates for SeqSearch in Spring 2025.
+   Updates for TaxaBLAST in Spring 2025.
 
    -- Get the job_status vocabulary
    SET vocabID = (SELECT id FROM vocabulary WHERE vocab_key = 'job_status');
@@ -25,9 +25,8 @@ BEGIN
    IF NOT EXISTS (SELECT 1 FROM term WHERE term_key = 'complete' AND vocab_id = vocabID) THEN
       INSERT INTO term (`full_key`, `label`, `term_key`, `vocab_id`) VALUES ('job_status.complete', 'complete', 'complete', vocabID);
    END IF;
-   */
-
-   /* 
+   
+   
    Updates from early February 2025
 
    -- Get the name_class vocabulary

@@ -132,12 +132,56 @@ export class Utils {
       return `${formattedSize} ${sizes[index]}`;
    }
 
+   // Format a number of seconds as hours, minutes, and seconds.
+   static formatSeconds(seconds_: number): string {
+
+      let result = "";
+
+      const hours = Math.floor(seconds_ / 3600);
+      const minutes = Math.floor((seconds_ % 3600) / 60);
+      const seconds = seconds_ % 60;
+
+      if (hours === 1) {
+         result += `1 hour`;
+      } else if (hours > 1) {
+         result += `${hours} hours`;
+      }
+
+      if (minutes > 0) {
+
+         if (result.length > 0) { result += ", "; }
+
+         if (minutes === 1) {
+            result += `1 minute`;
+         } else {
+            result += `${minutes} minutes`;
+         }
+      }
+
+      if (seconds > 0) {
+         
+         if (result.length > 0) { result += ", "; }
+
+         //result += `${seconds} second(s)`;
+         
+         if (seconds === 1) {
+            result += `1 second`;
+         } else {
+            result += `${seconds} seconds`;
+         }
+      }
+
+      return result;
+   }
+
    // Get the window's base URL: The protocol, host name, and port (optional) without subdirectories, page names, or query parameters.
    static getBaseURL(): string {
 
       let url = `${window.location.protocol}//${window.location.host}`;
       const qIndex = url.indexOf("?");
       if (qIndex > 0) { url = url.substring(0, qIndex); }
+
+      if (url.endsWith("/")) { url = url.substring(0, url.length - 1); }
 
       return url;
    }

@@ -1,0 +1,24 @@
+services:
+  ictv_taxablast_service.DownloadFile:
+    class: '\Drupal\ictv_taxablast_service\Plugin\rest\resource\DownloadFile'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_taxablast_service.GetOutputFile:
+    class: '\Drupal\ictv_taxablast_service\Plugin\rest\resource\GetOutputFile'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_taxablast_service.GetTaxaBlastJob:
+    class: '\Drupal\ictv_taxablast_service\Plugin\rest\resource\GetTaxaBlastJob'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
+  ictv_taxablast_service.UploadSequences:
+    class: '\Drupal\ictv_taxablast_service\Plugin\rest\resource\UploadSequences'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

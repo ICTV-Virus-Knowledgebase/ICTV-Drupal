@@ -1,5 +1,47 @@
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
+   CSS variables
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+:root {
+   /* Standard colors */
+   --ictv-danger-color: #dc3545;
+   --ictv-primary-color: #007bff;
+   --ictv-secondary-color: #6c757d;
+
+   /* Success */
+   --ictv-success-color: #198754;
+   --ictv-success-color-0: #1e7e34;
+   --ictv-success-color-1: #218838;
+   --ictv-success-color-2: #28a745;
+   
+   /* Warning */
+   --ictv-warning-color: #ffc107;
+   --ictv-warning-color-0: #d39e00;
+   --ictv-warning-color-1: #e0a800;
+
+   /* Greyscale */
+   --ictv-grey-color-1: #212529;
+   --ictv-grey-color-2: #555;
+   --ictv-grey-color-3: #999;
+   --ictv-grey-color-4: #888;
+   --ictv-grey-color-5: #aaa;
+   --ictv-grey-color-6: #bbb;
+   --ictv-grey-color-7: #ddd;
+   
+   /* Default button */
+   --ictv--button-default-border-color: var(--ictv-grey-color-5);
+   --ictv--button-default-border-focus-color: #80bdff;
+   --ictv--button-default-bg: var(--ictv-grey-color-7);
+   --ictv--button-default-color: var(--ictv-grey-color-4);
+   --ictv--button-default-icon-color: var(--ictv-grey-color-4);
+   
+
+   /* Link button */
+   --ictv-link-color: #0066cc;
+   --ictv-link-hover-color: #004999;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
    General-purpose styles
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -49,85 +91,160 @@
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   Buttons styles from Bootstrap
+   Buttons
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+.ictv-custom button {
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   font-size: 0.9rem;
+   margin-right: 0.5rem;
+   padding: .2rem .5rem;
+   text-align: center;
+}
+.ictv-custom button i {
+   font-weight: normal;
+   margin-right: 0.25rem;
+   pointer-events: none;
+}
+
 /* Primary */
-.ictv-custom .btn-primary {
+.ictv-custom .btn-primary:not(:disabled) {
    color: #fff;
-   background-color: #007bff;
-   border-color: #007bff;
+   background-color: var(--ictv-primary-color);
+   border-color: var(--ictv-primary-color);
 }
-.ictv-custom .btn-primary i {
+.ictv-custom .btn-primary:not(:disabled) i {
    color: #fff;
 }
-.ictv-custom .btn-primary:hover {
+.ictv-custom .btn-primary:not(:disabled):hover {
    color: #fff;
-   background-color: #0069d9;
+
+   /* TODO: use CSS vars */
+   background-color: #0069d9; 
    border-color: #0062cc;
 }
-.ictv-custom .btn-primary:focus,
-.ictv-custom .btn-primary.focus {
+.ictv-custom .btn-primary:not(:disabled):focus,
+.ictv-custom .btn-primary:not(:disabled).focus {
+   /* TODO: use CSS vars */
    box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.5);
 }
 .ictv-custom .btn-primary.disabled,
 .ictv-custom .btn-primary:disabled {
-   color: #fff;
-   background-color: #007bff;
-   border-color: #007bff;
+   color: var(--ictv--button-default-color);
+   background-color: var(--ictv--button-default-bg);
+   border-color: var(--ictv--button-default-border-color);
 }
 
 /* Success */
-.ictv-custom .btn-success {
+.ictv-custom .btn-success:not(:disabled) {
    color: #fff;
-   background-color: #198754;
-   border-color: #28a745;
+   background-color: var(--ictv-success-color);
+   border-color: var(--ictv-success-color-1);
 }
-.ictv-custom .btn-success i {
+.ictv-custom .btn-success:not(:disabled) i {
    color: #fff;
 }
-.ictv-custom .btn-success:hover {
+.ictv-custom .btn-success:not(:disabled):hover {
    color: #fff;
-   background-color: #218838;
-   border-color: #1e7e34;
+   background-color: var(--ictv-success-color-1);
+   border-color: var(--ictv-success-color-0);
 }
 
-.ictv-custom .btn-success:focus,
-.ictv-custom .btn-success.focus {
+.ictv-custom .btn-success:not(:disabled):focus,
+.ictv-custom .btn-success:not(:disabled).focus {
+   /* TODO: use CSS vars */
    box-shadow: 0 0 0 0.2rem rgba(72, 180, 97, 0.5);
 }
 
 .ictv-custom .btn-success.disabled,
 .ictv-custom .btn-success:disabled {
-   color: #fff;
-   background-color: #28a745;
-   border-color: #28a745;
+   color: var(--ictv--button-default-color);
+   background-color: var(--ictv--button-default-bg);
+   border-color: var(--ictv--button-default-border-color);
 }
 
 /* Warning */
-.ictv-custom .btn-warning {
-   color: #212529;
-   background-color: #ffc107;
-   border-color: #ffc107;
+.ictv-custom .btn-warning:not(:disabled) {
+   color: var(--ictv-grey-color-1);
+   background-color: var(--ictv-warning-color);
+   border-color: var(--ictv-warning-color);
 }
-.ictv-custom .btn-warning i {
-   color: #212529;
+.ictv-custom .btn-warning:not(:disabled) i {
+   color: var(--ictv-grey-color-1);
 }
 
-.ictv-custom .btn-warning:hover {
+.ictv-custom .btn-warning:not(:disabled):hover {
    color: #212529;
-   background-color: #e0a800;
-   border-color: #d39e00;
+   background-color: var(--ictv-warning-color-1);
+   border-color: var(--ictv-warning-color-0);
 }
 
 .ictv-custom .btn-warning:focus,
 .ictv-custom .btn-warning.focus {
+   /* TODO: use CSS vars */
    box-shadow: 0 0 0 0.2rem rgba(222, 170, 12, 0.5);
 }
 
 .ictv-custom .btn-warning.disabled,
 .ictv-custom .btn-warning:disabled {
-   color: #212529;
-   background-color: #ffc107;
-   border-color: #ffc107;
+   color: var(--ictv--button-default-color);
+   background-color: var(--ictv--button-default-bg);
+   border-color: var(--ictv--button-default-border-color);
 }
+
+
+/*
+.ictv-custom input,
+.ictv-custom textarea,
+.ictv-custom select {
+   background-color: #fff;
+   border: 1px solid var(--ictv-border-color);
+   border-radius: 0;
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+   color: #555;
+   height: max-content;
+   line-height: 1.0rem;
+   margin: 0 0 0 0.25rem;
+   padding: 0.25rem 0.25rem;
+   vertical-align: middle;
+}
+.ictv-custom input:focus,
+.ictv-custom textarea:focus,
+.ictv-custom select:focus  {
+   background-color: #fff;
+   border-color: var(--ictv-border-focus-color);
+   box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.15);
+   color: #495057;
+   outline: 0;
+}
+*/
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Sweet Alert 2 modal dialogs
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* HTML content with a title and bullet points for swal2 modal-dialogs */
+.swal2-html-container .alert-details {
+   align-items: center;
+   display: flex;
+   flex-flow: column nowrap;
+   justify-content: flex-start;
+   overflow-y: auto;
+   width: 100%;
+}
+.swal2-html-container .alert-details .title {
+   font-weight: 700;
+   margin: 0.5rem 0 1.0rem 0;
+}
+.swal2-html-container .alert-details .bullets {
+   text-align: left;
+}
+.swal2-html-container .alert-details .bullet {
+   margin-bottom: 0.5rem;
+   text-align: left;
+}
+

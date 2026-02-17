@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\ictv_seqsearch_service\Plugin\rest\resource;
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
 enum ResultFileType: string {
    case asn = "asn";

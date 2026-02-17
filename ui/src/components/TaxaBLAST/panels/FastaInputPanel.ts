@@ -1,12 +1,11 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { BlastParams } from "../BlastParams";
-import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription, GetBlastTaskLabel, Icon, PanelKey, ParameterKey, ReadFileAsync } from "../Common";
+import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription, GetBlastTaskLabel, Icon, PanelKey, 
+   ReadFileAsync, ValidateFastaFilename } from "../Common";
 import { DialogBuilder } from "../../../helpers/DialogBuilder";
-import { FastaError } from "../../../models/FastaError";
 import { FastaFile } from "../../../models/FastaFile";
 import { FastaStatus, JobStatus } from "../../../global/Types";
-import { IFileData } from "../../../models/IFileData";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { ISubmissionResult } from "../ISubmissionResult";
 import { JobSubmission } from "../JobSubmission";
@@ -19,6 +18,7 @@ import { Utils } from "../../../helpers/Utils";
 // CSS classes for input controls.
 enum ControlClass {
    fastaFilename = "fasta-filename",
+   fastaFilenameMessage = "fasta-filename-message",
    fastaMessage = "fasta-message",
    fastaText = "fasta-text",
 
@@ -56,6 +56,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       dialogAddButton: HTMLButtonElement,
       dialogFasta: HTMLTextAreaElement,
       dialogFilename: HTMLInputElement,
+      dialogFilenameMessage: HTMLElement,
       dialogMessage: HTMLElement,
 
       startButton: HTMLButtonElement
@@ -90,6 +91,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          dialogAddButton: null,
          dialogFasta: null,
          dialogFilename: null,
+         dialogFilenameMessage: null,
          dialogMessage: null,
          enterFastaButton: null,
          fastaDialog: null,
@@ -118,14 +120,14 @@ export class FastaInputPanel implements ITaxaBlastPanel {
                <tr class="header-row">
                   <th class="control-column"></th>
                   <th class="task-column">BLAST program</th>
-                  <th class="optimizes-column">Optimizes for...</th>
+                  <th class="description-column">Description</th>
                </tr>
             </thead>
             <tbody>
                <tr class="task-row even">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" checked /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.blastn)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
+                  <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" checked /></td>
+                  <td>${GetBlastTaskLabel(BlastTask.megablast)}</td>
+                  <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
                </tr>
                <tr class="task-row odd">
                   <td><input type="radio" name="blast-task" value="${BlastTask.dcMegablast}" /></td>
@@ -133,9 +135,9 @@ export class FastaInputPanel implements ITaxaBlastPanel {
                   <td>${GetBlastTaskDescription(BlastTask.dcMegablast)}</td>
                </tr>
                <tr class="task-row even">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.megablast)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
+                  <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" /></td>
+                  <td>${GetBlastTaskLabel(BlastTask.blastn)}</td>
+                  <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
                </tr>
                <tr class="task-row odd">
                   <td><input type="radio" name="blast-task" value="${BlastTask.blastp}" /></td>
@@ -152,16 +154,16 @@ export class FastaInputPanel implements ITaxaBlastPanel {
    createFastaDialogHTML() {
       
       const id = "fasta_dialog";
-
-      let title = "Enter FASTA text to upload";
+      const title = "Enter FASTA text to upload";
 
       let body = 
          `<div class="dialog-row">
             <label>Filename</label>
-            <input type="text" class="${ControlClass.fastaFilename}" placeholder="Optional">
+            <input type="text" class="${ControlClass.fastaFilename}" placeholder="Optional" spellcheck="false">
+            <div class="${ControlClass.fastaFilenameMessage}"></div>
          </div>
          <div class="dialog-row">
-            <textarea class="${ControlClass.fastaText}" rows="15" placeholder="Enter FASTA here"  
+            <textarea class="${ControlClass.fastaText}" rows="15" placeholder="Enter FASTA here" spellcheck="false" 
                data-file-size="0"
                data-record-count="0"
                data-status="${FastaStatus.empty}"
@@ -242,11 +244,14 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       if (this.selectedFiles.isEmpty()) {
          this.elements.selectedFilesContents.innerHTML = "";
          this.elements.selectedFilesSection.classList.remove("active");
+
+         // Make the start button inactive.
+         this.elements.startButton.classList.remove("active");
          return;
       }
 
       // Populate the title row
-      let sequenceText = this.selectedFiles.recordCount === 1 ? "1 sequence" : `${this.selectedFiles.recordCount} sequences`;
+      let sequenceText = this.selectedFiles.recordCount === 1 ? "1 sequence" : `${this.selectedFiles.recordCount.toLocaleString("en-US")} sequences`;
       let sizeText = Utils.formatBytes(this.selectedFiles.totalSize, 2);
 
       this.elements.selectedFilesTitle.innerHTML = 
@@ -288,6 +293,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             status = `<button class="${ButtonClass.errorLink} has-tooltip" 
                data-filename="${file_.filename}"
                data-tippy-content="${errorText}"
+               disabled
                >${errorsLabel}</button>`
          }
 
@@ -297,7 +303,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             <td class="filename${errorClass}">${file_.filename}</td>
             <td class="size">${Utils.formatBytes(file_.size, 2)}</td>
             <td class="status">${status}</td> 
-            <td class="sequences">${file_.records.length}</td>
+            <td class="sequences">${file_.records.length.toLocaleString("en-US")}</td>
             <td class="select"><input type="checkbox" data-filename="${file_.filename}" /></td>
          </li>`;
       })
@@ -319,7 +325,10 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       this.elements.selectedFilesSection.classList.add("active");
 
       // Initialize tippy tooltips for buttons.
-      tippy(".has-tooltip");
+      tippy(".selected-files .has-tooltip");
+
+      // Make the start button active.
+      this.elements.startButton.classList.add("active");
    }
 
    // Get BLAST parameters from the panel.
@@ -435,6 +444,9 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       // Update the URL parameters without reloading the page.
       this.parent.updateUrlFromState();
 
+      // Navigate to the job details panel.
+      this.parent.displayPanel(PanelKey.jobDetails);
+      
       /*
       // Display the "pending results" sub-panel.
       await this.changePanelMode(PanelMode.pending_results);
@@ -488,16 +500,14 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             <div class="number-column">1.</div>
             <div class="content-column">
                Select one or more FASTA files or enter FASTA text.
-               <button class=\"btn ${ButtonClass.selectFiles} has-tooltip\"
+               <button class=\"btn ${ButtonClass.selectFiles} active has-tooltip\"
                   data-tippy-content="Click to select one or more FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
                >${Icon.search} Select files</button>
-               <button class=\"btn ${ButtonClass.enterFASTA} has-tooltip\"
+               <button class=\"btn ${ButtonClass.enterFASTA} active has-tooltip\"
                   data-tippy-content="Click to enter FASTA text to be uploaded. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be included."
                >${Icon.edit} Enter FASTA text</button>
                <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
-
                ${appleWarning}
-
                <div class="selected-files-section">
                   <div class="title">Selected files</div>
                   <div class="contents"></div>
@@ -523,7 +533,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          <div class="input-section">
             <div class="number-column">3.</div>
             <div class="content-column">
-               Enter a job name <input type=\"text\" class=\"job-name\" placeholder="optional" />
+               Enter a job name <input type=\"text\" class=\"job-name\" placeholder=\"optional\" spellcheck=\"false\" />
             </div>
          </div>
 
@@ -560,6 +570,9 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       this.elements.dialogFilename = this.elements.fastaDialog.querySelector(`.${ControlClass.fastaFilename}`);
       if (!this.elements.dialogFilename) { throw new Error("Invalid filename control in the dialog"); }
 
+      this.elements.dialogFilenameMessage = this.elements.fastaDialog.querySelector(`.${ControlClass.fastaFilenameMessage}`);
+      if (!this.elements.dialogFilenameMessage) { throw new Error("Invalid filename message in the dialog"); }
+
       this.elements.dialogFasta = this.elements.fastaDialog.querySelector(`.${ControlClass.fastaText}`);
       if (!this.elements.dialogFasta) { throw new Error("Invalid FASTA text control in the dialog"); }
 
@@ -578,27 +591,29 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          clearTimeout(this.debounceTimer);
 
          if (target.classList.contains(ControlClass.fastaFilename)) {
-
-            console.log("filename was changed")
             // TODO: Make sure there isn't already a file with this name in this.selectedFiles?
+
+            let filename = (target as HTMLInputElement).value;
+
+            if (!ValidateFastaFilename(filename)) {
+               this.elements.dialogFilenameMessage.innerHTML = `${Icon.error} Invalid filename`;
+               this.elements.dialogFilenameMessage.classList.add("active");
+            } else {           
+               this.elements.dialogFilenameMessage.innerHTML = "";
+               this.elements.dialogFilenameMessage.classList.remove("active");
+            }
 
          } else if (target.classList.contains(ControlClass.fastaText)) {
             
-            console.log("you modified the FASTA textarea")
-
             this.debounceTimer = setTimeout(async () => {
 
                const status = await this.validateDialogFASTA();
-
-               console.log(`${status} was returned by validateDialogFASTA`)
 
                // The status determines whether the button is disabled.
                this.elements.dialogAddButton.disabled = status !== FastaStatus.valid;
 
                return;
             }, 1000); // Adjust delay as needed
-
-            //await this.validateDialogFASTA();
          }
       })
 
@@ -619,6 +634,8 @@ export class FastaInputPanel implements ITaxaBlastPanel {
                console.error("Error: the add button was clicked even though it is disabled?");
                return;
             }
+
+            console.log("in add button click handler the filename el is ", this.elements.dialogFilename, " and its value is ", this.elements.dialogFilename.value)
 
             try {
                // Update the selected files with the file created using the dialog.
@@ -790,7 +807,6 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          //this.parent.jobSubmission.start();
 
          const files = this.selectedFiles.getValidFiles();
-         console.log("files = ", files)
          
          // Upload the FASTA file(s) to the web service for processing.
          const result = await TaxaBlastService.uploadSequences(this.parent.authToken, blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
@@ -906,8 +922,12 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             return FastaStatus.empty; 
          }
          
+         console.log(`in validateDialogFASTA dialog filename el = `, this.elements.dialogFilename)
+
          // Did the user enter a filename? If not, use the first FASTA header ID (if the FASTA is valid).
          let filename = Utils.safeTrim(this.elements.dialogFilename.value);
+
+         console.log(`in validateDialogFASTA filename = ${filename}`)
 
          // Get the file size of the FASTA text in bytes.
          const fileSize = new Blob([fastaText]).size;
@@ -927,7 +947,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
          // Provide a default filename
          if (!filename && Array.isArray(this.dialogFile.records) && this.dialogFile.records.length > 0) {
             let headerID = this.dialogFile.records[0].getHeaderID();
-            if (!headerID) { headerID = "manually_entered_fasta"; }
+            if (!headerID) { headerID = "user_entered_fasta"; }
             this.dialogFile.filename = `${headerID}.fasta`;
          }
 
@@ -982,14 +1002,10 @@ export class FastaInputPanel implements ITaxaBlastPanel {
 
             // Create a FastaFile object.
             const fastaFile = new FastaFile(contents, file.name, file.size);
-            
-            console.log(`file ${file.name} has size ${file.size}`)
 
             // Update the collection of selected files.
             this.selectedFiles.addFile(fastaFile);
          }
-
-         console.log("before display selectedFiles = ", this.selectedFiles)
 
          // Display the selected files.
          this.displaySelectedFiles();
