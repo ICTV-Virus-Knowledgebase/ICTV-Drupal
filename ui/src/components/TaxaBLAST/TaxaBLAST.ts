@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelAction, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ITaxaBlastJob } from "./ITaxaBlastJob";
 import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
@@ -12,9 +12,9 @@ import { TaxaBlastService } from "../../services/TaxaBlastService";
 import { Utils } from "../../helpers/Utils";
 
 // Panels
-import { FastaInputPanel } from "./panels/FastaInputPanel";
 import { JobDetailsPanel } from "./panels/JobDetailsPanel";
 import { JobHistoryPanel } from "./panels/JobHistoryPanel";
+import { JobSubmissionPanel } from "./panels/JobSubmissionPanel";
 import { MessagePanel } from "./panels/MessagePanel";
 
 
@@ -30,9 +30,9 @@ export class TaxaBLAST {
    elements: {
       blastHitsPanel: HTMLElement,
       container: HTMLElement,
-      fastaInputPanel: HTMLElement,
       jobDetailsPanel: HTMLElement,
       jobHistoryPanel: HTMLElement,
+      jobSubmissionPanel: HTMLElement,
       messagePanel: HTMLElement
    }
 
@@ -94,7 +94,7 @@ export class TaxaBLAST {
       this.elements = {
          blastHitsPanel: null,
          container: null,
-         fastaInputPanel: null,
+         jobSubmissionPanel: null,
          jobDetailsPanel: null,
          jobHistoryPanel: null,
          messagePanel: null
@@ -176,7 +176,7 @@ export class TaxaBLAST {
             this.state.sequenceIndex = NaN;
             break;
 
-         case PanelKey.fastaInput:
+         case PanelKey.jobSubmission:
 
             // Clear the job and state.
             this.job = null;
@@ -282,82 +282,6 @@ export class TaxaBLAST {
 
       return params;
    }
-
-   /*
-   // Handle the panel action that was provided.
-   async handleAction(action_: PanelAction) {
-
-      if (!action_) { throw new Error("Invalid action parameter"); }
-      
-      // Do we need to retrieve job data?
-      let loadJob = false;
-
-      // The panel that will be loaded / active.
-      let selectedKey = PanelKey.fastaInput;
-
-      switch (action_) {
-
-         case PanelAction.displayBlastHits:
-            loadJob = true;
-            selectedKey = PanelKey.blastHits;
-            break;
-
-         case PanelAction.displayError:
-            selectedKey = PanelKey.message;
-            break;
-
-         case PanelAction.displayHistory:
-            selectedKey = PanelKey.jobHistory;
-            break;
-
-         case PanelAction.displayJob:
-            loadJob = true;
-            selectedKey = PanelKey.jobDetails;
-
-            // Clear the file and sequence indices.
-            this.state.fileIndex = NaN;
-            this.state.sequenceIndex = NaN;
-            break;
-
-         case PanelAction.displayInput:
-            selectedKey = PanelKey.fastaInput;
-
-            // Clear the job and state.
-            this.job = null;
-            this.state.fileIndex = NaN;
-            this.state.jobUID = null;
-            this.state.sequenceIndex = NaN;
-            break;
-
-         default:
-            return await AlertBuilder.displayError(`Unhandled panel action: ${action_}`);
-      }
-
-      // Do we need to load a job by its UID?
-      if (loadJob && !!this.state.jobUID && (!this.job || this.job.uid !== this.state.jobUID)) {
-         await this.getJob(); 
-      }
-
-      // Iterate over all panels.
-      Object.keys(PanelKey).forEach(key_ => {
-
-         const panelKey = key_ as PanelKey;
-
-         // Get the panel with this key.
-         const panel = this.panels.get(panelKey);
-         if (!panel) { throw new Error(`Invalid panel for key ${key_}`); }
-
-         if (panelKey === selectedKey) {
-            panel.load();
-         } else if (panel.isActive) {
-            panel.unload();
-         }
-      })
-
-      // Always hide the message panel.
-      //this.elements.messagePanel.classList.remove("active");
-      return;
-   }*/
 
    // Handle a click event on a button or accordion control.
    async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
@@ -500,9 +424,9 @@ export class TaxaBLAST {
       // Create HTML for the container elements.
       const html = 
          `<div class=\"blast-hits-panel container\"></div>
-         <div class=\"fasta-input-panel container\"></div>
          <div class=\"job-details-panel container\"></div>
          <div class=\"job-history-panel container\"></div>
+         <div class=\"job-submission-panel container\"></div>
          <div class=\"message-panel container active\">${spinnerHTML}</div>`;
 
       this.elements.container.innerHTML = html;
@@ -512,9 +436,9 @@ export class TaxaBLAST {
       this.elements.blastHitsPanel = this.elements.container.querySelector(".blast-hits-panel") as HTMLElement;
       if (!this.elements.blastHitsPanel) { throw new Error("Invalid BLAST hits panel Element"); }
 
-      // The FASTA input panel
-      this.elements.fastaInputPanel = this.elements.container.querySelector(".fasta-input-panel") as HTMLElement;
-      if (!this.elements.fastaInputPanel) { throw new Error("Invalid FASTA input panel Element"); }
+      // The Job submission panel
+      this.elements.jobSubmissionPanel = this.elements.container.querySelector(".job-submission-panel") as HTMLElement;
+      if (!this.elements.jobSubmissionPanel) { throw new Error("Invalid Job submission panel Element"); }
 
       // The job details panel
       this.elements.jobDetailsPanel = this.elements.container.querySelector(".job-details-panel") as HTMLElement;
@@ -532,9 +456,9 @@ export class TaxaBLAST {
    
       // Create the panel instances.
       this.panels.set(PanelKey.blastHits, new BlastHitsPanel(this.elements.blastHitsPanel, this));
-      this.panels.set(PanelKey.fastaInput, new FastaInputPanel(this.elements.fastaInputPanel, this));
       this.panels.set(PanelKey.jobDetails, new JobDetailsPanel(this.elements.jobDetailsPanel, this));
       this.panels.set(PanelKey.jobHistory, new JobHistoryPanel(this.elements.jobHistoryPanel, this));
+      this.panels.set(PanelKey.jobSubmission, new JobSubmissionPanel(this.elements.jobSubmissionPanel, this));
       this.panels.set(PanelKey.message, new MessagePanel(this.elements.messagePanel, this));
 
       // Use URL parameters to determine which panel to display.
@@ -544,8 +468,8 @@ export class TaxaBLAST {
    // Process the URL parameters to determine which panel to load.
    async processURL() {
 
-      // The FASTA input panel is the default.
-      let panelKey = PanelKey.fastaInput;
+      // The job submission panel is the default.
+      let panelKey = PanelKey.jobSubmission;
 
       // Get the URL parameters
       const urlParams = new URLSearchParams(window.location.search);

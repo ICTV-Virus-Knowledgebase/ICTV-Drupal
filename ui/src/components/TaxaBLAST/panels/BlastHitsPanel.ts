@@ -1,5 +1,5 @@
 
-import { ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
+import { BlastStatus, ButtonClass, Constants, CreateTaxonDetailsURL, Icon, PanelKey } from "../Common";
 import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
 import { IBlastHitScore } from "../IBlastHitScore";
@@ -8,6 +8,7 @@ import { JobStatus } from "../../CuratedNameManager";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
+import { AlertBuilder } from "../../../helpers/AlertBuilder";
 
 
 export class BlastHitsPanel implements ITaxaBlastPanel {
@@ -262,6 +263,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       const sequence = file.sequences[this.parent.state.sequenceIndex];
       if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
+      if (sequence.status === BlastStatus.NO_HITS) {
+         return this.displayErrorMessage(`No BLAST hits were found for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.name}`);
+      }
+
       let sequenceLength = isNaN(sequence.sequence_length) ? "Unknown" : `${sequence.sequence_length.toLocaleString("en-US")}`;
 
       // Consolidate the BLAST hits by combining multiple hits for the same species.
@@ -317,7 +322,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
                <button class="btn ${ButtonClass.newSearch} has-tooltip"
                   data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
-                  data-url="${this.parent.createUrlFromState(PanelKey.fastaInput)}"
+                  data-url="${this.parent.createUrlFromState(PanelKey.jobSubmission)}"
                >${Icon.search}<span class="btn-label">New search</span></button>
             </div>
          </div>

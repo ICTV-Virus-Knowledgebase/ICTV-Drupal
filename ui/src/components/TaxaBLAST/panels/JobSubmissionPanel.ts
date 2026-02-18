@@ -27,7 +27,7 @@ enum ControlClass {
    visible = "visible"
 }
 
-export class FastaInputPanel implements ITaxaBlastPanel {
+export class JobSubmissionPanel implements ITaxaBlastPanel {
 
    // A (virtual) file populated by the FASTA text dialog. If the file is valid and the user 
    // clicks "add" in the dialog, this file will be added to this.selectedFiles.
@@ -159,7 +159,7 @@ export class FastaInputPanel implements ITaxaBlastPanel {
       let body = 
          `<div class="dialog-row">
             <label>Filename</label>
-            <input type="text" class="${ControlClass.fastaFilename}" placeholder="Optional" spellcheck="false">
+            <input type="text" class="${ControlClass.fastaFilename}" placeholder="Optional" spellcheck="false" value="" />
             <div class="${ControlClass.fastaFilenameMessage}"></div>
          </div>
          <div class="dialog-row">
@@ -262,12 +262,12 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             <div class="right-side">
                <button class="${ButtonClass.toggle} has-tooltip" 
                   data-all-selected="false"
-                  data-tippy-content=\"To remove files from the list below, click the checkbox on individual files or click "Select all" and then click "Remove selected files"\"
+                  data-tippy-content=\"To remove files from the list below, click the checkbox on individual files or click "Select all" and then click "Remove selected file(s)"\"
                >${Icon.toggleOn} Select all</button>
                <button class="${ButtonClass.removeFiles} has-tooltip" 
                   disabled
                   data-tippy-content=\"Remove every file with a checkmark from the list below\"
-               >${Icon.delete} Remove selected files</button>
+               >${Icon.delete} Remove selected file(s)</button>
             </div>
          </div>`;
       
@@ -610,9 +610,9 @@ export class FastaInputPanel implements ITaxaBlastPanel {
                const status = await this.validateDialogFASTA();
 
                // The status determines whether the button is disabled.
-               this.elements.dialogAddButton.disabled = status !== FastaStatus.valid;
-
+               this.elements.dialogAddButton.disabled = (status !== FastaStatus.valid);
                return;
+               
             }, 1000); // Adjust delay as needed
          }
       })
@@ -629,15 +629,16 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             this.elements.fastaDialog.style.display = "none";
 
          } else if (target.classList.contains(ButtonClass.add)) {
-            
-            if (this.elements.dialogAddButton.disabled) { 
-               console.error("Error: the add button was clicked even though it is disabled?");
-               return;
-            }
-
-            console.log("in add button click handler the filename el is ", this.elements.dialogFilename, " and its value is ", this.elements.dialogFilename.value)
-
             try {
+               // Did the user enter a filename? If not, provide a default.
+               let filename = Utils.safeTrim(this.elements.dialogFilename.value);
+               if (!filename) {
+                  let index = Array.isArray(this.selectedFiles.files) ? this.selectedFiles.files.length + 1 : 1;
+                  filename = `user_fasta_${index}.fasta`
+               }
+
+               this.dialogFile.filename = filename;
+
                // Update the selected files with the file created using the dialog.
                this.selectedFiles.addFile(this.dialogFile);
 
@@ -921,13 +922,10 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             this.updateFastaControlStatus(FastaStatus.empty, 0, 0);
             return FastaStatus.empty; 
          }
-         
-         console.log(`in validateDialogFASTA dialog filename el = `, this.elements.dialogFilename)
 
-         // Did the user enter a filename? If not, use the first FASTA header ID (if the FASTA is valid).
-         let filename = Utils.safeTrim(this.elements.dialogFilename.value);
-
-         console.log(`in validateDialogFASTA filename = ${filename}`)
+         // The filename will be added later, but we need to provide something when creating the FastaFile object. 
+         // It won't be used for validation since the filename is optional, but it is required by the FastaFile constructor.
+         let filename = "";
 
          // Get the file size of the FASTA text in bytes.
          const fileSize = new Blob([fastaText]).size;
@@ -944,40 +942,13 @@ export class FastaInputPanel implements ITaxaBlastPanel {
             status = FastaStatus.empty;
          }
 
-         // Provide a default filename
-         if (!filename && Array.isArray(this.dialogFile.records) && this.dialogFile.records.length > 0) {
-            let headerID = this.dialogFile.records[0].getHeaderID();
-            if (!headerID) { headerID = "user_entered_fasta"; }
-            this.dialogFile.filename = `${headerID}.fasta`;
-         }
-
          // Update the FASTA control's status.
          this.updateFastaControlStatus(status, this.dialogFile.size, this.dialogFile.records.length, errors);
 
          console.log("in validate dialog fasta fastaFile = ", this.dialogFile)
-
-         // Add the FASTA to the selected files.
-         //this.selectedFiles.files.push(fastaFile);
-
-         // Update the table of selected files.
-         //this.displaySelectedFiles();
-
-         /*
-         // Update the total file size.
-         this.parent.jobSubmission.totalSize += new Blob([fastaText]).size;
-         
-         // Update the record count with the number of valid FASTA records in this file.
-         this.parent.jobSubmission.recordCount += result.records.length;
-
-         // Add the file to the collection of valid files.
-         this.parent.jobSubmission.validFiles.push({
-            name: this.generateFastaFilename(),
-            contents: fastaText
-         })*/
       }
       catch (error_) {
-         console.log("error in validateDialogFASTA = ", error_)
-         //await AlertBuilder.displayError(error_);
+         await AlertBuilder.displayError(error_);
       }
 
       return status;
