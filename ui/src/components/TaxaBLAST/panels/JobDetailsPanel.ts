@@ -30,10 +30,8 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       // The pending job view and its children.
       pendingView: HTMLElement,
-      //pendingAttempts: HTMLElement,
       pendingElapsed: HTMLElement,
-      pendingJobName: HTMLElement,
-      //pendingTimespan: HTMLElement
+      pendingJobName: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -76,7 +74,6 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          jobName: null,
          jobNameLabel: null,
          panelControls: null,
-         //pendingAttempts: null,
          pendingJobName: null,
          pendingElapsed: null,
          pendingView: null,
@@ -172,13 +169,21 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
    createSequenceRow(fileIndex_: number, sequence_: ISequence, seqIndex_: number): string {
 
-      const hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length.toLocaleString("en-US") : 0;
+      if (!Array.isArray(sequence_.hits) || sequence_.hits.length < 1) {
+         return `<tr class="no-hits-row">
+            <td class="qseqid">No BLAST hits for sequence ${seqIndex_ + 1}</td>
+            <td class="hits">0</td>
+            <td class="controls"></td>
+         </tr>`
+      }
 
       const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
 
-      let html = `<tr>
+      const rowClass = seqIndex_ % 2 === 0 ? "even-row" : "odd-row";
+      
+      let html = `<tr class="${rowClass}">
          <td class="qseqid">${sequence_.qseqid}</td>
-         <td class="hits">${hitsCount}</td>
+         <td class="hits">${sequence_.hits.length.toLocaleString("en-US")}</td>
          <td class="controls">
             <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip"
                data-file-index="${fileIndex_}"
@@ -357,10 +362,8 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
          this.pendingData.timespan.remainingSeconds = Math.floor(Constants.JOB_POLLING_INTERVAL / 1000);
 
-         console.log(`in poll interval, remaining seconds = ${this.pendingData.timespan.remainingSeconds}`)
-
          // Load the job to see if it has completed.
-         //await this.checkJobStatus()
+         await this.checkJobStatus()
 
          this.pendingData.timespan.attempts += 1;
 
@@ -439,16 +442,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
    // Load the panel contents and display them on the page.
    async load() {
 
-      console.info("LOADING job details panel")
-
       this.isActive = true;
 
       // Make the container visible.
       this.elements.container.classList.add("active");
       
-      // The initial time remaining until calling getJobs again.
-      //const refreshSeconds = Utils.formatSeconds(Math.floor(Constants.JOB_POLLING_INTERVAL / 1000));
-
       const html = 
          `<div class="job-details panel-view"></div>
          <div class="pending-message panel-view">
@@ -457,13 +455,10 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
             FASTA file(s) and the current load on the system.</div>
             <div class="pending-elapsed-panel">
                <label>Elapsed time:</label>
-               <span class="pending-elapsed">0</span>
+               <span class="pending-elapsed"></span>
             </div>
          </div>
          <div class="error-message panel-view"></div>`;
-
-      //Your job<span class="pending-job-name"></span> is still running, but we will check on it in <span class="pending-timespan">${refreshSeconds}</span>
-      // (attempt #<span class="pending-attempts">1</span>)
       
       this.elements.container.innerHTML = html;
 
@@ -479,29 +474,17 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       this.elements.pendingView = this.elements.container.querySelector(".pending-message");
       if (!this.elements.pendingView) { throw new Error("Invalid pending section element"); }
 
-      //this.elements.pendingAttempts = this.elements.pendingView.querySelector(".pending-attempts");
-      //if (!this.elements.pendingAttempts) { throw new Error("Invalid pending attempts element"); }
-
       this.elements.pendingJobName = this.elements.pendingView.querySelector(".pending-job-name");
       if (!this.elements.pendingJobName) { throw new Error("Invalid pending job name element"); }
-
-      //this.elements.pendingTimespan = this.elements.pendingView.querySelector(".pending-timespan");
-      //if (!this.elements.pendingTimespan) { throw new Error("Invalid pending timespan element"); }
 
       this.elements.pendingElapsed = this.elements.pendingView.querySelector(".pending-elapsed");
       if (!this.elements.pendingElapsed) { throw new Error("Invalid pending elapsed element"); }
 
-      // TODO: determine whether to display the details section, the pending message section, or the error message section.
-
       // Get the job associated with the job UID.
       await this.parent.getJob();
 
-      console.log("in load(), parent job = ", this.parent.job)
-
-      // TODO: remove pending!!!
-      await this.displayView(JobStatus.pending);
-
-      return;
+      // Use the job status to determine which view to display.
+      return await this.displayView();
    }
 
    populateFilesPanel() {

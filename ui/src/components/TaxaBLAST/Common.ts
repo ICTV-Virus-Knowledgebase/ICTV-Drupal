@@ -1,14 +1,18 @@
 
 import { AppSettings } from "../../global/AppSettings";
 import { DateTime } from "luxon";
-import { JobStatus } from "../../global/Types";
 import { Utils } from "../../helpers/Utils";
-import { ITaxaBlastJob } from "./ITaxaBlastJob";
 
 
 //----------------------------------------------------------------------------------------------------------------
 // Enums
 //----------------------------------------------------------------------------------------------------------------
+
+// A status returned by BLAST.
+export enum BlastStatus {
+   HITS = "HITS",
+   NO_HITS = "NO_HITS"
+}
 
 // The available BLAST programs.
 export enum BlastTask {
@@ -73,22 +77,12 @@ export enum Icon {
    valid = `<i class=\"fa-regular fa-badge-check\"></i>`
 }
 
-export enum PanelAction {
-   displayError = "displayError",
-   displayHistory = "displayHistory",
-   displayJob = "displayJob",
-   displayBlastHits = "displayBlastHits",
-   displayInput = "displayInput"
-}
-
-// The order of panels is FASTA input, job submission, pending job, jobDetails, blastHits (short circuiting
-// to the error panel as necessary).
+// Identifiers for the different panels in the application.
 export enum PanelKey {
    blastHits = "blastHits", 
-   fastaInput = "fastaInput",
    jobDetails = "jobDetails",
    jobHistory = "jobHistory",
-   //jobSubmission = "jobSubmission",
+   jobSubmission = "jobSubmission",
    message = "message"
 }
 
