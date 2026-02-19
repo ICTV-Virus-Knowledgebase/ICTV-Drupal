@@ -8,8 +8,9 @@
    --ictv-danger-color: #dc3545;
    --ictv-dark-grey-color: #555;
    --ictv-disabled-color: #999;
+   --ictv-grey-color: #777;
    --ictv-icon-color: #888;
-   --ictv-lightest-grey-color: #bbb;
+   --ictv-lightest-grey-color: #efefef;
    --ictv-light-grey-color: #888;
    --ictv-link-color: #0066cc;
    --ictv-link-hover-color: #004999;
@@ -18,6 +19,8 @@
    --ictv-secondary-color: #6c757d;
    --ictv-success-color: #198754;
    --ictv-warning-color: #ffc107;
+
+   --ictv-border-radius: 5px;
 }
 
 
@@ -36,18 +39,6 @@
    margin-right: 0.5rem;
    padding: .2rem .5rem;
    text-align: center;
-   /*border: 1px solid transparent;
-   display: inline-block;
-   font-size: 0.9rem;
-   font-weight: 400;
-   padding: .375rem .75rem;
-   text-align: center;
-   user-select: none;
-   vertical-align: middle;
-   white-space: nowrap;
-   -webkit-user-select: none;
-   -moz-user-select: none;
-   -ms-user-select: none;*/
 }
 #ictv_taxablast_container button i {
    color: var(--ictv-icon-color);
@@ -209,14 +200,15 @@
    margin-right: 0.25rem;
 }
 
-/* The panel title */
+/* TODO: I don't think this is used anywhere.
+
+The panel title 
 #ictv_taxablast_container .panel-title {
    font-size: 1.5rem;
    font-weight: 700;
    margin-bottom: 1.0rem;
-   /* max-width: 900px; TEST */
    width: 100%;
-}
+}*/
 
 /* The panel controls */
 #ictv_taxablast_container .panel-controls {
@@ -225,7 +217,6 @@
    flex-flow: row;
    justify-content: space-between;
    margin: 0 0 0.5rem 0;
-   /* max-width: 900px; TEST */
    width: 100%;
 }
 
@@ -243,20 +234,23 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_taxablast_container .ictv-accordion-item {
    border-color: rgba(0, 0, 0, 0.3);
-   border-radius: 10px;
+   border-radius: var(--ictv-border-radius);
    border-style: solid;
    border-width: 1px;
-   margin-bottom: 0.5rem;
-   width: 100%; /* fit-content !important;*/
+   margin-bottom: 0.25rem;
+   width: 100%;
 }
+#ictv_taxablast_container .ictv-accordion-item.active {
+   margin: 1.0rem 0;
+}
+
+/* The accordion header */
 #ictv_taxablast_container .ictv-accordion-header {
    align-items: center;
-   background-color: var(--ictv-panel-header-color); /* #e9e9e9;*/
    color: #fff;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
-   /*padding: 1.0rem 1.5rem 1.0rem 0;*/
    transition: all 0.25s ease-out;
    width: 100%;
    will-change: background-color color;
@@ -265,21 +259,62 @@
    cursor: pointer;
 }
 #ictv_taxablast_container .ictv-accordion-item:not(.active) .ictv-accordion-header {
-   border-radius: 10px;
+   border-radius: var(--ictv-border-radius);
 }
 #ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-header {
-   border-radius: 10px 10px 0 0;
+   border-radius: var(--ictv-border-radius) var(--ictv-border-radius) 0 0;
+}
+
+/* Accordion header for the BLAST hits accordion. */
+#ictv_taxablast_container .ictv-accordion-header.blast-hits-header {
+   background-color: var(--ictv-lightest-grey-color);
+   color: #000;
+}
+#ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-header.blast-hits-header {
+   background-color: var(--ictv-panel-header-color);
+   color: #fff;
+}
+
+/* Accordion header for the sequence files accordion. */
+#ictv_taxablast_container .ictv-accordion-header.sequence-file-header {
+   background-color: var(--ictv-panel-header-color);
+   color: #fff;
+}
+
+/* The accordion label */
+#ictv_taxablast_container .ictv-accordion-label {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+   width: 100%;
+}
+#ictv_taxablast_container .ictv-accordion-label .filename {
+   margin-right: 0.25rem;
+}
+#ictv_taxablast_container .ictv-accordion-label .sequence-count {
+   margin-right: 0.25rem;
 }
 
 #ictv_taxablast_container .ictv-accordion-control {
-   color: #fff; /*var(--ictv-dark-grey-color);*/
+   /*color: #fff;*/
    font-weight: 400;
-   padding: 1.0rem;
+   padding: 0.5rem; /* 1.0rem; */
    transition: ease .3s transform;
 }
+#ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-control {
+   transform: rotate(-180deg);
+}
+#ictv_taxablast_container .ictv-accordion-control i {
+   font-size: 0.9rem;
+   pointer-events: none;
+}
 
+/* The accordion body */
 #ictv_taxablast_container .ictv-accordion-body {
    background-color: #efefef;
+   border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius);
    max-height: 0;
    opacity: 0;
    overflow: hidden;
@@ -295,38 +330,12 @@
    opacity: 1;
    visibility: visible;
 }
-#ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-control {
-   transform: rotate(-180deg);
-}
-
-#ictv_taxablast_container .ictv-accordion-control i {
-   pointer-events: none;
-}
 
 #ictv_taxablast_container .ictv-accordion-item .ictv-accordion-content {
-   margin: 0.5rem 1.0rem 1.0rem 1.0rem;
+   /*margin: 0.5rem 1.0rem 1.0rem 1.0rem;*/
+   margin: 0;
 }
 
-
-/*-------------------------------------------------------------------------------------------------------------------------------------------------
-   The accordion label (with result info)
--------------------------------------------------------------------------------------------------------------------------------------------------*/
-
-#ictv_taxablast_container .ictv-accordion-label {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: row nowrap;
-   justify-content: flex-start;
-   width: 100%;
-}
-#ictv_taxablast_container .ictv-accordion-label .filename {
-   font-size: 1.0rem;
-   margin-right: 0.25rem;
-}
-#ictv_taxablast_container .ictv-accordion-label .sequence-count {
-   font-size: 1.0rem;
-   margin-right: 0.25rem;
-}
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -344,14 +353,15 @@
 
 #ictv_taxablast_container .blast-hits-panel .error-message {
    color: var(--ictv-danger-color);
-   font-size: 1.2rem;
+   font-size: 1.0rem;
    margin-bottom: 0.5rem;
 }
 
 #ictv_taxablast_container .blast-hits-panel .blast-hits-title {
    font-size: 1.5rem;
    font-weight: 700;
-   margin: 1.75rem 0 0.75rem 0;
+   margin: 1.5rem 0 0 0;
+   width: 100%;
 }
 
 #ictv_taxablast_container .blast-hits-panel .panel-title {
@@ -360,14 +370,15 @@
    margin-bottom: 0.25rem;
    width: 100%;
 }
-#ictv_taxablast_container .blast-hits-panel .blast-sequence-length {
-   margin-bottom: 1.0rem;
+
+#ictv_taxablast_container .blast-hits-panel .blast-sequence-row {
+   margin-bottom: 0.5rem;
 }
-#ictv_taxablast_container .blast-hits-panel .blast-sequence-length .length-label {
+#ictv_taxablast_container .blast-hits-panel .blast-sequence-row .blast-label {
    font-size: 1.0rem;
    font-weight: 700;
 }
-#ictv_taxablast_container .blast-hits-panel .blast-sequence-length .length-value {
+#ictv_taxablast_container .blast-hits-panel .blast-sequence-row .blast-value {
    font-size: 1.0rem;
 }
 
@@ -463,10 +474,6 @@
    width: 2.7rem !important;
 }
 
-/*-------------------------------------------------------------------------------------------------------------------------------------------------
-   The job details panel
--------------------------------------------------------------------------------------------------------------------------------------------------*/
-
 /* A panel's view */
 #ictv_taxablast_container .panel-view {
    display: none;
@@ -477,26 +484,28 @@
    visibility: visible;
 }
 
-#ictv_taxablast_container .job-details-panel table.job-details {
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   A details table (for job details, file and sequence details, etc.)
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_taxablast_container table.details-table {
    background-color: #efefef;
-   border-color: #ddd;
+   border-color: rgba(0, 0, 0, 0.3); /*#ddd;*/
    border-style: solid;
-   border-width: 0.5px;
-   /* max-width: 900px; TEST */
+   border-width: 1px;
    width: 100%;
 }
 
-#ictv_taxablast_container .job-details-panel table.job-details tr {
+#ictv_taxablast_container table.details-table tr {
    border-color: #ddd;
    border-style: solid;
    border-width: 0 0 1px 0 !important;
 }
-#ictv_taxablast_container .job-details-panel table.job-details tr:last-of-type {
+#ictv_taxablast_container table.details-table tr:last-of-type {
    border-style: none;
    border-width: 0 !important;
 }
 
-#ictv_taxablast_container .job-details-panel table.job-details th {
+#ictv_taxablast_container table.details-table th {
    background-color: inherit;
    border-color: #ddd;
    border-width: 0 0 1px 0;
@@ -506,49 +515,68 @@
    vertical-align: top;
    white-space: nowrap;
 }
-#ictv_taxablast_container .job-details-panel table.job-details td {
+#ictv_taxablast_container table.details-table td {
    border-color: #ddd;
    border-width: 0 0 1px 0;
    font-size: 1.0rem;
    padding: 0.5rem;
 }
 
-#ictv_taxablast_container .job-details-panel table.job-details tr.job-name-row {
-   background-color: #777;
-   color: white;
+#ictv_taxablast_container table.details-table tr.emphasized-row {
+   background-color: var(--ictv-grey-color);
 }
-#ictv_taxablast_container .job-details-panel table.job-details tr.job-name-row .job-name-label {
+#ictv_taxablast_container table.details-table tr.emphasized-row th,
+#ictv_taxablast_container table.details-table tr.emphasized-row td {
    color: white;
 }
 
+/* Override the max width of TH's for the BLAST hits details table. */
+#ictv_taxablast_container table.details-table.blast-hits-details th {
+   max-width: 80px;
+}
+
 /* The rows showing the BLAST parameters */
-#ictv_taxablast_container .job-details-panel table.job-details .blast-parameters {
+#ictv_taxablast_container table.details-table .blast-parameters {
    padding: 0.25rem 0 0 0.5rem !important;
 }
-#ictv_taxablast_container .job-details-panel table.job-details .blast-parameter-row {
+#ictv_taxablast_container table.details-table .blast-parameter-row {
    align-items: flex-start;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
    padding: 0.25rem 0 !important;
 }
-#ictv_taxablast_container .job-details-panel table.job-details .blast-parameter-row:not(:first-child) {
+#ictv_taxablast_container table.details-table .blast-parameter-row:not(:first-child) {
    border-color: #ddd;
    border-style: solid;
    border-width: 1px 0 0 0 !important;
 }
-#ictv_taxablast_container .job-details-panel table.job-details .blast-parameter-row label {
+#ictv_taxablast_container table.details-table .blast-parameter-row label {
    font-weight: 700;
    width: 130px;
 }
-#ictv_taxablast_container .job-details-panel table.job-details .blast-parameter-row .blast-value {
+#ictv_taxablast_container table.details-table .blast-parameter-row .blast-value {
    font-weight: normal; /* placeholder */
 }
-#ictv_taxablast_container .job-details-panel table.job-details .blast-parameter-row .blast-command {
+#ictv_taxablast_container table.details-table .blast-parameter-row .blast-command {
    font-family: monospace;
    font-size: 0.8rem;
    max-width: 600px;
 }
+
+/* Customization for the job details table */
+#ictv_taxablast_container table.details-table.jobs-details {
+   border-width: 0;
+   margin: 0;
+}
+
+/* Customization for the BLAST hits details table */
+#ictv_taxablast_container table.details-table.blast-hits-details {
+   /*border-color: rgba(0, 0, 0, 0.3);
+   border-width: 1px;*/
+   margin-bottom: 0.5rem;
+}
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
    The link panel
@@ -608,7 +636,7 @@
 #ictv_taxablast_container .search-controls .search-text {
    background-color: #fff;
    background-image: none;
-   border-color: var(--ictv-lightest-grey-color);
+   border-color: var(--ictv-light-grey-color);
    padding-left: 0.75rem;
    width: 345px;
 }
@@ -717,6 +745,8 @@
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_taxablast_container table.sequences-table {
    background-color: #fff;
+   border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius) ;
+   border-width: 0; /* 0 0 1px 0; */
    margin: 0;
    /*min-width: 800px;*/
    /*overflow: visible !important;
@@ -724,14 +754,13 @@
    width: 100%;
 }
 #ictv_taxablast_container table.sequences-table .header-row {
-   background-color: var(--ictv-dark-grey-color) !important;
+   background-color: var(--ictv-grey-color) !important;
 }
 #ictv_taxablast_container table.sequences-table th,
 #ictv_taxablast_container table.sequences-table td {
    font-size: 1.0rem !important;
 }
 #ictv_taxablast_container table.sequences-table th {
-   background-color: var(--ictv-dark-grey-color) !important;
    color: #fff !important;
    font-weight: 400 !important;
 }
@@ -749,14 +778,28 @@
 #ictv_taxablast_container table.sequences-table thead + tbody tr:first-child td {
    padding-top: 0.75rem;
 }
+#ictv_taxablast_container table.sequences-table tbody tr:last-child {
+   border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius);
+}
+#ictv_taxablast_container table.sequences-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: var(--ictv-border-radius);
+}
+#ictv_taxablast_container table.sequences-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: var(--ictv-border-radius);
+}
 
 /* The table headers */
 /*#ictv_taxablast_container table.sequences-table th.qseqid,
 #ictv_taxablast_container table.sequences-table td.qseqid {
    width: auto;
 }*/
-#ictv_taxablast_container table.sequences-table th.hits,
-#ictv_taxablast_container table.sequences-table td.hits {
+#ictv_taxablast_container table.sequences-table .index {
+   max-width: 30px;
+   text-align: right;
+   width: 30px;
+}
+
+#ictv_taxablast_container table.sequences-table .hits {
    text-align: center;
    width: 60px;
 }
@@ -1095,7 +1138,7 @@
 #ictv_taxablast_container .ictv-modal-content {
    background-color: #efefef;
    border-color: #999;
-   border-radius: 10px;
+   border-radius: var(--ictv-border-radius);
    border-style: solid;
    border-width: 1px;
    height: fit-content;
@@ -1106,7 +1149,7 @@
 #ictv_taxablast_container .ictv-modal-header {
    align-items: center;
    background-color: var(--ictv-dark-grey-color);
-   border-radius: 10px 10px 0 0;
+   border-radius: var(--ictv-border-radius) var(--ictv-border-radius) 0 0;
    display: flex;
    flex-flow: row nowrap;
    justify-content: center;

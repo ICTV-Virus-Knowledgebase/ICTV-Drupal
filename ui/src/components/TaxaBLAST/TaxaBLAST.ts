@@ -1,7 +1,7 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { ButtonClass, Constants, GetSpinnerHTML, Icon, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { ButtonClass, Constants, FormatDate, FormatDuration, GetSpinnerHTML, Icon, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { ITaxaBlastJob } from "./ITaxaBlastJob";
 import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
@@ -110,6 +110,83 @@ export class TaxaBLAST {
       }
    }
 
+   // Create an HTML table containing the job details. If emphasizeFirstRow_ is true, the first row will be emphasized.
+   createJobDetailsTable(emphasizeFirstRow_: boolean): string {
+
+      if (!this.job) { return ""; }
+
+      // Format the job name
+      let jobName = Utils.safeTrim(this.job.name);
+      if (jobName.length < 1) { jobName = "(No job name provided)"; }
+
+      // Format the created on and ended on date/times.
+      let createdOn = FormatDate(this.job.createdOn);
+
+      // Format the duration between two date/times.
+      let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
+
+      // TODO: should this be overridden by "taxablast"?
+      let programName = this.job.data.program_name;
+
+
+      //----------------------------------------------------------------------------------------------------------------
+      // Generate the HTML for the job details
+      //----------------------------------------------------------------------------------------------------------------
+
+      let nameRowClass = emphasizeFirstRow_ ? " emphasized-row" : "";
+
+      return `<table class="details-table job-details">
+         <tbody>
+            <tr class="${nameRowClass}">
+               <th>Job name</th>
+               <td>${jobName}</td>
+            </tr>
+            <tr>
+               <th>Started</th>
+               <td>${createdOn || "(unknown)"}</td>
+            </tr>
+            <tr>
+               <th>Duration</th>
+               <td>${duration || "(unknown)"}</td>
+            </tr>
+            <tr>
+               <th>Status</th>
+               <td>${this.job.status}</td>
+            </tr>
+            <tr>
+               <th>Program and version</th>
+               <td>${programName} (version ${this.job.data.version})</td>
+            </tr>
+            <tr>
+               <th>Database</th>
+               <td>${this.job.data.database_title}</td>
+            </tr>
+            <tr>
+               <th>BLAST parameters</th>
+               <td class="blast-parameters">
+                  <div class="blast-parameter-row">
+                     <label>Task</label>
+                     <div class="blast-value">${this.job.data.task}</div>
+                  </div>
+                  <div class="blast-parameter-row">
+                     <label>Max HSPS</label>
+                     <div class="blast-value">${this.job.data.max_hsps}</div>
+                  </div>
+                  <div class="blast-parameter-row">
+                     <label>Max target seqs</label>
+                     <div class="blast-value">${this.job.data.max_target_seqs}</div>
+                  </div>
+                  <div class="blast-parameter-row">
+                     <label>Command</label>
+                     <div class="blast-command">${this.job.data.blastasn_cmd}</div>
+                  </div>      
+               </td>
+            </tr>
+         </tbody>
+      </table>`;
+   }
+
+
    // Create a row containing a link that allows the user to return to this page with the current job data.
    createLinkRow(panelKey_: PanelKey): string {
 
@@ -145,7 +222,7 @@ export class TaxaBLAST {
          <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
             data-tippy-content="Copy the URL to your clipboard"
             data-url="${url}"
-         >${Icon.copy} Copy URL to clipboard</button>
+         >${Icon.copy}<span class="btn-label">Copy URL to clipboard</span></button>
       </div>`;
    }
 
@@ -308,8 +385,7 @@ export class TaxaBLAST {
          }
       }
 
-      // Was a "btn-label" on a button clicked?
-      // TODO: This will probably be temporary!
+      // Was a "btn-label" on a button clicked? If so, use its parent button element as the target element.
       if (targetEl_.classList.contains("btn-label")) { targetEl_ = targetEl_.parentElement; }
 
       // Was a button on a sequence row clicked?

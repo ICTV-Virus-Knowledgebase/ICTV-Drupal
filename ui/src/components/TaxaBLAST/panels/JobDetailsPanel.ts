@@ -133,6 +133,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
             `<table class="${fileKey}_table sequences-table" data-count="${sequenceCount}">
                <thead>
                   <tr class="header-row">
+                     <th class="index">#</th>
                      <th class="qseqid">Query ID</th>
                      <th class="hits">Hits</th>
                      <th class="controls"></th>
@@ -148,18 +149,15 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       
       let html =
          `<div class="ictv-accordion-item" data-id="${fileKey}">
-            <div class="ictv-accordion-header" data-id="${fileKey}">
+            <div class="ictv-accordion-header sequence-file-header" data-id="${fileKey}">
                <div class="ictv-accordion-control" data-id="${fileKey}">${Icon.chevronDown}</div>
                <div class="ictv-accordion-label">
-                  <div class="filename">${file_.name}</div>
-                  <div class="sequence-count">(${sequenceCount} sequence${sequenceCount === 1 ? '' : 's'})</div>
+                  <div class="filename">Sequences in ${file_.name}</div>
+                  <div class="sequence-count">(${sequenceCount})</div>
                </div>
             </div>
             <div class="ictv-accordion-body" data-id="${fileKey}">
-               <div class="ictv-accordion-content">
-                  <div class="sequences-title">${title}</div>
-                  ${sequencesHTML}
-               </div>
+               <div class="ictv-accordion-content">${sequencesHTML}</div>
             </div>
          </div>`;
 
@@ -171,6 +169,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       if (!Array.isArray(sequence_.hits) || sequence_.hits.length < 1) {
          return `<tr class="no-hits-row">
+            <td class="index">${seqIndex_ + 1}</td>
             <td class="qseqid">No BLAST hits for sequence ${seqIndex_ + 1}</td>
             <td class="hits">0</td>
             <td class="controls"></td>
@@ -182,6 +181,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       const rowClass = seqIndex_ % 2 === 0 ? "even-row" : "odd-row";
       
       let html = `<tr class="${rowClass}">
+         <td class="index">${seqIndex_ + 1}</td>
          <td class="qseqid">${sequence_.qseqid}</td>
          <td class="hits">${sequence_.hits.length.toLocaleString("en-US")}</td>
          <td class="controls">
@@ -235,8 +235,6 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       // the container element. The boolean value that's returned indicates whether a job doesn't have a 
       // completed status (and also, if a message was displayed).
 
-      //if (DisplayMessageForIncompleteJob(this.elements.detailsView, this.parent.job)) { return; }
-
       // Clear any existing content in the container.
       this.elements.detailsView.innerHTML = "";
 
@@ -244,14 +242,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       let jobName = Utils.safeTrim(this.parent.job.name);
       if (jobName.length < 1) { jobName = "(No job name provided)"; }
 
-      // Format the created on and ended on date/times.
-      let createdOn = FormatDate(this.parent.job.createdOn);
+      // Emphasize the job name since it's the most important detail for users to see at a glance.
+      const emphasizeName = true; 
 
-      // Format the duration between two date/times.
-      let duration = FormatDuration(this.parent.job.createdOn, this.parent.job.endedOn);
-
-      // TODO: Temporary fix to display taxablast instead of seqsearch.
-      let programName = "taxablast"; // this.parent.job.data.program_name;
+      // Create the job details table HTML.
+      const tableHTML = this.parent.createJobDetailsTable(emphasizeName);
 
       // Create the link panel HTML containing a link to this job's details.
       const linkPanelHTML = this.parent.createLinkRow(PanelKey.jobDetails);
@@ -262,63 +257,14 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
       let html = 
-         `<div class="panel-title">Search Results</div>
-         <div class="panel-controls">
+         `<div class="panel-controls">
             ${linkPanelHTML}
             <button class="btn ${ButtonClass.newSearch} has-tooltip"
                data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
                data-url="${newSearchURL}"
             >${Icon.search} New search</button>
          </div>
-         <table class="job-details">
-            <tbody>
-               <tr class="job-name-row">
-                  <th class="job-name-label">Job name</th>
-                  <td class="job-name">${jobName}</td>
-               </tr>
-               <tr>
-                  <th>Started</th>
-                  <td>${createdOn || "(unknown)"}</td>
-               </tr>
-               <tr>
-                  <th>Duration</th>
-                  <td>${duration || "(unknown)"}</td>
-               </tr>
-               <tr>
-                  <th>Status</th>
-                  <td>${this.parent.job.status}</td>
-               </tr>
-               <tr>
-                  <th>Program and version</th>
-                  <td>${programName} (version ${this.parent.job.data.version})</td>
-               </tr>
-               <tr>
-                  <th>Database</th>
-                  <td>${this.parent.job.data.database_title}</td>
-               </tr>
-               <tr>
-                  <th>BLAST parameters</th>
-                  <td class="blast-parameters">
-                     <div class="blast-parameter-row">
-                        <label>Task</label>
-                        <div class="blast-value">${this.parent.job.data.task}</div>
-                     </div>
-                     <div class="blast-parameter-row">
-                        <label>Max HSPS</label>
-                        <div class="blast-value">${this.parent.job.data.max_hsps}</div>
-                     </div>
-                     <div class="blast-parameter-row">
-                        <label>Max target seqs</label>
-                        <div class="blast-value">${this.parent.job.data.max_target_seqs}</div>
-                     </div>
-                     <div class="blast-parameter-row">
-                        <label>Command</label>
-                        <div class="blast-command">${this.parent.job.data.blastasn_cmd}</div>
-                     </div>      
-                  </td>
-               </tr>
-            </tbody>
-         </table>
+         ${tableHTML}
          <div class="job-files"></div>`;
 
       this.elements.detailsView.innerHTML = html;
@@ -503,7 +449,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       
       // Populate the container
       this.elements.jobFiles.innerHTML = 
-         `<div class="result-files-title">Files</div>
+         `<div class="result-files-title">Search results</div>
          <div class="result-files">${html}</div>`;
 
       // Get references to DOM elements.
