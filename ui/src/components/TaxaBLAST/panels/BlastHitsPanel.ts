@@ -8,7 +8,8 @@ import { JobStatus } from "../../CuratedNameManager";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
-import { AlertBuilder } from "../../../helpers/AlertBuilder";
+import { ISequenceFile } from "../ISequenceFile";
+import { ISequence } from "../ISequence";
 
 
 export class BlastHitsPanel implements ITaxaBlastPanel {
@@ -17,6 +18,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    elements: {
       blastHits: HTMLElement,
       container: HTMLElement,
+      jobDetails: HTMLElement, // TEST
       panelControls: HTMLElement,
       panelTitle: HTMLElement
    }
@@ -39,6 +41,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       this.elements = {
          blastHits: null,
          container: containerEl_,
+         jobDetails: null,
          panelControls: null,
          panelTitle: null
       }
@@ -79,6 +82,33 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       if (latestHit !== null) { results.push(latestHit); }
 
       return results;
+   }
+
+   // Create HTML for the file and sequence details at the top of the panel.
+   createDetailsTableHTML(file_: ISequenceFile, sequence_: ISequence): string {
+
+      let hitsCount = Array.isArray(sequence_.hits) ? sequence_.hits.length : 0;
+
+      return `<table class="details-table blast-hits-details">
+         <tbody>
+            <tr class="emphasized-row">
+               <th>Query ID</th>
+               <td>${sequence_.qseqid}</td>
+            </tr>
+            <tr>
+               <th>Filename</th>
+               <td>${file_.name}</td>
+            </tr>
+            <tr>
+               <th>Sequence length</th>
+               <td>${sequence_.sequence_length.toLocaleString("en-us")}</td>
+            </tr>
+            <tr>
+               <th>Number of hits</th>
+               <td>${hitsCount.toLocaleString("en-us")}</td>
+            </tr>
+         </tbody>
+      </table>`;
    }
 
    // Create HTML for a BLAST hit.
@@ -267,8 +297,6 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          return this.displayErrorMessage(`No BLAST hits were found for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.name}`);
       }
 
-      let sequenceLength = isNaN(sequence.sequence_length) ? "Unknown" : `${sequence.sequence_length.toLocaleString("en-US")}`;
-
       // Consolidate the BLAST hits by combining multiple hits for the same species.
       const consolidatedHits = this.consolidateBlastHits(sequence.hits);
 
@@ -286,23 +314,41 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Use the query ID for the CSV filename.
       const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
+      
       // Create a URL for the job details/results page.
       const jobDetailsURL = this.parent.createUrlFromState(PanelKey.jobDetails);
 
       // Create the link panel HTML containing a link to this job's details.
       const linkPanelHTML = this.parent.createLinkRow(PanelKey.blastHits);
 
+      // Don't emphasize the job name since this isn't the most important detail for users to see at a glance.
+      const emphasizeFirstRow = false;
+
+      // Create the job details table HTML.
+      const tableHTML = this.parent.createJobDetailsTable(emphasizeFirstRow);
+      
+      // A key for the job details accordion item.
+      const detailsKey = "job_details";
+
+      // Create HTML for the file and sequence details table.
+      const detailsHTML = this.createDetailsTableHTML(file, sequence);
+
       // Create the panel's HTML.
       this.elements.container.innerHTML = 
-         `<div class="panel-title">BLAST hits for Query ID ${sequence.qseqid}</div>
-         <div class="blast-sequence-length">
-            <span class="length-label">Query sequence length:</span>
-            <span class="length-value">${sequenceLength}</span>
+         `${detailsHTML}
+         <div class="ictv-accordion-item job-details" data-id="${detailsKey}">
+            <div class="ictv-accordion-header blast-hits-header" data-id="${detailsKey}">
+               <div class="ictv-accordion-control" data-id="${detailsKey}">${Icon.chevronDown}</div>
+               <div class="ictv-accordion-label">Job details</div>
+            </div>
+            <div class="ictv-accordion-body" data-id="${detailsKey}">
+               <div class="ictv-accordion-content">${tableHTML}</div>
+            </div>
          </div>
+         <div class="blast-hits-title">BLAST hits</div>
          <div class="panel-controls">
             ${linkPanelHTML}
             <div class="sequence-controls">
-
                <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
                   data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
                   data-url="${jobDetailsURL}"
@@ -328,6 +374,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          </div>
          <div class="blast-hits">${hitsHTML}</div>`;
 
+
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
 
@@ -335,14 +382,24 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
       if (!this.elements.blastHits) { throw new Error("Invalid blast hits DOM element"); }
 
-      // Add a click event handler.
+      // Get a reference to the job details accordion element.
+      this.elements.jobDetails = this.elements.container.querySelector(".job-details");
+      if (!this.elements.jobDetails) { throw new Error("Invalid job details DOM element"); }
+      
+      // Get a reference to the panel controls element.
+      this.elements.panelControls = this.elements.container.querySelector(".panel-controls");
+      if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
+
+
+      // Handle clicks in the BLAST hits element. 
       this.elements.blastHits.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
       })
 
-      // Get a reference to the panel controls element.
-      this.elements.panelControls = this.elements.container.querySelector(".panel-controls");
-      if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
+      // Handle clicks in the job details element. 
+      this.elements.jobDetails.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.jobDetails, event_.target as HTMLElement);
+      })
 
       // Handle clicks in the panel controls.
       this.elements.panelControls.addEventListener("click", async (event_) => {

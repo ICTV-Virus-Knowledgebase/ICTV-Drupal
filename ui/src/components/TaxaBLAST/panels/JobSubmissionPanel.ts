@@ -372,7 +372,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             this.displayFileSelectionErrors(filename);
 
          } */ else {
-            console.log("unknown button")
+            console.error("Unknown button")
          }
 
          return;
@@ -805,14 +805,10 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          }
 
          // Start the job submission.
-         //this.parent.jobSubmission.start();
-
          const files = this.selectedFiles.getValidFiles();
          
          // Upload the FASTA file(s) to the web service for processing.
          const result = await TaxaBlastService.uploadSequences(this.parent.authToken, blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
-
-         console.log("result = ", result)
 
          // Handle the upload result and display the correct sub-panel.
          await this.handleSubmissionResult(result);
@@ -901,7 +897,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       } else {
          // TODO?
-         console.log("TODO: update message control for status ", status_)
+         console.error(`TODO: update message control to include status ${status_}`);
       }
 
       // Update the validation message control.
@@ -944,8 +940,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          // Update the FASTA control's status.
          this.updateFastaControlStatus(status, this.dialogFile.size, this.dialogFile.records.length, errors);
-
-         console.log("in validate dialog fasta fastaFile = ", this.dialogFile)
       }
       catch (error_) {
          await AlertBuilder.displayError(error_);
