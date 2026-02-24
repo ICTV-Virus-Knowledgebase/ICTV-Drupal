@@ -39,8 +39,6 @@ export class SelectedFiles {
       this.recordCount += fastaFile_.records.length;
       this.totalSize += fastaFile_.size;
 
-      console.log("in addFile total size is now ", this.totalSize)
-
       // Add the file to the array.
       this.files.push(fastaFile_);
 

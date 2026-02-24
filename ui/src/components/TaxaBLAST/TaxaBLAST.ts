@@ -241,8 +241,6 @@ export class TaxaBLAST {
    // Display (load) a panel and hide (unload) the other ones.
    async displayPanel(selectedKey_: PanelKey) {
 
-      console.log(`in displayPanel with panel key ${selectedKey_}`)
-
       // The selected panel might need updates to metadata.
       switch (selectedKey_) {
 

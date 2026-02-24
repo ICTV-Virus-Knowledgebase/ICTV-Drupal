@@ -262,7 +262,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             <div class="right-side">
                <button class="${ButtonClass.toggle} has-tooltip" 
                   data-all-selected="false"
-                  data-tippy-content=\"To remove files from the list below, click the checkbox on individual files or click "Select all" and then click "Remove selected file(s)"\"
+                  data-tippy-content=\"To remove files from the list below, click the checkbox on individual files or click 'Select all' and then click 'Remove selected file(s)'\"
                >${Icon.toggleOn} Select all</button>
                <button class="${ButtonClass.removeFiles} has-tooltip" 
                   disabled
@@ -293,7 +293,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             status = `<button class="${ButtonClass.errorLink} has-tooltip" 
                data-filename="${file_.filename}"
                data-tippy-content="${errorText}"
-               disabled
                >${errorsLabel}</button>`
          }
 
@@ -324,8 +323,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements.selectedFilesContents.innerHTML = html;
       this.elements.selectedFilesSection.classList.add("active");
 
-      // Initialize tippy tooltips for buttons.
-      tippy(".selected-files .has-tooltip");
+      // Re-initialize tippy tooltips for buttons.
+      tippy(".has-tooltip"); // .selected-files-section .contents .selected-files 
 
       // Make the start button active.
       this.elements.startButton.classList.add("active");
@@ -540,7 +539,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          <div class="input-section">
             <div class="number-column">4.</div>
             <div class="content-column">
-               Upload FASTA files and run TaxaBLAST <button class=\"btn start-button\">Start</button>
+               Upload FASTA files and run TaxaBLAST <button class=\"btn start-button has-tooltip\" 
+                  data-tippy-content=\"Click to submit the selected FASTA files and run TaxaBLAST\">Start</button>
             </div>
          </div>
          ${this.createFastaDialogHTML()}`;
