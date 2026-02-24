@@ -1078,10 +1078,11 @@ The panel title
 
 /* The "Run TaxaBLAST" button */
 #ictv_taxablast_container .job-submission-panel button.start-button {
-   background-color: var(--ictv-light-grey-color-color);
+   background-color: var(--ictv-light-grey-color);
    border-radius: 5px;
-   color: var(--ictv-disabled-color);
-   margin-left: 0.25rem;
+   color: #fff;
+   margin: 0 0 0 0.25rem;
+   padding: 0.05rem 0.25rem;
    width: 60px;
 }
 #ictv_taxablast_container .job-submission-panel button.start-button i {
