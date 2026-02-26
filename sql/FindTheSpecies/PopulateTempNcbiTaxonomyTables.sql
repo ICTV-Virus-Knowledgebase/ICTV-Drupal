@@ -8,6 +8,8 @@
 
 USE ictv_apps_temp;
 
+-- Disable foreign key checks for this session.
+SET FOREIGN_KEY_CHECKS = 0;
 
 /*
    The NCBI Division table
@@ -30,7 +32,6 @@ SELECT
    `name`,
    `comments`,
    `tid`
-
 FROM ictv_apps.ncbi_division;
 
 
@@ -55,7 +56,6 @@ SELECT
    `unique_name`,
    `name_class`,
    `name_class_tid`
-
 FROM ictv_apps.ncbi_name;
 
 
@@ -106,8 +106,10 @@ SELECT
    `hidden_subtree_root_flag`,
    `comments`,
    `subspecies_parent_tax_id`
-
 FROM ictv_apps.ncbi_node;
+
+-- Re-enable foreign key checks.
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Add the self-referential foreign key constraint.
 ALTER TABLE ictv_apps_temp.ncbi_node

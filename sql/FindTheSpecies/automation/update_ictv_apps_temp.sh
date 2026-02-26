@@ -39,7 +39,9 @@ DbPort="3306"
 DiseaseOntologyFilename="$SCRIPT_DIR/../../../data/diseaseOntologyData_021825.csv"
 
 
-# Calculate and display elapsed time.
+#------------------------------------------------------------------------------------------------------------------
+# A function to calculate and display elapsed time.
+#------------------------------------------------------------------------------------------------------------------
 function display_elapsed_time {
    local START_TIME=$1
 

@@ -4,13 +4,18 @@ import requests
 import zipfile
 
 
-extract_path = "extracted_files"  # Folder where files will be extracted
+# The subfolder where files will be extracted.
+extract_path = "data"
+
+# The download URL
 url = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip"
+
+# The taxonomy download zip file.
 zip_path = "taxdmp.zip"
 
 
 
-# Download the ZIP file
+# Download the ZIP file from NCBI.
 def downloadZip(url, zipPath):
    try:
       response = requests.get(url, stream=True)
