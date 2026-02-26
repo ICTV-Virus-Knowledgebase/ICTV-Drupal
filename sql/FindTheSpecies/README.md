@@ -5,9 +5,8 @@
 
 ### Tables
 
-- Create and populate the vocabulary and term tables using **InitializeVocabularyAndTerms.sql**.
+- Create and populate the vocabulary and term tables using **InitializeTempVocabulariesAndTerms.sql**.
 - Run **CreateTaxonNameTable.sql** to create the taxon_name table.
-- Run **CreateTaxonHistogramTable.sql** to create the taxonomy_histogram table.
 - Run **CreateNcbiTaxonomyTables.sql** to create the ncbi_names, ncbi_nodes, and ncbi_division tables.
 
 ### NCBI Taxonomy tables

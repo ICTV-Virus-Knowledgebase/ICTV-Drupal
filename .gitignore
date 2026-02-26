@@ -1,35 +1,39 @@
-ictv_curated_name_manager/assets/css/
-ictv_curated_name_manager/assets/images/
-ictv_curated_name_manager/assets/js/ICTV_CuratedNameManager.js
+
+ictv_curated_name_manager/assets/css/*
+ictv_curated_name_manager/assets/js/*
+ictv_curated_name_manager/assets/js/!curatedNameManager.js
 
 ictv_find_the_species_component/assets/css/
-ictv_find_the_species_component/assets/js/ICTV_VirusNameLookup.js
+ictv_find_the_species_component/assets/js/*
+ictv_find_the_species_component/assets/js/!findTheSpeciesComponent.js
 
-ictv_member_species_table/assets/css/
-ictv_member_species_table/assets/images/
-ictv_member_species_table/assets/js/ICTV_MemberSpeciesTable.js
+ictv_member_species_table/assets/css/*
+ictv_member_species_table/assets/js/*
+ictv_member_species_table/assets/js/!memberSpeciesTable.js
 
-ictv_proposal_submission/assets/css/
-ictv_proposal_submission/assets/images/
-ictv_proposal_submission/assets/js/ICTV_ProposalSubmission.js
+ictv_proposal_submission/assets/css/*
+ictv_proposal_submission/assets/js/*
+ictv_proposal_submission/assets/js/!proposalSubmission.js
 
-ictv_release_history_taxonomy_browser/assets/css/
-ictv_release_history_taxonomy_browser/assets/images/
-ictv_release_history_taxonomy_browser/assets/js/ICTV_TaxonomyBrowser.js
+ictv_release_history_taxonomy_browser/assets/css/*
+ictv_release_history_taxonomy_browser/assets/js/*
+ictv_release_history_taxonomy_browser/assets/js/!releaseHistoryTaxonomyBrowser.js
 
-ictv_taxablast_ui/assets/css/
-ictv_taxablast_ui/assets/js/ICTV_TaxaBLAST.js
+ictv_taxablast_ui/assets/css/*
+ictv_taxablast_ui/assets/js/*
+ictv_taxablast_ui/assets/js/!taxablast.js
 
-ictv_taxon_history/assets/css/
-ictv_taxon_history/assets/js/ICTV_TaxonReleaseHistory.js
+ictv_taxon_history/assets/css/*
+ictv_taxon_history/assets/js/*
+ictv_taxon_history/assets/js/!taxonHistory.js
 
-ictv_taxonomy_browser/assets/css/
-ictv_taxonomy_browser/assets/images/
-ictv_taxonomy_browser/assets/js/ICTV_TaxonomyBrowser.js
+ictv_taxonomy_browser/assets/css/*
+ictv_taxonomy_browser/assets/js/*
+ictv_taxonomy_browser/assets/js/!taxonomyBrowser.js
 
-ictv_virus_name_lookup/assets/css/
-ictv_virus_name_lookup/assets/images/
-ictv_virus_name_lookup/assets/js/ICTV_VirusNameLookup.js
+ictv_virus_name_lookup/assets/css/*
+ictv_virus_name_lookup/assets/js/*
+ictv_virus_name_lookup/assets/js/!virusNameLookup.js
 
 ui/dist/
 ui/node_modules/
@@ -37,3 +41,5 @@ ui/node_modules/
 scripts/__pycache__/
 scripts/VirusNameLookup/__pycache__/
 
+sql/FindTheSpecies/archive/
+sql/VirusNameLookup/archive/
