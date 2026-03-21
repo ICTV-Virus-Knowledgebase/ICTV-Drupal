@@ -1,5 +1,5 @@
 taxaBLAST:
-  version: 20251209
+  version: 20260321
   css:
     theme:
       assets/css/ictv_common.css: {}
