@@ -34,6 +34,7 @@ DELETE FROM ictv_apps.searchable_taxon;
 -- Copy records from searchable_taxon in ictv_apps_temp to ictv_apps.
 INSERT INTO ictv_apps.searchable_taxon (
    `id`,
+   `alternate_id`,
    `division_tid`,
    `filtered_name`,
    `ictv_id`,
@@ -53,6 +54,7 @@ INSERT INTO ictv_apps.searchable_taxon (
 )
 SELECT 
    `id`,
+   `alternate_id`,
    `division_tid`,
    `filtered_name`,
    `ictv_id`,
@@ -112,7 +114,7 @@ FROM ictv_apps_temp.disease_ontology;
 
 
 -- ======================================================================================================================
--- NCBI division
+-- NCBI Taxonomy
 -- ======================================================================================================================
 
 -- Disable foreign key checks.
@@ -120,8 +122,10 @@ SET FOREIGN_KEY_CHECKS=0;
 
 -- Delete existing records from ncbi_division in ictv_apps.
 DELETE FROM ictv_apps.ncbi_division;
+DELETE FROM ictv_apps.ncbi_name;
+DELETE FROM ictv_apps.ncbi_node;
 
--- Copy records from ncbi_division in ictv_apps_temp to ictv_apps.
+-- Copy NCBI division records from ictv_apps_temp to ictv_apps.
 INSERT INTO ictv_apps.ncbi_division (
    `id`,
    `cde`,
@@ -138,21 +142,7 @@ SELECT
 
 FROM ictv_apps_temp.ncbi_division;
 
--- Re-enable foreign key checks.
-SET FOREIGN_KEY_CHECKS=1;
-
-
--- ======================================================================================================================
--- NCBI name
--- ======================================================================================================================
-
--- Disable foreign key checks.
-SET FOREIGN_KEY_CHECKS=0;
-
--- Delete existing records from ncbi_name in ictv_apps.
-DELETE FROM ictv_apps.ncbi_name;
-
--- Copy records from ncbi_name in ictv_apps_temp to ictv_apps.
+-- Copy NCBI name records from ictv_apps_temp to ictv_apps.
 INSERT INTO ictv_apps.ncbi_name (
    `tax_id`,
    `name_txt`,
@@ -169,21 +159,7 @@ SELECT
 
 FROM ictv_apps_temp.ncbi_name;
 
--- Re-enable foreign key checks.
-SET FOREIGN_KEY_CHECKS=1;
-
-
--- ======================================================================================================================
--- NCBI node
--- ======================================================================================================================
-
--- Disable foreign key checks.
-SET FOREIGN_KEY_CHECKS=0;
-
--- Delete existing records from ncbi_node in ictv_apps.
-DELETE FROM ictv_apps.ncbi_node;
-
--- Copy records from ncbi_node in ictv_apps_temp to ictv_apps.
+-- Copy NCBI node records from ictv_apps_temp to ictv_apps.
 INSERT INTO ictv_apps.ncbi_node (
    `tax_id`,
    `parent_tax_id`,

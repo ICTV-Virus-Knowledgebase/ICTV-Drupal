@@ -123,7 +123,36 @@ BEGIN
 	END IF;
 	
 	-- Filter the name
-	SET filteredName = getFilteredName(_name);
+   SET filteredName = REPLACE(
+         REPLACE(
+            REPLACE(
+               REPLACE(
+                  REPLACE(
+                     REPLACE(
+                        REPLACE(
+                           REPLACE(
+                              REPLACE(
+                                 REPLACE(
+                                    REPLACE(
+                                       REPLACE(
+                                          REPLACE(
+                                             REPLACE(
+                                                REPLACE(_name, '-', ' ')
+                                             , '_', ' ')
+                                          , '`', '')
+                                       , '"', '')
+                                    , '''', '')
+                                 , '!', '')
+                              , '?', '')
+                           , '  ', ' ')
+                        , '(', ',')
+                     , ')', ',')
+                  , ';', ',')
+               , ':', ',')
+            , ',,', ',')
+         , '/', ' ')
+      , '\\', ' ');
+      -- SET filteredName = getFilteredName(_name);
 	
 	
 	-- Create the new searchable_taxon record.

@@ -1,8 +1,8 @@
 databaseName: 'ictv_apps'
-dockerContainer: 'curtish/ictv_seqsearch:VMR_MSL40.v2.20251013.20260210.5c3e865'
-drupalRoot: '/var/www/drupal/site'
+dockerContainer: 'curtish/ictv_seqsearch:VMR_MSL41.v1.20260320.32f19af'
+drupalRoot: '/var/www/dapp/web'
 inputDirectory: 'seq_in'
-jobsPath: '/var/www/drupal/files/jobs'
+jobsPath: '/var/www/dapp/files/jobs'
 jsonResultsFilename: 'tax_results.json'
 maxTotalUploadSize: 500000000
 maxUploadedRecords: 100

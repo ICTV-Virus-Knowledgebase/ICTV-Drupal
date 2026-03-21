@@ -33,9 +33,9 @@ BEGIN
    AND sci.name_class_tid = sciNameTID
    AND nonSci.name_class_tid <> sciNameTID
    AND sci.ictv_id IS NOT NULL
-   AND sci.ictv_taxnode_id IS NOT NULL
-   AND nonSci.ictv_id IS NULL
-   AND nonSci.ictv_taxnode_id IS NULL;
+   AND sci.ictv_taxnode_id IS NOT NULL;
+   -- AND nonSci.ictv_id IS NULL
+   -- AND nonSci.ictv_taxnode_id IS NULL;
 
 END //
 
