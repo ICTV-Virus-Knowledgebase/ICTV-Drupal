@@ -14,7 +14,7 @@ BEGIN
    DELETE FROM ictv_apps_temp.vocabulary;
    
    -- Copy the vocabulary table from ictv_apps to ictv_apps_temp.
-   INSERT INTO ictv_apps_temp.vocabulary (
+   /* INSERT INTO ictv_apps_temp.vocabulary (
       id, 
       description, 
       label, 
@@ -25,14 +25,14 @@ BEGIN
       description,
       label,
       vocab_key
-   FROM ictv_apps.vocabulary;
+   FROM ictv_apps.vocabulary; */
 
 
    -- Delete records from the ictv_apps_temp term table.
    DELETE FROM ictv_apps_temp.term;
    
    -- Copy the term table from ictv_apps to ictv_apps_temp.
-   INSERT INTO ictv_apps_temp.term (
+   /* INSERT INTO ictv_apps_temp.term (
       id, 
       description,
       full_key,
@@ -47,7 +47,7 @@ BEGIN
       label,
       term_key,
       vocab_id
-   FROM ictv_apps.term;
+   FROM ictv_apps.term; */
 
    -- Re-enable foreign key checks.
    SET FOREIGN_KEY_CHECKS = 1;

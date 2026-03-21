@@ -3,6 +3,10 @@ DROP PROCEDURE IF EXISTS `InitializeNcbiSubspecies`;
 
 DELIMITER //
 
+-- TODO: This can be optimized by search on term ID instead of name_class
+-- Codex addition: "and by only joining to the ncbi_name table once for the subspecies nodes instead of 4 times for the parent nodes. However, this procedure only needs to be run once after importing the NCBI taxonomy data, so performance is not a big concern.""
+
+
 -- For all NCBI subspecies nodes, try to update the subspecies_parent_tax_id column with the lowest 
 -- level parent node that has a rank of species or above. 
 CREATE PROCEDURE InitializeNcbiSubspecies()

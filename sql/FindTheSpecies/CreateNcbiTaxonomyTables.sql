@@ -17,7 +17,10 @@ CREATE TABLE IF NOT EXISTS `ncbi_name` (
 	`unique_name` VARCHAR(500) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
 	`name_class` VARCHAR(20) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`name_class_tid` INT(11) NULL DEFAULT NULL COMMENT 'This is a custom column that provides a term ID equivalent for the name class.',
-	PRIMARY KEY (`tax_id`, `name_txt`, `name_class`) USING BTREE
+	PRIMARY KEY (`tax_id`, `name_txt`, `name_class`) USING BTREE,
+   KEY `ncbi_name_name_txt_IDX` (`name_txt`) USING BTREE,
+   KEY `ncbi_name_name_class_IDX` (`name_class`) USING BTREE,
+   KEY `ncbi_name_tax_id_IDX` (`tax_id`) USING BTREE
 );
 
 
@@ -41,6 +44,8 @@ CREATE TABLE IF NOT EXISTS `ncbi_node` (
 	PRIMARY KEY (`tax_id`) USING BTREE,
 	INDEX `FK_division_id` (`division_id`) USING BTREE,
 	INDEX `FK_parent_tax_id_tax_id` (`parent_tax_id`) USING BTREE,
+   KEY `ncbi_node_tax_id_IDX` (`tax_id`,`division_id`) USING BTREE,
+   KEY `ncbi_node_rank_name_IDX` (`rank_name`) USING BTREE,
 	CONSTRAINT `FK_division_id` FOREIGN KEY (`division_id`) REFERENCES `ncbi_division` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION,
 	CONSTRAINT `FK_parent_tax_id_tax_id` FOREIGN KEY (`parent_tax_id`) REFERENCES `ncbi_node` (`tax_id`) ON UPDATE NO ACTION ON DELETE NO ACTION
 );

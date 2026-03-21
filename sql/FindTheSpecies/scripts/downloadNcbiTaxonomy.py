@@ -1,77 +1,75 @@
 
 import os
+from pathlib import Path
 import requests
 import zipfile
 
 
-# The subfolder where files will be extracted.
-extract_path = "data"
+# The subfolder where data files will be extracted.
+# TODO: Pass this in as a command line parameter!
+data_path = "./data"
 
-# The download URL
-url = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip"
+# The FTP/download URL
+ftp_url = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip"
 
-# The taxonomy download zip file.
-zip_path = "taxdmp.zip"
+# The taxonomy zip file that will be downloaded from NCBI.
+ncbi_zip_file = "taxdmp.zip"
+
+
+# Make sure the data subdirectory exists.
+if not Path(data_path).is_dir():
+   print("Error: The data subdirectory does not exist.")
+   exit(1)
+
+try:
+   # Download the ZIP file from the NCBI.
+   response = requests.get(ftp_url, stream=True)
+   response.raise_for_status()  # Raise an error for failed requests
+
+   with open(ncbi_zip_file, "wb") as file:
+      for chunk in response.iter_content(chunk_size=8192):
+         file.write(chunk)
+
+   print(f"Downloaded file saved as {ncbi_zip_file}")
+
+except requests.exceptions.RequestException as re:
+   print(f"Error downloading file: {re}")
+   exit(1)
+
+except Exception as e:
+   print(f"Unexpected error: {e}")
+   exit(1)
 
 
 
-# Download the ZIP file from NCBI.
-def downloadZip(url, zipPath):
-   try:
-      response = requests.get(url, stream=True)
-      response.raise_for_status()  # Raise an error for failed requests
+# Validate the zip file
+if not zipfile.is_zipfile(ncbi_zip_file):
+   print("Error: The downloaded file is not a valid ZIP archive.")
+   exit(1)
 
-      with open(zipPath, "wb") as file:
-         for chunk in response.iter_content(chunk_size=8192):
-            file.write(chunk)
+try:
+   with zipfile.ZipFile(ncbi_zip_file, "r") as zip_ref:
 
-      print(f"Downloaded file saved as {zipPath}")
+      # Check for existing files and rename if necessary
+      for file_name in zip_ref.namelist():
 
-   except requests.exceptions.RequestException as e:
-      print(f"Error downloading file: {e}")
-      return False
+         file_path = os.path.join(data_path, file_name)
+
+         # If the file already exists, delete it.
+         Path(file_path).unlink(missing_ok=True)
+
+      zip_ref.extract("division.dmp", data_path)
+      zip_ref.extract("names.dmp", data_path)
+      zip_ref.extract("nodes.dmp", data_path)
+
+   print(f"Extracted files to {data_path}")
+
+except zipfile.BadZipFile as bzf:
+   print(f"Error: Corrupt ZIP file: {bzf}")
+   exit(1)
    
-   return True
-
-
-# Safely extract specified contents of the ZIP file.
-def extractZip(zipPath, extractPath):
-
-   # Make sure the zip file is valid.
-   if not zipfile.is_zipfile(zipPath):
-      print("Error: The downloaded file is not a valid ZIP archive.")
-      return False
-
-   # Ensure output directory exists
-   os.makedirs(extractPath, exist_ok=True)  
-
-   try:
-      with zipfile.ZipFile(zipPath, "r") as zipRef:
-
-         # Check for existing files and rename if necessary
-         for fileName in zipRef.namelist():
-            filePath = os.path.join(extractPath, fileName)
-
-            # If file exists, rename it by appending "_new"
-            if os.path.exists(filePath):
-               base, ext = os.path.splitext(fileName)
-               newFileName = f"{base}_new{ext}"
-               filePath = os.path.join(extractPath, newFileName)
-               print(f"File {fileName} already exists. Saving as {newFileName}")
-
-         zipRef.extract("division.dmp", extractPath)
-         zipRef.extract("names.dmp", extractPath)
-         zipRef.extract("nodes.dmp", extractPath)
-
-      print(f"Extracted files to {extractPath}")
-
-   except zipfile.BadZipFile:
-      print("Error: Corrupt ZIP file.")
-      return False
+except Exception as e:
+   print(f"Error: {e}")
+   exit(1)
    
-   return True
-
-
-# Run the functions
-if downloadZip(url, zip_path):
-    extractZip(zip_path, extract_path)
+exit(0)

@@ -30,8 +30,9 @@ def importFromCSV(dbSettings_: DbSettings, filename_: str):
       dbConnection = mariadb.connect(
          autocommit = True,
          database = dbSettings_.dbName,
-         host = dbSettings_.hostname,
-         port = dbSettings_.port,
+         #host = dbSettings_.hostname,
+         #port = dbSettings_.port,
+         unix_socket="/run/mysqld/mysqld.sock",
          user = dbSettings_.username,
          password = dbSettings_.password)
       

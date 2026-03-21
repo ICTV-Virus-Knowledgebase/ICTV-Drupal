@@ -74,7 +74,36 @@ BEGIN
    -- Return NCBI taxa that are species or higher along with a possible match in ICTV taxonomy.
    SELECT
       division.id AS division_tid,
-      getFilteredName(nname.name_txt) AS filtered_name,
+      -- getFilteredName(nname.name_txt) AS filtered_name,
+      REPLACE(
+         REPLACE(
+            REPLACE(
+               REPLACE(
+                  REPLACE(
+                     REPLACE(
+                        REPLACE(
+                           REPLACE(
+                              REPLACE(
+                                 REPLACE(
+                                    REPLACE(
+                                       REPLACE(
+                                          REPLACE(
+                                             REPLACE(
+                                                REPLACE(nname.name_txt, '-', ' ')
+                                             , '_', ' ')
+                                          , '`', '')
+                                       , '"', '')
+                                    , '''', '')
+                                 , '!', '')
+                              , '?', '')
+                           , '  ', ' ')
+                        , '(', ',')
+                     , ')', ',')
+                  , ';', ',')
+               , ':', ',')
+            , ',,', ',')
+         , '/', ' ')
+      , '\\', ' ') AS filtered_name,
       latestTN.ictv_id,
       latestTN.latestTaxnodeID AS ictv_taxnode_id,
       nname.name_txt,

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # Update tables in the ictv_apps_temp database.
 #
@@ -6,130 +6,102 @@
 # Here's how to remove the carriage return characters from this script:
 # sed -i 's/\r$//' update_ictv_apps_temp.sh
 
-# Script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-# SQL Directory for most DB objects that ictv_apps_temp needs.
-SQL_DIR="$SCRIPT_DIR/../initialize"
-
-# GetFilteredName.sql directory
-GetFilteredNameSQL_DIR="$SCRIPT_DIR/../Functions"
-
-# QuerySearchableTaxon.sql directory
-QuerySearchableTaxonSQL_DIR="$SCRIPT_DIR/../storedProcedures"
-
-# Python scripts directory
-PY_SCRIPT_DIR="$SCRIPT_DIR/../../../scripts/VirusNameLookup"
-
-# SQL Directory for views
-SQL_VIEWS_DIR="$SCRIPT_DIR/../views"
-
-INITIAL_START_TIME=$(date +%s)
-
-# The ictv_apps_temp database
-AppsTempDB="ictv_apps_temp"
-
-# Database connection information.
-DbHostname="localhost"
-DbUsername=""
-DbPassword=""
-DbPort="3306"
-
-# The disease_ontology data file.
-DiseaseOntologyFilename="$SCRIPT_DIR/../../../data/diseaseOntologyData_021825.csv"
-
+# Make sure the script is run from the FindTheSpecies directory.
+CURRENT_DIR_NAME=$(basename "$(pwd)")
+if [ "$CURRENT_DIR_NAME" != "FindTheSpecies" ]; then
+   echo -e "This script should be run in the FindTheSpecies directory\n"
+   exit 1
+fi
 
 #------------------------------------------------------------------------------------------------------------------
-# A function to calculate and display elapsed time.
+# Sourcing set_env_vars.sh sets the following variables:
+#
+#  APPS_TEMP_DB: The ictv_apps_temp database
+#
+#  AUTOMATION_DIR: the automation directory
+#
+#  DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_PORT: Database connection information
+#
+#  DISEASE_ONTOLOGY_FILENAME: The disease_ontology data file
+#
+#  FTS_HOME: The FindTheSpecies directory (under /sql in ICTV-Drupal)
+#
+#  DATA_DIR: Data directory
+#
+#  SCRIPT_DIR: Python scripts directory
+#
+#  SQL_DIR: Directory for stored procedures, views, and SQL scripts used by ictv_apps_temp
 #------------------------------------------------------------------------------------------------------------------
-function display_elapsed_time {
-   local START_TIME=$1
-
-   END_TIME=$(date +%s)
-   ELAPSED_TIME=$((END_TIME - START_TIME))
-
-   MINUTES=$((ELAPSED_TIME / 60))
-   SECONDS=$((ELAPSED_TIME % 60))
-
-   echo -e "Execution time: ${MINUTES} minute(s), ${SECONDS} second(s)"
-}
+source ./automation/set_env_vars.sh
 
 # Display usage information.
 function usage {
-    echo "Usage: $0 -u database_username -p database_password"
-    exit 1
+   echo -e "Usage: $0 -u <database username> -p <database password>\n"
+   exit 1
 }
-
 
 # Parse input parameters
 while getopts ":u:p:" opt; do
-    case ${opt} in
-        u )
-            DbUsername=$OPTARG
-            ;;
-        p )
-            DbPassword=$OPTARG
-            ;;
-        \? )
-            usage
-            ;;
-    esac
+   case ${opt} in
+      u )
+         DB_USERNAME=$OPTARG
+         ;;
+      p )
+         DB_PASSWORD=$OPTARG
+         ;;
+      \? )
+         usage
+         ;;
+   esac
 done
 
 # Check if required parameters are provided
-if [ -z "$DbUsername" ] || [ -z "$DbPassword" ]; then
+if [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
     usage
 fi
 
+# This script's start time.
+INITIAL_START_TIME=$(date +%s)
 
 #------------------------------------------------------------------------------------------------------------------
 # Create tables and update views, stored procedures, and functions.
 #------------------------------------------------------------------------------------------------------------------
 
-# Create the disease_ontology table.
-echo -e "\nCreating disease_ontology table"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/CreateDiseaseOntologyTable.sql"
-if [ $? -ne 0 ]; then
-  echo "An error occurred creating the disease_ontology table"
-  exit 1
-fi
-
 # Add SQL views
-echo -e "\nAdding SQL views"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_searchable_taxon.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_species_isolates.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node_merge_split.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node_names.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_VIEWS_DIR/v_taxonomy_node.sql"
+echo -e "\nAdding SQL views\n"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_searchable_taxon.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_species_isolates.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_taxonomy_node_merge_split.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_taxonomy_node_names.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_taxonomy_node.sql"
 
 #------------------------------------------------------------------------------------------------------------------
 # Update the vocabulary and term tables with new data.
 #------------------------------------------------------------------------------------------------------------------
 START_TIME=$(date +%s)
-echo -e "\nUpdating vocabulary and term tables"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/UpdateVocabularyAndTerms.sql"
-echo "CALL UpdateVocabularyAndTerms();" | mariadb -D $AppsTempDB -s -b --show-warnings
+echo -e "\nUpdating vocabulary and term tables\n"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/UpdateVocabularyAndTerms.sql"
+echo "CALL UpdateVocabularyAndTerms();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-  echo "An error occurred updating the vocabulary and term tables"
+  echo "An error occurred updating the vocabulary and term tables\n"
   exit 1
 fi
 
 display_elapsed_time "$START_TIME"
-
 
 #------------------------------------------------------------------------------------------------------------------
 # Update the searchable_taxon table.
 #------------------------------------------------------------------------------------------------------------------
 
 # Delete records from the searchable_taxon table.
-echo "DELETE FROM searchable_taxon;" | mariadb -D $AppsTempDB -s -b --show-warnings
+echo "DELETE FROM searchable_taxon;" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 
 # Add a new column to the searchable_taxon table.
 START_TIME=$(date +%s)
-echo -e "\nAdding a new column to the searchable_taxon table"
-echo "ALTER TABLE searchable_taxon ADD COLUMN IF NOT EXISTS alternate_id VARCHAR(100) NULL;" | mariadb -D $AppsTempDB -s -b --show-warnings
+echo -e "\nAdding a new column to the searchable_taxon table\n"
+echo "ALTER TABLE searchable_taxon ADD COLUMN IF NOT EXISTS alternate_id VARCHAR(100) NULL;" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-  echo "An error occurred adding a new column to the searchable_taxon table"
+  echo "An error occurred adding a new column to the searchable_taxon table\n"
   exit 1
 fi
 
@@ -142,15 +114,15 @@ display_elapsed_time "$START_TIME"
 
 # Add the function "get filtered name".
 echo -e "\nAdding GetFilteredName.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$GetFilteredNameSQL_DIR/GetFilteredName.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/GetFilteredName.sql"
 
 # Add the stored procedure used to import records into searchable_taxon.
 echo -e "\nAdding ImportSearchableTaxon.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportSearchableTaxon.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/ImportSearchableTaxon.sql"
 
 # Add the stored procedure that searches searchable_taxon.
-echo -e "\nAdding QuerySearchableTaxon.sql"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$QuerySearchableTaxonSQL_DIR/QuerySearchableTaxon.sql"
+echo -e "\nAdding QuerySearchableTaxon.sql\n"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/QuerySearchableTaxon.sql"
 
 
 #------------------------------------------------------------------------------------------------------------------
@@ -158,42 +130,42 @@ mariadb -D "$AppsTempDB" -s -b --show-warnings < "$QuerySearchableTaxonSQL_DIR/Q
 #------------------------------------------------------------------------------------------------------------------
 
 # Populate the latest_release_of_ictv_ids table.
-echo -e "\nPopulating the latest_release_of_ictv_ids table"
+echo -e "\nPopulating the latest_release_of_ictv_ids table\n"
 START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/InitializeLatestReleaseOfIctvID.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/InitializeLatestReleaseOfIctvID.sql"
 display_elapsed_time "$START_TIME"
 
 # Import VMR records (species_isolates).
-echo -e "\nImporting VMR records (species_isolates)"
+echo -e "\nImporting VMR records (species_isolates)\n"
 START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportLatestSpeciesIsolates.sql"
-echo "CALL ImportLatestSpeciesIsolates();" | mariadb -D $AppsTempDB -s -b --show-warnings
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/ImportLatestSpeciesIsolates.sql"
+echo "CALL ImportLatestSpeciesIsolates();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-  echo "An error occurred importing VMR records (species_isolates)"
+  echo "An error occurred importing VMR records (species_isolates)\n"
   exit 1
 fi
 
 display_elapsed_time "$START_TIME"
 
 # Import the latest taxonomy_node records corresponding with distinct names in taxonomy_node. 
-echo -e "\nImporting the latest taxonomy nodes"
+echo -e "\nImporting the latest taxonomy nodes\n"
 START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportLatestTaxonomyNodes.sql"
-echo "CALL ImportLatestTaxonomyNodes();" | mariadb -D $AppsTempDB -s -b --show-warnings
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/ImportLatestTaxonomyNodes.sql"
+echo "CALL ImportLatestTaxonomyNodes();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-  echo "An error occurred importing the latest taxonomy nodes"
+  echo "An error occurred importing the latest taxonomy nodes\n"
   exit 1
 fi
 
 display_elapsed_time "$START_TIME"
 
 # Import ICTV species with binomial nomenclature and remove the genus name from the species name.
-echo -e "\nImporting ICTV species epithets"
+echo -e "\nImporting ICTV species epithets\n"
 START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportIctvSpeciesEpithets.sql"
-echo "CALL ImportIctvSpeciesEpithets();" | mariadb -D $AppsTempDB -s -b --show-warnings
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/ImportIctvSpeciesEpithets.sql"
+echo "CALL ImportIctvSpeciesEpithets();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-  echo "An error occurred importing ICTV species epithets"
+  echo "An error occurred importing ICTV species epithets\n"
   exit 1
 fi
 
@@ -201,104 +173,14 @@ display_elapsed_time "$START_TIME"
 
 
 #------------------------------------------------------------------------------------------------------------------
-# Populate searchable_taxon with NCBI data.
+# Populate searchable_taxon with NCBI Taxonomy data.
 #------------------------------------------------------------------------------------------------------------------
-
-# Initialize NCBI term ID columns for divisions, name classes, and rank names.
-# Note: This could be done in update_ncbi_taxonomy.sh but is included here in case any new terms have been added.
-START_TIME=$(date +%s)
-echo -e "\nInitializing NCBI term ID columns"
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/InitializeNcbiTermIdColumns.sql"
-echo "CALL InitializeNcbiTermIdColumns();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred initializing NCBI term ID columns"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
-# Import NCBI scientific names into searchable_taxon
-echo -e "\nImporting NCBI scientific names"
-START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportNcbiScientificNames.sql"
-echo "CALL ImportNcbiScientificNames();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred importing NCBI scientific names"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
-# Initialize NCBI sub-species records before they are imported.
-echo -e "\nInitializing NCBI sub-species"
-START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/InitializeNcbiSubspecies.sql"
-echo "CALL InitializeNcbiSubspecies();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred initializing NCBI sub-species"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
-# Import NCBI sub-species records into searchable_taxon.
-echo -e "\nImporting NCBI sub-species records"
-START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportNcbiSubspeciesNodes.sql"
-echo "CALL ImportNcbiSubspeciesNodes();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred importing NCBI sub-species records"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
-# Update NCBI Taxonomy non-scientific names that are associated with NCBI Taxonomy scientific names
-# that have an ICTV taxnode ID assigned.
-echo -e "\nUpdating NCBI non-scientific names"
-START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/UpdateNcbiNonScientificNames.sql"
-echo "CALL UpdateNcbiNonScientificNames();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred updating NCBI non-scientific names"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
+eval "$AUTOMATION_DIR/import_ncbi_taxonomy_into_searchable_taxon.sh" -u "$DB_USERNAME" -p "$DB_PASSWORD"
 
 #------------------------------------------------------------------------------------------------------------------
 # Populate searchable_taxon with Disease Ontology data.
 #------------------------------------------------------------------------------------------------------------------
-
-# Import the Disease Ontology CSV file into the disease_ontology table
-echo -e "\nImporting disease_ontology data from $DiseaseOntologyFilename"
-START_TIME=$(date +%s)
-python3 "$PY_SCRIPT_DIR/importDiseaseOntology.py" --dbName $AppsTempDB --filename $DiseaseOntologyFilename \
-    --hostname $DbHostname --password $DbPassword --port $DbPort --username $DbUsername
-display_elapsed_time "$START_TIME"
-
-# Initialize the disease_ontology table by associating records with an ICTV ID and taxnode ID.
-echo -e "\nInitializing the disease_ontology table"
-START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/InitializeDiseaseOntology.sql"
-echo "CALL InitializeDiseaseOntology();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred initializing the disease_ontology table"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
-# Import disease_ontology records into searchable_taxon.
-echo -e "\nImporting disease_ontology records into searchable_taxon"
-START_TIME=$(date +%s)
-mariadb -D "$AppsTempDB" -s -b --show-warnings < "$SQL_DIR/ImportDiseaseOntologyIntoSearchableTaxon.sql"
-echo "CALL ImportDiseaseOntologyIntoSearchableTaxon();" | mariadb -D $AppsTempDB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred importing disease_ontology records into searchable_taxon"
-  exit 1
-fi
+eval "$AUTOMATION_DIR/import_disease_ontology_into_searchable_taxon.sh" -u "$DB_USERNAME" -p "$DB_PASSWORD"
 
 
 #------------------------------------------------------------------------------------------------------------------

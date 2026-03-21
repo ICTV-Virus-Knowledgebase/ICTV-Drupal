@@ -96,7 +96,36 @@ BEGIN
    -- Return the parent taxa for NCBI subspecies nodes along with a possible match in ICTV taxonomy.
    SELECT
       ndiv.tid AS division_tid,
-      getFilteredName(subspeciesName.name_txt) AS filtered_name,
+      -- getFilteredName(subspeciesName.name_txt) AS filtered_name,
+      REPLACE(
+         REPLACE(
+            REPLACE(
+               REPLACE(
+                  REPLACE(
+                     REPLACE(
+                        REPLACE(
+                           REPLACE(
+                              REPLACE(
+                                 REPLACE(
+                                    REPLACE(
+                                       REPLACE(
+                                          REPLACE(
+                                             REPLACE(
+                                                REPLACE(subspeciesName.name_txt, '-', ' ')
+                                             , '_', ' ')
+                                          , '`', '')
+                                       , '"', '')
+                                    , '''', '')
+                                 , '!', '')
+                              , '?', '')
+                           , '  ', ' ')
+                        , '(', ',')
+                     , ')', ',')
+                  , ';', ',')
+               , ':', ',')
+            , ',,', ',')
+         , '/', ' ')
+      , '\\', ' ') AS filtered_name,
       latestTN.ictv_id,
       latestTN.latestTaxnodeID AS ictv_taxnode_id,
       parentName.name_txt,
