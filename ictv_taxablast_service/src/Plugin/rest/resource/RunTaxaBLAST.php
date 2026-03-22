@@ -1,6 +1,17 @@
 #!/usr/bin/php
 <?php
 
+namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
+
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
+use Drupal\Core\DrupalKernel;
+use Drupal\Core\File\FileSystemInterface;
+use Drupal\ictv_common\Types\JobStatus;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBLAST;
+use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBlastJob;
+use Symfony\Component\HttpFoundation\Request;
+use Drupal\ictv_common\Utils;
+
 /**
  * 
  * Run the TaxaBLAST script and update the database with the results.
@@ -41,16 +52,6 @@
  *    (required) The user's unique numeric identifier.
  * 
 */
-
-use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
-use Drupal\Core\DrupalKernel;
-use Drupal\Core\File\FileSystemInterface;
-use Drupal\ictv_common\Types\JobStatus;
-use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBLAST;
-use Drupal\ictv_taxablast_service\Plugin\rest\resource\TaxaBlastJob;
-use Symfony\Component\HttpFoundation\Request;
-use Drupal\ictv_common\Utils;
-
 
 try {
    //-------------------------------------------------------------------------------------------------------
@@ -101,8 +102,10 @@ try {
 
 
    // Variables that will be used below and need initial values.
+   $connection = NULL;
    $errorMessage = "";
    $jobID = NULL;
+   $jobStatus = JobStatus::error;
    $jsonForSQL = NULL;
    $message = NULL; // TODO: Is this needed?
 
@@ -132,18 +135,14 @@ try {
       exit(1);
    }
 
-   // Display an error in the Drupal log - only if Drupal is initialized
+   // If the kernel was not successfully initialized, write the error to stderr.
    if (!class_exists("\Drupal\Core\DrupalKernel")) { 
       fwrite(STDERR, "Drupal could not be initialized");
       exit(1); 
    }
 
-   // dmd testing
-   \Drupal::logger("ictv_taxablast_service")->info("In RunTaxaBLAST.php");
-
    // Now that Drupal has been initialized, validate the task parameter.
-   if (!in_array($task, Common::$VALID_BLAST_TASKS)) { throw new \Exception("Invalid task parameter"); }
-
+   if (!in_array($task, Common::$VALID_BLAST_TASKS)) { throw new \Exception("Invalid BLAST task parameter '".$task."'"); }
 
    // Return to the original working directory.
    chdir($cwd);
@@ -177,9 +176,6 @@ try {
       $jobStatus = JobStatus::error;
       throw new \Exception("Error reading the JSON results file: ".$jsonFilename);
    }
-
-   // dmd testing
-   \Drupal::logger("ictv_taxablast_service")->info($json);
 
    // Convert the JSON text into a Taxonomy result (nested array).
    $taxResult = json_decode($json, true);
@@ -258,13 +254,10 @@ try {
 
    $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
 
-   // dmd test
-   \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
-
    // Write the error message to stderr.
    fwrite(STDERR, $errorMessage);
 
-   // Display an error in the Drupal log - only if Drupal is initialized
+   // If Drupal was initialized, display an error in the Drupal log.
    if (class_exists("\Drupal\Core\DrupalKernel")) {
       try {
          \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
@@ -281,7 +274,6 @@ try {
       TaxaBlastJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
 
    } else {
-      // dmd test
       \Drupal::logger("ictv_taxablast_service")->error("Invalid jobUID in RunTaxaBLAST.php");
    }
 

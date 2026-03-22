@@ -172,14 +172,12 @@ class TaxaBlastJob {
       if (Utils::isNullOrEmpty($uid)) { return null; }
 
 
-      // The deserialized JSON.
+      // This will contain the deserialized JSON.
       $data = null;
 
       $json = $row["json"];
       if (!Utils::isNullOrEmpty($json)) { 
 
-         \Drupal::logger(Common::$MODULE_NAME)->info("in fromArray json = ".$json);
-         
          // Convert the JSON from hexadecimal back to a string.
          $json = hex2bin($json);
 

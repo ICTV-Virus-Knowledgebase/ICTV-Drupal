@@ -148,8 +148,6 @@ class Common {
          throw new \Exception($errorMessage);
       }
 
-      \Drupal::logger(Common::$MODULE_NAME)->info("Created directory {$newDirectory}");
-
       // Get all files in the output directory.
       $files = scandir($outputPath);
 
@@ -510,7 +508,8 @@ class Common {
                }
             }
 
-            $header = substr($line, 1);  // remove '>'
+            // Remove '>' from the header.
+            $header = substr($line, 1);  
             $sequenceLines = [];
 
          } else {

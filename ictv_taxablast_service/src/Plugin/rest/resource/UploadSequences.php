@@ -340,6 +340,7 @@ class UploadSequences extends ResourceBase {
       $errorMessage = null;
       $jobID = null;
       $jobUID = null;
+      $outputPath = null;
 
       try {
          // Get and validate the JSON in the request body.
@@ -363,19 +364,21 @@ class UploadSequences extends ResourceBase {
          //----------------------------------------------------------------
 
          // Maximum number of HSPs to return.
-         $maxHSPS = Common::$DEFAULT_BLAST_MAX_HSPS;
+         $maxHSPS = null;
          if (isset($requestJSON["maxHSPS"])) {
-            $testValue = Common::safeTrim($requestJSON["maxHSPS"]);
-            if (is_int($testValue) && (int)$testValue > 0) { $maxHSPS = (int)$testValue; }
+            $maxHSPS = $requestJSON["maxHSPS"];
          }
-         
+
+         if (!is_int($maxHSPS)) { $maxHSPS = Common::$DEFAULT_BLAST_MAX_HSPS; }
+
          // Maximum number of target sequences to return.
-         $maxTargetSeqs = Common::$DEFAULT_BLAST_MAX_TARGET_SEQS;
+         $maxTargetSeqs = null;
          if (isset($requestJSON["maxTargetSeqs"])) {
-            $testValue = Common::safeTrim($requestJSON["maxTargetSeqs"]);
-            if (is_int($testValue) && (int)$testValue > 0) { $maxTargetSeqs = (int)$testValue; }
+            $maxTargetSeqs = $requestJSON["maxTargetSeqs"];
          }
          
+         if (!is_int($maxTargetSeqs)) { $maxTargetSeqs = Common::$DEFAULT_BLAST_MAX_TARGET_SEQS; }
+
          // The BLAST task to use.
          $task = Common::$DEFAULT_BLAST_TASK;
          if (isset($requestJSON["task"])) {
@@ -406,6 +409,10 @@ class UploadSequences extends ResourceBase {
          // Use the job path to generate the paths of the input and output subdirectories.
          $inputPath = $jobPath.DIRECTORY_SEPARATOR.$this->inputDirectory;
          $outputPath = $jobPath.DIRECTORY_SEPARATOR.$this->outputDirectory;
+
+         // dmd testing
+         $errorFile = $outputPath.DIRECTORY_SEPARATOR."error.txt";
+         $outputFile = $outputPath.DIRECTORY_SEPARATOR."output.txt";
 
          // Initialize the upload order.
          $uploadOrder = 1;
@@ -478,21 +485,15 @@ class UploadSequences extends ResourceBase {
             // The user's unique numeric identifier.
             "userUID={$userUID} ".
 
-            // dmd testing 021126
-            "> /dev/null 2>&1 ".
             // TODO: consider redirecting stderr and stdout to files in $outputPath
-
+            //"> /dev/null 2>&1 ".
+            "> ".$outputFile." 2> ".$errorFile." ".
+            
             // Run in the background.
             "&";
 
-         //$output = null;
-         //$resultCode = -1;
-
-         // dmd testing
-         \Drupal::logger(Common::$MODULE_NAME)->info("command = ".$command);
-
          // Run the command on the command line.
-         $commandResult = exec($command); //, $output, $resultCode);
+         $commandResult = exec($command);
 
       } catch (\Throwable $e) {
 
@@ -511,9 +512,6 @@ class UploadSequences extends ResourceBase {
             TaxaBlastJob::updateJobJSON($this->connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
          }
       }
-
-      // dmd testing
-      \Drupal::logger(Common::$MODULE_NAME)->info("About to return from upload sequences");
 
       // Return the job UID and status and an error message (if an error occurred).
       return [
