@@ -435,7 +435,6 @@ body .block-ictv-d3-taxonomy-visualization {
    flex-flow: row nowrap;
    font-size: 1.0rem;
    padding-bottom: 0.20rem;
-   text-transform: capitalize;
 }
 
 .ictv-tax-viz-tooltip .history {
