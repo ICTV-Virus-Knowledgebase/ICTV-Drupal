@@ -1192,11 +1192,11 @@ export class TaxonHistory {
       })
 
       // We will use this list to keep track of distinct ICTV IDs.
-      let ictvIDs = [];
+      let ictvIDs: number[] = [];
 
       let mostRecentMSL: number = NaN;
       let mostRecentYear: string = null;
-      let previousTaxNodeID = null;
+      let previousTaxNodeID: number = null;
 
       // Iterate over all taxa from the taxon history.
       this.data.taxa.forEach((taxon_: ITaxon) => {
@@ -1243,14 +1243,14 @@ export class TaxonHistory {
             // Update the selected taxon variable.
             this.selectedTaxon = taxon_;
 
-            if (this.taxonDetails) {
+            /*if (this.taxonDetails) {
 
                // Format the page's "Taxon name" title text using this taxon.
                const taxonTitle = this.formatTaxonForPageTitle(this.selectedTaxon);
 
                // Update the page with the title text.
                this.taxonDetails.populateTaxonPageTitle(taxonTitle);
-            }
+            }*/
          }  
       })
 

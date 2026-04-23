@@ -111,10 +111,10 @@ export class TaxaBLAST {
    }
 
    // Create an HTML table containing the job details. If emphasizeFirstRow_ is true, the first row will be emphasized.
-   createJobDetailsTable(emphasizeFirstRow_: boolean): string {
+   createJobDetailsTable(emphasizeFirstRow_: boolean, cssClass_?: string): string {
 
       if (!this.job) { return ""; }
-
+      
       // Format the job name
       let jobName = Utils.safeTrim(this.job.name);
       if (jobName.length < 1) { jobName = "(No job name provided)"; }
@@ -135,7 +135,9 @@ export class TaxaBLAST {
 
       let nameRowClass = emphasizeFirstRow_ ? " emphasized-row" : "";
 
-      return `<table class="details-table job-details">
+      let cssClass = !cssClass_ ? " has-borders" : ` ${cssClass_}`;
+
+      return `<table class="details-table${cssClass}">
          <tbody>
             <tr class="${nameRowClass}">
                <th>Job name</th>
@@ -187,7 +189,7 @@ export class TaxaBLAST {
    }
 
 
-   // Create a row containing a link that allows the user to return to this page with the current job data.
+   // Create a row containing a link to the specified panel with the current job data.
    createLinkRow(panelKey_: PanelKey): string {
 
       // All link panels require a valid job UID.
@@ -196,7 +198,7 @@ export class TaxaBLAST {
       let instructions = "";
 
       // Create a link URL for the specified panel.
-      const url = this.createUrlFromState(panelKey_);
+      const url = this.createPanelURL(panelKey_);
 
       switch (panelKey_) {
 
@@ -226,16 +228,46 @@ export class TaxaBLAST {
       </div>`;
    }
 
-   // Create a URL with parameters derived from the state.
-   createUrlFromState(panelKey_?: PanelKey): string {
+   createPanelURL(targetPanel_: PanelKey) {
+
       
-      let url = window.location.href;
-      const qIndex = url.indexOf("?");
-      if (qIndex > -1) { url = url.substring(0, qIndex); }
+      // Get the current URL with no parameters.
+      let baseURL = window.location.href;
+      const qIndex = baseURL.indexOf("?");
+      if (qIndex > -1) { baseURL = baseURL.substring(0, qIndex); }
 
-      const params = this.getUrlParamsFromState(panelKey_);
+      switch (targetPanel_) {
 
-      return `${url}?${params.toString()}`;
+         case PanelKey.jobSubmission:
+
+            // The job submission URL has no parameters.
+            return baseURL;
+
+         case PanelKey.jobDetails:
+
+            // The job details URL only has a job UID parameter.
+            if (!this.state.jobUID) { return null; }
+
+            return `${baseURL}?${ParameterKey.job}=${this.state.jobUID}`;
+
+         case PanelKey.blastHits:
+
+            // The BLAST hits URL has a job UID, a file index, and a sequence index.
+            if (isNaN(this.state.fileIndex) || isNaN(this.state.sequenceIndex) || !this.state.jobUID) {
+               return null;
+            }
+
+            let url = `${baseURL}?`
+               + `${ParameterKey.job}=${this.state.jobUID}&`
+               + `${ParameterKey.file}=${this.state.fileIndex}&`
+               + `${ParameterKey.sequence}=${this.state.sequenceIndex}`;
+            
+            return url;
+
+         default:
+            // Return the base URL by default.
+            return baseURL;
+      }
    }
 
    // Display (load) a panel and hide (unload) the other ones.
@@ -321,13 +353,18 @@ export class TaxaBLAST {
       return;
    }
 
+   /*
+   // dmd testing 032126
+
    // Use the current state to generate URL search parameters.
    getUrlParamsFromState(panelKey_?: PanelKey): URLSearchParams {
       
       // Get the current URL parameters
       const params = new URLSearchParams(window.location.search);
       
-      // TESTING: Remove the history parameter.
+      if (!panelKey_) { return null; }
+
+      // TODO: Remove the history parameter.
       if (params.has(ParameterKey.history)) { params.delete(ParameterKey.history); }
 
       // If the job UID is valid, update its URL parameter.
@@ -356,7 +393,7 @@ export class TaxaBLAST {
       }
 
       return params;
-   }
+   }*/
 
    // Handle a click event on a button or accordion control.
    async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
@@ -446,7 +483,7 @@ export class TaxaBLAST {
             this.state.fileIndex = fileIndex;
             this.state.sequenceIndex = seqIndex;
             
-            window.open(this.createUrlFromState(), "_blank");
+            window.open(this.createPanelURL(PanelKey.blastHits), "_blank");
 
          } else if (button.classList.contains(ButtonClass.viewHTML)) {
             
@@ -613,13 +650,14 @@ export class TaxaBLAST {
       return;
    }*/
 
+   /*
    // Update the URL parameters without reloading the page.
    updateUrlFromState() {
       
       const params = this.getUrlParamsFromState();
 
       history.replaceState(null, "", "?" + params.toString());
-   }
+   }*/
 
    // Display the BLAST HTML data for a specific sequence.
    async viewHTML(filename_: string, title_: string) {

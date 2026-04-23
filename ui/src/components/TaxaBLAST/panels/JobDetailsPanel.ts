@@ -3,7 +3,6 @@ import { ButtonClass, Constants, CreateKeyFromName, CreateNewSearchURL, FormatDa
    PanelKey, ToggleAccordion } from "../Common";
 import { ISequence } from "../ISequence";
 import { ISequenceFile } from "../ISequenceFile";
-//import { ITaxaBlastJob } from "../ITaxaBlastJob";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
@@ -221,7 +220,10 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          }
       }
 
-      this.elements.errorView.innerHTML = message;
+      // Display the error message.
+      this.elements.errorView.innerHTML = 
+         `<div class="error-title">Error:</div>
+         <div class="message">${message}</div>`;
 
       // Display the error view and hide the others.
       this.elements.errorView.classList.add("active");
@@ -248,7 +250,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       // Create the job details table HTML.
       const tableHTML = this.parent.createJobDetailsTable(emphasizeName);
 
-      // Create the link panel HTML containing a link to this job's details.
+      // Create link panel HTML with a link to the current job's details.
       const linkPanelHTML = this.parent.createLinkRow(PanelKey.jobDetails);
 
       const newSearchURL = CreateNewSearchURL();
@@ -386,7 +388,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
    }
 
    // Load the panel contents and display them on the page.
-   async load() {
+   async load(): Promise<void> {
 
       this.isActive = true;
 
@@ -478,10 +480,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       return;
    }
 
-   unload() {
+   async unload(): Promise<void> {
       this.isActive = false;
       this.elements.container.classList.remove("active");
 
       // TODO: should we remove event listeners?
+      return;
    }
 }

@@ -11,8 +11,8 @@ export interface ITaxaBlastPanel {
    parent: TaxaBLAST;
 
    // Load the panel contents and display them on the page.
-   load();
+   load(): Promise<void>;
 
    // Unload and hide the panel contents.
-   unload();
+   unload(): Promise<void>;
 }

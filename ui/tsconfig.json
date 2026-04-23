@@ -2,10 +2,13 @@
    "compilerOptions": {
      "allowJs": true,
      "allowSyntheticDefaultImports": true,
-     "lib": [ "es6", "dom" ],
-     "moduleResolution": "node",
+     "strictNullChecks": false,
+     "lib": [ "es2022", "dom" ],
+     "module": "Node16",
+     "moduleResolution": "Node16",
      "noEmitOnError": true,
-     "outDir": "./scripts/dist",
+     "outDir": "./src/dist",
+     "rootDir": "./src",
      "target": "es2022",
      "typeRoots": [
          "node_modules/@types"

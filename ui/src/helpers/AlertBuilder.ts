@@ -109,4 +109,12 @@ export class AlertBuilder {
       return this.displayAlert(AlertIcon.warning, message_, title_, onClose_);
    }
 
+   // A synchronous version of displayWarning().
+   static displayWarningSync(message_: string, title_?: string, onClose_?: Function) {
+
+      if (!message_) { return; }
+      
+      this.displayAlert(AlertIcon.warning, message_, title_, onClose_).then(result_ => { return result_; })
+   }
+
 }

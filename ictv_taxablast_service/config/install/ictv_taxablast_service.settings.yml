@@ -7,5 +7,5 @@ jsonResultsFilename: 'tax_results.json'
 maxTotalUploadSize: 500000000
 maxUploadedRecords: 100
 outputDirectory: 'tax_out'
-scriptName: './seqsearch'
+scriptName: './taxablast'
 scriptParameters: ''

@@ -1,5 +1,7 @@
 
-import { IdParameterName, IdentifierPrefix, IdentifierType, LookupIdParameterType } from "../global/Types";
+import { IdParameterName, IdentifierPrefix, IdentifierType, ISequenceMetadata,
+   LookupIdParameterType, NucleotideCodes, NucleotideAmbiguityCodes, ProteinCodes, 
+   ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType } from "../global/Types";
 import { IIdentifierData } from "../models/IIdentifierData";
 import { Identifiers } from "../models/Identifiers";
 
@@ -27,6 +29,76 @@ export class Utils {
 
       return result;
    }
+
+   static classifyFastaSequence(fastaSequence: string): ISequenceMetadata {
+  
+      let result: ISequenceMetadata = {
+         aaFraction: 0,
+         ntFraction: 0,
+         type: SequenceType.invalid,
+         confidence: 0,
+
+         counts: {
+            aaAmbiguity: 0,
+            aaStandard: 0,
+            ntAmbiguity: 0,
+            ntStandard: 0,
+            total: 0
+         }
+      };
+
+      // Remove whitespace and convert to uppercase for case-insensitive comparison.
+      fastaSequence = fastaSequence.replace(/\s+/g, '').toUpperCase();
+      if (!fastaSequence || fastaSequence.length === 0) { return result; }
+
+      let hasProteinOnly = false;
+
+      for (const ch of fastaSequence) {
+         const isNt = NucleotideCodes.has(ch);
+         const isNtA = NucleotideAmbiguityCodes.has(ch);
+         const isProtein = ProteinCodes.has(ch);
+         const isProteinA = ProteinAmbiguityCodes.has(ch);
+
+         if (ProteinOnlyCodes.has(ch)) {
+            hasProteinOnly = true;
+         }
+
+         if (isNt) result.counts.ntStandard++;
+         if (isNtA) result.counts.ntAmbiguity++;
+         if (isProtein) result.counts.aaStandard++;
+         if (isProteinA) result.counts.aaAmbiguity++;
+         if (isNt || isNtA || isProtein || isProteinA) result.counts.total++;
+      }
+
+      result.ntFraction = (result.counts.ntStandard + result.counts.ntAmbiguity) / result.counts.total;
+      result.aaFraction = (result.counts.aaStandard + result.counts.aaAmbiguity) / result.counts.total;
+
+      // The confidence is the difference between the two fractions, so a sequence that is 100% nucleotide would have confidence of 1, a sequence 
+      // that is 100% protein would also have confidence of 1, and a sequence that is 50% nucleotide and 50% protein would have confidence of 0 (i.e. completely ambiguous).
+      result.confidence = Math.max(result.ntFraction, result.aaFraction) - Math.min(result.ntFraction, result.aaFraction);
+
+      if (hasProteinOnly) {
+         result.type = SequenceType.protein;
+
+      } else if (result.counts.ntStandard === result.counts.total) {
+         result.type = SequenceType.nucleotide;
+
+      } else if (result.counts.aaStandard === result.counts.total) {
+         result.type = SequenceType.protein;
+
+      } else if (result.ntFraction >= 0.95 && result.ntFraction > result.aaFraction) {
+         result.type = SequenceType.nucleotide;
+
+      } else if (result.aaFraction >= 0.95 && result.aaFraction > result.ntFraction) {
+         result.type = SequenceType.protein;
+
+      } else {
+         result.type = SequenceType.ambiguous;
+      }
+
+      return result;
+   }
+
 
    // Convert a string containing an integer to an integer.
    static convertStringToInt(strInt_: string): number {
@@ -238,6 +310,7 @@ export class Utils {
       return identifiers;
    }
 
+   
    // Is the user's browser on iOS?
    static isIOS() {
 
