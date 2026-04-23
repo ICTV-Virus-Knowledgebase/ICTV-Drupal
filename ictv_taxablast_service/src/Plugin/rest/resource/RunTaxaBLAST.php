@@ -103,9 +103,11 @@ try {
 
    // Variables that will be used below and need initial values.
    $connection = NULL;
+   $drupalInitialized = false;
    $errorMessage = "";
    $jobID = NULL;
-   $jobStatus = JobStatus::error;
+   $jobStatus = NULL;
+   $jobStatusValue = "error";
    $jsonForSQL = NULL;
    $message = NULL; // TODO: Is this needed?
 
@@ -116,18 +118,16 @@ try {
    chdir($drupalRoot); 
 
    //-------------------------------------------------------------------------------------------------------
-   // Initialize an instance of Drupal.
+   // Initialize a minimal instance of Drupal.
    //-------------------------------------------------------------------------------------------------------
    try {
       $autoloader = require_once 'autoload.php';
 
-      // NOTE: This was the previous version, but creating a request instance without using global 
-      // environment variables should work in both web and command line scenarios.
-      //$request = Request::createFromGlobals();
       $request = \Symfony\Component\HttpFoundation\Request::create('/');
       $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
 
       $kernel->boot();
+      $drupalInitialized = true;
 
    } catch (\Throwable $initError) {
       $initErrorMessage = method_exists($initError, "getMessage") ? $initError->getMessage() : get_class($initError);
@@ -164,6 +164,7 @@ try {
    // Run the TaxaBLAST script and return a job status.
    //-------------------------------------------------------------------------------------------------------
    $jobStatus = TaxaBLAST::runSearch($dockerContainer, $inputPath, $maxHSPS, $maxTargetSeqs, $outputPath, $scriptName, $task, $workingDirectory);
+   $jobStatusValue = $jobStatus->value;
    
    // TODO: Delete the input files after TaxaBLAST completes.
 
@@ -174,6 +175,7 @@ try {
 
    if (!$json) { 
       $jobStatus = JobStatus::error;
+      $jobStatusValue = $jobStatus->value;
       throw new \Exception("Error reading the JSON results file: ".$jsonFilename);
    }
 
@@ -181,6 +183,7 @@ try {
    $taxResult = json_decode($json, true);
    if ($taxResult === null && json_last_error() !== JSON_ERROR_NONE) {
       $jobStatus = JobStatus::error;
+      $jobStatusValue = $jobStatus->value;
       throw new \Exception("JSON data is invalid after conversion: ".json_last_error_msg());
    }
 
@@ -224,7 +227,7 @@ try {
 
          // Update the job file record.
          $sql = "UPDATE job_file SET 
-            status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".$jobStatus->value."') 
+         status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".$jobStatusValue."') 
             WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1) 
             AND filename = '".$file["name"]."' ";
 
@@ -241,7 +244,7 @@ try {
 
       // Update the job's job_files as unsuccessful.
       $sql = "UPDATE job_file SET 
-         status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".JobStatus::error->value."') 
+         status_tid = (SELECT id FROM term WHERE full_key = 'job_status.error') 
          WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1)";
 
       $fileQuery = $connection->query($sql);
@@ -250,7 +253,7 @@ try {
    
 } catch (\Throwable $e) {
 
-   $jobStatus = JobStatus::error;
+   $jobStatusValue = "error";
 
    $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
 
@@ -258,22 +261,18 @@ try {
    fwrite(STDERR, $errorMessage);
 
    // If Drupal was initialized, display an error in the Drupal log.
-   if (class_exists("\Drupal\Core\DrupalKernel")) {
-      try {
-         \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
-      } catch (\Throwable $logError) {
-         // If logging fails, just continue
-      }
+   if ($drupalInitialized && class_exists("\Drupal\Core\DrupalKernel")) {
+      \Drupal::logger("ictv_taxablast_service")->error($errorMessage);
    }
 
-   if (mb_strlen($jobUID) > 0) {
+   if (mb_strlen($jobUID) > 0 && $drupalInitialized && $connection !== NULL) {
 
-      if ($jobStatus === null || mb_strlen($jobStatus->value) < 1) { $jobStatus = JobStatus::error; }
+      if ($jobStatus === null) { $jobStatus = JobStatus::error; }
 
       // Update the job's JSON and status.
       TaxaBlastJob::updateJobJSON($connection, $jobID, $jobUID, $jsonForSQL, $errorMessage, $jobStatus);
 
-   } else {
+   } elseif ($drupalInitialized) {
       \Drupal::logger("ictv_taxablast_service")->error("Invalid jobUID in RunTaxaBLAST.php");
    }
 

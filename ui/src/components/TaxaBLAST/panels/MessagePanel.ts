@@ -35,7 +35,7 @@ export class MessagePanel implements ITaxaBlastPanel {
    }
 
    // Make the panel visible and populate it with data.
-   async load() {
+   async load(): Promise<void> {
 
       console.info("LOADING message panel")
 
@@ -43,16 +43,16 @@ export class MessagePanel implements ITaxaBlastPanel {
 
       // Make the container visible.
       this.elements.container.classList.add("active");
-
-
+      return;
    }
 
    // Unload and hide the panel.
-   unload() {
+   async unload(): Promise<void> {
 
       this.isActive = false;
       this.elements.container.classList.remove("active");
       
       // TODO: should we remove event listeners?
+      return;
    }
 }

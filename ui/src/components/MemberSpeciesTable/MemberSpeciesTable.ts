@@ -1,5 +1,6 @@
 
 import DataTables from 'datatables.net-dt';
+import Api from 'datatables.net-dt';
 import { ITaxon } from '../../models/TaxonHistory/ITaxon';
 import { IVirusIsolate } from "../../models/IVirusIsolate";
 import { ComponentKey, TaxonDetails } from '../TaxonDetails';
@@ -42,7 +43,7 @@ export class MemberSpeciesTable {
 
    counts: Map<string, number>;
 
-   dataTable;
+   dataTable: any;
 
    elements: {
       container: HTMLElement,
@@ -349,8 +350,10 @@ export class MemberSpeciesTable {
          // Update the counts lookup for each column.
          this.columns.forEach((column_: string) => {
 
-            // Does this column exist and does it have a non-empty value?
-            if (!!isolate_[column_] && isolate_[column_].length > 0) {
+            const key = column_ as keyof IVirusIsolate;
+
+            // Does this column exist and have a non-empty value?
+            if (!!isolate_[key]) {
                let currentCount = this.counts.get(column_);
                this.counts.set(column_, currentCount + 1);
             }

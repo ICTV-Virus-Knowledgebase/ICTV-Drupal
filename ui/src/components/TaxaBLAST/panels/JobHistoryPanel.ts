@@ -91,7 +91,7 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
 
 
    // Load the panel contents and display them on the page.
-   async load() {
+   async load(): Promise<void> {
 
       this.isActive = true;
 
@@ -217,10 +217,11 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
         return; 
     }
 
-    unload() {
+    async unload(): Promise<void> {
         this.isActive = false;
         this.elements.container.classList.remove("active");
 
         // TODO: should we remove event listeners?
+        return;
     }
 }

@@ -1,5 +1,4 @@
 
-
 //----------------------------------------------------------------------------------------------------------------
 // Enums
 //----------------------------------------------------------------------------------------------------------------
@@ -8,7 +7,6 @@ export enum CuratedNameType {
    disease = "disease",
    other = "other"
 }
-
 
 // The validation status of a FASTA record.
 export enum FastaStatus {
@@ -138,14 +136,14 @@ export enum SearchModifier {
    exact_match = "exact_match"
 }
 
-/*
 export enum SequenceType {
    ambiguous = "ambiguous",
    invalid = "invalid",
+   mixed = "mixed",
    nucleotide = "nucleotide",
    protein = "protein",
-   undefined = "undefined"
-}*/
+   unknown = "unknown"
+}
 
 export enum TaxaLevel {
    tree = "tree",
@@ -192,7 +190,10 @@ export enum TaxonomyDB {
    ictv_epithets = "ictv_epithets",
    ictv_taxonomy = "ictv_taxonomy",
    ictv_vmr = "ictv_vmr",
-   ncbi_taxonomy = "ncbi_taxonomy"
+   ncbi_taxonomy = "ncbi_taxonomy",
+
+   // "Unspecified" is a placeholder value for when the taxonomy database is unknown or not applicable.
+   unspecified = "unspecified"
 }
 
 // The display type determines how the control is initially populated.
@@ -206,52 +207,52 @@ export enum TaxonomyDisplayType {
 
 // Taxonomy ranks found in ICTV and NCBI Taxonomies.
 export enum TaxonomyRank {
-   biotype = "Biotype",
-   clade = "Clade",
-   class = "Class",
-   cohort = "Cohort",
-   family = "Family",
-   forma = "Forma",
-   forma_specialis = "Forma Specialis",
-   genotype = "Genotype",
-   genus = "Genus",
-   infraclass = "Infraclass",
-   infraorder = "Infraorder",
-   isolate = "Isolate",
-   kingdom = "Kingdom",
-   morph = "Morph",
-   no_rank = "No rank",
-   order = "Order",
-   parvorder = "Parvorder",
-   pathogroup = "Pathogroup",
-   phylum = "Phylum",
-   realm = "Realm",
-   section = "Section",
-   series = "Series",
-   serogroup = "Serogroup",
-   serotype = "Serotype",
-   species = "Species",
-   species_group = "Species group",
-   species_subgroup = "Species subgroup",
-   strain = "Strain",
-   subclass = "Subclass",
-   subcohort = "Subcohort",
-   subfamily = "Subfamily",
-   subgenus = "Subgenus",
-   subkingdom = "Subkingdom",
-   suborder = "Suborder",
-   subphylum = "Subphylum",
-   subrealm = "Subrealm",
-   subsection = "Subsection",
-   subspecies = "Subspecies",
-   subtribe = "Subtribe",
-   superclass = "Superclass",
-   superfamily = "Superfamily",
-   superkingdom = "Superkingdom",
-   superorder = "Superorder",
-   superphylum = "Superphylum",
-   tribe = "Tribe",
-   varietas = "Varietas"
+   biotype = "biotype",
+   clade = "clade",
+   class = "class",
+   cohort = "cohort",
+   family = "family",
+   forma = "forma",
+   forma_specialis = "forma_specialis",
+   genotype = "genotype",
+   genus = "genus",
+   infraclass = "infraclass",
+   infraorder = "infraorder",
+   isolate = "isolate",
+   kingdom = "kingdom",
+   morph = "morph",
+   no_rank = "no_rank",
+   order = "order",
+   parvorder = "parvorder",
+   pathogroup = "pathogroup",
+   phylum = "phylum",
+   realm = "realm",
+   section = "section",
+   series = "series",
+   serogroup = "serogroup",
+   serotype = "serotype",
+   species = "species",
+   species_group = "species_group",
+   species_subgroup = "species_subgroup",
+   strain = "strain",
+   subclass = "subclass",
+   subcohort = "subcohort",
+   subfamily = "subfamily",
+   subgenus = "subgenus",
+   subkingdom = "subkingdom",
+   suborder = "suborder",
+   subphylum = "subphylum",
+   subrealm = "subrealm",
+   subsection = "subsection",
+   subspecies = "subspecies",
+   subtribe = "subtribe",
+   superclass = "superclass",
+   superfamily = "superfamily",
+   superkingdom = "superkingdom",
+   superorder = "superorder",
+   superphylum = "superphylum",
+   tribe = "tribe",
+   varietas = "varietas"
 }
 
 export enum IctvRank {
@@ -350,15 +351,102 @@ export enum WebStorageKey {
 //----------------------------------------------------------------------------------------------------------------
 export const REGEX = {
 
-   // Symbols that aren't IUPAC approved nucleotide or protein bases.
-   FASTA_INVALID_BASES: /[^ABCDEFGHIKLMNPQRSTUVWY\.\-]+/img
+   // Use this regex to match characters that aren't IUPAC approved nucleotide or protein bases (including ambiguity codes).
+   NOT_AA_OR_NT: /[^ABCDEFGHIJKLMNOPQRSTUVWXYZ\.\-\*]+/img,
+   
+   /*
+   Standard amino acids: 
+   A: Alanine
+   C: Cysteine
+   D: Aspartic acid
+   E: Glutamic acid
+   F: Phenylalanine
+   G: Glycine
+   H: Histidine
+   I: Isoleucine
+   K: Lysine
+   L: Leucine
+   M: Methionine
+   N: Asparagine
+   P: Proline
+   Q: Glutamine
+   R: Arginine
+   S: Serine
+   T: Threonine
+   V: Valine
+   W: Tryptophan
+   Y: Tyrosine
+
+   Ambiguity Codes
+   B: Aspartic acid or Asparagine (Asp/Asn) 
+   J: Leucine or Isoleucine (Leu/Ile)
+   O: Pyrrolysine	(non-standard amino acid)
+   U: Selenocysteine - This is a standard amino acid, but it is also sometimes represented with the code for Uridine if dealing with RNA or modified nucleotides. However, for protein sequences, U is typically not a valid amino acid, but a nucleic acid base.  
+   X: Any amino acid 
+   Z: Glutamic acid or Glutamine (Glu/Gln) - Note: Some tools use this for glutamic acid or glutamine, though it's less common in standard FASTA formats for protein sequences, which typically rely on other standard codes. 
+   
+   */
+
+   // A regex for standard amino acids (proteins) in a FASTA sequence (including ambiguity codes).
+   // NOTE: This doesn't appear to be used anywhere.
+   FASTA_AA_REGEX: "/^[ABCDEFGHIJKLMNOPQRSTUVWXYZ]+$/i",
+
+   /*
+   Standard Bases: 
+   A (adenine)
+   C (cytosine)
+   G (guanine)
+   T (thymine) for DNA
+   U (uracil) for RNA
+
+   Ambiguity Codes: These represent multiple possibilities or unknown nucleotides, such as:
+   B: Not A (C or G or T) 
+   D: Not C (A or G or T) 
+   H: Not G (A or C or T)
+   K: Keto (G or T)
+   M: Amino (A or C)
+   N: Any nucleotide
+   R: Purine (A or G)
+   S: Strong (G or C) 
+   V: Not T (A or C or G)
+   W: Weak (A or T)
+   X: Any nucleotide
+   Y: Pyrimidine (C or T) 
+
+   Other Allowed Characters
+   Hyphen/Dash (-): Used to represent a gap in a sequence alignment.
+    
+   */
+
+   // A regex for valid nucleotides in a FASTA sequence.
+   // NOTE: This doesn't appear to be used anywhere.
+   FASTA_NT_REGEX: "/^[ABDCGHKMNRSTUVWXY\-]+$/i"
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // Functions that use enums
 //-----------------------------------------------------------------------------------------------------------------------------
 
-export function LookupIdParameterType(parameterName_: IdParameterName): IdentifierType {
+//
+// Return true if the value is a valid member of the enum.
+//
+// Note the strange syntax for the return type. This is a "type predicate" that allows TypeScript to narrow the type 
+// of the value in conditional statements that use this function. T is inferred from the enum_ argument, so you can just
+// call IsEnumValue(MyEnum, value) without having to specify the type parameter. 
+// 
+// An interesting aspect of this function is that if it returns true (if value_ is a valid member of the enum), then in the 
+// "if true" block where this function is called, TypeScript will treat value_ as have the enum type instead of just a string.
+export function IsEnumValue<T extends Record<string, string>>(
+   enum_: T,
+   value_: string
+): value_ is T[keyof T] {
+   return Object.values(enum_).includes(value_ as T[keyof T]);
+}
+
+export function LookupIdParameterType(parameterName_: IdParameterName|string): IdentifierType {
+
+   if (!parameterName_) { return IdentifierType.none; }
+   if (!IsEnumValue(IdParameterName, parameterName_)) { return IdentifierType.none; }
 
    switch (parameterName_) {
 
@@ -396,10 +484,22 @@ export function LookupIdParameterType(parameterName_: IdParameterName): Identifi
    }
 }
 
+// Lookup a display value for this name class. If the name class isn't in the enum, just return it with underscores replaced by spaces. 
+// This allows us to display name classes that aren't in the enum without causing an error.
+export function LookupNameClass(nameClass_: NameClass|string, taxonomyDB_: TaxonomyDB|string): string {
 
-export function LookupNameClass(nameClass_: NameClass, taxonomyDB_: TaxonomyDB) {
+   // Validate the name class.
+   if (!nameClass_) { return ""; }
+   if (!IsEnumValue(NameClass, nameClass_)) { 
+      return (nameClass_ as string).replace(/_/g, " ").toLowerCase(); 
+   }
 
-   if (taxonomyDB_ !== TaxonomyDB.ictv_vmr) { return nameClass_.replace("_", " "); }
+   // For the ICTV VMR, we want to use slightly different display values for some name classes. For example, "isolate_name" 
+   // is displayed as "virus name" in the VMR but "isolate name" in other taxonomy databases. So if the taxonomy database is
+   // anything other than the VMR, we'll replace underscores with spaces and return that as the display value for the name class.
+   if (!IsEnumValue(TaxonomyDB, taxonomyDB_) || taxonomyDB_ !== TaxonomyDB.ictv_vmr) { 
+      return (nameClass_ as string).replace(/_/g, " ").toLowerCase(); 
+   }
 
    switch (nameClass_) {
       case NameClass.genbank_accession:
@@ -413,11 +513,20 @@ export function LookupNameClass(nameClass_: NameClass, taxonomyDB_: TaxonomyDB) 
       case NameClass.refseq_accession:
          return "virus RefSeq accession";
       default: 
-         return nameClass_.replace("_", " ");
+         return (nameClass_ as string).replace(/_/g, " ").toLowerCase();
    }
 }
 
-export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: TaxonomyDB) {
+export function LookupNameClassDefinition(nameClass_: NameClass|string, taxonomyDB_: TaxonomyDB|string): string {
+
+   // Validate the name class.
+   if (!nameClass_) { return ""; }
+   if (!IsEnumValue(NameClass, nameClass_)) { 
+      return (nameClass_ as string).replace(/_/g, " ").toLowerCase(); 
+   }
+
+   // Default taxonomyDB to "unspecified".
+   if (!IsEnumValue(TaxonomyDB, taxonomyDB_)) { taxonomyDB_ = TaxonomyDB.unspecified; }
 
    if (taxonomyDB_ === TaxonomyDB.ictv_vmr) {
 
@@ -438,84 +547,91 @@ export function LookupNameClassDefinition(nameClass_: NameClass, taxonomyDB_: Ta
             return "The equivalent RefSeq accession numbers for the GenBank (nucleotide) accession number(s)";
 
          default: 
-            return nameClass_.replace("_", " ");
+            return nameClass_.replace(/_/g, " ").toLowerCase();
       }
+   }
 
-   } else {
+   switch (nameClass_) { 
 
-      switch (nameClass_) { 
+      case NameClass.abbreviation:
+         return "An abbreviation associated with the virus";
 
-         case NameClass.abbreviation:
-            return "An abbreviation associated with the virus";
+      case NameClass.acronym:
+         return "An acronym associated with the virus";
 
-         case NameClass.acronym:
-            return "An acronym associated with the virus";
+      case NameClass.authority:
+         return "The name of the scientist(s) who originally described the virus and the year it was published";
 
-         case NameClass.authority:
-            return "The name of the scientist(s) who originally described the virus and the year it was published";
+      case NameClass.blast_name:
+         return "A simplified name used by BLAST (Basic Local Alignment Search Tool) for grouping organisms into broad categories";
 
-         case NameClass.blast_name:
-            return "A simplified name used by BLAST (Basic Local Alignment Search Tool) for grouping organisms into broad categories";
+      case NameClass.common_name:
+         return "An informal name in common usage";
 
-         case NameClass.common_name:
-            return "An informal name in common usage";
+      case NameClass.disease:
+         return "A disease caused by a virus";
 
-         case NameClass.disease:
-            return "A disease caused by a virus";
+      case NameClass.equivalent_name:
+         return "A name that is considered equivalent to the scientific name but may not be currently used";
 
-         case NameClass.equivalent_name:
-            return "A name that is considered equivalent to the scientific name but may not be currently used";
+      case NameClass.genbank_accession:
+         return "A unique alphanumeric identifier assigned to a specific sequence record in the GenBank database";
 
-         case NameClass.genbank_accession:
-            return "A unique alphanumeric identifier assigned to a specific sequence record in the GenBank database";
+      case NameClass.genbank_acronym:
+         return "An acronym used in GenBank records";
 
-         case NameClass.genbank_acronym:
-            return "An acronym used in GenBank records";
+      case NameClass.genbank_common_name:
+         return "The common name associated with the virus used specifically in GenBank records";
 
-         case NameClass.genbank_common_name:
-            return "The common name associated with the virus used specifically in GenBank records";
+      case NameClass.includes:
+         return "A name that encompasses subgroups or other taxa included within the current taxon";
 
-         case NameClass.includes:
-            return "A name that encompasses subgroups or other taxa included within the current taxon";
+      case NameClass.in_part:
+         return "A name that is only partially synonymous with the virus";
 
-         case NameClass.in_part:
-            return "A name that is only partially synonymous with the virus";
+      case NameClass.isolate_abbreviation:
+         return "A shortened or abbreviated form of a specific isolate's name";
 
-         case NameClass.isolate_abbreviation:
-            return "A shortened or abbreviated form of a specific isolate's name";
+      case NameClass.isolate_designation:
+         return "A specific identifier or label given to a particular isolate, often used to differentiate among multiple isolates of the same species";
 
-         case NameClass.isolate_designation:
-            return "A specific identifier or label given to a particular isolate, often used to differentiate among multiple isolates of the same species";
+      case NameClass.isolate_exemplar:
+         return "A representative isolate chosen as the best example or reference for a specific group, strain, or species";
 
-         case NameClass.isolate_exemplar:
-            return "A representative isolate chosen as the best example or reference for a specific group, strain, or species";
+      case NameClass.isolate_name:
+         return "The full or descriptive name assigned to an isolate, often reflecting its source, collection location, or other unique characteristics";
+      
+      case NameClass.refseq_accession:
+         return "A unique alphanumeric identifier assigned to a specific sequence record in the NCBI RefSeq (Reference Sequence) database";
 
-         case NameClass.isolate_name:
-            return "The full or descriptive name assigned to an isolate, often reflecting its source, collection location, or other unique characteristics";
-         
-         case NameClass.refseq_accession:
-            return "A unique alphanumeric identifier assigned to a specific sequence record in the NCBI RefSeq (Reference Sequence) database";
+      case NameClass.refseq_organism:
+         return "The organism name associated with a specific RefSeq entry. It refers to the taxonomic identity of the organism for which a curated reference sequence is provided in the RefSeq database";
+      
+      case NameClass.scientific_name:
+         return "Name derived from NCBI lineage";
 
-         case NameClass.refseq_organism:
-            return "The organism name associated with a specific RefSeq entry. It refers to the taxonomic identity of the organism for which a curated reference sequence is provided in the RefSeq database";
-         
-         case NameClass.scientific_name:
-            return "Name derived from NCBI lineage";
+      case NameClass.synonym:
+         return "Alternative scientific names that have been historically used for a virus or taxon but are not the currently accepted name";
 
-         case NameClass.synonym:
-            return "Alternative scientific names that have been historically used for a virus or taxon but are not the currently accepted name";
+      case NameClass.taxon_name:
+         return "A formal taxonomic name";
 
-         case NameClass.taxon_name:
-            return "A formal taxonomic name";
-
-         case NameClass.type_material:
-            return "A name related to the type specimen or type material upon which the taxon's description is based";
-      }
+      case NameClass.type_material:
+         return "A name related to the type specimen or type material upon which the taxon's description is based";
+      
+      default:
+         return (nameClass_ as string).replace(/_/g, " ").toLowerCase();
    }
 }
 
 // Return a display value for this release action.
-export function LookupReleaseAction(releaseAction_: ReleaseAction) {
+export function LookupReleaseAction(releaseAction_: ReleaseAction|string): string {
+
+   // Validate the release action.
+   if (!releaseAction_) { return ""; }
+   if (!IsEnumValue(ReleaseAction, releaseAction_)) { 
+      return (releaseAction_ as string).replace(/_/g, " ").toLowerCase(); 
+   }
 
    switch (releaseAction_) {
       case ReleaseAction.abolished:
@@ -541,11 +657,17 @@ export function LookupReleaseAction(releaseAction_: ReleaseAction) {
       case ReleaseAction.unchanged:
          return "unchanged";
       default:
-         return releaseAction_;
+         return (releaseAction_ as string).replace(/_/g, " ").toLowerCase();
    }
 }
 
 export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
+
+   // Validate the release action.
+   if (!releaseAction_) { return ""; }
+   if (!IsEnumValue(ReleaseAction, releaseAction_)) { 
+      return (releaseAction_ as string).replace(/_/g, " ").toLowerCase(); 
+   }
 
    switch (releaseAction_) {
       case ReleaseAction.abolished:
@@ -576,7 +698,173 @@ export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
 }
 
 // Return the value of the taxonomy rank enum.
-export function LookupTaxonomyRank(rank_: string) {
+export function LookupTaxonomyRank(rank_: TaxonomyRank|string) {
+   
    if (!rank_) { return ""; }
-   return TaxonomyRank[rank_ as TaxonomyRank];
+
+   // If the rank parameter isn't a valid member of the TaxonomyRank enum, just return it as is. 
+   // This allows us to display ranks that aren't in the enum without causing an error. It also 
+   // allows us to avoid having to update the enum every time we encounter a new rank in the data.
+   if (!IsEnumValue(TaxonomyRank, rank_)) { return rank_; }
+
+   switch (rank_) {
+      case TaxonomyRank.biotype:
+         return "Biotype";
+      case TaxonomyRank.clade:
+         return "Clade";
+      case TaxonomyRank.class:
+         return "Class";
+      case TaxonomyRank.cohort:
+         return "Cohort";
+      case TaxonomyRank.family:
+         return "Family";
+      case TaxonomyRank.forma:
+         return "Forma";
+      case TaxonomyRank.forma_specialis:
+         return "Forma Specialis";
+      case TaxonomyRank.genotype:
+         return "Genotype";
+      case TaxonomyRank.genus:
+         return "Genus";
+      case TaxonomyRank.infraclass:
+         return "Infraclass";
+      case TaxonomyRank.infraorder:
+         return "Infraorder";
+      case TaxonomyRank.isolate:
+         return "Isolate";
+      case TaxonomyRank.kingdom:
+         return "Kingdom";
+      case TaxonomyRank.morph:
+         return "Morph";
+      case TaxonomyRank.no_rank:
+         return "No rank";
+      case TaxonomyRank.order:
+         return "Order";
+      case TaxonomyRank.parvorder:
+         return "Parvorder";
+      case TaxonomyRank.pathogroup:
+         return "Pathogroup";
+      case TaxonomyRank.phylum:
+         return "Phylum";
+      case TaxonomyRank.realm:
+         return "Realm";
+      case TaxonomyRank.section:
+         return "Section";
+      case TaxonomyRank.series:
+         return "Series";
+      case TaxonomyRank.serogroup:
+         return "Serogroup";
+      case TaxonomyRank.serotype:
+         return "Serotype";
+      case TaxonomyRank.species:
+         return "Species";
+      case TaxonomyRank.species_group:
+         return "Species group";
+      case TaxonomyRank.species_subgroup:
+         return "Species subgroup";
+      case TaxonomyRank.strain:
+         return "Strain";
+      case TaxonomyRank.subclass:
+         return "Subclass";
+      case TaxonomyRank.subcohort:
+         return "Subcohort";
+      case TaxonomyRank.subfamily:
+         return "Subfamily";
+      case TaxonomyRank.subgenus:
+         return "Subgenus";
+      case TaxonomyRank.subkingdom:
+         return "Subkingdom";
+      case TaxonomyRank.suborder:
+         return "Suborder";
+      case TaxonomyRank.subphylum:
+         return "Subphylum";
+      case TaxonomyRank.subrealm:
+         return "Subrealm";
+      case TaxonomyRank.subsection:
+         return "Subsection";
+      case TaxonomyRank.subspecies:
+         return "Subspecies";
+      case TaxonomyRank.subtribe:
+         return "Subtribe";
+      case TaxonomyRank.superclass:
+         return "Superclass";
+      case TaxonomyRank.superfamily:
+         return "Superfamily";
+      case TaxonomyRank.superkingdom:
+         return "Superkingdom";
+      case TaxonomyRank.superorder:
+         return "Superorder";
+      case TaxonomyRank.superphylum:
+         return "Superphylum";
+      case TaxonomyRank.tribe:
+         return "Tribe";
+      case TaxonomyRank.varietas:
+         return "Varietas";
+      default:
+         return (rank_ as string).replace(/_/g, " ").toLowerCase();
+   }
 }
+
+
+//----------------------------------------------------------------------------------------------------------------
+// Interfaces
+//----------------------------------------------------------------------------------------------------------------
+
+// After evaluating a FASTA sequence, we determine the most-likely sequence type by counting standard nucleotide 
+// and amino acid bases and return this object as the result.
+export interface ISequenceMetadata {
+   aaFraction: number;
+   ntFraction: number;
+   type: SequenceType;
+   confidence: number;
+   counts: {
+      aaAmbiguity: number;
+      aaStandard: number;
+      ntAmbiguity: number;
+      ntStandard: number;
+      total: number;
+   }
+   // TESTING
+   //aaCount: number;
+   //ntCount: number;
+   //totalCount: number;
+}
+
+
+//----------------------------------------------------------------------------------------------------------------
+// Objects
+//----------------------------------------------------------------------------------------------------------------
+
+// Nucleotide codes used in FASTA.
+export const NucleotideCodes = new Set([
+   "A", "C", "G", "T", "U"
+]);
+
+// Nucleotide ambiguity codes used in FASTA.
+export const NucleotideAmbiguityCodes = new Set([
+   "B", "D", "H", "K", "M", 
+   "N", "R", "S", "V", "W", 
+   "X", "Y", "-"
+]);
+
+// Standard amino acid codes used in FASTA.
+export const ProteinCodes = new Set([
+   "A", "C", "D", "E", 
+   "F", "G", "H", "I",
+   "K", "L", "M", "N", 
+   "P", "Q", "R", "S", 
+   "T", "V", "W", "Y"
+]);
+
+// Amino acid ambiguity codes used in FASTA.
+export const ProteinAmbiguityCodes = new Set([
+   "B", "J", "O", "U", 
+   "X", "Z", "*"
+]);
+
+// Codes that aren't used in nucleotide sequences and therefore indicate that a FASTA sequence 
+// is likely a protein sequence.
+export const ProteinOnlyCodes = new Set([
+   "E", "F", "I", "J", "L", 
+   "O", "P", "Q", "Z", "*"
+]);

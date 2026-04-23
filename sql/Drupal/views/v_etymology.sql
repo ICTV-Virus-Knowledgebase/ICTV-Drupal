@@ -1,7 +1,18 @@
 
-SELECT *
+CREATE OR REPLACE VIEW `v_etymology` AS 
+
+SELECT 
+	`sid`,
+	taxon_name,
+	taxon_sort,
+	etymology,
+	ety_html,
+	proposal_title,
+	proposal_url,
+	taxon_rank
+	
 FROM (
-	SELECT wsd.sid,
+   SELECT wsd.sid,
       MAX(CASE WHEN wsd.name = 'taxon' THEN wsd.value END) AS taxon_name,
       MAX(CASE WHEN wsd.name = 'taxon_sort' THEN wsd.value END) AS taxon_sort,
       MAX(CASE WHEN wsd.name = 'etymology' THEN wsd.value END) AS etymology,
@@ -16,4 +27,4 @@ FROM (
    AND wsd.value IS NOT NULL
    AND wsd.value <> ''
    GROUP BY ws.sid
-) taxa
+) ety

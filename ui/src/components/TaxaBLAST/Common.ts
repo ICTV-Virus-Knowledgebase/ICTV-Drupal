@@ -1,6 +1,7 @@
 
 import { AppSettings } from "../../global/AppSettings";
 import { DateTime } from "luxon";
+import { IsEnumValue, SequenceType } from "../../global/Types";
 import { Utils } from "../../helpers/Utils";
 
 
@@ -19,7 +20,8 @@ export enum BlastTask {
    megablast = "megablast",
    dcMegablast = "dc-megablast",
    blastn = "blastn",
-   blastp = "blastp"
+   blastp = "blastp",
+   blastx = "blastx"
 }
 
 // CSS class names for buttons.
@@ -116,8 +118,8 @@ export enum ResultFileType {
 export const Constants = {
 
    // Accepted file types for sequence uploads.
-   // TODO: Make sure this list is consistent with the seqsearch Python file in the ICTVtaxaBlast GitHub repo.
-   ACCEPTED_FILE_TYPES: [".fasta", ".fa", ".fas", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"],
+   // TODO: Make sure this list is consistent with the taxablast Python file in the ICTVtaxaBlast GitHub repo.
+   ACCEPTED_FILE_TYPES: [".fasta", ".fa", ".faa", ".fas", ".ffn", ".fna", ".frn", ".fsa", ".pep", ".prot", ".seq", ".txt"],
 
    // The application name
    APPLICATION_NAME: "TaxaBLAST",
@@ -133,10 +135,10 @@ export const Constants = {
    DEFAULT_BLAST_TASK: BlastTask.blastn,
 
    // The maximum number of HSPS (high-scoring segment pairs) to return per target sequence.
-   DEFAULT_MAX_HSPS: 25,
+   DEFAULT_MAX_HSPS: 5,
 
    // The default maximum number of target sequences to return.
-   DEFAULT_MAX_TARGET_SEQS: 50,
+   DEFAULT_MAX_TARGET_SEQS: 5,
 
    // How long should the upload panel wait to try to load job data?
    JOB_POLLING_INTERVAL: 5000,
@@ -233,9 +235,13 @@ export function GenerateUUID() {
 
 
 // Labels for the available BLAST programs.
-export function GetBlastTaskDescription(task_: BlastTask) {
+export function GetBlastTaskDescription(task_: BlastTask|string) {
 
    let label = "";
+
+   if (!task_ || !IsEnumValue(BlastTask, task_)) { 
+      return label; 
+   }
 
    switch (task_) {
       case BlastTask.blastn:
@@ -250,16 +256,37 @@ export function GetBlastTaskDescription(task_: BlastTask) {
       case BlastTask.megablast:
          label = "Highly-efficient algorithms optimized for very similar nucleotide sequences";
          break;
+      case BlastTask.blastx:
+         label = "Translates nucleotides to proteins to find homologous proteins, detect conserved domains, and identify distant coding regions.";
+         break;
       default:
-         label = "unknown";
+         label = `Unknown task \"${(task_ as string)}\"`;
    }
 
    return label;
 }
 
+export function GetSequenceTypeFromBlastTask(task_: BlastTask) {
+   switch(task_) {
+      case BlastTask.blastn:
+      case BlastTask.blastx:
+      case BlastTask.dcMegablast:
+      case BlastTask.megablast:
+         return SequenceType.nucleotide;
+      case BlastTask.blastp:
+         return SequenceType.protein;
+      default:
+         return SequenceType.unknown;
+   }
+}
+
 
 // Get a label for a BLAST task.
-export function GetBlastTaskLabel(task_: BlastTask) {
+export function GetBlastTaskLabel(task_: BlastTask|string): string {
+
+   if (!task_ || !IsEnumValue(BlastTask, task_)) { 
+      return "";
+   }
 
    let label = "";
 
@@ -270,6 +297,9 @@ export function GetBlastTaskLabel(task_: BlastTask) {
       case BlastTask.blastp:
          label = "blastp";
          break;
+      case BlastTask.blastx:
+         label = "blastx";
+         break;
       case BlastTask.dcMegablast:
          label = "dc-megablast (discontiguous megablast)";
          break;
@@ -277,7 +307,7 @@ export function GetBlastTaskLabel(task_: BlastTask) {
          label = "megablast";
          break;
       default:
-         label = "unknown";
+         label = (task_ as string).replace(/_/g, " ");
    }
 
    return label;
@@ -285,12 +315,13 @@ export function GetBlastTaskLabel(task_: BlastTask) {
 
 // Return a spinner icon and a message.
 export function GetSpinnerHTML(message_: string): string {
+   if (!message_) { message_ = ""; }
    return `<span class="spinner-message">${Icon.spinner} ${message_}</span>`;
 }
 
 
 // Read the contents of a file asynchronously and return it as a base64-encoded string.
-export async function ReadFileAsync(file_): Promise<string> {
+export async function ReadFileAsync(file_: File): Promise<string> {
    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {

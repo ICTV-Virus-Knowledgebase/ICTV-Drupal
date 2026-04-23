@@ -10,8 +10,8 @@ use Drupal\ictv_common\Utils;
 class Common {
 
    // Default BLAST parameters
-   public static int $DEFAULT_BLAST_MAX_HSPS = 25;
-   public static int $DEFAULT_BLAST_MAX_TARGET_SEQS = 50;
+   public static int $DEFAULT_BLAST_MAX_HSPS = 5;
+   public static int $DEFAULT_BLAST_MAX_TARGET_SEQS = 5;
    public static string $DEFAULT_BLAST_TASK = "blastn";
 
    /*
@@ -81,7 +81,7 @@ class Common {
    public static string $MODULE_NAME = "ictv_taxablast_service";
 
    // Valid BLAST task names that can be provided as a parameter to UploadSequences.
-   public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dc-megablast"];
+   public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dc-megablast", "blastp", "blastx"];
    
 
    /**

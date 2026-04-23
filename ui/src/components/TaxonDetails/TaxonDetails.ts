@@ -6,6 +6,7 @@ import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { MemberSpeciesTable } from "../MemberSpeciesTable/MemberSpeciesTable";
 import { TaxonHistory } from "../TaxonHistory/TaxonHistory";
 import { Utils } from "../../helpers/Utils";
+import { target } from "./webpack.config";
 
 export enum ComponentKey {
    history = "history",
@@ -15,10 +16,10 @@ export enum ComponentKey {
 export class TaxonDetails {
 
    // The tabbed components
-   components: Map<ComponentKey, any> = null;
+   components: Map<ComponentKey, any> | null = null;
 
    // The DOM selector for the container element.
-   containerSelector: string = null;
+   containerSelector: string | null = null;
 
    // The current MSL release number.
    currentReleaseNum: number = NaN;
@@ -31,7 +32,7 @@ export class TaxonDetails {
       
    // Important DOM elements used by this component.
    elements: {
-      container: HTMLElement,
+      container: HTMLElement | null,
 
       // Taxon history
       historyTabButton: HTMLElement,
@@ -42,13 +43,14 @@ export class TaxonDetails {
       isolatesTabPanel: HTMLElement,
 
       tabButtons: HTMLElement,
-      tabPanels: HTMLElement,
+      tabPanels: HTMLElement
 
-      // The taxon name at the top of the page.
-      taxonName: HTMLElement
+      // The etymology module at the top of the page.
+      //etymologyPanel: HTMLElement,
+      //taxonTitle: HTMLElement
    }
 
-   identifiers: Identifiers = null;
+   identifiers: Identifiers | null = null;
 
    
 
@@ -72,8 +74,9 @@ export class TaxonDetails {
          isolatesTabButton: null,
          isolatesTabPanel: null,
          tabButtons: null,
-         tabPanels: null,
-         taxonName: null
+         tabPanels: null
+         //etymologyPanel: null,
+         //taxonTitle: null
       }
    }
 
@@ -134,8 +137,7 @@ export class TaxonDetails {
       
       // Generate the component's HTML.
       let html: string =
-         `<h4 class="taxon-title"></h4>
-         <div class="container-panel">
+         `<div class="container-panel">
             <div class="tab-buttons">
                <div class="tab-button active" data-id="${ComponentKey.history}">Taxon History</div>
                <div class="tab-button" data-id="${ComponentKey.isolates}">Virus Isolates</div>
@@ -149,7 +151,7 @@ export class TaxonDetails {
                </div>
             </div>
          </div>`;
-         
+
       // Get a reference to the container Element.
       this.elements.container = document.querySelector(this.containerSelector);
       if (!this.elements.container) { throw new Error("Invalid container Element"); }
@@ -192,9 +194,17 @@ export class TaxonDetails {
          return;
       })
 
+      /*
       // Look for the taxon name element, but it might not have been added to the page.
-      this.elements.taxonName = document.querySelector(".view-taxon-etymology .view-header");
-      if (!this.elements.taxonName) {
+      this.elements.etymologyPanel = document.querySelector(".view-etymology-taxon-names");
+      if (this.elements.etymologyPanel) {
+         this.elements.taxonTitle = document.createElement("div");
+         this.elements.taxonTitle.className = "modified-taxon-title";
+         this.elements.taxonTitle.textContent = "TODO";
+         this.elements.etymologyPanel.parentNode.insertBefore(this.elements.taxonTitle, this.elements.etymologyPanel);
+      }*/
+      
+      /*if (!this.elements.taxonName) {
 
          // Get a reference to the "backup" taxon title element.
          this.elements.taxonName = this.elements.container.querySelector(".taxon-title");
@@ -211,7 +221,7 @@ export class TaxonDetails {
          this.elements.taxonName.innerHTML = `<div class="modified-taxon-title"></div>`;
          this.elements.taxonName = this.elements.taxonName.querySelector(".modified-taxon-title");
          if (!this.elements.taxonName) { console.error("An error occurred replacing the h4 element with the taxon title element"); }
-      }
+      }*/
 
       // Get the URL parameters
       const urlParams = new URLSearchParams(window.location.search);
@@ -243,16 +253,17 @@ export class TaxonDetails {
       this.components.set(ComponentKey.isolates, isolatesTable); 
    }
 
+   /*
    // Populate the taxon name, rank, and release details at the top of the page.
    populateTaxonPageTitle(title_: string) {
 
-      if (!this.elements.taxonName) { return; }
+      if (!this.elements.taxonTitle) { return; }
 
       title_ = Utils.safeTrim(title_);
       if (!title_) { return; }
 
-      this.elements.taxonName.innerHTML = title_;
-   }
+      this.elements.taxonTitle.innerHTML = title_;
+   }*/
 
    // Reload the virus isolates table.
    async reloadIsolatesTable(taxNodeID_: number) {
@@ -266,7 +277,7 @@ export class TaxonDetails {
       const ictvID = NaN;
       const vmrID = NaN;
       const msl = NaN;
-      const taxonName = null;
+      const taxonName: string = null;
 
       return await isolatesTable.loadTable(ictvID, vmrID, msl, false, taxNodeID_, taxonName);
    }

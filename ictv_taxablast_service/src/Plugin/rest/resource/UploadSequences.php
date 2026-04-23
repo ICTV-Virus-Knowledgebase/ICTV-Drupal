@@ -410,9 +410,9 @@ class UploadSequences extends ResourceBase {
          $inputPath = $jobPath.DIRECTORY_SEPARATOR.$this->inputDirectory;
          $outputPath = $jobPath.DIRECTORY_SEPARATOR.$this->outputDirectory;
 
-         // dmd testing
-         $errorFile = $outputPath.DIRECTORY_SEPARATOR."error.txt";
-         $outputFile = $outputPath.DIRECTORY_SEPARATOR."output.txt";
+         // These capture stdout and stderr for RunTaxaBLAST.php.
+         $errorFile = $outputPath.DIRECTORY_SEPARATOR."run_taxablast_stderr.txt";
+         $outputFile = $outputPath.DIRECTORY_SEPARATOR."run_taxablast_stdout.txt";
 
          // Initialize the upload order.
          $uploadOrder = 1;
@@ -485,8 +485,7 @@ class UploadSequences extends ResourceBase {
             // The user's unique numeric identifier.
             "userUID={$userUID} ".
 
-            // TODO: consider redirecting stderr and stdout to files in $outputPath
-            //"> /dev/null 2>&1 ".
+            // Redirect stderr and stdout to text files in $outputPath
             "> ".$outputFile." 2> ".$errorFile." ".
             
             // Run in the background.

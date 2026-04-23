@@ -1,8 +1,9 @@
 
 import { Constants } from "./Common";
 import { FastaFile } from "../../models/FastaFile";
-import { FastaStatus } from "../../global/Types";
+import { FastaStatus, SequenceType } from "../../global/Types";
 import { IFileData } from "../../models/IFileData";
+import { Utils } from "../../helpers/Utils";
 
 
 // FASTA files selected to be uploaded and BLAST-ed.
@@ -32,12 +33,35 @@ export class SelectedFiles {
    // Add a new FASTA file.
    addFile(fastaFile_: FastaFile) {
 
+      console.log("In selected files addFile() with file: ", fastaFile_);
+
       // Has a file with this name already been added?
       if (this.nameLookup.has(fastaFile_.filename)) { throw new Error(`File ${fastaFile_.filename} has already been added`); }
             
       // Update the record count and total size.
       this.recordCount += fastaFile_.records.length;
       this.totalSize += fastaFile_.size;
+
+      // Validate the total file size and record count.
+      if (fastaFile_.size > Constants.MAX_FILE_SIZE_TOTAL) {
+         const maxSizeLabel = Utils.formatBytes(Constants.MAX_FILE_SIZE_TOTAL, 0);
+         throw new Error(`The total size of all uploaded files must be less than ${maxSizeLabel}.`);
+      }
+      if (fastaFile_.records.length > Constants.MAX_SEQUENCE_COUNT) {
+         
+         
+         let errorMessage = `The maximum number of sequences you can submit is ${Constants.MAX_SEQUENCE_COUNT} and your `;
+         const sequenceCount = fastaFile_.records.length;
+
+         if (sequenceCount === 1) {
+            errorMessage += `FASTA file contains ${sequenceCount}. `;
+         } else {
+            errorMessage += `FASTA files contain ${sequenceCount}. `;
+         }
+
+         errorMessage += `Please remove files from your submission or refresh the page to start over.`;
+         throw new Error(errorMessage);
+      }
 
       // Add the file to the array.
       this.files.push(fastaFile_);
@@ -70,8 +94,6 @@ export class SelectedFiles {
       // Validate the number of FASTA records/sequences found in the file(s).
       if (this.recordCount > Constants.MAX_SEQUENCE_COUNT) {
 
-         const s = this.recordCount === 1 ? "" : "s";
-
          // Create an error message.
          let errorMessage = `The maximum number of sequences you can submit is ${Constants.MAX_SEQUENCE_COUNT} and your `;
 
@@ -82,7 +104,6 @@ export class SelectedFiles {
          }
 
          errorMessage += `Please remove files from your submission or refresh the page to start over.`;
-
          errors.push(errorMessage);
 
       } else if (this.recordCount < 1) {
@@ -112,6 +133,24 @@ export class SelectedFiles {
       if (index < 0) { throw new Error(`File ${filename_} was not found in the name lookup`); }
 
       return this.files[index];
+   }
+
+   // Get the overall sequence type of the selected files. If there are multiple sequence types, return "mixed". If there are no valid sequence types, return "unknown".
+   getSequenceType(): SequenceType {
+
+      let sequenceTypes = new Set<SequenceType>();
+
+      this.files.forEach((file_: FastaFile) => {
+         if (file_.sequenceType) {
+            sequenceTypes.add(file_.sequenceType);
+         }
+      })
+
+      if (sequenceTypes.size === 1) {
+         return Array.from(sequenceTypes)[0];
+      }
+
+      return SequenceType.mixed;
    }
 
    // Get a summary of the statuses of the FASTA files, each with a file count.
@@ -159,7 +198,7 @@ export class SelectedFiles {
    // Remove files with these filenames.
    removeFiles(filenames_: Array<string>) {
 
-      let updatedFiles = [];
+      let updatedFiles: FastaFile[] = [];
 
       // We will rebuild the name lookup and recalculate the record count and total file size.
       this.nameLookup.clear();

@@ -5,7 +5,7 @@ import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription, GetBlastTas
    ReadFileAsync, ValidateFastaFilename } from "../Common";
 import { DialogBuilder } from "../../../helpers/DialogBuilder";
 import { FastaFile } from "../../../models/FastaFile";
-import { FastaStatus, JobStatus } from "../../../global/Types";
+import { FastaStatus, JobStatus, SequenceType } from "../../../global/Types";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { ISubmissionResult } from "../ISubmissionResult";
 import { JobSubmission } from "../JobSubmission";
@@ -63,7 +63,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    }
 
    // This is used to only run validation on the FASTA textarea in the dialog after the user finishes typing.
-   debounceTimer;
+   debounceTimer: number;
 
    // Is the panel currently active/displayed?
    isActive: boolean;
@@ -121,6 +121,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                   <th class="control-column"></th>
                   <th class="task-column">BLAST program</th>
                   <th class="description-column">Description</th>
+                  <th class="input-column">Query input</th>
                </tr>
             </thead>
             <tbody>
@@ -128,21 +129,31 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                   <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" checked /></td>
                   <td>${GetBlastTaskLabel(BlastTask.megablast)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
+                  <td>nucleotide</td>
                </tr>
                <tr class="task-row odd">
                   <td><input type="radio" name="blast-task" value="${BlastTask.dcMegablast}" /></td>
                   <td>${GetBlastTaskLabel(BlastTask.dcMegablast)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.dcMegablast)}</td>
+                  <td>nucleotide</td>
                </tr>
                <tr class="task-row even">
                   <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" /></td>
                   <td>${GetBlastTaskLabel(BlastTask.blastn)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
+                  <td>nucleotide</td>
                </tr>
                <tr class="task-row odd">
                   <td><input type="radio" name="blast-task" value="${BlastTask.blastp}" /></td>
                   <td>${GetBlastTaskLabel(BlastTask.blastp)}</td>
                   <td>${GetBlastTaskDescription(BlastTask.blastp)}</td>
+                  <td>amino acid</td>
+               </tr>
+               <tr class="task-row odd">
+                  <td><input type="radio" name="blast-task" value="${BlastTask.blastx}" /></td>
+                  <td>${GetBlastTaskLabel(BlastTask.blastx)}</td>
+                  <td>${GetBlastTaskDescription(BlastTask.blastx)}</td>
+                  <td>nucleotide</td>
                </tr>
             </tbody>
          </table>`;
@@ -245,6 +256,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          this.elements.selectedFilesContents.innerHTML = "";
          this.elements.selectedFilesSection.classList.remove("active");
 
+         console.log("in displaySelectedFiles, no selected files");
+
          // Make the start button inactive.
          this.elements.startButton.classList.remove("active");
          return;
@@ -274,8 +287,17 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       const includeFilename = false;
       let rows = "";
 
+      // Keep track of the sequence types found in the selected files. This is used to determine which BLAST tasks are valid for the selected   
+      // files and provide warnings to users if they select BLAST tasks that may not be appropriate for their data.
+      const sequenceTypes = new Set<SequenceType>();
+
       // Add a row element for every selected file.
       this.selectedFiles.files.forEach((file_: FastaFile, index_: number) => {
+
+         console.log("in displaySelectedFiles, file_ = ", file_);
+         
+         // Update the set of sequence types found in the selected files.
+         sequenceTypes.add(file_.sequenceType);
 
          let errorClass = "";
          let status = "";
@@ -296,6 +318,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                >${errorsLabel}</button>`
          }
 
+         const sequenceType = file_.sequenceType || SequenceType.unknown;
+
          const rowClass = index_ % 2 === 0 ? "even" : "odd";
 
          rows += `<tr class="selected-file ${rowClass}">
@@ -303,6 +327,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             <td class="size">${Utils.formatBytes(file_.size, 2)}</td>
             <td class="status">${status}</td> 
             <td class="sequences">${file_.records.length.toLocaleString("en-US")}</td>
+            <td class="type">${sequenceType}</td>
             <td class="select"><input type="checkbox" data-filename="${file_.filename}" /></td>
          </li>`;
       })
@@ -314,6 +339,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                <th class="size">Size</th>
                <th class="status">Status</th>
                <th class="sequences">Sequences</th>
+               <th class="type">Type</th>
                <th class="select"></th>
             </tr>
          </thead>
@@ -328,6 +354,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       // Make the start button active.
       this.elements.startButton.classList.add("active");
+
+      if (sequenceTypes.size > 1) {
+         let warning = "The selected files appear to contain a mix of nucleotide and protein sequences, so some BLAST tasks may not be appropriate for all of the selected files.";
+         AlertBuilder.displayWarningSync(warning);
+      }
    }
 
    // Get BLAST parameters from the panel.
@@ -350,11 +381,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    }
 
    // Handle a click in the "selected files" section.
-   handleSelectedFilesClick(event_) {
+   handleSelectedFilesClick(event_: MouseEvent): void {
 
       const target = event_.target as HTMLElement;
 
-      const button = target.closest("button") as HTMLButtonElement;
+      const button = target.closest("button") as HTMLButtonElement | null;
       if (button) {
          if (button.classList.contains(ButtonClass.toggle)) {
 
@@ -377,14 +408,14 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          return;
       }
 
-      const checkbox = target.closest("input") as HTMLInputElement;
+      const checkbox = target.closest("input") as HTMLInputElement | null;
       if (checkbox) {
 
-         let filename = checkbox.getAttribute("data-filename");
+         const filename: string | null = checkbox.getAttribute("data-filename");
          if (!filename) { return; }
 
          // Get the "remove selected" button.
-         const removeButton = this.elements.selectedFilesTitle.querySelector(`.${ButtonClass.removeFiles}`) as HTMLButtonElement;
+         const removeButton = this.elements.selectedFilesTitle.querySelector(`.${ButtonClass.removeFiles}`) as HTMLButtonElement | null;
          if (!removeButton) { throw new Error("Unable to find the \"remove selected files\" button")}
          
          if (checkbox.checked) {
@@ -394,7 +425,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          } else {
 
-            let selectionCount = 0;
+         let selectionCount: number = 0;
 
             // Get all file selection checkboxes that have been checked.
             const checkedControls: NodeListOf<HTMLInputElement> = this.elements.selectedFilesContents.querySelectorAll(`input[type="checkbox"][data-filename]:checked`);
@@ -441,7 +472,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.parent.state.sequenceIndex = NaN;
 
       // Update the URL parameters without reloading the page.
-      this.parent.updateUrlFromState();
+      //const params = this.parent.getUrlParamsFromState();
+      const jobDetailsURL = this.parent.createPanelURL(PanelKey.jobDetails);
+      history.replaceState(null, "", jobDetailsURL);
+      
+      //this.parent.updateUrlFromState();
 
       // Navigate to the job details panel.
       this.parent.displayPanel(PanelKey.jobDetails);
@@ -468,7 +503,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    }
 
    // Populate the panel and make it visible.
-   async load() {
+   async load(): Promise<void> {
 
       this.isActive = true;
 
@@ -605,7 +640,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          } else if (target.classList.contains(ControlClass.fastaText)) {
             
-            this.debounceTimer = setTimeout(async () => {
+            this.debounceTimer = window.setTimeout(async () => {
 
                const status = await this.validateDialogFASTA();
 
@@ -651,7 +686,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                // Display the selected FASTA files that should now include the file created using the dialog.
                this.displaySelectedFiles();
 
-            } catch (error_) {
+            } catch (error_: any) {
                this.dialogFile = null;
                return AlertBuilder.displayError(error_);
             } 
@@ -804,7 +839,44 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             return false;
          }
 
-         // Start the job submission.
+         // This will be set to true if the user decides to cancel the job submission. If so, we will return early and not submit the job.
+         let cancelSubmission = false;
+
+         // Check the sequence type(s) of the selected files and provide warnings to users if they select BLAST tasks that may not be appropriate for their data.
+         let sequenceType = this.selectedFiles.getSequenceType();
+         if (!sequenceType || sequenceType === SequenceType.unknown || sequenceType === SequenceType.mixed) {
+
+            let message = "";
+
+            if (!sequenceType || sequenceType === SequenceType.unknown) {
+               message = "The sequence type of the selected files could not be determined";
+
+            } else if (sequenceType === SequenceType.mixed) {
+               message = "The selected files appear to contain a mix of nucleotide and protein sequences";
+
+            } else {
+               await AlertBuilder.displayError("An unknown error occurred when determining the sequence type of the selected files");
+               return false;
+            }
+
+            // Provide guidance to users about selecting BLAST tasks for their files.
+            message += ", so please make sure to select the appropriate BLAST task. If your files contain nucleotide sequences, " +
+               "select megablast, dc-megablast, blastn, or blastx. If your files contain protein sequences, select blastp.";
+            
+            await AlertBuilder.displayConfirm(message, "Proceed with job submission?", () => { cancelSubmission = true; });
+
+         } else if (sequenceType === SequenceType.nucleotide && blastParams.task === BlastTask.blastp) {
+            let message = "The selected files appear to contain nucleotide sequences, but the BLAST task selected is blastp, which is designed for protein sequences."
+            await AlertBuilder.displayConfirm(message, "Proceed with job submission?", () => { cancelSubmission = true; });
+
+         } else if (sequenceType === SequenceType.protein && blastParams.task !== BlastTask.blastp) {
+            let message = "The selected files appear to contain protein sequences, but the BLAST task selected is designed for nucleotide sequences.";
+            await AlertBuilder.displayConfirm(message, "Proceed with job submission?", () => { cancelSubmission = true; });
+         }
+
+         if (cancelSubmission) { return false; }
+
+         // Get the files that will be submitted.
          const files = this.selectedFiles.getValidFiles();
          
          // Upload the FASTA file(s) to the web service for processing.
@@ -813,7 +885,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          // Handle the upload result and display the correct sub-panel.
          await this.handleSubmissionResult(result);
        
-      } catch (error_) {
+      } catch (error_: any) {
          await AlertBuilder.displayError(error_);
       }
 
@@ -868,12 +940,14 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    }
 
    // Unload and hide the panel.
-   unload() {
+   async unload(): Promise<void> {
 
       this.isActive = false;
       this.elements.container.classList.remove("active");
       
       // TODO: should we remove event listeners?
+
+      return;
    }
 
    // Update the FASTA text control's data attributes and message.
@@ -941,7 +1015,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          // Update the FASTA control's status.
          this.updateFastaControlStatus(status, this.dialogFile.size, this.dialogFile.records.length, errors);
       }
-      catch (error_) {
+      catch (error_: any) {
          await AlertBuilder.displayError(error_);
       }
 
@@ -968,6 +1042,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             // Create a FastaFile object.
             const fastaFile = new FastaFile(contents, file.name, file.size);
 
+            // TODO: keep track of whether there are different sequence types.
+
             // Update the collection of selected files.
             this.selectedFiles.addFile(fastaFile);
          }
@@ -975,8 +1051,12 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          // Display the selected files.
          this.displaySelectedFiles();
       }
-      catch (error_) {
+      catch (error_: any) {
          await AlertBuilder.displayError(error_);
+      }
+      finally {
+         // Reset so re-selecting same file will trigger a change event.
+         this.elements.fileInput.value = "";
       }
    }
 

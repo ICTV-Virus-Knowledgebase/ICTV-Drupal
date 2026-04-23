@@ -10,8 +10,8 @@ use Drupal\ictv_common\Utils;
 class TaxaBLAST {
 
    // The contents of stdout and stderr will be written to these files.
-   public static string $stdErrorFilename = "stderr.txt";
-   public static string $stdOutFilename = "stdout.txt";
+   public static string $stdErrorFilename = "taxablast_stderr.txt";
+   public static string $stdOutFilename = "taxablast_stdout.txt";
 
 
    // Run TaxaBLAST from the Docker image.
