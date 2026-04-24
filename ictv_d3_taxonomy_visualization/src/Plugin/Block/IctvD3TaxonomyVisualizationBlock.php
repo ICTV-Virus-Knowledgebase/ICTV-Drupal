@@ -24,7 +24,7 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
     //\Drupal::logger('ictv_d3_taxonomy_visualization')->info("test module path = ".$testModulePath);
     //$assetPath = $modulePath."/assets";
 
-    // TODO: The code above doesn't work in prod, so we use this hard-coded version.
+    // dmd 030223 the code above doesn't work in prod, so we use this hard-coded version.
     $assetPath = "/modules/custom/ictv_d3_taxonomy_visualization/assets";
 
     // Use the default database instance.
@@ -76,6 +76,7 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
                 <select class='release-ctrl'></select>
                 <div class='font-size-panel'></div>
                 <div class='search-panel'></div>
+                <label class='paginate-toggle'><input type='checkbox' class='paginate-ctrl' checked='checked' /><span>Paginate Taxa</span></label>
             </div>
             <div class='search-results-panel'></div>
             <div class='body-panel'>
