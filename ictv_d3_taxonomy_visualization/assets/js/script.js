@@ -47,7 +47,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    
    // Configuration settings (to replace hard-coded values below)
    const settings = {
-      pageSize: 60,
+      pageSize: 50,
       animationDuration: 900,
       animationDelay: 1100,
       node: {
@@ -97,6 +97,14 @@ window.ICTV.d3TaxonomyVisualization = function (
       parentTaxnodeID: null
    }
 
+   let currentTreeRoot = null;
+   let currentTreeUpdate = null;
+
+   // Zoom behavior for font slider
+   let currentZoom = null;
+   let currentSvgZoom = null;
+   let initialZoomTransform = null;
+
    // nodeHeight is used in pageNodes() to determine which page to display when searching
    var nodeHeight = null;
    var globalTaxNodeId = null;
@@ -117,7 +125,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    var counter = 0;
    var len = 0;
    var res = [];
-   
+
    // The DOM Element for the font size panel and slider (these are assigned in "iniitializeFontSizePanel").
    let fontSizePanelEl = null;
    let fontSliderEl = null;
@@ -136,6 +144,9 @@ window.ICTV.d3TaxonomyVisualization = function (
    // This will be populated with a release's species data.
    let speciesData = null;
 
+   // Choose to paginate taxa (by default it is on)
+   let togglePaginate = null;
+
    // Create an instance of the search panel object and initialize it.
    const searchPanel = new window.ICTV.SearchPanel(currentReleaseNumber, selectSearchResult, `${containerSelector} .search-results-panel`,
    `${containerSelector} .search-panel`, taxonDetailsURL, taxonomyURL);
@@ -152,10 +163,53 @@ window.ICTV.d3TaxonomyVisualization = function (
    //Initialize ss 
    initializeButton();
 
+   // Initialize the paginate toggle.
+   initializePaginateToggle();
+
    // Initialize the release control using MSL release data.
    initializeReleaseControl();
 
-   
+   // Is pagination enabled?
+   function isPaginationEnabled() {
+      return !togglePaginate || togglePaginate.checked;
+   }
+
+   // Pagination toggle
+   function initializePaginateToggle() {
+      togglePaginate = document.querySelector(`${containerSelector} .header-panel .paginate-ctrl`);
+      if (!togglePaginate) { throw new Error("Invalid paginate toggle Element"); }
+
+   togglePaginate.addEventListener("change", async function () {
+      if (!currentTreeRoot || !currentTreeUpdate) return;
+
+      // Re-display the current release to rebuild the tree with or without pagination
+      const releaseYear = releaseControlEl.value;
+      if (releaseYear) {
+         await displayReleaseTaxonomy(releaseYear);
+         }
+      });
+   }
+
+   // Follow target node as they're opened after clicking on search result
+   // Called inside expandPath function
+   function panToNode(node, duration) {
+   if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
+
+   const currentTransform = d3.zoomTransform(currentSvgZoom.node());
+   const scale = currentTransform.k;
+
+   // node.y = horizontal position, node.x = vertical position (tree is rotated)
+   const tx = (settings.svg.width / 3) - scale * node.y;
+   const ty = (settings.svg.height / 2) - scale * node.x;
+
+   currentSvgZoom.transition()
+      .duration(duration || settings.animationDuration)
+      .call(
+         currentZoom.transform,
+         d3.zoomIdentity.translate(tx, ty).scale(scale)
+      );
+   }
+
    // TODO: What button? Give this a better name!
    function initializeButton() {
 
@@ -213,7 +267,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                .style('font-style', 'normal')
 
             svgSelection.selectAll('text')
-               .style('font-size', '64px')
+               // Restore the user's font size after export
+               .style('font-size', ((currentFontSize || 4) * 16) + 'px')
                .style('fill', 'black')
                .style('text-transform', 'capitalize')
 
@@ -269,14 +324,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                         svg.removeAttribute('viewBox');
                      }
 
-                     // Reset font slider if it is at a value > 4
-                     // currentFontSize is a global varible assigned to the fontSliderE1 value
-                     if (currentFontSize > 4) {
-                        fontSliderEl.property("value", 4);
-                        font = "4rem";
-                        currentFontSize = 4;
-                        d3.selectAll('text').style("font-size", font);
-                     }
+                     // Restore the user's font size after export
+                     const currentFont = (currentFontSize || 4) + "rem";
+                     d3.selectAll(`${containerSelector} .taxonomy-panel text`).style("font-size", currentFont);
 
                      // Resolve the promise with the image data
                      resolve(imgData);
@@ -308,9 +358,11 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Get the bounding box of the SVG content
             let bbox = svg.getBBox();
+            const fontScale = (currentFontSize || 4) / 4;
+            const leftTrim = (1 - 1 / Math.sqrt(fontScale)) * bbox.width * 0.25;
 
             // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
-            svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+            svg.setAttribute('viewBox', `${bbox.x + leftTrim} ${bbox.y} ${bbox.width - leftTrim} ${bbox.height}`);
 
             // Create a D3 selection from the SVG
             let svgSelection = d3.select(svg);
@@ -343,7 +395,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                .style('font-style', 'normal')
 
             svgSelection.selectAll('text')
-               .style('font-size', '64px')
+               // Restore the user's font size after export
+               .style('font-size', ((currentFontSize || 4) * 16) + 'px')
                .style('fill', 'black')
 
             // Serialize the SVG to a string
@@ -379,14 +432,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                svg.removeAttribute('viewBox');
             }
 
-            // Reset font slider if it is at a value > 4
-            // currentFontSize is a global varible assigned to the fontSliderE1 value
-            if (currentFontSize > 4) {
-               fontSliderEl.property("value", 4);
-               font = "4rem";
-               currentFontSize = 4;
-               d3.selectAll('text').style("font-size", font);
-            }
+            // Restore the user's font size after export
+            const currentFont = (currentFontSize || 4) + "rem";
+            d3.selectAll(`${containerSelector} .taxonomy-panel text`).style("font-size", currentFont);
 
          }
 
@@ -403,11 +451,12 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Get the bounding box of the SVG content
             let bbox = svg.getBBox();
-
-            let padding = 250;
+            let padding = 15;
+            const fontScale = (currentFontSize || 4) / 4;
+            const leftTrim = (1 - 1 / Math.sqrt(fontScale)) * bbox.width * 0.25;
 
             // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
-            svg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + 2 * padding} ${bbox.height + 2 * padding}`);
+            svg.setAttribute('viewBox', `${bbox.x + leftTrim - padding} ${bbox.y - padding} ${bbox.width - leftTrim + 2 * padding} ${bbox.height + 2 * padding}`);
 
             // Create a D3 selection from the SVG
             let svgSelection = d3.select(svg);
@@ -434,7 +483,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                });
 
             svgSelection.selectAll('text.node-text')
-               .style('font-family', 'C059')
+               .style('font-family', 'Liberation Serif')
                .style('font-weight', 'bold')
                .style('font-style', 'italic')
 
@@ -442,7 +491,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                .style('font-style', 'normal')
 
             svgSelection.selectAll('text')
-               .style('font-size', '64px')
+               // Restore the user's font size after export
+               .style('font-size', ((currentFontSize || 4) * 16) + 'px')
                .style('fill', 'black')
 
             // Serialize the SVG to a string
@@ -486,14 +536,12 @@ window.ICTV.d3TaxonomyVisualization = function (
                      svg.removeAttribute('viewBox');
                   }
 
-                  // Reset font slider if it is at a value > 4
-                  // currentFontSize is a global varible assigned to the fontSliderE1 value
-                  if (currentFontSize > 4) {
-                     fontSliderEl.property("value", 4);
-                     font = "4rem";
-                     currentFontSize = 4;
-                     d3.selectAll('text').style("font-size", font);
-                  }
+                  // Restore the user's font size after export
+                  const currentFont = (currentFontSize || 4) + "rem";
+                  d3.selectAll(`${containerSelector} .taxonomy-panel text`).style("font-size", currentFont);
+
+                  // Remove the Liberation Serif font-family so the browser reverts to its default
+                  d3.selectAll(`${containerSelector} .taxonomy-panel text.node-text`).style("font-family", null);
 
                });
          }
@@ -532,6 +580,217 @@ window.ICTV.d3TaxonomyVisualization = function (
       if (!release) { throw new Error(`No release found for release year ${releaseYear}`); }
 
       return release;
+   }
+
+   function isPagerNode(node) {
+      return !!(node && node.data && node.data.isPager === true);
+   }
+
+   function getNodeChildren(node) {
+      if (!node) { return null; }
+
+      return node.allChildren || node.children || node._children || null;
+   }
+
+   function getPageItemCount(pageSize) {
+      return Math.max(pageSize - 2, 1);
+   }
+
+   function getDefaultPageIndex(node, itemCount, pageCount) {
+      let pageIndex = 0;
+
+      if (
+         !!node &&
+         !!node.data &&
+         !!node.data.parentTaxNodeID &&
+         paginationData.parentTaxnodeID == node.data.parentTaxNodeID &&
+         !isNaN(paginationData.childDisplayOrder)
+      ) {
+         pageIndex = Math.floor((paginationData.childDisplayOrder - 1) / itemCount);
+      }
+
+      return Math.max(0, Math.min(pageIndex, pageCount - 1));
+   }
+
+   function createPagerNode(parentNode, pageIndex) {
+      if (!isPaginationEnabled()) { return null; }
+
+      return {
+         data: {
+            name: "More...",
+            rankName: "Shift",
+            taxNodeID: "",
+            parentTaxNodeID: parentNode?.data?.taxNodeID || "",
+            rankIndex: (parseInt(parentNode?.data?.rankIndex) || 0) + 1,
+            is_assigned: true,
+            has_species: 0,
+            isPager: true
+         },
+         parent: parentNode,
+         depth: (parentNode?.depth || 0) + 1,
+         height: 0,
+         page: pageIndex,
+         children: null,
+         _children: null,
+         allChildren: null
+      };
+   }
+
+   function getVisibleChildren(node) {
+      if (!node) { return null; }
+
+      if (!isPaginationEnabled()) {
+         return node.allChildren || node.children || node._children || null;
+      }
+
+      if (!node.allChildren) {
+         return node.children || node._children || null;
+      }
+
+      if (!node.pagination) {
+         return node.allChildren;
+      }
+
+      const pageIndex = Math.max(0, Math.min(node.pagination.currentPage, node.pagination.pageCount - 1));
+      const startRange = pageIndex * node.pagination.itemCount;
+      const endRange = startRange + node.pagination.itemCount;
+      const visibleChildren = node.allChildren.slice(startRange, endRange);
+
+      if (node.pagination.pageCount < 2) {
+         return visibleChildren;
+      }
+
+      const previousPage = pageIndex === 0 ? node.pagination.pageCount - 1 : pageIndex - 1;
+      const nextPage = pageIndex === node.pagination.pageCount - 1 ? 0 : pageIndex + 1;
+
+      return [
+         createPagerNode(node, previousPage),
+         ...visibleChildren,
+         createPagerNode(node, nextPage)
+      ].filter(Boolean);
+   }
+
+   function syncVisibleChildren(node) {
+      if (!node || !node.allChildren) { return false; }
+
+      const visibleChildren = getVisibleChildren(node);
+      if (node.children) {
+         node.children = visibleChildren;
+         return true;
+      }
+
+      if (node._children) {
+         node._children = visibleChildren;
+         return true;
+      }
+
+      return false;
+   }
+
+   function setNodePage(node, pageIndex) {
+      if (!isPaginationEnabled() || !node || !node.pagination) { return false; }
+
+      const normalizedPageIndex = ((pageIndex % node.pagination.pageCount) + node.pagination.pageCount) % node.pagination.pageCount;
+      const pageChanged = node.pagination.currentPage !== normalizedPageIndex;
+      node.pagination.currentPage = normalizedPageIndex;
+
+      return syncVisibleChildren(node) || pageChanged;
+   }
+
+   function setNodePageForChild(parentNode, childNode) {
+      if (!isPaginationEnabled() || !parentNode || !parentNode.pagination || !parentNode.allChildren || !childNode) {
+         return false;
+      }
+
+      let childIndex = parentNode.allChildren.indexOf(childNode);
+      if (childIndex === -1 && !!childNode.data) {
+         childIndex = parentNode.allChildren.findIndex((candidate) => (
+            !!candidate &&
+            !!candidate.data &&
+            candidate.data.taxNodeID === childNode.data.taxNodeID
+         ));
+      }
+
+      if (childIndex === -1) { return false; }
+
+      const targetPageIndex = Math.floor(childIndex / parentNode.pagination.itemCount);
+      return setNodePage(parentNode, targetPageIndex);
+   }
+
+   function expandNode(node) {
+      if (!node || !node._children) { return false; }
+
+      node.children = getVisibleChildren(node);
+      node._children = null;
+      return true;
+   }
+
+   function collapseNode(node) {
+      if (!node || !node.children) { return false; }
+
+      node._children = getVisibleChildren(node);
+      node.children = null;
+      return true;
+   }
+
+   function initializePagination(node, pageSize) {
+      if (!node || !node.children) { return; }
+
+      node.allChildren = [...node.children];
+      node.allChildren.forEach((childNode) => initializePagination(childNode, pageSize));
+
+      if (node.allChildren.length > pageSize) {
+         const itemCount = getPageItemCount(pageSize);
+         const pageCount = Math.ceil(node.allChildren.length / itemCount);
+
+         node.pagination = {
+            itemCount,
+            pageCount,
+            currentPage: getDefaultPageIndex(node, itemCount, pageCount)
+         };
+
+         node.children = getVisibleChildren(node);
+      } else {
+         node.pagination = null;
+         node.children = node.allChildren;
+      }
+   }
+
+   function clearPaginationState(node) {
+      if (!node || isPagerNode(node)) { return; }
+
+      const children = node.allChildren || node.children || node._children || null;
+      node.pagination = null;
+      node.allChildren = null;
+      node.children = children;
+      node._children = null;
+
+      if (!children) { return; }
+
+      children.forEach((childNode) => clearPaginationState(childNode));
+   }
+
+   // Force target node onto screen when paginated?
+   function findPathToTaxNode(node, targetTaxNodeID) {
+      if (!node) { return null; }
+
+      if (!!node.data && `${node.data.taxNodeID}` === `${targetTaxNodeID}`) {
+         return [node];
+      }
+
+      const children = getNodeChildren(node);
+      if (!children) { return null; }
+
+      for (const childNode of children) {
+         if (isPagerNode(childNode)) { continue; }
+
+         const path = findPathToTaxNode(childNode, targetTaxNodeID);
+         if (!!path) {
+            return [node, ...path];
+         }
+      }
+
+      return null;
    }
 
    function initializeZoomPanel() {
@@ -596,13 +855,74 @@ window.ICTV.d3TaxonomyVisualization = function (
       // changing the font on change of slider
       fontSliderEl.on("input", function (e) {
          const fontSize = e.target.value;
-         font = fontSize + "rem";
-
          currentFontSize = fontSize;
+         d3.selectAll(`${containerSelector} .taxonomy-panel text.node-text`)
+            .style("font-size", fontSize + "rem");
 
-         // Constrain the font size change to the taxonomy panel.
-         const treeTextSelector = `${containerSelector} .taxonomy-panel text`;
-         d3.selectAll(treeTextSelector).style("font-size", font);
+         d3.selectAll(`${containerSelector} .taxonomy-panel text.pager-node-text`)
+            .style("font-size", fontSize + "rem");
+
+         if (currentTreeRoot && currentTreeUpdate) {
+            currentTreeUpdate(currentTreeRoot);
+
+            setTimeout(function () {
+               if (!currentZoom || !currentSvgZoom || !initialZoomTransform) return;
+
+               const fontScale = (parseFloat(fontSize) || 4) / 4;
+               const newScale = initialZoomTransform.k / Math.sqrt(fontScale);
+
+               // 1. Find the horizontal (y) data coordinate of the first visible column (usually Realm)
+               let firstColY = currentTreeRoot.y;
+               if (currentTreeRoot.children && currentTreeRoot.children.length > 0) {
+                  firstColY = currentTreeRoot.children[0].y;
+               } else if (currentTreeRoot._children && currentTreeRoot._children.length > 0) {
+                  firstColY = currentTreeRoot._children[0].y;
+               }
+
+               // 2. Identify where this column originally anchored to the screen at a normal font size (fontScale = 1).
+               // Since your update() does `d.y = d.depth * w * fontScale`, dividing by fontScale gives you original unscaled Y.
+               const originalY = firstColY / fontScale;
+               const targetScreenX = initialZoomTransform.x + (originalY * initialZoomTransform.k);
+
+               // 3. Set txDefault so that after scaling, this column stays EXACTLY at that screen coordinate
+               const txDefault = targetScreenX - (firstColY * newScale);
+
+               // 4. Vertical default logic (scaling cleanly outward from the center of the viewport)
+               const scaleRatio = newScale / initialZoomTransform.k;
+               const svgHeight = settings.svg.height;
+               const tyDefault = (svgHeight / 2) - scaleRatio * ((svgHeight / 2) - initialZoomTransform.y);
+
+
+               if (selectedNode && !isNaN(selectedNode.x) && !isNaN(selectedNode.y)) {
+                  // A node is selected — re-center on it at the adjusted scale
+                  const txSelected = (settings.svg.width / 2) - newScale * selectedNode.y;
+                  const tySelected = (settings.svg.height / 2) - newScale * selectedNode.x;
+
+                  // Use whichever tx is smaller (more scrolled to the right) to avoid drifting left of the base alignment
+                  const tx = Math.min(txSelected, txDefault);
+                  const ty = tx === txDefault ? tyDefault : tySelected;
+
+                  currentSvgZoom.transition()
+                     .duration(100)
+                     .call(
+                        currentZoom.transform,
+                        d3.zoomIdentity.translate(tx, ty).scale(newScale)
+                     );
+               } else {
+                  // No node is selected — cleanly anchor using the initial-position logic
+                  currentSvgZoom.transition()
+                     .duration(100)
+                     .call(
+                        currentZoom.transform,
+                        d3.zoomIdentity.translate(txDefault, tyDefault).scale(newScale)
+                     );
+               }
+
+               if (ZoomSliderEl) {
+                  ZoomSliderEl.property("value", newScale);
+               }
+            }, settings.animationDuration + 50);
+         }
       });
    }
 
@@ -685,6 +1005,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       len = 0;
       counter = 0;
       res = [];
+      currentTreeRoot = null;
+      currentTreeUpdate = null;
 
       // If there's already an SVG element in the taxonomy panel, delete it.
       const existingSVG = document.querySelector(`${containerSelector} .taxonomy-panel svg `);
@@ -699,38 +1021,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       d3.json(jsonFilename).then(function (data) {
          
          var genus = false;
-
-         const ab = d3.hierarchy(data, function (d) {
-            if (d.children === null) { return; }
-
-            do {
-               let str = d.child_counts;
-               var result;
-               const regex = /(\d+)/;
-               if (typeof str === "string" && str.length > 0) {
-                  if (str.includes("species")) {
-                     result = str.replace(/, .*species|,.*$/, "");
-                  } else {
-                     result = str?.match(regex);
-                  }
-               }
-               if (typeof result === "string" && result.length > 0) {
-                  num = parseInt(result.match(/\d+/)[0]);
-                  if (num > 500) {
-                     num = temp;
-                  } else {
-                     if (num > temp) {
-                        arr.push(temp);
-                        temp = num;
-                     }
-                  }
-               }
-            } while (num >= 1000);
-
-            max = Math.max(...arr);
-            num_flag = true;
-            return d.children;
-         });
 
          // Set the width and height available within the SVG.
          const availableHeight =
@@ -811,6 +1101,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          var i = 0;
 
          function createTree(ds) {
+
             var svg = d3
                .select(`${containerSelector} .taxonomy-panel`)
                .append("svg")
@@ -842,72 +1133,51 @@ window.ICTV.d3TaxonomyVisualization = function (
                .call(zoom)
                .on("dblclick.zoom", null);
 
+            // Variables declared at the top to handle svg resizing once the font slider give horizontal/vertical spacing to account for bigger font
+            currentZoom = zoom;
+            currentSvgZoom = svg_zoom;
+            initialZoomTransform = d3.zoomTransform(svg_zoom.node());
+
             // Use d3 to generate the tree layout/structure.
             const treeLayout = d3.tree().size([availableHeight, availableWidth]);
 
             treeLayout(ds);
 
 
-            function pageNodes(d, pageSize) {
-
-               if (!d.children) { return; }
-
-               d.children.forEach((c) => pageNodes(c, pageSize));
-               if (d.children.length > pageSize) {
-
-                  d.pages = [];
-                  const count = pageSize - 2;
-                  const pageCount = Math.ceil(d.children.length / count);
-
-                  // Iterate over all pages.
-                  for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-
-                     // The start and end indices for the current page.
-                     let startRange = pageIndex * count;
-                     let endRange = startRange + count;
-
-                     // Add the child nodes to the page.
-                     d.pages[pageIndex] = d.children.slice(startRange, endRange);
-
-                     // I think this adds the "up" node before the page's child nodes.
-                     d.pages[pageIndex].unshift({
-                        ...d.pages[pageIndex][0],
-                        data: {
-                           name: "More...",
-                           rankName: "Shift"
-                        },
-                        page: pageIndex == 0 ? pageCount - 1 : pageIndex - 1,
-                     });
-
-                     // I think this adds the "down" node after the page's child nodes.
-                     d.pages[pageIndex].push({
-                        ...d.pages[pageIndex][0],
-                        data: {
-                           name: "More...",
-                           rankName: "Shift"
-                        },
-                        page: pageIndex != pageCount - 1 ? pageIndex + 1 : 0,
-                     });
-                  }
-
-                  // The default page index
-                  let pageIndex = 0;
-
-                  if (!!d.data.parentTaxNodeID && paginationData.parentTaxnodeID == d.data.parentTaxNodeID && !isNaN(paginationData.childDisplayOrder)) {
-                     pageIndex = Math.floor((paginationData.childDisplayOrder - 1) / count);
-                  }
-
-                  // Select the current page by index.
-                  d.children = d.pages[pageIndex];
-               }
+            // initializePagination(ds, settings.pageSize);
+            if (isPaginationEnabled()) {
+               initializePagination(ds, settings.pageSize);
+            } else {
+               clearPaginationState(ds);
             }
 
-            ds.children.forEach((c) => pageNodes(c, settings.pageSize));
-
-            ds.children.forEach(collapse);
+            const rootChildren = getNodeChildren(ds) || [];
+            rootChildren.forEach(collapse);
+            currentTreeRoot = ds;
+            currentTreeUpdate = update;
 
             update(ds);
 
+            // If font size has been changed from default, apply zoom compensation
+            // so the tree doesn't appear too zoomed in when rebuilt
+            if (currentFontSize && parseFloat(currentFontSize) !== 4) {
+               const fontScale = parseFloat(currentFontSize) / 4;
+               const newScale = initialZoomTransform.k / Math.sqrt(fontScale);
+               const scaleRatio = newScale / initialZoomTransform.k;
+               const leftPadding = (1 - scaleRatio) * settings.svg.width * 0.09;
+               const newTx = scaleRatio * initialZoomTransform.x - leftPadding;
+               const svgHeight = settings.svg.height;
+               const newTy = svgHeight / 2 - scaleRatio * (svgHeight / 2 - initialZoomTransform.y);
+
+               svg_zoom.call(
+                  zoom.transform,
+                  d3.zoomIdentity.translate(newTx, newTy).scale(newScale)
+               );
+
+               if (ZoomSliderEl) {
+                  ZoomSliderEl.property("value", newScale);
+               }
+            }
 
             function update(source) {
 
@@ -919,8 +1189,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                var info = treeLayout(ds);
                var parent = info.descendants();
                var currentNodeCount = parent.length;
+               const fontScale = (currentFontSize || 4) / 4; // 4 is the default/min font size
                const scaleFactor = Math.min(1, settings.svg.height / 90);
-               const dx = 21 * scaleFactor;
+               // const dx = 21 * scaleFactor;
+               const dx = 21 * scaleFactor * fontScale;  // vertical spacing scales with font
+               // const dy = settings.svg.height / (currentNodeCount + 1);
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
                var links = info.descendants().slice(1);
@@ -951,8 +1224,10 @@ window.ICTV.d3TaxonomyVisualization = function (
                      num = parseInt(result.match(/\d+/)[0]);
                   }
 
-                  d.x = d.x * h;
-                  d.y = d.depth * w;
+                  d.x = d.x * h;                               // vertical position
+                  // d.x = d.x * h * Math.sqrt(fontScale);
+                  // d.y = d.depth * w * Math.sqrt(fontScale);    // horizontal position
+                  d.y = d.depth * w * fontScale;
                });
 
                var children = svg.selectAll("g.node").data(parent, function (d) {
@@ -1000,30 +1275,25 @@ window.ICTV.d3TaxonomyVisualization = function (
                   })
                   .on("click", click);
 
-               // lrm 5-22-2024
-               // Commented out this code to instead, append a circle to the nodes
-               // this is done in the update circle.node function
-               // TODO: Probably take this out, leaving it here for now
-               Enter.append("rect")
+               // Append the bridging rect ONLY for ghost nodes
+               Enter.filter(function(d) { return isGhostNode(d); })
+                  .append("rect")
+                  .attr("class", "ghost-bridge")
                   .style("stroke", "black")
                   .style("stroke-width", "3px")
                   .style("fill", function (d) {
-                     findParent(d);
+                     return findParent(d);
                   })
                   .attr("cursor", "pointer");
 
                // lrm 5-22-2024
-               // this code appears to not be needed, the logic for the circle is in the update circle.node function
                Enter.append("circle")
                   .attr("class", "node")
                   .style("stroke", "black")
                   .style("stroke-width", `${settings.node.strokeWidth}px`)
-                  .style("fill", function (d) {
-                     findParent(d);
-                  })
                   
+                  // Make tree/root node invisible?
                   .style("opacity", function (d) {
-                     // TODO: what is this doing?
                      return !d.data.parentDistance ? 0 : 1;
                   })
                   .style("pointer-events", function (d, i) {
@@ -1036,6 +1306,30 @@ window.ICTV.d3TaxonomyVisualization = function (
                   });
                }
 
+               // Helper function for rectangle around node.text
+               // This rectangle needs to grow when the font size is increased
+               // Created with Enter.insert("rect", "circle") later in the code
+               function updateTextRect(nodeSelection) {
+                  const rectPaddingX = 6;
+                  const rectPaddingY = 3;
+
+                  nodeSelection.each(function (d) {
+                     const group = d3.select(this);
+                     const textNode = group.select("text").node();
+                     const rectSelection = group.select("rect.text-bg");
+
+                     if (!textNode || rectSelection.empty()) { return; }
+
+                     d.bbox = textNode.getBBox();
+
+                     rectSelection
+                        .attr("x", d.bbox.x - rectPaddingX)
+                        .attr("y", d.bbox.y - rectPaddingY)
+                        .attr("width", d.bbox.width + (rectPaddingX * 2))
+                        .attr("height", d.bbox.height + (rectPaddingY * 2));
+                  });
+               }
+
                Enter.append("text")
                   .attr("x", function (d) {
                      return d.children ? -13 : 13;
@@ -1044,11 +1338,13 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      let className = "node-text";
 
-                     if (d.data.taxNodeID === "legend") {
+                     if (isPagerNode(d)) {
+                        className = "pager-node-text";
+                     } else if (d.data.taxNodeID === "legend") {
                         className = "legend-node-text";
                      } else if (d.data.name === "Unassigned" && !isGhostNode(d)) {
                         className = "unassigned-text";
-                     } else if(isGhostNode(d)) {
+                     } else if (isGhostNode(d)) {
                         className = "ghost-node-text";
                      }
 
@@ -1096,24 +1392,33 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .attr("fill", function (d) {
                      return "#000000";
                   })
+
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy)
                   .call(getBB);
 
-               Enter.insert("rect", "text")
+               Enter.insert("rect", "circle")
+                  .attr("class", "text-bg")
                   .attr("x", function (d) {
-                     return d.bbox.x;
+                     return d.bbox.x - 6;
+                     // return d.bbox.x;
                   })
                   .attr("y", function (d) {
-                     return d.bbox.y;
+                     return d.bbox.y - 3;
+                     // return d.bbox.y;
                   })
                   .attr("width", function (d) {
-                     return d.bbox.width;
+                     return d.bbox.width + 12;
+                     // return d.bbox.width;
                   })
                   .attr("height", function (d) {
-                     return d.bbox.height;
+                     return d.bbox.height + 6;
+                     // return d.bbox.height;
                   })
-                  .style("fill", "white")
+                  // .style("fill", "white")
+                  .style("fill", function(d) {
+                     return isGhostNode(d) ? "transparent" : "white";
+                  })
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy);
 
@@ -1124,17 +1429,13 @@ window.ICTV.d3TaxonomyVisualization = function (
                      return "translate(" + d.y + "," + d.x + ")";
                   });
 
-               // lrm 5-22-2024
-               // instead of rect, append a circle to the nodes
-               // this is done in the update circle.node function
-               // TODO: Probably take this out, leaving it for now
-               Update.select("rect")
+               // Target specifically the ghost bridge rect
+               Update.select("rect.ghost-bridge")
                   .style("stroke", "black")
                   .style("stroke-width", "2px")
-                  .attr("dx", settings.node.textDx)
-                  .attr("dy", settings.node.textDy)
                   .style("fill", function (d) {
-                     findParent(d);
+                     // Need to return findParent(d) so it actually applies the color!
+                     return findParent(d); 
                   })
                   .attr("cursor", "pointer");
 
@@ -1143,7 +1444,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   // append circle to all nodes but the invisible ghost nodes
                   .attr("r", function (d) {
 
-                     if (isGhostNode(d)) {
+                     if (isGhostNode(d) || isPagerNode(d)) {
                         return 0;
                      } else if (d.data.taxNodeID === "legend") {
                         return 0;
@@ -1165,35 +1466,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                      findParent(d);
                   })
                   .attr("cursor", "pointer")
-                  .text(function (d, i) {
-                     if (d.data.name === "Unassigned" || d.data.rankName === "tree") {
-                        if (d.data.taxNodeID === "legend") {
-                           return d.data.rankName;
-                        } else if (
-                           d.data.rankName === "realm" ||
-                           d.data.has_unassigned_siblings === true
-                        ) {
-                           // TEST
-                           return "";
-                           //return "Unassigned";
-                        } else {
-                           return "";
-                        }
-                     } else {
-                        return d.data.name;
-                     }
-                  })
-                  .attr("fill", function (d) {
-                     if (d.data.rankName === "genus" && genus == true) {
-                        return "blue";
-                     }
-
-                     return "#000000";
-                  });
 
                var font;
-
-               // .attr('cursor', 'pointer')
 
                Update.select("text.node-text")
                   .attr("cursor", "pointer")
@@ -1234,6 +1508,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                         return "#000000";
                      }
                   })
+
+               Update.select("text.pager-node-text")
+                  .style("font-size", fontSliderEl.property("value") + "rem");
+
+               updateTextRect(Update);
                   
                var Exit = children
                   .exit()
@@ -1301,6 +1580,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                      // Do not draw links to ghost nodes
                      // This helps the link line colors stay consistent
                      if (!isGhostNode(d)) {
+                        if (isPagerNode(d)){
+                           return null;
+                        }
                         if (isGhostNode(d.parent)) {
                            return diagonal(findNonGhostParent(d.parent), d);
                         }
@@ -1358,10 +1640,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   return path;
                }
 
-               var simulation = d3
-                  .forceSimulation()
-                  .force("link", d3.forceLink().distance(500).strength(0.1));
-
                function findParent(par) {
                   if (par.depth < 2) {
                      return par.data.name;
@@ -1379,20 +1657,20 @@ window.ICTV.d3TaxonomyVisualization = function (
                }
 
                function click(event, d) {
-                  selected = d.data.name;
-
-                  selectedNode = d;
-
-                  // console.log(d);
                   if (d.data.taxNodeID !== "legend") {
-                     if (d.hasOwnProperty("page")) {
-                        d.parent.children = d.parent.pages[d.page];
-                     } else if (d.children) {
-                        d._children = d.children;
-                        d.children = null;
+                     if (isPagerNode(d)) {
+                        setNodePage(d.parent, d.page);
+                        update(d.parent);
+                        return;
+                     }
+
+                     selected = d.data.name;
+                     selectedNode = d;
+
+                     if (d.children) {
+                        collapseNode(d);
                      } else if (d._children){
-                        d.children = d._children;
-                        d._children = null;
+                        expandNode(d);
                      }
 
                      // lrm 5-20-2024
@@ -1438,10 +1716,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                       return null;
                   }
               }
-
-               // The first parameter is the element that acts as a delegate for child elements with
-               // tippy instances. The second parameter defines the tippy instances that will be assigned
-               // to the child elements (qualified by the "target" attribute). 
+ 
                //
                // https://atomiks.github.io/tippyjs/
                window.tippy.delegate(`${containerSelector} svg`, {
@@ -1486,10 +1761,39 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      instance.setContent(html);
                   },
+                  
                   placement: "left-start",
                   target: "g.node text.node-text",
                   theme: "ICTV-Tooltip"
                })
+
+               // Tippy pop-up that shows the number of children under the "More..." pagination button
+               window.tippy.delegate(`${containerSelector} svg`, {
+                  allowHTML: true,
+                  animation: settings.tooltip.animation,
+                  appendTo: () => document.body,
+                  delay: [0, 0],
+                  onShow(instance) {
+                     const d = instance.reference.__data__;
+                     if (!d || !isPagerNode(d) || !d.parent || !d.parent.pagination || !d.parent.allChildren) {
+                        return false;
+                     }
+
+                     const pagination = d.parent.pagination;
+                     const total = d.parent.allChildren.length;
+                     const pageStart = pagination.currentPage * pagination.itemCount;
+                     const pageEnd = Math.min(pageStart + pagination.itemCount, total);
+                     const onPage = pageEnd - pageStart;
+                     const remaining = total - onPage;
+
+                     instance.setContent(
+                        `<div class="ictv-tax-viz-tooltip">${remaining} more taxa (${total} total)</div>`
+                     );
+                  },
+                  placement: "right",
+                  target: "g.node text.pager-node-text",
+                  theme: "ICTV-Tooltip"
+               });
 
             }
          }
@@ -1500,65 +1804,39 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
    function collapse(d) {
-      if (d.children) {
+      const children = getNodeChildren(d);
+      if (!children) { return; }
 
-         if (d.data.name === name && counter < len - 1) {
-            counter++;
-            for (var i = 0; i < 1; i++) {
-               var open = d.children[i];
-               name = res[counter]
-               if (d.children) {
-                  d.children.forEach(collapse);
-               }
-               return;
-            }
-         } else {
+      if (d.data.name === name && counter < len - 1) {
+         counter++;
+         name = res[counter];
+         children.forEach(collapse);
+         d.children = getVisibleChildren(d);
+         d._children = null;
+         return;
+      }
 
-            if (
-               d.data.name === "Unassigned" &&
-               d.data.rankName === "realm" &&
-               d.data.taxNodeID !== "legend"
-            ) {
-               // No name, a rank of "realm", and not part of the legend.
-               d._children = d.children;
-               d._children.forEach(collapse);
-               d.children = null;
-            } else if (
-               (d.data.name === "Unassigned") &&
-               d.data.has_assigned_siblings !== true &&
-               d.data.has_unassigned_siblings !== true
-            ) {
+      children.forEach(collapse);
 
-
-               // No name and it doesn't have assigned or unassigned siblings (so no siblings?).
-               // TODO: the if condition above can be simplified to:
-               //      !d.data.name && !d.data.has_assigned_siblings && !d.data.has_unassigned_siblings
-
-               // TODO: The for loop appears to be unnecessary.
-               for (var i = 0; i < 1; i++) {
-                  // TODO: "open" isn't referenced anywhere
-                  var open = d.children[i];
-                  d.children.forEach(collapse);
-               }
-            } else {
-               // If the node has either assigned or unassigned siblings.
-               // TODO: "if (d.data.children.name === null)"" can be included in the if condition below.
-               if (
-                  d.data.has_assigned_siblings === true ||
-                  d.data.has_unassigned_siblings === true
-               ) {
-                  // TODO: does the "children" array have a name attribute?
-                  if (d.data.children.name === null) {
-                     d._children = d.children;
-                     d._children.forEach(collapse);
-                     d.children = null;
-                  }
-               }
-               d._children = d.children;
-               d._children.forEach(collapse);
-               d.children = null;
-            }
-         }
+      if (
+         d.data.name === "Unassigned" &&
+         d.data.rankName === "realm" &&
+         d.data.taxNodeID !== "legend"
+      ) {
+         // No name, a rank of "realm", and not part of the legend.
+         d._children = getVisibleChildren(d);
+         d.children = null;
+      } else if (
+         d.data.name === "Unassigned" &&
+         d.data.has_assigned_siblings !== true &&
+         d.data.has_unassigned_siblings !== true
+      ) {
+         // No name and it doesn't have assigned or unassigned siblings (so no siblings?).
+         d.children = getVisibleChildren(d);
+         d._children = null;
+      } else {
+         d._children = getVisibleChildren(d);
+         d.children = null;
       }
 
    }
@@ -1576,6 +1854,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       paginationData.childDisplayOrder = parseInt(displayOrder_);
       paginationData.parentTaxnodeID = parseInt(parentTaxNodeID_);
 
+      // console.log(`in selectSearchResult: taxNodeId_ = ${taxNodeId_}, taxNodeIdLineage_ = ${taxNodeIdLineage_}, displayOrder_ = ${displayOrder_}`);
+
       // Select the specified release.
       releaseControlEl.value = releaseNumber_;
       releaseControlEl.dispatchEvent(new Event("change"));
@@ -1587,110 +1867,157 @@ window.ICTV.d3TaxonomyVisualization = function (
       clearButtonEl.dispatchEvent(new Event("click"));
 
 
-      async function openNode(nodeId) {
+      // dmd testing 070224
+      async function waitForTreeReady() {
+         const maxAttempts = 30;
 
-         // The number of the current attempt to find nodeID's taxonomy node
-         let attempt = 0;
-
-         // How many times should we iterate over rank indices trying to find the taxonomy node?
-         // TODO: This should probably be the max depth from tree to species.
-         const maxAttempts = 12;
-
-         // The DOM node we're looking for.
-         let selectedNode = null;
-
-         // Keep iterating until nodeID's taxonomy node is visible.
-         while (attempt < maxAttempts) {
-
-            // Is the taxonomy node visible yet?
-            selectedNode = document.querySelector(`g[taxNodeID="${nodeId}"]`);
-            if (!!selectedNode) {
-
-               // Success: We found the taxonomy node!
-               // Update previous node with the taxonomy node's rank index and taxNode ID.
-               previousNode.parentRankIndex = parseInt(selectedNode.getAttribute("rank_index"));
-               previousNode.parentTaxNodeID = selectedNode.getAttribute("taxNodeID");
-
-               if (nodeId !== taxNodeId_) {
-                  // Click the node, pause, and resolve. 
-                  selectedNode.dispatchEvent(new Event("click"));
-               }
-
-               break;
-
-            } else {
-
-               // Increment the previous rank index.
-               previousNode.parentRankIndex += 1;
-
-               // Try to select a ghost node.
-               selectedNode = document.querySelector(`g[parentTaxNodeID="${previousNode.parentTaxNodeID}"][is_assigned="false"][rank_index="${previousNode.parentRankIndex}"]`);
-               if (!!selectedNode) {
-
-                  const unassignedText = selectedNode.querySelector("text.unassigned-text");
-                  if (!!unassignedText) {
-
-                     // We found the "Unassigned" ghost node.
-                     // Update previous node
-                     previousNode.parentRankIndex += 1;
-
-                     // Click the ghost node and pause.
-                     selectedNode.dispatchEvent(new Event("click"));
-                     await wait(settings.animationDelay);
-                  }
-               }
+         for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            if (!!currentTreeRoot && !!currentTreeUpdate) {
+               return true;
             }
 
-            attempt += 1;
+            await wait(200);
          }
 
-         // lrm 5-10-2024
-         // Reset the color of all text to the default color
-         // This ensures the search result node is the
-         // only node that is highlighted
-         document.querySelectorAll('text.node-text').forEach(textElementReset => {
+         return false;
+      }
+
+      async function expandPath(path) {
+         if (!path || path.length < 2) { return; }
+
+         for (let i = 1; i < path.length; i++) {
+            const parentNode = path[i - 1];
+            const currentNode = path[i];
+            const pageChanged = setNodePageForChild(parentNode, currentNode);
+            const expanded = expandNode(parentNode);
+
+            if (pageChanged || expanded) {
+               currentTreeUpdate(parentNode);
+
+               // Call panToNode helper function at subfamily rank (it does not need to pan from the beginning)
+               // if (currentNode.depth >= 8) {
+               //    panToNode(currentNode, settings.animationDuration);
+               // }
+               panToNode(currentNode, settings.animationDuration);
+               await wait(settings.animationDelay);
+            }
+         }
+      }
+
+      async function highlightNode(node) {
+         if (!node || !node.data || !node.data.taxNodeID || !currentTreeUpdate) { return; }
+
+         selectedNode = node;
+
+         let selectedNodeEl = document.querySelector(`g[taxNodeID="${node.data.taxNodeID}"]`);
+         clickedCircle = selectedNodeEl ? selectedNodeEl.querySelector("circle") : null;
+         clickedText = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
+
+         currentTreeUpdate(node);
+         await wait(settings.animationDelay);
+
+         document.querySelectorAll("text.node-text, text.unassigned-text").forEach((textElementReset) => {
             textElementReset.style.fill = "#000000";
          });
 
-         // Highlight the last expanded node/search result node
-         // This only works for searching nodes
-         const textToHighlight = selectedNode.querySelector('text');
-         if (textToHighlight) {
-            textToHighlight.style.fill = "#006CB5";
-         }
-
-         // lrm 6-24-2024
-         // Reset the circle colors so that you only color the search result circle
-         document.querySelectorAll('circle').forEach(circleElementReset => {
+         document.querySelectorAll("circle").forEach((circleElementReset) => {
             circleElementReset.style.fill = "#FFFFFF";
          });
 
-
-         // Ensure the search result's circle is blue
-         const circleToHighlight = selectedNode.querySelector('circle');
-         if (circleToHighlight) {
-            circleToHighlight.style.fill = "#006CB5";
+         selectedNodeEl = document.querySelector(`g[taxNodeID="${node.data.taxNodeID}"]`);
+         const textToHighlight = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
+         if (textToHighlight) {
+            textToHighlight.style.fill = "#006CB5";
+            clickedText = textToHighlight;
          }
 
-         await wait(settings.animationDelay);
-         return;
+         const circleToHighlight = selectedNodeEl ? selectedNodeEl.querySelector("circle") : null;
+         if (circleToHighlight) {
+            circleToHighlight.style.fill = "#006CB5";
+            clickedCircle = circleToHighlight;
+         }
+
+         // panToNode(node, settings.animationDuration + 100);
+         
       }
 
       async function openNodes() {
+         const treeReady = await waitForTreeReady();
+         if (!treeReady) { return; }
 
          // Split the delimited string into an array.
-         const lineage_array = taxNodeIdLineage_.split(",");
+         const lineage_array = taxNodeIdLineage_.split(",").filter((nodeId) => !!nodeId);
+         let currentNode = currentTreeRoot;
+         let finalNode = null;
 
-         // Initialize the previous node.
-         previousNode.parentRankIndex = 0;
-         previousNode.parentTaxNodeID = lineage_array[0];
+         for (const nodeId of lineage_array) {
+            let path = findPathToTaxNode(currentNode, nodeId);
 
-         for (let i = 1; i < lineage_array.length; i++) {
-            await openNode(lineage_array[i]);
+            if (!path) {
+               path = findPathToTaxNode(currentTreeRoot, nodeId);
+            }
+
+            if (!path) { continue; }
+
+            await expandPath(path);
+            currentNode = path[path.length - 1];
+            finalNode = currentNode;
          }
+
+         await highlightNode(finalNode);
+
+         paginationData.childDisplayOrder = NaN;
+         paginationData.parentTaxnodeID = null;
       }
 
       setTimeout(openNodes, settings.animationDelay);
+
+      // TODO: Use lineage to select taxa nodes after the tree has been refreshed
+
+      /*-------------------------------------------------------------------------------------------------------------------
+
+      NOTE: this commented code is the previous attempt to select a node using taxnodeID. It worked in 
+      some cases, but broke when there was a "ghost node". Ghost nodes are ranks that are missing 
+      in a lineage. For example, in the lineage of species "White spot syndrome virus", there isn't a
+      taxon with the rank "Order" between Class and Family:
+
+         Class: Naldaviricetes
+         Family: Nimaviridae
+         Genus: Whispovirus
+         Species: White spot syndrome virus
+
+      I left the code here in case it provides any inspiration.
+      
+      -------------------------------------------------------------------------------------------------------------------
+
+
+      // Older code
+      name = "";
+      const taxa = lineage_.split(">");
+      taxa.forEach((taxon_) => {
+         console.log(taxon_)
+         name = taxa[0];
+         collapse(name);
+         console.log("name", taxon_.pa);
+
+      })
+      console.log(taxa.length)
+      len = taxa.length
+      Sflag = true;
+      res = taxa;
+      svg_zoom
+         .transition()
+         .call(
+            zoom.transform,
+            d3.zoomIdentity
+               .translate(settings.zoom.translateX, settings.zoom.translateY)
+               .scale(1 / 0.19)
+         )
+         .on("end", function () {
+            svg_zoom.transition()
+               .duration(750)
+               .call(zoom.scaleBy, settings.zoom.scaleFactor);
+         });*/
    }
 
 };
