@@ -74,6 +74,19 @@ body .block-ictv-d3-taxonomy-visualization {
    display: flex;
 }
 
+#d3_taxonomy_vis_container .header-panel .paginate-toggle {
+   align-items: center;
+   cursor: pointer;
+   display: inline-flex;
+   gap: 0.35rem;
+   margin-left: 1rem;
+   white-space: nowrap;
+}
+
+#d3_taxonomy_vis_container .header-panel .paginate-ctrl {
+   margin: 0;
+}
+
 
 /*----------------------------------------------------------------------------------------------------------------
   Sliders
