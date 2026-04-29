@@ -272,14 +272,9 @@ The panel title
 #ictv_taxablast_container .ictv-accordion-header.blast-hits-header {
    background-color: var(--ictv-lightest-grey-color);
    color: #000;
+   padding: 0.5rem 0.5rem 0.5rem 0;
 }
 #ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-header.blast-hits-header {
-   background-color: var(--ictv-grey-color);  /*var(--ictv-panel-header-color);*/
-   color: #fff;
-}
-
-/* Accordion header for the sequence files accordion. */
-#ictv_taxablast_container .ictv-accordion-header.sequence-file-header {
    background-color: var(--ictv-panel-header-color);
    color: #fff;
 }
@@ -303,8 +298,10 @@ The panel title
 #ictv_taxablast_container .ictv-accordion-control {
    /*color: #fff;*/
    font-weight: 400;
-   padding: 0.5rem; /* 1.0rem; */
+   /*padding: 0.5rem 1.0rem 0.5rem 0.5rem;*/
+   text-align: center;
    transition: ease .3s transform;
+   width: 2.5rem;
 }
 #ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-control {
    transform: rotate(-180deg);
@@ -383,16 +380,6 @@ The panel title
    width: 100%;
 }
 
-#ictv_taxablast_container .blast-hits-panel .blast-sequence-row {
-   margin-bottom: 0.5rem;
-}
-#ictv_taxablast_container .blast-hits-panel .blast-sequence-row .blast-label {
-   font-size: 1.0rem;
-   font-weight: 700;
-}
-#ictv_taxablast_container .blast-hits-panel .blast-sequence-row .blast-value {
-   font-size: 1.0rem;
-}
 
 /* BLAST hit tiles */
 #ictv_taxablast_container .blast-hits .blast-species-tile {
@@ -402,74 +389,72 @@ The panel title
    border-style: solid;
    border-width: 1px;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: column nowrap;
    justify-content: flex-start;
    margin-bottom: 0.5rem;
    padding: 1.0rem;
    width: 100%;
 }
-
-#ictv_taxablast_container .blast-hits .blast-species-tile .result-index {
-   font-size: 0.9rem; 
-   /*margin-right: 0.5rem;*/
-   text-align: left;
-   width: 2.0rem;
+#ictv_taxablast_container .blast-hits .species-accordion-label {
+   font-weight: normal; /* placeholder */
 }
-#ictv_taxablast_container .blast-hits .blast-species-tile .result-body {
+#ictv_taxablast_container .blast-hits .species-rank-and-name {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.2rem;
+   justify-content: flex-start;
+   width: 100%;
+}
+#ictv_taxablast_container .blast-hits .species-rank-and-name .species-rank {
+   margin-right: 0.25rem;
+}
+#ictv_taxablast_container .blast-hits .species-rank-and-name .species-name {
+   font-style: italic;
+   font-weight: 700;
+   white-space: nowrap;
+}
+#ictv_taxablast_container .blast-hits .species-lineage {
+   align-items: flex-start;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 0.9rem;
+   justify-content: flex-start;
    width: 100%;
 }
 
-#ictv_taxablast_container .blast-hits .blast-species-tile .lineage {
-   font-size: 0.9rem;
-   font-weight: 400;
-   margin-bottom: 0.25rem;
+#ictv_taxablast_container .blast-hits .species-lineage .lineage-chevron {
+   font-size: 0.75rem;
+   font-weight: normal;
+   margin: 0.25rem 0.25rem;
 }
-#ictv_taxablast_container .blast-hits .blast-species-tile .lineage i.fa-chevron-right {
-   font-size: 0.7rem;
-   margin: 0 0.25rem;
+#ictv_taxablast_container .blast-hits .ictv-accordion-item.active .species-lineage .lineage-chevron {
+   color: rgba(255, 255, 255, 0.6);
 }
-
-#ictv_taxablast_container .blast-hits .blast-species-tile .rank-and-name {
-   font-size: 1.1rem;
+#ictv_taxablast_container .blast-hits .species-lineage .lineage-name {
+   cursor: pointer;
 }
-#ictv_taxablast_container .blast-hits .blast-species-tile .rank-and-name .species-rank {
-   font-weight: 700;
-}
-#ictv_taxablast_container .blast-hits .blast-species-tile .rank-and-name .species-name {
-   margin-right: 0.25rem;
-}
-
-/* 
-Note: I don't think these are used.
-
-#ictv_taxablast_container .blast-hits .blast-species-tile .result {
-   align-items: flex-start;
-   display: flex;
-   flex-flow: column nowrap;
-   justify-content: center;
-   z-index: 1000;
-}
-#ictv_taxablast_container .blast-hits .lineage-and-result .result-name {
-   color: #333;
-}
-#ictv_taxablast_container .blast-hits .lineage-and-result .result-note {
-   font-size: 0.9rem;
-}*/
 
 /* An isolate group in a species tile. */
 #ictv_taxablast_container .isolate-group {
-   border-color: #ccc;
-   border-style: solid;
-   border-width: 1px 0 0 0;
    font-size: 1.0rem !important;
-   margin-top: 1.0rem;
-   padding-top: 0.5rem;
+   margin: 1.0rem 0 1.0rem 1.0rem;
 }
 #ictv_taxablast_container .isolate-group .isolate-details {
    font-size: 1.0rem;
+   margin-bottom: 0.25rem;
 }
-#ictv_taxablast_container .isolate-group .isolate-details .e-or-a {
+
+#ictv_taxablast_container .isolate-group .isolate-details .hit-label {
+   font-weight: normal; /* placeholder */
+}
+#ictv_taxablast_container .isolate-group .isolate-details .virus-name {
    font-weight: 700;
+}
+
+
+#ictv_taxablast_container .isolate-group .isolate-details .e-or-a {
+   font-weight: normal; /* placeholder */
 }
 
 /* Style the DataTable's "entries per page" select list and label. */
@@ -490,18 +475,18 @@ Note: I don't think these are used.
    font-size: 0.9rem;
    vertical-align: top;
 }
-#ictv_taxablast_container .blast-species-tile table.hsp-table {
+#ictv_taxablast_container .isolate-group  table.hsp-table {
    margin: 0;
    width: 100%;
 }
-#ictv_taxablast_container .blast-species-tile table.hsp-table tr.even {
+#ictv_taxablast_container .isolate-group  table.hsp-table tr.even {
    background-color: #fff;
 }
-#ictv_taxablast_container .blast-species-tile table.hsp-table tr.odd {
+#ictv_taxablast_container .isolate-group  table.hsp-table tr.odd {
    background-color: var(--ictv-alt-row-bg);
 }
-#ictv_taxablast_container .blast-species-tile table.hsp-table th,
-#ictv_taxablast_container .blast-species-tile table.hsp-table td {
+#ictv_taxablast_container .isolate-group  table.hsp-table th,
+#ictv_taxablast_container .isolate-group  table.hsp-table td {
    padding: 3px 6px;
 }
 
@@ -533,9 +518,9 @@ Note: I don't think these are used.
 #ictv_taxablast_container .isolate-group .hsp-table td.product {
 	width: 260px !important;
 }
-#ictv_taxablast_container .isolate-group .hsp-table td.note {
+/*#ictv_taxablast_container .isolate-group .hsp-table td.note {
 	width: auto;
-}
+}*/
 
 
 

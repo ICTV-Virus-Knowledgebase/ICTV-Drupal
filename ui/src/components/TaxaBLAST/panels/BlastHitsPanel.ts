@@ -3,7 +3,8 @@ import { BlastStatus, BlastTask, ButtonClass, Constants,
    CreateTaxonDetailsURL, GetBlastTaskLabel, GetSequenceTypeFromBlastTask, Icon, 
    PanelKey } from "../Common";
 import DataTables from "datatables.net-dt";
-import { IBlastHit } from "../IBlastHit"; 
+import { IBlastHit } from "../IBlastHit";
+import { GetTaxonomyRankLabel, IctvRank } from "../../../global/Types";
 import { BlastHSP } from "../BlastHSP";
 import { BlastIsolate } from "../BlastIsolate";
 import { BlastSpecies } from "../BlastSpecies";
@@ -18,6 +19,9 @@ import { ISequence } from "../ISequence";
 
 export class BlastHitsPanel implements ITaxaBlastPanel {
 
+   // The window's base URL: The protocol, host name, and port (optional) without subdirectories, page names, or query parameters.
+   baseURL: string;
+
    // DOM elements
    elements: {
       blastHits: HTMLElement,
@@ -30,11 +34,17 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    // Is the panel currently active/displayed?
    isActive: boolean;
 
+   includeProteinResults: boolean = false;
+
    // The parent page
    parent: TaxaBLAST = null;
 
    // Configuration settings and constants.
    settings = {
+      // Should we display all taxonomic ranks, or just family and below?
+      displayAllRanks: true,
+
+      // In some situations, text longer than this will be truncated with "(...)" appended.
       MAX_CHARS_FROM_LONG_TEXT: 40
    }
 
@@ -53,6 +63,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          panelControls: null,
          panelTitle: null
       }
+
+      this.baseURL = Utils.getBaseURL();
    }
 
    // Consolidate the BLAST hits by species and isolate.
@@ -106,10 +118,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    }
 
    // Create table rows for HSPs.
-   createHspRowsHTML(hsps_: BlastHSP[], sequenceType_: SequenceType): string {
+   createHspRowsHTML(hsps_: BlastHSP[]): string {
 
-      let numColumns = 5;
-      if (sequenceType_ === SequenceType.protein) { numColumns = 8; }
+      let numColumns = 4;
+      if (this.includeProteinResults) { numColumns = 6; }
 
       if (!Array.isArray(hsps_) || hsps_.length < 1) { return `<tr><td colspan="${numColumns}">No data available</td></tr>`; }
       
@@ -122,6 +134,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          let bitscore = isNaN(hsp_.bitscore) ? "0" : hsp_.bitscore.toLocaleString("en-US");
          if (bitscore.indexOf(".") < 0) { bitscore += ".0"; }
 
+         /*
          let eValue = "0";
 
          if (hsp_.evalue > 0) {
@@ -134,7 +147,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
             // Format the final HTML string
             eValue = `${coefficient}×10<sup>${exponent}</sup>`;
-         }
+         }*/
 
          let pIdent = "unknown";
          if (!isNaN(hsp_.pident)) { pIdent = `${hsp_.pident.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`; }
@@ -142,7 +155,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          // Protein results have additional data.
          let proteinColumns = ""; 
 
-         if (sequenceType_ === SequenceType.protein) {
+         if (this.includeProteinResults) {
 
             let note = hsp_.note;
             let productName = hsp_.productName;
@@ -162,18 +175,19 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
             proteinColumns = 
                `<td class="protein-id">${linkedName}</td>
-               <td class="product has-tooltip" data-tippy-content="${productName}">${productExcerpt}</td>
-               <td class="note has-tooltip" data-tippy-content="${note}">${noteExcerpt}</td>`;
+               <td class="product has-tooltip" data-tippy-content="${productName}">${productExcerpt}</td>`;
          }
 
          html += `<tr class="${rowClass}">
             <td class="hit-index">${index_ + 1}</td>
             <td class="bitscore">${bitscore}</td>
-            <td class="evalue">${eValue}</td>
             <td class="length">${hsp_.length.toLocaleString("en-US")}</td>
             <td class="pident">${pIdent}</td>
             ${proteinColumns}
          </tr>`;
+
+         // <td class="evalue">${eValue}</td>
+         // <td class="note has-tooltip" data-tippy-content="${note}">${noteExcerpt}</td>
       })
       
       return html;
@@ -192,27 +206,25 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       if (virusNames.length < 1) { virusNames = "unknown"; }
 
       // Create rows for the HSPs
-      const hspRows = this.createHspRowsHTML(isolate_.hsps, isolate_.sequenceType);
+      const hspRows = this.createHspRowsHTML(isolate_.hsps);
 
-      // Protein results have additional data.
-      let proteinHeaders = ""; 
-      if (isolate_.sequenceType === SequenceType.protein) {
-         proteinHeaders = 
-            `<th class="protein-id">Protein ID</th>
-            <th class="product">Product</th>
-            <th class="note">Note</th>`;
-      }
-
+      // Include additional columns for BLAST tasks that return protein data.
+      let proteinHeaders = this.includeProteinResults 
+         ? `<th class="protein-id">Protein ID</th>
+            <th class="product">Product</th>`
+         : "";
+      
       let html = `<div class="isolate-group">
          <div class="isolate-details">
-            <span class="e-or-a">${exemplarOrAdditional} virus</span>: ${virusNames} (${accessionLink})</div>
-         <div class="hsp-title">High-scoring Segment Pairs (HSPs)</div>
+            <span class="hit-label">Hit:</span>
+            <span class="virus-name">${virusNames}</span>
+            (<span class="e-or-a">${exemplarOrAdditional} virus</span>; ${accessionLink})
+         </div>
          <table class="hsp-table" data-isolate-id="${isolate_.isolateID}" data-hsp-count="${isolate_.hsps.length}">
             <thead>
                <tr>
                   <th>#</th>
                   <th>Bitscore</th>
-                  <th>E-value</th>
                   <th>Length</th>
                   <th>% Identity</th>
                   ${proteinHeaders}
@@ -263,10 +275,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          </table>`;
    }
 
-   createSpeciesTile(species_: BlastSpecies, resultIndex_: number): string {
+   createSpeciesTile(species_: BlastSpecies): string {
 
       // Format the species' lineage.
-      const lineage = this.formatLineage(species_);
+      const lineage = this.formatLineage(species_, true);
       
       let segment = Utils.safeTrim(species_.segmentName);
       if (segment.length > 0) { segment = `<span class="segment-name">segment ${segment}</span>`; }
@@ -296,18 +308,37 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          isolatesHTML += this.createIsolateHTML(isolate_);
       })
 
-      let tileHTML = 
+      /*let tileHTML = 
          `<div class="blast-species-tile">
-            <div class="result-index">#${resultIndex_ + 1}</div>
-            <div class="result-body">
-               <div class="lineage">${lineage}</div>
-               <div class="rank-and-name">
-                  <span class="species-rank">Species</span>: <span class="species-name">${speciesNameLink}</span>${segment}
+            <div class="species-rank-and-name">
+               <div class="species-rank">Hit: Species</div>
+               <div class="species-name">${speciesNameLink} ${segment}</div>
+            </div>
+            <div class="species-lineage">${lineage}</div>
+            ${isolatesHTML}
+         </div>`;
+      return tileHTML;*/
+
+
+
+      let html =
+         `<div class="ictv-accordion-item" data-id="${species_.ictvID}">
+            <div class="ictv-accordion-header blast-hits-header" data-id="${species_.ictvID}">
+               <div class="ictv-accordion-control" data-id="${species_.ictvID}">${Icon.chevronDown}</div>
+               <div class="species-accordion-label">
+                  <div class="species-rank-and-name">
+                     <div class="species-rank">Species</div>
+                     <div class="species-name">${speciesNameLink} ${segment}</div>
+                  </div>
+                  <div class="species-lineage">${lineage}</div>
                </div>
-               ${isolatesHTML}
+            </div>
+            <div class="ictv-accordion-body" data-id="${species_.ictvID}">
+               <div class="ictv-accordion-content">${isolatesHTML}</div>
             </div>
          </div>`;
-      return tileHTML;
+
+      return html;
    }
 
    displayErrorMessage(message_: string) {
@@ -315,6 +346,35 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       return;
    }
 
+   
+   formatLineage(species_: BlastSpecies, displayAll_?: boolean): string {
+
+      if (!displayAll_) { displayAll_ = false; }
+
+      let html = "";
+
+      const delimiter = `<span class="lineage-chevron" aria-hidden="true">${Icon.lineageDelimiter}</span>`;
+
+      Object.keys(IctvRank).forEach((rank_: string) => {
+      
+         // If we aren't displaying all ranks and this rank isn't Family or below, continue;
+         if (!displayAll_ && ![IctvRank.family, IctvRank.subfamily, IctvRank.genus, IctvRank.subgenus, IctvRank.species].includes(rank_ as IctvRank)) { return; }
+
+         // Get this rank's name.
+         let taxonName = species_[rank_ as keyof BlastSpecies];
+         if (!taxonName) { return; }
+
+         if (html.length > 0) { html += delimiter; }
+
+         // Get the display label for the taxonomic rank.
+         const label = GetTaxonomyRankLabel(rank_ as IctvRank);
+         html += `<span class="lineage-name has-tooltip" data-tippy-content="${label}"><i>${taxonName}</i></span>`;
+      })
+
+      return html;
+   }
+
+   /*
    // Format the lineage of the BLAST hit.
    formatLineage(species_: BlastSpecies) {
 
@@ -342,10 +402,13 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       }
 
       return html;
-   }
+   }*/
 
    // Convert the HSP tables into DataTable instances.
-   initializeHspTables(/*sequenceType_: SequenceType*/) {
+   initializeHspTables() {
+
+      console.log("in initializeHspTables")
+
 
       const hspTableEls = this.elements.blastHits.querySelectorAll(".isolate-group table.hsp-table");
       if (hspTableEls == null || hspTableEls.length < 1) { return; }
@@ -367,8 +430,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          let ordering = true;
          let paging = true;
          
-         // Tables with less than 20 HSPs don't need to have paging, info, or ordering.
-         if (hspCount < 20) { 
+         // Tables with less than 5 HSPs don't need to have paging, info, or ordering.
+         if (hspCount < 5) { 
             bottomEnd = null;
             info = false;
             ordering = false;
@@ -446,19 +509,20 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Use the BLAST task to determine the sequence type.
       const sequenceType: SequenceType = GetSequenceTypeFromBlastTask(this.parent.job.data.task as BlastTask);
 
+      // BLAST tasks blastp and blastx will have protein results in the HSPs.
+      this.includeProteinResults = [ BlastTask.blastp, BlastTask.blastx].includes(this.parent.job.data.task as BlastTask);
+
       // Consolidate the BLAST hits by species and isolates.
       const speciesMap = this.consolidateBlastHits(sequence.hits, sequenceType);
       if (speciesMap === null || speciesMap.size < 1) { 
          return this.displayErrorMessage(`The species information in the BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.name} is invalid`);
       }
 
-      let resultIndex = 0;
       let speciesTilesHTML = "";
       
       // Generate "species tile" HTML for all species in the map.
       speciesMap.forEach((species_: BlastSpecies) => {
-         speciesTilesHTML += this.createSpeciesTile(species_, resultIndex); 
-         resultIndex += 1;
+         speciesTilesHTML += this.createSpeciesTile(species_); 
       })
      
       // Use the query ID for the CSV filename.
@@ -556,7 +620,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       })
 
       // Convert the HSP tables into DataTable instances.
-      this.initializeHspTables(/*sequenceType*/);
+      //this.initializeHspTables();
       
       return;
    }

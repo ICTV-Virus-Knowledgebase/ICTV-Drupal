@@ -1,51 +1,17 @@
 
-import { IdParameterName, IdentifierPrefix, IdentifierType, ISequenceMetadata,
+import { AllNonNtProteinCodes, IdParameterName, IdentifierPrefix, IdentifierType, 
    LookupIdParameterType, NucleotideCodes, NucleotideAmbiguityCodes, ProteinCodes, 
    ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType } from "../global/Types";
 import { IIdentifierData } from "../models/IIdentifierData";
 import { Identifiers } from "../models/Identifiers";
+import { SequenceMetadata } from "../models/SequenceMetadata";
 
 
 export class Utils {
 
-
-   // TODO: This doesn't work with floats!
-   static addCommasToNumber(number_: number): string {
-
-      const text = number_.toString();
-
-      const firstIndex = text.length - 1;
-
-      let result = "";
-
-      for (let c = firstIndex; c >= 0; c--) {
-
-         const count = firstIndex - c;
-
-         let comma = count % 3 === 0 && (c < firstIndex) ? "," : "";
-
-         result = `${text.charAt(c)}${comma}${result}`;
-      }
-
-      return result;
-   }
-
-   static classifyFastaSequence(fastaSequence: string): ISequenceMetadata {
+   static classifyFastaSequence(fastaSequence: string): SequenceMetadata {
   
-      let result: ISequenceMetadata = {
-         aaFraction: 0,
-         ntFraction: 0,
-         type: SequenceType.invalid,
-         confidence: 0,
-
-         counts: {
-            aaAmbiguity: 0,
-            aaStandard: 0,
-            ntAmbiguity: 0,
-            ntStandard: 0,
-            total: 0
-         }
-      };
+      let result = new SequenceMetadata();
 
       // Remove whitespace and convert to uppercase for case-insensitive comparison.
       fastaSequence = fastaSequence.replace(/\s+/g, '').toUpperCase();
@@ -54,46 +20,61 @@ export class Utils {
       let hasProteinOnly = false;
 
       for (const ch of fastaSequence) {
+
          const isNt = NucleotideCodes.has(ch);
-         const isNtA = NucleotideAmbiguityCodes.has(ch);
+         const isAmbNt = NucleotideAmbiguityCodes.has(ch);
          const isProtein = ProteinCodes.has(ch);
-         const isProteinA = ProteinAmbiguityCodes.has(ch);
+         const isProteinAmb = ProteinAmbiguityCodes.has(ch);
+         const isNonNtProtein = AllNonNtProteinCodes.has(ch)
 
          if (ProteinOnlyCodes.has(ch)) {
             hasProteinOnly = true;
          }
 
-         if (isNt) result.counts.ntStandard++;
-         if (isNtA) result.counts.ntAmbiguity++;
-         if (isProtein) result.counts.aaStandard++;
-         if (isProteinA) result.counts.aaAmbiguity++;
-         if (isNt || isNtA || isProtein || isProteinA) result.counts.total++;
+         if (isNt) result.counts.nt.standard++;
+         if (isAmbNt) result.counts.nt.ambiguity++;
+         if (isProtein) result.counts.aa.standard++;
+         if (isProteinAmb) result.counts.aa.ambiguity++;
+         if (isNonNtProtein) result.counts.aa.nonNT++;
+
+         if (isNt || isAmbNt || isProtein || isProteinAmb) result.counts.total++;
       }
 
-      result.ntFraction = (result.counts.ntStandard + result.counts.ntAmbiguity) / result.counts.total;
-      result.aaFraction = (result.counts.aaStandard + result.counts.aaAmbiguity) / result.counts.total;
+      if (result.counts.total < 1) {
+         return result;
+      }
 
-      // The confidence is the difference between the two fractions, so a sequence that is 100% nucleotide would have confidence of 1, a sequence 
-      // that is 100% protein would also have confidence of 1, and a sequence that is 50% nucleotide and 50% protein would have confidence of 0 (i.e. completely ambiguous).
-      result.confidence = Math.max(result.ntFraction, result.aaFraction) - Math.min(result.ntFraction, result.aaFraction);
+      result.fractions.nt.all = (result.counts.nt.standard + result.counts.nt.ambiguity) / result.counts.total;
+      result.fractions.nt.standard = result.counts.nt.standard / result.counts.total;
 
+      result.fractions.aa.all = (result.counts.aa.standard + result.counts.aa.ambiguity) / result.counts.total;
+      result.fractions.aa.nonNT = result.counts.aa.nonNT / result.counts.total;
+      result.fractions.aa.standard = result.counts.aa.standard / result.counts.total;
+
+      // Determine the sequence type
       if (hasProteinOnly) {
          result.type = SequenceType.protein;
+         result.confidence = 1.0;
 
-      } else if (result.counts.ntStandard === result.counts.total) {
+      } else if (result.fractions.nt.standard >= 0.95) {
          result.type = SequenceType.nucleotide;
+         result.confidence = result.fractions.nt.standard;
 
-      } else if (result.counts.aaStandard === result.counts.total) {
+      } else if (result.fractions.aa.standard >= 0.95) {
          result.type = SequenceType.protein;
+         result.confidence = result.fractions.aa.standard;
 
-      } else if (result.ntFraction >= 0.95 && result.ntFraction > result.aaFraction) {
+      } else if (result.fractions.nt.all >= 0.95 && result.fractions.nt.all > result.fractions.aa.all) {
          result.type = SequenceType.nucleotide;
+         result.confidence = result.fractions.nt.all;
 
-      } else if (result.aaFraction >= 0.95 && result.aaFraction > result.ntFraction) {
+      } else if (result.fractions.aa.all >= 0.95 && result.fractions.aa.all > result.fractions.nt.all) {
          result.type = SequenceType.protein;
+         result.confidence = result.fractions.aa.all;
 
       } else {
          result.type = SequenceType.ambiguous;
+         result.confidence = Math.abs(result.fractions.aa.all - result.fractions.nt.all);
       }
 
       return result;
@@ -310,7 +291,67 @@ export class Utils {
       return identifiers;
    }
 
-   
+   // Get offset (like jQuery .offset())
+   static getOffset(el: HTMLElement) {
+      const rect = el.getBoundingClientRect();
+      const docEl = document.documentElement;
+      const scrollLeft = window.pageXOffset || docEl.scrollLeft || 0;
+      const scrollTop  = window.pageYOffset || docEl.scrollTop || 0;
+      const clientLeft = docEl.clientLeft || 0;
+      const clientTop  = docEl.clientTop || 0;
+
+      return {
+         top: rect.top + scrollTop - clientTop,
+         left: rect.left + scrollLeft - clientLeft
+      };
+   }
+
+   // Hide a visible element with an animated transition.
+   static hideWithTransition(el_: HTMLElement, duration_?: number) {
+
+      // Set a default for the optional parameter.
+      if (isNaN(duration_)) { duration_ = 300; }
+
+      el_.style.height = `${el_.scrollHeight}px`;
+      el_.style.overflow = "hidden";
+      el_.style.transitionDuration = `${duration_}ms`;
+
+      // Force layout so the transition starts from current height.
+      void el_.offsetHeight;
+
+      // Apply the hidden end-state (matches .show-transition)
+      el_.style.opacity = "0";
+      el_.style.height = "0";
+      el_.style.marginTop = "0";
+      el_.style.marginBottom = "0";
+      el_.style.paddingTop = "0";
+      el_.style.paddingBottom = "0";
+
+      const onEnd = (ev_: TransitionEvent) => {
+         if (ev_.target === el_) removeStyles();
+      };
+
+      // Hide and clean up inline styles after the transition.
+      const removeStyles = () => {
+         el_.style.display = "none";
+         el_.style.height = "";
+         el_.style.overflow = "";
+         el_.style.transitionDuration = "";
+         el_.style.opacity = "";
+         el_.style.marginTop = "";
+         el_.style.marginBottom = "";
+         el_.style.paddingTop = "";
+         el_.style.paddingBottom = "";
+         el_.removeEventListener("transitionend", onEnd);
+      };
+
+      el_.addEventListener("transitionend", onEnd);
+
+      // A safety fallback in case "transitionend" doesn't fire.
+      setTimeout(removeStyles, duration_ + 50);
+   }
+
+
    // Is the user's browser on iOS?
    static isIOS() {
 
@@ -408,4 +449,61 @@ export class Utils {
       return !text_ ? "" : text_.trim();
    }
 
+   // Scroll to focus on the specified element.
+   static scrollToElement(el_: HTMLElement) {
+
+      let scrollOffset = Utils.getOffset(el_);
+      if (scrollOffset && scrollOffset.top) {
+         
+         // Clamp to document bounds
+         const maxScroll = Math.max(
+            document.documentElement.scrollHeight,
+            document.body.scrollHeight
+         ) - window.innerHeight;
+
+         window.scrollTo({
+            top: Math.max(0, Math.min(scrollOffset.top - 300, maxScroll)),
+            left: 0,
+            behavior: 'smooth'
+         });
+      }
+   }
+
+   static showWithTransition(el_: HTMLElement, duration_?: number, display_?: string) {
+      
+      // Set defaults for optional parameters.
+      if (isNaN(duration_)) { duration_ = 300; }
+      if (!display_) { display_ = "block"; }
+      
+      //const style = window.getComputedStyle(el_);
+      // If it's already visible, don't bother.
+      //if (style.display !== "none") return;
+
+      el_.style.display = display_;
+
+      const fullHeight = `${el_.scrollHeight}px`;
+
+      // Set the starting "collapsed" state
+      el_.classList.add("show-transition");
+
+      el_.style.transitionDuration = `${duration_ }ms`;
+
+      // force reflow
+      void el_.offsetHeight;
+
+      // Expand to the full size.
+      el_.style.opacity = "1";
+      el_.style.height = fullHeight;
+      el_.style.marginTop = "";
+      el_.style.marginBottom = "";
+      el_.style.paddingTop = "";
+      el_.style.paddingBottom = "";
+
+      // Cleanup after the transition.
+      setTimeout(() => {
+         el_.classList.remove("show-transition");
+         el_.style.height = "";
+         el_.style.transitionDuration = "";
+      }, duration_);
+   }
 }

@@ -96,8 +96,7 @@ export enum NameClass {
    type_material = "type_material"
 }
 
-export enum OrderedTaxaLevel {
-   tree = 0,
+export enum NumericTaxonomyRank {
    realm = 1,
    subrealm = 2,
    kingdom = 3,
@@ -145,6 +144,7 @@ export enum SequenceType {
    unknown = "unknown"
 }
 
+/*
 export enum TaxaLevel {
    tree = "tree",
    realm = "realm",
@@ -162,26 +162,7 @@ export enum TaxaLevel {
    genus = "genus",
    subgenus = "subgenus",
    species = "species"
-}
-
-export enum TaxaLevelLabel {
-   tree = "Tree",
-   realm = "Realm",
-   subrealm = "Subrealm",
-   kingdom = "Kingdom",
-   subkingdom = "Subkingdom",
-   phylum = "Phylum",
-   subphylum = "Subphylum",
-   class = "Class",
-   subclass = "Subclass",
-   order = "Order",
-   suborder = "Suborder",
-   family = "Family",
-   subfamily = "Subfamily",
-   genus = "Genus",
-   subgenus = "Subgenus",
-   species = "Species"
-}
+}*/
 
 // The taxonomy databases
 export enum TaxonomyDB {
@@ -196,7 +177,7 @@ export enum TaxonomyDB {
    unspecified = "unspecified"
 }
 
-// The display type determines how the control is initially populated.
+// The display type determines how the Taxonomy Browser is initially populated.
 export enum TaxonomyDisplayType {
    default_to_page = "default_to_page",
    display_all = "display_all",
@@ -205,44 +186,44 @@ export enum TaxonomyDisplayType {
    user_entered = "user_entered"
 }
 
-// Taxonomy ranks found in ICTV and NCBI Taxonomies.
+// All taxonomy ranks found in ICTV and NCBI Taxonomies.
 export enum TaxonomyRank {
    biotype = "biotype",
    clade = "clade",
-   class = "class",
+   class = "class", // ICTV rank
    cohort = "cohort",
-   family = "family",
+   family = "family", // ICTV rank
    forma = "forma",
    forma_specialis = "forma_specialis",
    genotype = "genotype",
-   genus = "genus",
+   genus = "genus", // ICTV rank
    infraclass = "infraclass",
    infraorder = "infraorder",
    isolate = "isolate",
-   kingdom = "kingdom",
+   kingdom = "kingdom", // ICTV rank
    morph = "morph",
    no_rank = "no_rank",
-   order = "order",
+   order = "order", // ICTV rank
    parvorder = "parvorder",
    pathogroup = "pathogroup",
-   phylum = "phylum",
-   realm = "realm",
+   phylum = "phylum", // ICTV rank
+   realm = "realm", // ICTV rank
    section = "section",
    series = "series",
    serogroup = "serogroup",
    serotype = "serotype",
-   species = "species",
+   species = "species", // ICTV rank
    species_group = "species_group",
    species_subgroup = "species_subgroup",
    strain = "strain",
-   subclass = "subclass",
+   subclass = "subclass", // ICTV rank
    subcohort = "subcohort",
-   subfamily = "subfamily",
-   subgenus = "subgenus",
-   subkingdom = "subkingdom",
-   suborder = "suborder",
-   subphylum = "subphylum",
-   subrealm = "subrealm",
+   subfamily = "subfamily", // ICTV rank
+   subgenus = "subgenus", // ICTV rank
+   subkingdom = "subkingdom", // ICTV rank
+   suborder = "suborder", // ICTV rank
+   subphylum = "subphylum", // ICTV rank
+   subrealm = "subrealm", // ICTV rank
    subsection = "subsection",
    subspecies = "subspecies",
    subtribe = "subtribe",
@@ -251,6 +232,7 @@ export enum TaxonomyRank {
    superkingdom = "superkingdom",
    superorder = "superorder",
    superphylum = "superphylum",
+   tree = "tree", // Only in ICTV
    tribe = "tribe",
    varietas = "varietas"
 }
@@ -271,24 +253,6 @@ export enum IctvRank {
    genus = "genus",
    subgenus = "subgenus",
    species = "species"
-}
-
-export enum IctvRankLabel {
-   realm = "Realm",
-   subrealm = "Subrealm",
-   kingdom = "Kingdom",
-   subkingdom = "Subkingdom",
-   phylum = "Phylum",
-   subphylum = "Subphylum",
-   class = "Class",
-   subclass = "Subclass",
-   order = "Order",
-   suborder = "Suborder",
-   family = "Family",
-   subfamily = "Subfamily",
-   genus = "Genus",
-   subgenus = "Subgenus",
-   species = "Species"
 }
 
 // Keys representing all available web services.
@@ -323,6 +287,7 @@ export enum WebServiceKey {
    getReleaseHistory = "getReleaseHistory",
    //getReleaseTaxa = "getReleaseTaxa",
    getTaxaByName = "getTaxaByName",
+   getTaxon = "getTaxon",
    getTaxonDetails = "getTaxonDetails",
    getTreeExpandedToNode = "getTreeExpandedToNode",
    getUnassignedChildTaxaByName = "getUnassignedChildTaxaByName",
@@ -423,9 +388,106 @@ export const REGEX = {
    FASTA_NT_REGEX: "/^[ABDCGHKMNRSTUVWXY\-]+$/i"
 }
 
+//----------------------------------------------------------------------------------------------------------------
+// Constant arrays
+//----------------------------------------------------------------------------------------------------------------
+export const OrderedRanks = [
+   IctvRank.realm,
+   IctvRank.subrealm,
+   IctvRank.kingdom,
+   IctvRank.subkingdom,
+   IctvRank.phylum,
+   IctvRank.subphylum,
+   IctvRank.class,
+   IctvRank.subclass,
+   IctvRank.order,
+   IctvRank.suborder,
+   IctvRank.family,
+   IctvRank.subfamily,
+   IctvRank.genus,
+   IctvRank.subgenus,
+   IctvRank.species
+]
+
+
 //-----------------------------------------------------------------------------------------------------------------------------
 // Functions that use enums
 //-----------------------------------------------------------------------------------------------------------------------------
+
+// Return a label that corresponds to the taxonomy rank provided (singular or plural).
+export function GetTaxonomyRankLabel(rank_: TaxonomyRank|string, isPlural_?: boolean): string {
+   
+   if (!rank_) { return ""; }
+
+   // If the rank parameter isn't a valid member of the TaxonomyRank enum, just return it as is. 
+   // This allows us to display ranks that aren't in the enum without causing an error. It also 
+   // allows us to avoid having to update the enum every time we encounter a new rank in the data.
+   if (!IsEnumValue(TaxonomyRank, rank_)) { return rank_; }
+
+   // Capitalize the first letter and replace underscores with spaces.
+   const formattedRank = `${rank_[0].toUpperCase()}${rank_.slice(1)}`.replace(/_/g, " ");
+
+   if (!isPlural_) {
+      return formattedRank;
+   }
+   
+   switch (rank_) {
+
+      // Special cases
+      case TaxonomyRank.family:
+         return "Families";
+      case TaxonomyRank.forma_specialis:
+         return "Formae speciales";
+      case TaxonomyRank.genus:
+         return "Genera";
+      case TaxonomyRank.no_rank:
+         return "No ranks"; // ???
+      case TaxonomyRank.phylum:
+         return "Phyla";
+      case TaxonomyRank.subfamily:
+         return "Subfamilies";
+      case TaxonomyRank.subgenus:
+         return "Subgenera";
+      case TaxonomyRank.subphylum:
+         return "Subphyla";
+      case TaxonomyRank.superfamily:
+         return "Superfamilies";
+      case TaxonomyRank.superphylum:
+         return "Superphyla";
+      case TaxonomyRank.varietas:
+         return "Varietates";
+
+      // Append "es"
+      case TaxonomyRank.class:
+      case TaxonomyRank.infraclass:
+      case TaxonomyRank.forma_specialis:
+      case TaxonomyRank.subclass:
+      case TaxonomyRank.superclass:
+         return `${formattedRank}es`;
+
+      // The plural and singular are the same.
+      case TaxonomyRank.series:
+      case TaxonomyRank.species:
+      case TaxonomyRank.subspecies:
+         return formattedRank;
+
+      // By default, append an "s" to make it plural.
+      default:
+         return `${formattedRank}s`;
+   }
+}
+
+// Get the numeric index of the specified ICTV (taxonomy) rank in the ordered ranks collection.
+export function GetTaxonomyRankIndex(rank_: IctvRank): number {
+   return OrderedRanks.indexOf(rank_);
+}
+
+// Get the ICTV (taxonomy) rank given its index in the ordered ranks collection.
+export function GetTaxonomyRankByIndex(rankIndex_: number): IctvRank {
+   if (rankIndex_ >= OrderedRanks.length) { return null; }
+   return OrderedRanks[rankIndex_];
+}
+
 
 //
 // Return true if the value is a valid member of the enum.
@@ -697,144 +759,55 @@ export function LookupReleaseActionDefinition(releaseAction_: ReleaseAction) {
    }
 }
 
-// Return the value of the taxonomy rank enum.
-export function LookupTaxonomyRank(rank_: TaxonomyRank|string) {
-   
-   if (!rank_) { return ""; }
-
-   // If the rank parameter isn't a valid member of the TaxonomyRank enum, just return it as is. 
-   // This allows us to display ranks that aren't in the enum without causing an error. It also 
-   // allows us to avoid having to update the enum every time we encounter a new rank in the data.
-   if (!IsEnumValue(TaxonomyRank, rank_)) { return rank_; }
-
-   switch (rank_) {
-      case TaxonomyRank.biotype:
-         return "Biotype";
-      case TaxonomyRank.clade:
-         return "Clade";
-      case TaxonomyRank.class:
-         return "Class";
-      case TaxonomyRank.cohort:
-         return "Cohort";
-      case TaxonomyRank.family:
-         return "Family";
-      case TaxonomyRank.forma:
-         return "Forma";
-      case TaxonomyRank.forma_specialis:
-         return "Forma Specialis";
-      case TaxonomyRank.genotype:
-         return "Genotype";
-      case TaxonomyRank.genus:
-         return "Genus";
-      case TaxonomyRank.infraclass:
-         return "Infraclass";
-      case TaxonomyRank.infraorder:
-         return "Infraorder";
-      case TaxonomyRank.isolate:
-         return "Isolate";
-      case TaxonomyRank.kingdom:
-         return "Kingdom";
-      case TaxonomyRank.morph:
-         return "Morph";
-      case TaxonomyRank.no_rank:
-         return "No rank";
-      case TaxonomyRank.order:
-         return "Order";
-      case TaxonomyRank.parvorder:
-         return "Parvorder";
-      case TaxonomyRank.pathogroup:
-         return "Pathogroup";
-      case TaxonomyRank.phylum:
-         return "Phylum";
-      case TaxonomyRank.realm:
-         return "Realm";
-      case TaxonomyRank.section:
-         return "Section";
-      case TaxonomyRank.series:
-         return "Series";
-      case TaxonomyRank.serogroup:
-         return "Serogroup";
-      case TaxonomyRank.serotype:
-         return "Serotype";
-      case TaxonomyRank.species:
-         return "Species";
-      case TaxonomyRank.species_group:
-         return "Species group";
-      case TaxonomyRank.species_subgroup:
-         return "Species subgroup";
-      case TaxonomyRank.strain:
-         return "Strain";
-      case TaxonomyRank.subclass:
-         return "Subclass";
-      case TaxonomyRank.subcohort:
-         return "Subcohort";
-      case TaxonomyRank.subfamily:
-         return "Subfamily";
-      case TaxonomyRank.subgenus:
-         return "Subgenus";
-      case TaxonomyRank.subkingdom:
-         return "Subkingdom";
-      case TaxonomyRank.suborder:
-         return "Suborder";
-      case TaxonomyRank.subphylum:
-         return "Subphylum";
-      case TaxonomyRank.subrealm:
-         return "Subrealm";
-      case TaxonomyRank.subsection:
-         return "Subsection";
-      case TaxonomyRank.subspecies:
-         return "Subspecies";
-      case TaxonomyRank.subtribe:
-         return "Subtribe";
-      case TaxonomyRank.superclass:
-         return "Superclass";
-      case TaxonomyRank.superfamily:
-         return "Superfamily";
-      case TaxonomyRank.superkingdom:
-         return "Superkingdom";
-      case TaxonomyRank.superorder:
-         return "Superorder";
-      case TaxonomyRank.superphylum:
-         return "Superphylum";
-      case TaxonomyRank.tribe:
-         return "Tribe";
-      case TaxonomyRank.varietas:
-         return "Varietas";
-      default:
-         return (rank_ as string).replace(/_/g, " ").toLowerCase();
-   }
-}
-
 
 //----------------------------------------------------------------------------------------------------------------
-// Interfaces
+// Constant sets
 //----------------------------------------------------------------------------------------------------------------
 
-// After evaluating a FASTA sequence, we determine the most-likely sequence type by counting standard nucleotide 
-// and amino acid bases and return this object as the result.
-export interface ISequenceMetadata {
-   aaFraction: number;
-   ntFraction: number;
-   type: SequenceType;
-   confidence: number;
-   counts: {
-      aaAmbiguity: number;
-      aaStandard: number;
-      ntAmbiguity: number;
-      ntStandard: number;
-      total: number;
-   }
-   // TESTING
-   //aaCount: number;
-   //ntCount: number;
-   //totalCount: number;
-}
+// Nucleotide codes used in FASTA.
+export const NucleotideCodes = new Set([
+   "A", "C", "G", "T", "U"
+]);
 
+// Nucleotide ambiguity codes used in FASTA.
+export const NucleotideAmbiguityCodes = new Set([
+   "B", "D", "H", "K", "M", 
+   "N", "R", "S", "V", "W", 
+   "X", "Y", "-"
+]);
 
-//----------------------------------------------------------------------------------------------------------------
-// Objects
-//----------------------------------------------------------------------------------------------------------------
+// Standard amino acid codes used in FASTA.
+export const ProteinCodes = new Set([
+   "A", "C", "D", "E", 
+   "F", "G", "H", "I",
+   "K", "L", "M", "N", 
+   "P", "Q", "R", "S", 
+   "T", "V", "W", "Y"
+]);
 
+// Amino acid ambiguity codes used in FASTA.
+export const ProteinAmbiguityCodes = new Set([
+   "B", "J", "O", "U", "X", "Z", "*"
+]);
+
+// All amino acid codes with their ambiguity codes, but without A, C, G, T, or U.
+export const AllNonNtProteinCodes = new Set([
+   "B", "D", "E", "F", 
+   "H", "I", "J", "K", 
+   "L", "M", "N", "O", 
+   "P", "Q", "R", "S", 
+   "V", "W", "X", "Y", 
+   "*"
+]);
+
+// Codes that aren't used in nucleotide sequences and therefore indicate that a FASTA sequence 
+// is likely a protein sequence.
+export const ProteinOnlyCodes = new Set([
+   "E", "F", "I", "J", "L", 
+   "O", "P", "Q", "Z", "*"
+]);
+
+/*
 // Nucleotide codes used in FASTA.
 export const NucleotideCodes = new Set([
    "A", "C", "G", "T", "U"
@@ -862,9 +835,21 @@ export const ProteinAmbiguityCodes = new Set([
    "X", "Z", "*"
 ]);
 
+export const ProteinCodeWithAmbiguityNoACGTU = new Set([
+   "B", "D", "E", "F", 
+   "H", "I", "J", "K", 
+   "L", "M", "N", "O", 
+   "P", "Q", "R", "S", 
+   "V", "W", "X", "Y", 
+   "*"
+]);
+
 // Codes that aren't used in nucleotide sequences and therefore indicate that a FASTA sequence 
 // is likely a protein sequence.
 export const ProteinOnlyCodes = new Set([
    "E", "F", "I", "J", "L", 
    "O", "P", "Q", "Z", "*"
 ]);
+*/
+
+

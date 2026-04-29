@@ -6,7 +6,7 @@ taxonomyBrowser:
       assets/css/fa-solid.css: {}
       assets/css/fontawesome.css: {}
       assets/css/jquery.dataTables.min.css: {}
-      assets/css/ICTV.css: {} 
+      assets/css/TaxonomyBrowser.css: {} 
       assets/css/tippy.css: {} 
       assets/css/light-border.css: {}
   fonts:

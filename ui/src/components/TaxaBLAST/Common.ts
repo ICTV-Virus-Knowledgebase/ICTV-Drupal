@@ -63,7 +63,7 @@ export enum Icon {
    download = `<i class=\"fa fa-download\"></i>`,
    html = `<i class=\"fa-regular fa-file-lines\"></i>`,
    info = `<i class=\"fa-solid fa-circle-info\"></i>`,
-   lineageDelimiter = `<i class=\"fa-solid fa-chevron-right\"></i>`,
+   lineageDelimiter = `<i class=\"fa-light fa-chevron-right\"></i>`,
    link = `<i class=\"fa-solid fa-link\"></i>`,
    next = `<i class=\"fa-regular fa-angle-right\"></i>`,
    paste = `<i class=\"fa-solid fa-paste\"></i>`,

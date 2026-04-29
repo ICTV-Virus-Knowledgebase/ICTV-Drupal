@@ -4,7 +4,7 @@ import { AppSettings } from "../../global/AppSettings";
 import DataTables from "datatables.net-dt";
 import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
-import { LookupNameClass, LookupNameClassDefinition, LookupTaxonomyRank, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
+import { LookupNameClass, LookupNameClassDefinition, GetTaxonomyRankLabel, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
 import { Utils } from "../../helpers/Utils";
 import { VirusNameLookupService } from "../../services/VirusNameLookupService";
 
@@ -402,7 +402,7 @@ export class VirusNameLookup {
       let linkedResultName = `<a class="result-link .ms-auto" href="${url}" target="_blank">${ictvResult_.name}</a>`;
       
       // Format the result rank (since it's an ICTV result there should always be a valid rank name).
-      const resultRank = !ictvResult_.rankName || ictvResult_.rankName === "no_rank" ? "" : `<b>${LookupTaxonomyRank(ictvResult_.rankName)}</b>`;
+      const resultRank = !ictvResult_.rankName || ictvResult_.rankName === "no_rank" ? "" : `<b>${GetTaxonomyRankLabel(ictvResult_.rankName)}</b>`;
 
       const matchesTitle = ictvResult_.matches.length === 1 ? "Database match: <b>1</b>" : `Database matches: <b>${ictvResult_.matches.length}</b>`;
 
@@ -725,7 +725,7 @@ export class VirusNameLookup {
       if (!rankName_ || rankName_.length < 1 || rankName_ === "no_rank") { return ""; }
 
       // Lookup the rank's label.
-      let formattedRank = LookupTaxonomyRank(rankName_);
+      let formattedRank = GetTaxonomyRankLabel(rankName_);
       if (!formattedRank) { return ""; }
 
       // Remove NCBI ranks (???)

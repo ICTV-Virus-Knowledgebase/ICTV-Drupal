@@ -25,7 +25,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       jobNameLabel: HTMLElement,
       panelControls: HTMLElement,
       jobFiles: HTMLElement,
-      resultFiles: HTMLElement,
+      sequenceResults: HTMLElement,
 
       // The pending job view and its children.
       pendingView: HTMLElement,
@@ -76,7 +76,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          pendingJobName: null,
          pendingElapsed: null,
          pendingView: null,
-         resultFiles: null
+         sequenceResults: null
       }
    }
 
@@ -107,7 +107,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       return;
    }
 
-   
+   /*
    // Create HTML for a sequence file panel.
    createFileHTML(file_: ISequenceFile, fileIndex_: number): string {
 
@@ -162,8 +162,79 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       // TODO: Where to display errors?
       return html;
+   }*/
+
+   createResultsTableHTML() {
+
+      let sequenceRows = "";
+
+      let resultCount = 1;
+
+      this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
+
+         console.log(`file ${fileIndex_}`)
+
+         file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
+
+            console.log(`sequence ${sequenceIndex_}`)
+
+            const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
+
+            const hits = sequence_.hits !== null ? sequence_.hits.length : 0;
+
+            const rowClass = resultCount % 2 === 0 ? "even-row" : "odd-row";
+
+            let row = `<tr class="${rowClass}">
+               <td class="">${resultCount}</td>
+               <td class="">${file_.name}</td>
+               <td class="">${sequence_.qseqid}</td>
+               <td class="">${hits}</td>
+               <td class="controls">
+                  <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip"
+                     data-file-index="${fileIndex_}"
+                     data-seq-index="${sequenceIndex_}" 
+                     data-tippy-content="View the BLAST hits in a new tab"
+                  >${Icon.dna}<span class="btn-label">View BLAST hits</span></button>
+
+                  <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip" 
+                     data-filename="${sequence_.blast_html}"
+                     data-tippy-content="View the alignments in a new tab"
+                     data-title="${sequence_.qseqid}"
+                  >${Icon.html}<span class="btn-label">View alignments</span></button>
+                  
+                  <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip" 
+                     data-filename="${sequence_.blast_csv}"
+                     data-tippy-content="Download the BLAST hits as a CSV file"
+                     data-title="${csvTitle}"
+                  >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
+               </td>
+            </tr>`;
+
+            sequenceRows += row;
+
+            resultCount += 1;
+         })
+      })
+
+      let html = `<table class="sequence-results-table">
+         <thead>
+            <tr>
+               <th>#</th>
+               <th>Filename</th>
+               <th>Query ID</th>
+               <th>Hits</th>
+               <th></th>
+            </tr>
+         </thead>
+         <tbody>
+         ${sequenceRows}
+         </tbody>
+      </table>`;
+
+      return html;
    }
 
+   /*
    createSequenceRow(fileIndex_: number, sequence_: ISequence, seqIndex_: number): string {
 
       if (!Array.isArray(sequence_.hits) || sequence_.hits.length < 1) {
@@ -205,7 +276,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       </tr>`;
 
       return html;
-   }
+   }*/
 
    // Display a message in the error view and hide the other views.
    displayErrorView(message_?: string) {
@@ -285,7 +356,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       if (!this.elements.jobFiles) { throw new Error("Invalid job files DOM element"); }
 
       // Populate the section with job file panels.
-      this.populateFilesPanel();
+      this.populateResultsPanel();
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
@@ -435,47 +506,48 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       return await this.displayView();
    }
 
-   populateFilesPanel() {
+   populateResultsPanel() {
 
       if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1) {
          this.elements.jobFiles.innerHTML = "No FASTA files are available for this job";
          return;
       }
 
-      let html = "";
+      let html = this.createResultsTableHTML();
 
       // Generate HTML for the search results.
-      this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
-         html += this.createFileHTML(file_, fileIndex_);
-      })
+      //this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
+      //   html += this.createFileHTML(file_, fileIndex_);
+      //})
       
       // Populate the container
       this.elements.jobFiles.innerHTML = 
-         `<div class="result-files-title">Search results</div>
-         <div class="result-files">${html}</div>`;
+         `<div class="sequence-results-title">Sequence results</div>
+         <div class="sequence-results">${html}</div>`;
 
       // Get references to DOM elements.
-      this.elements.resultFiles = this.elements.jobFiles.querySelector(`.result-files`);
-      if (!this.elements.resultFiles) { throw new Error("Invalid result files element"); }
+      this.elements.sequenceResults = this.elements.jobFiles.querySelector(`.sequence-results`);
+      if (!this.elements.sequenceResults) { throw new Error("Invalid sequence results element"); }
 
       // Add a click event handler.
-      this.elements.resultFiles.addEventListener("click", async (event_) => {
+      this.elements.sequenceResults.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.jobFiles, event_.target as HTMLElement);
       });
       
+      /*
       // If there's only one file, go ahead and expand its accordion.
       if (this.parent.job.data.files.length === 1 && !!this.parent.job.data.files[0]) {
          const file = this.parent.job.data.files[0];
          const fileKey = CreateKeyFromName(file.name);
 
-         const itemEl = this.elements.resultFiles.querySelector(`.ictv-accordion-item[data-id="${fileKey}"]`) as HTMLElement;
+         const itemEl = this.elements.sequenceResults.querySelector(`.ictv-accordion-item[data-id="${fileKey}"]`) as HTMLElement;
          if (!itemEl) { throw new Error(`Invalid element for file key ${fileKey}`); }
          
          itemEl.classList.add("active"); // TEST
 
          // Click to expand the accordion for the single file.
          itemEl.click();
-      }
+      }*/
 
       return;
    }
