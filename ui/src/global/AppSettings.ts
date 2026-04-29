@@ -57,6 +57,7 @@ export class _AppSettings {
       getReleaseHistory: "get-release-history",
       //getReleaseTaxa: "get-release-taxa",
       getTaxaByName: "get-taxa-by-name",
+      getTaxon: "get-taxon",
       getTaxonDetails: "get-taxon-details",
       getTreeExpandedToNode: "get-tree-expanded-to-node",
       getUnassignedChildTaxaByName: "get-unassigned-child-taxa-by-name",

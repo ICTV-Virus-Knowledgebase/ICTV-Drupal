@@ -472,16 +472,13 @@ class TaxonomyHelper {
     $html .= $isRefHTML;
 
     // The taxon node element
-    $html .= '<div class="tc-node" '
-      // data-id
+    $html .= '<div class="tc-node has-tooltip" '
       . 'data-id="' . $taxon->taxnodeID . '" '
-      // data-child-taxa
-      . 'data-child-taxa="' . ($taxon->childTaxaCount ?? '') . '" '
-      // data-history
+
+      // dmd 04/28/26 Replaced data-child-taxa with data-tippy-content.
+      . 'data-tippy-content="' . ($taxon->childTaxaCount ?? '') . '" '
       . 'data-history="' . $totalHistory . '" '
-      // data-rank
       . 'data-name="' . ($taxon->taxonName ?? '') . '" '
-      // data-name
       . 'data-rank="' . ($taxon->levelName ?? '') . '">'
     ;
 
@@ -779,8 +776,8 @@ class TaxonomyHelper {
       'pre_expand_to_level_id'   => $preExpandToLevelID,
       'parent_taxnode_id'        => null,
       'selected_level_id'        => $selectedLevelID
-  ];
-}
+      ];
+   }
 
     $topLevelRankID  = (int)$row2['top_level_id'];
     $preExpandToRankID = (int)$row2['pre_expand_to_level_id'];

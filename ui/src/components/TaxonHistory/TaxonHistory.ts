@@ -5,14 +5,14 @@ import { IRelease } from "../../models/TaxonHistory/IRelease";
 import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { ITaxonHistoryResult } from "../../models/TaxonHistory/ITaxonHistoryResult";
 import { Identifiers } from "../../models/Identifiers";
-import { LookupReleaseAction, LookupReleaseActionDefinition, LookupTaxonomyRank, ReleaseAction, TaxaLevel, WebStorageKey } from "../../global/Types";
+import { LookupReleaseAction, LookupReleaseActionDefinition, GetTaxonomyRankLabel, IctvRank, ReleaseAction, WebStorageKey } from "../../global/Types";
 import { TaxonDetails } from "../TaxonDetails";
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
 //import { TooltipBuilder } from "../../helpers/TooltipBuilder";
 import { Utils } from "../../helpers/Utils";
 
 // TEST
-import { Props, ReferenceElement } from 'tippy.js';
+//import { Props, ReferenceElement } from 'tippy.js';
 
 // "Forward declarations" for external JavaScript libraries.
 declare var jQuery: any;
@@ -158,8 +158,8 @@ export class TaxonHistory {
 
       // Populate the all rank names array.
       this.allRankNamesArray = [];
-      for (let rankName in TaxaLevel) {
-         if (rankName !== TaxaLevel.tree) { this.allRankNamesArray.push(rankName); }
+      for (let rankName in IctvRank) {
+         this.allRankNamesArray.push(rankName);
       }
 
       this.identifiers = null;
@@ -790,7 +790,7 @@ export class TaxonHistory {
             // If we're including ranks, add this rank to the ranks line.
             if (this.exportSettings.includeRanks) {
                if (rankLine) { rankLine += delimiter; }
-               rankLine += LookupTaxonomyRank(rankName_);
+               rankLine += GetTaxonomyRankLabel(rankName_);
             }
 
             // There should be a name for this rank.
@@ -807,7 +807,7 @@ export class TaxonHistory {
             // If we're including ranks, update the ranks line.
             if (this.exportSettings.includeRanks && this.exportSettings.includeEmptyRanks) {
                if (rankLine) { rankLine += delimiter; }
-               rankLine += LookupTaxonomyRank(rankName_);
+               rankLine += GetTaxonomyRankLabel(rankName_);
             }
             
             if (nameLine) { nameLine += delimiter; }
@@ -1296,7 +1296,7 @@ export class TaxonHistory {
       taxon_.previousRank = this.getPreviousRank(taxon_);
 
       // Lookup the formatted version of the taxon's rank name.
-      taxon_.rankName = LookupTaxonomyRank(taxon_.rankName);
+      taxon_.rankName = GetTaxonomyRankLabel(taxon_.rankName);
 
       return taxon_;
    }

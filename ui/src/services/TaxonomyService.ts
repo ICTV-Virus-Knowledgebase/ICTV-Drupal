@@ -1,17 +1,18 @@
 
 import { IDisplaySettings } from "../components/TaxonomyBrowser/IDisplaySettings";
 import { IMslRelease } from "../models/IMslRelease";
+import { ITaxon } from "../models/ITaxon";
 import { ITaxonDetailsResult } from "../models/ITaxonDetailsResult";
 import { ITaxonSearchResult } from "../models/ITaxonSearchResult";
 import { WebService } from "./WebService";
-import { TaxaLevel, WebServiceKey } from "../global/Types";
+import { IctvRank, WebServiceKey } from "../global/Types";
 
 
 export class _TaxonomyService {
 
    // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
    // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
-   async getByReleasePreExpanded(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
+   async getByReleasePreExpanded(displaySettings_: IDisplaySettings, hideAboveRank_: IctvRank, preExpandToRank_: IctvRank,
       releaseNumber_: string): Promise<string> {
 
       // TODO: validate displaySettings_
@@ -71,7 +72,7 @@ export class _TaxonomyService {
    /*
    // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
    // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
-   async getReleaseTaxa(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
+   async getReleaseTaxa(displaySettings_: IDisplaySettings, hideAboveRank_: IctvRank, preExpandToRank_: IctvRank,
       releaseNumber_: string): Promise<string> {
 
       // TODO: validate displaySettings_
@@ -108,6 +109,21 @@ export class _TaxonomyService {
       return responseData;
    }
 
+   // Get a single taxon using its taxnode_id.
+   async getTaxon(taxNodeID_: string): Promise<ITaxon> {
+
+      if (!taxNodeID_) { throw new Error("Invalid taxNodeID"); }
+
+      const data = {
+         taxnode_id: taxNodeID_
+      };
+
+      const taxon = await WebService.get<ITaxon>(WebServiceKey.getTaxon, data);
+
+      console.log(taxon);
+
+      return taxon;
+   }
 
    async getTaxonDetails(taxNodeID_: string): Promise<ITaxonDetailsResult> {
 
@@ -125,7 +141,7 @@ export class _TaxonomyService {
    }
 
 
-   async getTreeExpandedToNode(displaySettings_: IDisplaySettings, hideAboveRank_: TaxaLevel, preExpandToRank_: TaxaLevel,
+   async getTreeExpandedToNode(displaySettings_: IDisplaySettings, hideAboveRank_: IctvRank, preExpandToRank_: IctvRank,
       releaseNumber_: string, taxNodeID_: string) {
 
       if (!releaseNumber_) { throw new Error("Invalid releaseNumber in getTreeExpandedToNode"); }

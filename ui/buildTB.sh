@@ -36,8 +36,8 @@ cp ./dist/ICTV_TaxonomyBrowser.js ../ictv_release_history_taxonomy_browser/asset
 #------------------------------------------------------------------------------
 printf "Copying CSS file(s) to ictv_taxonomy_browser/assets/css\n\n"
 
-cp ./css/ICTV.css ../ictv_taxonomy_browser/assets/css/
-# dmd 110125 cp ./css/TaxonomyBrowser.css ../ictv_taxonomy_browser/assets/css/
+#cp ./css/ICTV.css ../ictv_taxonomy_browser/assets/css/
+cp ./css/TaxonomyBrowser.css ../ictv_taxonomy_browser/assets/css/
 
 printf "Copying CSS file(s) to ictv_release_history_taxonomy_browser/assets/css\n\n"
 
