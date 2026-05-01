@@ -2,7 +2,7 @@
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { ICuratedName } from "../../models/ICuratedName";
 import { IManager } from "./IManager";
-import { LookupTaxonomyRank } from "../../global/Types";
+import { GetTaxonomyRankLabel } from "../../global/Types";
 
 
 export class TableView {
@@ -61,7 +61,7 @@ export class TableView {
          // Alternate the CSS class every row.
          let rowClass = index_ % 2 === 0 ? "odd-bg" : "even-bg";
 
-         let rankName = LookupTaxonomyRank(curatedName_.rankName);
+         let rankName = GetTaxonomyRankLabel(curatedName_.rankName);
 
          let type = !curatedName_.type ? "" : curatedName_.type;
 

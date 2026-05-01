@@ -40,6 +40,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       // BLAST parameters
       blastMaxHSPS: HTMLInputElement,
       blastMaxTargetSeqs: HTMLInputElement,
+      blastTaskTable: HTMLTableElement,
       
       enterFastaButton: HTMLButtonElement,
       fileInput: HTMLInputElement,
@@ -87,6 +88,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements = {
          blastMaxHSPS: null,
          blastMaxTargetSeqs: null,
+         blastTaskTable: null,
          container: containerEl_,
          dialogAddButton: null,
          dialogFasta: null,
@@ -554,12 +556,14 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             <div class="content-column">Enter BLAST parameters (optional)
                <div class="control-row">${blastTaskHTML}</div>
                <div class="control-row">
-                  <label>Max HSPs per target sequence </label>
-                  <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
-               </div>
-               <div class="control-row">
-                  <label>Max target sequences </label>
-                  <input type="number" class="max-target-seqs" value="${Constants.DEFAULT_MAX_TARGET_SEQS}" />
+                  <div class="horizontal-control">
+                     <label>Max target sequences </label>
+                     <input type="number" class="max-target-seqs" value="${Constants.DEFAULT_MAX_TARGET_SEQS}" />
+                  </div>
+                  <div class="horizontal-control">
+                     <label>Max HSPs per target sequence </label>
+                     <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
+                  </div>
                </div>
             </div>
          </div>
@@ -582,6 +586,17 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       this.elements.container.innerHTML = html;
 
+      /*
+      previous formatting for blast params
+      <div class="control-row">
+                  <label>Max HSPs per target sequence </label>
+                  <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
+               </div>
+               <div class="control-row">
+                  <label>Max target sequences </label>
+                  <input type="number" class="max-target-seqs" value="${Constants.DEFAULT_MAX_TARGET_SEQS}" />
+               </div>
+      */
       //------------------------------------------------------------------------------------------------------------------------
       // Get references to the DOM elements.
       //------------------------------------------------------------------------------------------------------------------------
@@ -717,6 +732,35 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       // NOTE: We're only doing this to make sure they exist.
       const blastTaskRadios = this.elements.container.querySelectorAll('input[name="blast-task"]') as NodeListOf<HTMLInputElement>;
       if (!blastTaskRadios || blastTaskRadios.length < 1) { throw new Error("Invalid BLAST task radio elements"); }
+
+      // TODO: change handler for blast task radio buttons!
+      this.elements.blastTaskTable = this.elements.container.querySelector("table.blast-tasks");
+      if (!this.elements.blastTaskTable) { throw new Error("Invalid BLAST task table element"); }
+
+      /*this.elements.blastTaskTable.addEventListener("change", (event_: Event) => {
+
+         const target = event_.target as HTMLElement;
+
+         // Get the closest radio button Element to the target Element.
+         const radioEl = target.closest(`input[type="radio"][name="blast-task"]`) as HTMLInputElement;
+         if (!radioEl) { return; }
+
+         switch (radioEl.value) {
+            case BlastTask.blastn:
+            case BlastTask.blastp:
+            case BlastTask.dcMegablast:
+            case BlastTask.megablast:
+               if (this.elements.)
+               break;
+
+            case BlastTask.blastx:
+
+               break;
+         }
+         console.log("radioEl value = ", radioEl.value)
+
+         return;
+      })*/
 
       // The max HSPs input box
       this.elements.blastMaxHSPS = this.elements.container.querySelector(".max-hsps") as HTMLInputElement;

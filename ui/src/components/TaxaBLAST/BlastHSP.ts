@@ -30,15 +30,15 @@ export class BlastHSP {
       if (hit_ === null) { throw new Error("Invalid BLAST hit in BlastHSP"); }
 
       this.bitscore = hit_.bitscore;
-      this.endLocation = hit_.end_loc;
+      this.endLocation = hit_.send; // hit_.end_loc;
       this.evalue = hit_.evalue;
       this.length = hit_.length;
-      this.note = Utils.safeTrim(hit_.Note);
+      this.note = Utils.safeTrim(hit_.sseq_ictv.cds_note);
       this.pident = hit_.pident;
-      this.proteinID = Utils.safeTrim(hit_.Protein_id);
-      this.productName = Utils.safeTrim(hit_.Product_name);
+      this.proteinID = Utils.safeTrim(hit_.sseq_ictv.cds_protein_id);
+      this.productName = Utils.safeTrim(hit_.sseq_ictv.cds_product_name);
       this.sseqid = hit_.sseqid;
-      this.sseqidAccession = hit_.sseqid_accession;
-      this.startLocation = hit_.start_loc;
+      //this.sseqidAccession = hit_.ss // hit_.sseqid_accession;
+      this.startLocation = hit_.sstart; // hit_.start_loc;
    }
 }

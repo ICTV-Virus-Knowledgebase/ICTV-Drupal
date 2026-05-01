@@ -3,6 +3,6 @@ import { ISequence } from "./ISequence";
 
 export interface ISequenceFile {
    errors: string[];
-   name: string;
+   filename: string;
    sequences: ISequence[];
 }

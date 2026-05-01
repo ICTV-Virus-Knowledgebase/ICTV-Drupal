@@ -133,13 +133,13 @@ export class TaxaBLAST {
       // Generate the HTML for the job details
       //----------------------------------------------------------------------------------------------------------------
 
-      let nameRowClass = emphasizeFirstRow_ ? " emphasized-row" : "";
+      let nameRowClass = emphasizeFirstRow_ ? `class="emphasized-row"` : "";
 
       let cssClass = !cssClass_ ? " has-borders" : ` ${cssClass_}`;
 
       return `<table class="details-table${cssClass}">
          <tbody>
-            <tr class="${nameRowClass}">
+            <tr${nameRowClass}>
                <th>Job name</th>
                <td>${jobName}</td>
             </tr>
@@ -157,7 +157,7 @@ export class TaxaBLAST {
             </tr>
             <tr>
                <th>Program and version</th>
-               <td>${programName} (version ${this.job.data.version})</td>
+               <td>${programName}</td>
             </tr>
             <tr>
                <th>Database</th>
@@ -186,6 +186,8 @@ export class TaxaBLAST {
             </tr>
          </tbody>
       </table>`;
+
+      // dmd 043026 I removed (version ${this.job.data.version})
    }
 
 

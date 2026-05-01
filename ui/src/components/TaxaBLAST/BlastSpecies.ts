@@ -24,7 +24,8 @@ export class BlastSpecies {
    // BLAST terminology, this is the qseqid.
    queryID: string;
 
-   // The viral segment (if appropriate).
+   // The viral segment (if appropriate)
+   segmentAccession: string;
    segmentName: string;
 
    // Lineage names
@@ -46,39 +47,40 @@ export class BlastSpecies {
 
 
    // C-tor
-   constructor(hit_: IBlastHit) {
+   constructor(filename_: string, hit_: IBlastHit) {
 
       this.isolates = new Map<string, BlastIsolate>();
 
-      this.ictvID = Utils.safeTrim(hit_.ictv_id);
+      this.ictvID = Utils.safeTrim(hit_.sseq_ictv.species_ictv_id);
       if (!this.ictvID) { 
          throw new Error("Invalid ICTV ID in BlastSpecies"); 
       }
       
-      this.exemplarIsolateID = null;
-      this.filename = Utils.safeTrim(hit_.input_seq);
-      this.segmentName = Utils.safeTrim(hit_.segmentname);
+      this.exemplarIsolateID = hit_.sseq_ictv.isolate_id;
+      this.filename = Utils.safeTrim(filename_);
+      this.segmentAccession = Utils.safeTrim(hit_.sseq_ictv.segment_accession);
+      this.segmentName = Utils.safeTrim(hit_.sseq_ictv.segment_name);
 
-      if (hit_.sseqid_lineage === null) { 
-         throw new Error("The sseqid_lineage is invalid in BlastSpecies"); 
+      if (hit_.sseq_ictv.lineage === null) { 
+         throw new Error("The sseq_ictv.lineage is invalid in BlastSpecies"); 
       }
       
       // Lineage
-      this.realm = Utils.safeTrim(hit_.sseqid_lineage.realm);
-      this.subrealm = Utils.safeTrim(hit_.sseqid_lineage.subrealm);
-      this.kingdom = Utils.safeTrim(hit_.sseqid_lineage.kingdom);
-      this.subkingdom = Utils.safeTrim(hit_.sseqid_lineage.subkingdom);
-      this.phylum = Utils.safeTrim(hit_.sseqid_lineage.phylum);
-      this.subphylum = Utils.safeTrim(hit_.sseqid_lineage.subphylum);
-      this.class = Utils.safeTrim(hit_.sseqid_lineage.class);
-      this.subclass = Utils.safeTrim(hit_.sseqid_lineage.subclass);
-      this.order = Utils.safeTrim(hit_.sseqid_lineage.order);
-      this.suborder = Utils.safeTrim(hit_.sseqid_lineage.suborder);
-      this.family = Utils.safeTrim(hit_.sseqid_lineage.family);
-      this.subfamily = Utils.safeTrim(hit_.sseqid_lineage.subfamily);
-      this.genus = Utils.safeTrim(hit_.sseqid_lineage.genus);
-      this.subgenus = Utils.safeTrim(hit_.sseqid_lineage.subgenus);
-      this.species = Utils.safeTrim(hit_.sseqid_lineage.species);
+      this.realm = Utils.safeTrim(hit_.sseq_ictv.lineage.realm);
+      this.subrealm = Utils.safeTrim(hit_.sseq_ictv.lineage.subrealm);
+      this.kingdom = Utils.safeTrim(hit_.sseq_ictv.lineage.kingdom);
+      this.subkingdom = Utils.safeTrim(hit_.sseq_ictv.lineage.subkingdom);
+      this.phylum = Utils.safeTrim(hit_.sseq_ictv.lineage.phylum);
+      this.subphylum = Utils.safeTrim(hit_.sseq_ictv.lineage.subphylum);
+      this.class = Utils.safeTrim(hit_.sseq_ictv.lineage.class);
+      this.subclass = Utils.safeTrim(hit_.sseq_ictv.lineage.subclass);
+      this.order = Utils.safeTrim(hit_.sseq_ictv.lineage.order);
+      this.suborder = Utils.safeTrim(hit_.sseq_ictv.lineage.suborder);
+      this.family = Utils.safeTrim(hit_.sseq_ictv.lineage.family);
+      this.subfamily = Utils.safeTrim(hit_.sseq_ictv.lineage.subfamily);
+      this.genus = Utils.safeTrim(hit_.sseq_ictv.lineage.genus);
+      this.subgenus = Utils.safeTrim(hit_.sseq_ictv.lineage.subgenus);
+      this.species = Utils.safeTrim(hit_.sseq_ictv.lineage.species);
    }
    
 }

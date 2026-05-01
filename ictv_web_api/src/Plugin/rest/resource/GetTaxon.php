@@ -83,7 +83,6 @@ class GetTaxon extends ResourceBase {
 
       // Retrieve the 'taxnode_id' parameter from the request.
       $taxnodeID = $request->get('taxnode_id');
-      // if (Utils::isNullOrEmpty($taxnodeID)) { throw new BadRequestHttpException("Invalid tax node ID"); }
       if (empty($taxnodeID) || !is_numeric($taxnodeID)) {
          throw new BadRequestHttpException('Invalid tax node ID');
       }
@@ -93,18 +92,13 @@ class GetTaxon extends ResourceBase {
       // Get the taxon from the database.
       $taxon = $this->getTaxon($taxnodeID);
 
-      // Build the response data.
-      $data = [
-         'taxon' => $taxon,
-      ];
-
       $build = array(
          '#cache' => array(
             'max-age' => 0,
          ),
       );
 
-      $response = new ResourceResponse($data);
+      $response = new ResourceResponse($taxon);
       $response->addCacheableDependency($build);
       $response->headers->set('Access-Control-Allow-Origin', '*');
 
@@ -144,9 +138,9 @@ class GetTaxon extends ResourceBase {
             parent.level_id AS parent_level_id,
             parent_level.name AS parent_level_name,
             " . TaxonomyHelper::generatePartialQuery() . "
-         JOIN taxonomy_node parent ON parent.taxnode_id = tn.parent_id
-         JOIN taxonomy_level parent_level ON parent_level.id = parent.level_id
-         WHERE tn.parent_id = :taxnode_id
+         LEFT JOIN taxonomy_node parent ON parent.taxnode_id = tn.parent_id
+         LEFT JOIN taxonomy_level parent_level ON parent_level.id = parent.level_id
+         WHERE tn.taxnode_id = :taxnode_id
             AND tn.is_hidden = 0
             AND tn.is_deleted = 0
          LIMIT 1";

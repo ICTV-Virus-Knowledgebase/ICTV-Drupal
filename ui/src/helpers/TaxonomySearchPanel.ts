@@ -3,7 +3,7 @@ import { AppSettings } from "../global/AppSettings";
 import DataTable from "datatables.net-dt";
 import { ITaxonSearchResult } from "../models/ITaxonSearchResult";
 import { TaxonomyService } from "../services/TaxonomyService";
-
+import tippy from "tippy.js";
 
 export enum SearchContext {
    CuratedNames = "CuratedNames",
@@ -100,7 +100,8 @@ export class TaxonomySearchPanel {
       const html = 
          `<div class="${this.cssClasses.searchPanel}" data-is-visible="true">
             <div class="input-group ${this.cssClasses.searchControls}">
-               <input type="text" class="form-control ${this.cssClasses.searchText}" placeholder="Search taxonomy..." />
+               <input type="text" class="form-control ${this.cssClasses.searchText} clearable" placeholder="Search taxonomy..." aria-label="Enter search text" />
+            
                <button class="btn ${this.cssClasses.searchControl}" type="button"><i class="fa fa-search"></i> Search</button>
                <button class="btn ${this.cssClasses.clearSearchControl}" type="button"><i class="fas fa-times"></i> Reset</button>
             </div>
@@ -110,6 +111,8 @@ export class TaxonomySearchPanel {
             </div>
             <div class="${this.cssClasses.searchResults}"></div>
          </div>`;
+
+      // TODO: add this after the search text field: <button type="button" class="clear" aria-label="Clear input" title="Clear">×</button>
 
       // Add the HTML to the page.
       this.elements.container.innerHTML = html;
@@ -209,7 +212,7 @@ export class TaxonomySearchPanel {
                await this.selectionHandler(id, lineage, rankName, release);
             }
 
-         } else if (buttonEl.classList.contains("view-history-button")) {
+         } else if (buttonEl.classList.contains("view-details-button")) {
 
             // Get the taxon name
             let taxonName = buttonEl.getAttribute("data-name");
@@ -273,7 +276,7 @@ export class TaxonomySearchPanel {
             <tbody>`;  
 
          // Iterate over the taxonomy search results and create a table row for each one.
-         searchResults.forEach((searchResult_: ITaxonSearchResult) => {
+         searchResults.forEach((searchResult_: ITaxonSearchResult, rowIndex_: number) => {
 
             let dataID = "";
             let dataLineage = "";
@@ -287,11 +290,13 @@ export class TaxonomySearchPanel {
                dataLineage = searchResult_.jsonLineage;
             }
 
+            const rowClass = rowIndex_ % 2 === 0 ? "even-row" : "odd-row";
+
             if (this.searchContext === SearchContext.CuratedNames) {
                html +=
-                  `<tr>
+                  `<tr class="${rowClass}">
                      <td class="view-ctrl-column">
-                        <button class="slim-btn view-search-result-button"
+                        <button class="slim-btn view-search-result-button has-tooltip"
                            data-id="${dataID}" 
                            data-name="${searchResult_.name}" 
                            data-rank="${searchResult_.rankName}" 
@@ -303,18 +308,20 @@ export class TaxonomySearchPanel {
                   </tr>`;
             } else {
                html +=
-                  `<tr>
+                  `<tr class="${rowClass}">
                      <td class="view-ctrl-column">
-                        <button class="slim-btn view-search-result-button"
+                        <button class="slim-btn view-search-result-button has-tooltip"
                            data-id="${dataID}" 
                            data-lineage="${dataLineage}" 
                            data-rank="${searchResult_.rankName}" 
                            data-release="${searchResult_.releaseNumber}"
+                           data-tippy-content="View ${searchResult_.rankName} <i>${searchResult_.name}</i> in the taxonomy below"
                         >View</button>
-                        <button class="slim-btn view-history-button"
+                        <button class="slim-btn view-details-button has-tooltip"
                            data-id="${dataID}" 
                            data-name="${searchResult_.name}"
-                        >History</button>
+                           data-tippy-content="View details about ${searchResult_.rankName} <i>${searchResult_.name}</i>, including its history and isolates"
+                        >Details</button>
                      </td>
                      <td class="release-name">${searchResult_.treeName}</td>
                      <td class="level-name">${searchResult_.rankName}</td>
@@ -339,9 +346,15 @@ export class TaxonomySearchPanel {
       // Convert the table into a DataTable instance. 
       new DataTable(`${this.containerSelector} .${this.cssClasses.searchResultsTable}`, {
          dom: "ltip",
-         "order": [],
+         language: {
+            info: 'Showing _START_ - _END_ of _TOTAL_ search results'
+         },
+         order: [],
          searching: false
       });
+
+      // Initialize tippy tooltips
+      tippy(".has-tooltip");
    }
 
 }

@@ -39,6 +39,8 @@ use Drupal\ictv_web_api\helpers\TaxonomyHelper;
 
 class GetReleaseTaxa extends ResourceBase {
 
+   // NOTE: I don't think this web service is used!!!
+
   protected Connection $connection;
   protected string $databaseName = 'ictv_taxonomy';
 

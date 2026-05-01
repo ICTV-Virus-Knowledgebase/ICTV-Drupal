@@ -8,6 +8,7 @@ export interface ITaxon {
     levelID: number;
     levelName: string;
     memberOf: string;
+    mslReleaseNum: number;
     nextDeltaCount: number;
     nodeDepth: number;
     numChildren: number;
