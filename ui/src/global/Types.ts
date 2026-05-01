@@ -285,7 +285,6 @@ export enum WebServiceKey {
    getChildTaxa = "getChildTaxa",
    getMslRelease = "getMslRelease",
    getReleaseHistory = "getReleaseHistory",
-   //getReleaseTaxa = "getReleaseTaxa",
    getTaxaByName = "getTaxaByName",
    getTaxon = "getTaxon",
    getTaxonDetails = "getTaxonDetails",
@@ -505,6 +504,7 @@ export function IsEnumValue<T extends Record<string, string>>(
    return Object.values(enum_).includes(value_ as T[keyof T]);
 }
 
+/*
 export function LookupIdParameterType(parameterName_: IdParameterName|string): IdentifierType {
 
    if (!parameterName_) { return IdentifierType.none; }
@@ -544,7 +544,7 @@ export function LookupIdParameterType(parameterName_: IdParameterName|string): I
       default:
          return IdentifierType.none;
    }
-}
+}*/
 
 // Lookup a display value for this name class. If the name class isn't in the enum, just return it with underscores replaced by spaces. 
 // This allows us to display name classes that aren't in the enum without causing an error.

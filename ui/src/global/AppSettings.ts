@@ -55,7 +55,6 @@ export class _AppSettings {
       getChildTaxa: "get-child-taxa",
       getMslRelease: "get-msl-release",
       getReleaseHistory: "get-release-history",
-      //getReleaseTaxa: "get-release-taxa",
       getTaxaByName: "get-taxa-by-name",
       getTaxon: "get-taxon",
       getTaxonDetails: "get-taxon-details",

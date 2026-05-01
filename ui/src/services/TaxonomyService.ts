@@ -61,41 +61,12 @@ export class _TaxonomyService {
       return mslRelease;
    }
 
-
    async getReleaseHistory() {
 
       const responseData = await WebService.get<any>(WebServiceKey.getReleaseHistory);
 
       return responseData;
    }
-
-   /*
-   // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
-   // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
-   async getReleaseTaxa(displaySettings_: IDisplaySettings, hideAboveRank_: IctvRank, preExpandToRank_: IctvRank,
-      releaseNumber_: string): Promise<string> {
-
-      // TODO: validate displaySettings_
-
-      let data = {
-         display_child_count: displaySettings_.displayChildCount,
-         display_history_controls: displaySettings_.displayHistoryCtrls,
-         display_member_of_controls: displaySettings_.displayMemberOfCtrls,
-         left_align_all: displaySettings_.leftAlignAll,
-         msl_release: releaseNumber_,
-         pre_expand_to_rank: preExpandToRank_,
-         top_level_rank: hideAboveRank_,
-         use_small_font: displaySettings_.useSmallFont
-      }
-
-      const responseData = await WebService.get<any>(WebServiceKey.getReleaseTaxa, data);
-
-      let taxonomyHTML: string = null;
-      if (responseData && responseData.taxonomyHTML) { taxonomyHTML = responseData.taxonomyHTML; }
-
-      return taxonomyHTML;
-   }*/
-
 
    async getTaxaByName(releaseNumber_: string, taxonName_: string) {
 
@@ -118,11 +89,7 @@ export class _TaxonomyService {
          taxnode_id: taxNodeID_
       };
 
-      const taxon = await WebService.get<ITaxon>(WebServiceKey.getTaxon, data);
-
-      console.log(taxon);
-
-      return taxon;
+      return await WebService.get<ITaxon>(WebServiceKey.getTaxon, data);
    }
 
    async getTaxonDetails(taxNodeID_: string): Promise<ITaxonDetailsResult> {
@@ -194,26 +161,6 @@ export class _TaxonomyService {
 
       return await WebService.get<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
    }
-
-
-   async searchVisualTaxonomy(currentRelease_: number, includeAllReleases_: boolean, searchText_: string, selectedRelease_?: number): Promise<ITaxonSearchResult[]> {
-
-      // Validate the search text
-      if (!searchText_) { alert("Please enter search text"); return null; }
-
-      if (!selectedRelease_) { selectedRelease_ = null; }
-
-      const data = {
-         action_code: "search_visual_taxonomy",
-         current_release: currentRelease_,
-         include_all_releases: includeAllReleases_,
-         search_text: searchText_,
-         selected_release: selectedRelease_
-      };
-
-      return await WebService.post<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
-   }
-
 
 }
 

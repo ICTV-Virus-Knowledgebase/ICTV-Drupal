@@ -789,9 +789,9 @@ The panel title
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
-   The sequences table
+   The query results table
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
-#ictv_taxablast_container table.sequences-table {
+#ictv_taxablast_container table.query-results-table {
    background-color: #fff;
    border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius) ;
    border-width: 0; /* 0 0 1px 0; */
@@ -801,63 +801,63 @@ The panel title
    table-layout: fixed !important;*/
    width: 100%;
 }
-#ictv_taxablast_container table.sequences-table .header-row {
+#ictv_taxablast_container table.query-results-table .header-row {
    background-color: var(--ictv-grey-color) !important;
 }
-#ictv_taxablast_container table.sequences-table th,
-#ictv_taxablast_container table.sequences-table td {
+#ictv_taxablast_container table.query-results-table th,
+#ictv_taxablast_container table.query-results-table td {
    font-size: 1.0rem !important;
 }
-#ictv_taxablast_container table.sequences-table th {
+#ictv_taxablast_container table.query-results-table th {
    color: #fff !important;
    font-weight: 400 !important;
 }
-#ictv_taxablast_container table.sequences-table .even-row {
+#ictv_taxablast_container table.query-results-table .even-row {
    background-color: #fff;
 }
-#ictv_taxablast_container table.sequences-table .odd-row {
+#ictv_taxablast_container table.query-results-table .odd-row {
    background-color: var(--ictv-alt-row-bg);
 }
-#ictv_taxablast_container table.sequences-table .no-hits-row {
+#ictv_taxablast_container table.query-results-table .no-hits-row {
    color: var(--ictv-danger-color);
 }
 
-#ictv_taxablast_container table.sequences-table thead + tbody tr:first-child th, 
-#ictv_taxablast_container table.sequences-table thead + tbody tr:first-child td {
+#ictv_taxablast_container table.query-results-table thead + tbody tr:first-child th, 
+#ictv_taxablast_container table.query-results-table thead + tbody tr:first-child td {
    padding-top: 0.75rem;
 }
-#ictv_taxablast_container table.sequences-table tbody tr:last-child {
+#ictv_taxablast_container table.query-results-table tbody tr:last-child {
    border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius);
 }
-#ictv_taxablast_container table.sequences-table tbody tr:last-child td:first-child {
+#ictv_taxablast_container table.query-results-table tbody tr:last-child td:first-child {
     border-bottom-left-radius: var(--ictv-border-radius);
 }
-#ictv_taxablast_container table.sequences-table tbody tr:last-child td:last-child {
+#ictv_taxablast_container table.query-results-table tbody tr:last-child td:last-child {
     border-bottom-right-radius: var(--ictv-border-radius);
 }
 
 /* The table headers */
-/*#ictv_taxablast_container table.sequences-table th.qseqid,
-#ictv_taxablast_container table.sequences-table td.qseqid {
+/*#ictv_taxablast_container table.query-results-table th.qseqid,
+#ictv_taxablast_container table.query-results-table td.qseqid {
    width: auto;
 }*/
-#ictv_taxablast_container table.sequences-table .index {
+#ictv_taxablast_container table.query-results-table .index {
    max-width: 30px;
    text-align: right;
    width: 30px;
 }
 
-#ictv_taxablast_container table.sequences-table .hits {
+#ictv_taxablast_container table.query-results-table .hits {
    text-align: center;
    width: 60px;
 }
-#ictv_taxablast_container table.sequences-table .controls {
+#ictv_taxablast_container table.query-results-table .controls {
    white-space: nowrap;
    width: 1%;
 }
 
-#ictv_taxablast_container table.sequences-table th, 
-#ictv_taxablast_container table.sequences-table td {
+#ictv_taxablast_container table.query-results-table th, 
+#ictv_taxablast_container table.query-results-table td {
    padding: 0.5rem;
 }
 
@@ -888,14 +888,19 @@ The panel title
 #ictv_taxablast_container .job-submission-panel .control-row {
    align-items: center;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: row; /* nowrap */
    justify-content: flex-start;
    margin-bottom: 1.0rem;
 }
 #ictv_taxablast_container .job-submission-panel .control-row label {
    font-weight: normal;
-   /*margin-right: 0.25rem;*/
-   width: 200px;
+}
+#ictv_taxablast_container .job-submission-panel .control-row .horizontal-control {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   width: 30%;
 }
 
 /* "Select files" button */
@@ -1104,9 +1109,14 @@ The panel title
 /* The max HSPs and max target seqs input boxes */
 #ictv_taxablast_container .job-submission-panel .max-hsps,
 #ictv_taxablast_container .job-submission-panel .max-target-seqs { 
-   padding: 0.5rem 0.25rem;
-   text-align: center;
-   width: 4.0rem;
+   padding: 0;
+   text-align: right;
+   width: 5.0rem;
+}
+#ictv_taxablast_container .job-submission-panel input[type=number]::-webkit-outer-spin-button,
+#ictv_taxablast_container .job-submission-panel input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance:caret; /* TESTING! */
+  /*margin: 0;*/
 }
 
 /* TODO: how is this different from the standard input box style above? */
@@ -1306,6 +1316,10 @@ The panel title
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
     Overriding DataTables CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* The "Showing x of y entries" text */
+#taxonomy_browser_container .dt-info {
+   font-size: 0.8rem;
+}
 
 /* The "Show ___ entries" row above the table */
 #ictv_taxablast_container .dt-length {
@@ -1321,18 +1335,21 @@ The panel title
    justify-content: flex-start;
 }
 #ictv_taxablast_container .dt-length select.dt-input {
-   border: 1px solid #aaa;
+   border: 1px solid var(--ictv-border-color);
    border-radius: 5px;
    display: inline-block;
    font-size: 0.8rem;
-   padding: 3px !important; /* Before 03/21/26 this was 0 0 0 3px */
+   padding: 3px !important;
    margin: 0 0.25rem;
    text-align: left;
    width: 60px;
 }
 #ictv_taxablast_container .dt-paging .dt-paging-button {
-   border-color: #aaa;
+   border-color: var(--ictv-border-color);
+   border-style: solid;
+   border-radius: 0;
    border-width: 1px;
+   margin-right: 0.25rem;
 }
 #ictv_taxablast_container .dt-type-numeric {
    padding: 3px 6px;

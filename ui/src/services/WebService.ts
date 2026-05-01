@@ -50,7 +50,7 @@ export class _WebService {
       // Combine the Drupal web service URL with the CSRF web service.
       const csrfURL = `${AppSettings.drupalWebServiceURL}${csrfService}`;
 
-      let csrfToken = null;
+      let csrfToken = "";
 
       try {
          // Get a CSRF token to include in the web request.
@@ -108,7 +108,7 @@ export class _WebService {
 
    // This is used by the get and post methods to make a web service request and return the results.
    protected async performRequest<T>(authToken_: string, method_: RequestMethod, 
-      webServiceURL_: string, data_?: any, csrfToken_?: null): Promise<T> {
+      webServiceURL_: string, data_?: any, csrfToken_?: string): Promise<T> {
 
       // Validate input parameters
       if (!method_) { throw new Error("Invalid HTTP request method"); }

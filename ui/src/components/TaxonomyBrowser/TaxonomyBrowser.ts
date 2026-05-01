@@ -14,6 +14,7 @@ import { GetTaxonomyRankLabel, GetTaxonomyRankByIndex, GetTaxonomyRankIndex, Ict
 import { TaxonomyService } from "../../services/TaxonomyService";
 import tippy, { Props, ReferenceElement } from "tippy.js";
 import { Utils } from "../../helpers/Utils";
+import { AlertBuilder } from "../../helpers/AlertBuilder";
 
 // The initial data provided to the taxonomy browser.
 interface IInitialData {
@@ -318,6 +319,29 @@ export class TaxonomyBrowser {
       return html;
    }
 
+   // Display a release and its associated taxonomy.
+   async displayTaxonomy() {
+      await this.getRelease(this.initialData.releaseNumber);
+      await this.getByReleasePreExpanded();
+      return;
+   }
+
+   // Display a release and its taxonomy, and expand to highlight a selected taxon (its taxnode_id 
+   // will be provided as a URL parameter).
+   async displayTaxonomyWithSelectedTaxon(): Promise<boolean> {
+
+      let taxon: ITaxon = await TaxonomyService.getTaxon(this.identifiers.taxNodeID.toString());
+      if (!taxon) { 
+         await AlertBuilder.displayError("The taxnode_id URL parameter is invalid");
+         return false;
+      }
+
+      // As a (probably)) temporary solution, we are overloading the method that's used when selecting a search result.
+      await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), null, taxon.levelName, taxon.mslReleaseNum.toString());
+      return true;
+   }
+
+   // Use MSL Release data to populate the release panel.
    displayRelease(release_: IMslRelease) {
 
       if (!release_ || !release_.year) {
@@ -358,6 +382,58 @@ export class TaxonomyBrowser {
       this.elements.releasePanel.style.display = "block";
    }
 
+   // Populate the page in "release history" mode.
+   async displayReleaseHistory() {
+
+      // Get the release history
+      await this.getReleaseHistory();
+
+      // Set the selected release.
+      let selectedRelease = this.initialData.releaseNumber;
+
+      // See if an MSL was provided as a query string parameter.
+      if (!!this.identifiers && !isNaN(this.identifiers.msl)) {
+         
+         // Scroll to the release after it is selected.
+         this.scrollToReleaseAfterLoading = true;
+
+         // Update the search panel.
+         this.searchPanel.selectedRelease = this.identifiers.msl;
+         
+         // Set the selected release.
+         selectedRelease = this.identifiers.msl.toString();
+      }
+
+      // Get the requested release and its associated taxonomy.
+      await this.getRelease(selectedRelease);
+      await this.getByReleasePreExpanded();
+
+      // Add a click event handler for the release history table entries.
+      this.elements.releaseHistory.addEventListener("click", async (event_: MouseEvent) => {
+
+         const releaseControl = event_.target as HTMLElement;
+         if (!releaseControl.classList.contains("release-ctrl")) { return false; }
+
+         // Get the link's release number.
+         const releaseNumber = releaseControl.getAttribute("data-release");
+         if (!releaseNumber) { return false; }
+
+         event_.preventDefault();
+         event_.stopPropagation();
+
+         // Set the search panel's selected release so it will be used when searching.
+         this.searchPanel.selectedRelease = parseInt(releaseNumber);
+
+         // Scroll to the release after it is selected.
+         this.scrollToReleaseAfterLoading = true;
+
+         // Get the requested release and its associated taxonomy.
+         await this.getRelease(releaseNumber);
+         await this.getByReleasePreExpanded();
+
+         return false;
+      })
+   }
 
    // Create HTML for a single taxon and add it to the page.
    displayTaxon(taxon_: ITaxon, parentEl_?: HTMLElement) {
@@ -450,7 +526,7 @@ export class TaxonomyBrowser {
       return;
    }
 
-
+   // Toggle the visibility of child nodes under the selected "parent" node.
    async expandCollapse(taxNodeID_: string, animate_: boolean, parentEl_?: HTMLElement): Promise<boolean> {
 
       if (!parentEl_) {
@@ -501,7 +577,6 @@ export class TaxonomyBrowser {
 
       return true;
    }
-
 
    // TODO: This could be made a LOT simpler.
    formatTaxaRanks(mslRelease_: IMslRelease): string {
@@ -658,7 +733,6 @@ export class TaxonomyBrowser {
       return results;
    }
 
-
    async getByReleasePreExpanded() {
 
       let hideAboveRank = this.localData.hideAboveRank || this.defaults.hideAboveRank;
@@ -762,29 +836,6 @@ export class TaxonomyBrowser {
 
       return;
    }
-
-   // Get taxa from the specified release number (defaulting to the most-recent, if empty). The results 
-   // will be constrained by the "hide above" rank and "pre-expand to" rank in local data.
-   /*async getReleaseTaxa() {
-
-      let hideAboveRank: TaxaLevel = this.localData.hideAboveRank || <TaxaLevel>this.defaults.hideAboveRank;
-      let preExpandToRank: TaxaLevel = this.localData.preExpandToRank || <TaxaLevel>this.defaults.preExpandToRank;
-
-      // Display the spinner icon
-      let spinner = this.getSpinnerHTML("Loading...");
-
-      // Clear the search results and display the spinner.
-      this.elements.taxonomyBrowser.innerHTML = spinner;
-
-      // Get the taxonomy HTML
-      const taxonomyHTML: string = await TaxonomyService.getReleaseTaxa(this.displaySettings, hideAboveRank, preExpandToRank, this.mslRelease.releaseNumber);
-      if (!taxonomyHTML) { throw new Error("Invalid taxonomy HTML"); }
-
-      // Process the release data.
-      this.processReleaseTaxa(taxonomyHTML);
-
-      return;
-   }*/
 
    // Return a DIV that contains the spinner icon and optional text.
    getSpinnerHTML(spinnerText_: string): string {
@@ -969,8 +1020,6 @@ export class TaxonomyBrowser {
    // This callback function is provided to the taxonomy search panel (child component) to handle a search result selection.
    async handleSearchResultSelection(taxNodeID_: string, lineage_: string, rank_: string, releaseNumber_: string) {
 
-      console.log("in handleSearchResultSelection")
-
       // Get the specified release
       await this.getRelease(releaseNumber_);
 
@@ -992,8 +1041,20 @@ export class TaxonomyBrowser {
 
    async initialize() {
 
-      // Look for identifiers as query string parameters.
-      this.setIdentifiersFromURL();
+      try {
+         // Look for identifiers as query string parameters.
+         this.identifiers = Identifiers.getIdentifiersFromURL();
+
+      } catch (error_: any) {
+         console.log("set identity error is ", error_)
+
+         await AlertBuilder.displayError(error_);
+
+         // Reset the identifiers so they aren't used later on.
+         if (this.identifiers) {
+            this.identifiers.reset();
+         }
+      }
 
       // Look for the local data in web storage.
       this.getLocalData();
@@ -1168,84 +1229,30 @@ export class TaxonomyBrowser {
          });
       }
 
-      if (this.initialData.displayType === TaxonomyDisplayType.display_release_history) {
+      console.log("this.identifiers = ", this.identifiers)
 
-         // Add a click event handler for the release history table entries.
-         this.elements.releaseHistory.addEventListener("click", async (event_: MouseEvent) => {
+      try {
+         // Determine how to display the release, taxonomy, and possibly the release history.
+         if (this.initialData.displayType === TaxonomyDisplayType.display_all && !isNaN(this.identifiers.taxNodeID)) {
 
-            const releaseControl = event_.target as HTMLElement;
-            if (!releaseControl.classList.contains("release-ctrl")) { return false; }
+            // Display the taxonomy from the selected taxon's release and pre-expand to the taxon. If we encounter errors, we will 
+            // use the default load/display behavior below.
+            if (this.displayTaxonomyWithSelectedTaxon()) { return; }
 
-            // Get the link's release number.
-            const releaseNumber = releaseControl.getAttribute("data-release");
-            if (!releaseNumber) { return false; }
+         } else if (this.initialData.displayType == TaxonomyDisplayType.display_all) {
+            return this.displayTaxonomy();
 
-            event_.preventDefault();
-            event_.stopPropagation();
+         } else if (this.initialData.displayType === TaxonomyDisplayType.display_release_history) {
+            return this.displayReleaseHistory();  
+         }
 
-            // Set the search panel's selected release so it will be used when searching.
-            this.searchPanel.selectedRelease = parseInt(releaseNumber);
-
-            // Scroll to the release after it is selected.
-            this.scrollToReleaseAfterLoading = true;
-
-            // Get the requested release and its associated taxonomy.
-            await this.getRelease(releaseNumber);
-            await this.getByReleasePreExpanded();
-
-            return false;
-         })
+      } catch (error_: any) {
+         console.error("error when choosing display mode: ", error_)
+         await AlertBuilder.displayError(error_);
       }
-
-      // Populate the control using the initial data.
-      switch (this.initialData.displayType) {
-
-         case TaxonomyDisplayType.display_all:
-
-            // dmd testing
-            if (!isNaN(this.identifiers.taxNodeID)) {
-               
-               await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), null, null, AppSettings.currentMslRelease.toString());
-
-            } else {
-               await this.getRelease(this.initialData.releaseNumber);
-               await this.getByReleasePreExpanded();
-            }
-            
-            break;
-
-         case TaxonomyDisplayType.display_release_history:
-
-            // Get the release history
-            await this.getReleaseHistory();
-
-            // Default the selected release.
-            let selectedRelease = this.initialData.releaseNumber;
-
-            // See if an MSL was provided as a query string parameter.
-            this.setIdentifiersFromURL();
-            if (!!this.identifiers && !isNaN(this.identifiers.msl)) {
-               
-               // Scroll to the release after it is selected.
-               this.scrollToReleaseAfterLoading = true;
-
-               // Update the search panel.
-               this.searchPanel.selectedRelease = this.identifiers.msl;
-               
-               // Set the selected release.
-               selectedRelease = this.identifiers.msl.toString();
-            }
-
-            // Get the requested release and its associated taxonomy.
-            await this.getRelease(selectedRelease);
-            await this.getByReleasePreExpanded();
-
-            break;
-
-         default:
-            await this.getRelease(this.initialData.releaseNumber);
-            await this.getTaxaByName();
-      }
+      // Load the release and its taxonomy by default.
+      await this.getRelease(this.initialData.releaseNumber);
+      await this.getByReleasePreExpanded();
 
       return;
    }
@@ -1421,16 +1428,6 @@ export class TaxonomyBrowser {
 
       // Persist in session storage (to limit how long it stays around).
       sessionStorage.setItem(this.webStorageKey, json);
-   }
-
-   // Populate identifiers using the query string parameters.
-   setIdentifiersFromURL() {
-
-      const urlParams = new URLSearchParams(window.location.search);
-
-      // Look for identifier parameters in the query string.
-      this.identifiers = Utils.getIdentifiersFromURL(urlParams);
-      return;
    }
 
    // Set the local data's "pre-expand to" rank, possibly updating the controls.

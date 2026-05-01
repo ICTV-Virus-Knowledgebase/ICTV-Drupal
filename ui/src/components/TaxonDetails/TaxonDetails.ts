@@ -227,7 +227,7 @@ export class TaxonDetails {
       const urlParams = new URLSearchParams(window.location.search);
 
       // Look for identifier parameters in the query string.
-      this.identifiers = Utils.getIdentifiersFromURL(urlParams);
+      this.identifiers = Identifiers.getIdentifiersFromURL();
 
       // Was a VMR ID or "view=isolates" parameter provided? If so, this will override the default tab selection.
       if (!isNaN(this.identifiers.vmrID) || urlParams.has("view", ComponentKey.isolates)) {

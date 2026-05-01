@@ -138,7 +138,7 @@ export const Constants = {
    DEFAULT_MAX_HSPS: 5,
 
    // The default maximum number of target sequences to return.
-   DEFAULT_MAX_TARGET_SEQS: 5,
+   DEFAULT_MAX_TARGET_SEQS: 25,
 
    // How long should the upload panel wait to try to load job data?
    JOB_POLLING_INTERVAL: 5000,

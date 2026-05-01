@@ -5,7 +5,7 @@ import { EditView } from "./EditView";
 import { ICuratedName } from "../../models/ICuratedName";
 import { IResult } from "../../models/IResult";
 import { IManager } from "./IManager";
-import { LookupTaxonomyRank } from "../../global/Types";
+import { GetTaxonomyRankLabel } from "../../global/Types";
 import { TableView } from "./TableView";
 import { ViewMode } from "./Terms";
 
@@ -93,7 +93,7 @@ export class CuratedNameManager implements IManager {
 
       if (!name_) { return "No ICTV taxon specified"; }
 
-      return !rankName_ ? name_ : `${LookupTaxonomyRank(rankName_)}: ${name_}`;
+      return !rankName_ ? name_ : `${GetTaxonomyRankLabel(rankName_)}: ${name_}`;
    }
 
 

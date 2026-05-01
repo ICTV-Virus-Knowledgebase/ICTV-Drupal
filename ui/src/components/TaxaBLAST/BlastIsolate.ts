@@ -9,12 +9,13 @@ import { Utils } from "../../helpers/Utils";
 export class BlastIsolate {
 
    accession: string;
-   exemplarOrAdditional: string;
    hsps: BlastHSP[];
+   isolateExemplar: string;
    isolateID: string;
-   sequenceLength: number;
+   isolateName: string; 
+   sequenceLength: number; // TODO: I don't think this is the correct name!
    sequenceType: SequenceType;
-   virusNames: string; // TODO: why is this plural? Can there be multiple names for an isolate?
+   
 
    // C-tor
    constructor(hit_: IBlastHit, sequenceType_: SequenceType) {
@@ -22,13 +23,15 @@ export class BlastIsolate {
       if (hit_ === null) { throw new Error("Invalid BLAST hit in BlastIsolate"); }
 
       this.accession = null; // This should be populated below.
-      this.exemplarOrAdditional = Utils.safeTrim(hit_.exemplar_additional);
-      this.hsps = [];
-      this.isolateID = hit_.isolate_id;
+      this.isolateExemplar = Utils.safeTrim(hit_.sseq_ictv.isolate_exemplar);
+      this.isolateID = hit_.sseq_ictv.isolate_id;
+      this.isolateName = hit_.sseq_ictv.isolate_name;
+      if (!this.isolateName) { this.isolateName = "unknown"; }
+
       this.sequenceLength = hit_.length;
       this.sequenceType = sequenceType_;
-      this.virusNames = hit_.virus_names;
-      if (!this.virusNames) { this.virusNames = "unknown"; }
+      
+      this.hsps = [];
 
       // Parse the sseqid for the isolate's accession.
       let parts = hit_.sseqid.split("-");

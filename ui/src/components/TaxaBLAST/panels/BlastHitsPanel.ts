@@ -68,7 +68,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    }
 
    // Consolidate the BLAST hits by species and isolate.
-   consolidateBlastHits(hits_: IBlastHit[], sequenceType_: SequenceType): Map<string, BlastSpecies> {
+   consolidateBlastHits(filename_: string, hits_: IBlastHit[], sequenceType_: SequenceType): Map<string, BlastSpecies> {
 
       // A map containing all species referenced in the BLAST hits.
       const speciesMap = new Map<string, BlastSpecies>();
@@ -81,37 +81,37 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          let species: BlastSpecies = null;
 
          // Get the species if it's already in the species map. Otherwise, create a new one.
-         if (speciesMap.has(hit_.ictv_id)) {
-            species = speciesMap.get(hit_.ictv_id);
+         if (speciesMap.has(hit_.sseq_ictv.species_ictv_id)) {
+            species = speciesMap.get(hit_.sseq_ictv.species_ictv_id);
             if (species === null) { 
-               throw new Error(`Invalid species in the species map for ICTV ID ${hit_.ictv_id}`);
+               throw new Error(`Invalid species in the species map for ICTV ID ${hit_.sseq_ictv.species_ictv_id}`);
             }
          } else {
-            species = new BlastSpecies(hit_);
+            species = new BlastSpecies(filename_, hit_);
          }
 
          // Get the isolate if it's already in the isolates map. Otherwise, create a new one.
-         if (species.isolates.has(hit_.isolate_id)) {
-            isolate = species.isolates.get(hit_.isolate_id);
+         if (species.isolates.has(hit_.sseq_ictv.isolate_id)) {
+            isolate = species.isolates.get(hit_.sseq_ictv.isolate_id);
             if (isolate === null || typeof isolate === "undefined") { 
-               throw new Error(`Invalid isolates in the isolates map for VMR ID ${hit_.isolate_id}`);
+               throw new Error(`Invalid isolates in the isolates map for VMR ID ${hit_.sseq_ictv.isolate_id}`);
             }
          } else {
-            isolate = new BlastIsolate(hit_,sequenceType_);
+            isolate = new BlastIsolate(hit_, sequenceType_);
          }
 
          // Add this hit's HSP to the isolate.
          isolate.hsps.push(new BlastHSP(hit_));
 
          // Update the species with this isolate.
-         species.isolates.set(hit_.isolate_id, isolate);
+         species.isolates.set(hit_.sseq_ictv.isolate_id, isolate);
 
-         if (isolate.exemplarOrAdditional === "E") {
+         if (isolate.isolateExemplar === "E") {
             species.exemplarIsolateID = isolate.isolateID;
          }
 
          // Update the species map.
-         speciesMap.set(hit_.ictv_id, species);
+         speciesMap.set(hit_.sseq_ictv.species_ictv_id, species);
       })
 
       return speciesMap;
@@ -200,9 +200,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       let accessionLink = Utils.createGenBankAccessionLink(isolate_.accession);
       
       // Is this an exemplar or an additional isolate?
-      let exemplarOrAdditional = isolate_.exemplarOrAdditional === "E" ? "Exemplar" : "Additional";
+      let exemplarOrAdditional = isolate_.isolateExemplar === "E" ? "Exemplar" : "Additional";
 
-      let virusNames = Utils.safeTrim(isolate_.virusNames);
+      let virusNames = Utils.safeTrim(isolate_.isolateName);
       if (virusNames.length < 1) { virusNames = "unknown"; }
 
       // Create rows for the HSPs
@@ -265,7 +265,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                </tr>
                <tr>
                   <th>Filename</th>
-                  <td>${file_.name}</td>
+                  <td>${file_.filename}</td>
                </tr>
                <tr>
                   <th>BLAST task</th>
@@ -280,8 +280,18 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Format the species' lineage.
       const lineage = this.formatLineage(species_, true);
       
+      
       let segment = Utils.safeTrim(species_.segmentName);
-      if (segment.length > 0) { segment = `<span class="segment-name">segment ${segment}</span>`; }
+      if (segment.length > 0) {
+
+         let linkedSegment = segment;
+         if (species_.segmentAccession.length > 0) {
+            const segmentURL = Utils.createGenBankAccessionLink(species_.segmentAccession, species_.segmentAccession);
+            
+         }
+
+         segment = `<span class="segment-name">segment ${segment}</span>`; 
+      }
 
       // Create a taxon details URL for this species.
       const taxonDetailsURL = CreateTaxonDetailsURL(species_.ictvID, species_.species);
@@ -410,15 +420,19 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       console.log("in initializeHspTables")
 
 
-      const hspTableEls = this.elements.blastHits.querySelectorAll(".isolate-group table.hsp-table");
+      const hspTableEls = this.elements.blastHits.querySelectorAll(".isolate-group table.hsp-table") as NodeListOf<HTMLTableElement>;
       if (hspTableEls == null || hspTableEls.length < 1) { return; }
 
       hspTableEls.forEach((hspTableEl_) => {
       
-         const isolateID = hspTableEl_.getAttribute("data-isolate-id");
+         console.log("hspTableEl_.dataset = ", hspTableEl_.dataset)
+         
+         const isolateID = hspTableEl_.dataset.isolateId;
+         //getAttribute("data-isolate-id");
          if (!isolateID) { return; }
 
-         const strHspCount = hspTableEl_.getAttribute("data-hsp-count");
+         const strHspCount = hspTableEl_.dataset.hspCount;
+         // hspTableEl_.getAttribute("data-hsp-count");
          const hspCount = parseInt(strHspCount);
          if (isNaN(hspCount)) { return; }
 
@@ -501,9 +515,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
       if (sequence.status === BlastStatus.NO_HITS) {
-         return this.displayErrorMessage(`No BLAST hits were found for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.name}`);
+         return this.displayErrorMessage(`No BLAST hits were found for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename}`);
       } else if (!Array.isArray(sequence.hits) || sequence.hits.length < 1) { 
-         return this.displayErrorMessage(`The BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.name} are invalid`);
+         return this.displayErrorMessage(`The BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} are invalid`);
       }
 
       // Use the BLAST task to determine the sequence type.
@@ -513,9 +527,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       this.includeProteinResults = [ BlastTask.blastp, BlastTask.blastx].includes(this.parent.job.data.task as BlastTask);
 
       // Consolidate the BLAST hits by species and isolates.
-      const speciesMap = this.consolidateBlastHits(sequence.hits, sequenceType);
+      const speciesMap = this.consolidateBlastHits(file.filename, sequence.hits, sequenceType);
       if (speciesMap === null || speciesMap.size < 1) { 
-         return this.displayErrorMessage(`The species information in the BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.name} is invalid`);
+         return this.displayErrorMessage(`The species information in the BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} is invalid`);
       }
 
       let speciesTilesHTML = "";

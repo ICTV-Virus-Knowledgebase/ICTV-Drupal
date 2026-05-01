@@ -1,0 +1,17 @@
+id: 'get_release_history'
+plugin_id: 'get_release_history'
+langcode: en
+status: true
+dependencies:
+  module:
+    - ictv_web_api
+    - serialization
+    - user
+granularity: resource
+configuration:
+  methods:
+    - GET
+  formats:
+    - json
+  authentication:
+    - cookie

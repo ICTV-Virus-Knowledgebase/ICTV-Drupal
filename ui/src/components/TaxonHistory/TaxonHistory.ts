@@ -1115,7 +1115,7 @@ export class TaxonHistory {
          this.identifiers = identifiers_;
       } else {
          // Look for identifier parameters in the query string.
-         this.identifiers = Utils.getIdentifiersFromURL(urlParams);
+         this.identifiers = Identifiers.getIdentifiersFromURL();
       }
 
       if (!Identifiers.isValid(this.identifiers)) { return await AlertBuilder.displayError("No valid identifiers were provided"); }

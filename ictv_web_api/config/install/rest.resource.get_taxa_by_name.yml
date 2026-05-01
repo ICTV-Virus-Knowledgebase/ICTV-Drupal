@@ -1,0 +1,17 @@
+id: 'get_taxa_by_name'
+plugin_id: 'get_taxa_by_name'
+langcode: en
+status: true
+dependencies:
+  module:
+    - ictv_web_api
+    - serialization
+    - user
+granularity: resource
+configuration:
+  methods:
+    - GET
+  formats:
+    - json
+  authentication:
+    - cookie

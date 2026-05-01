@@ -571,8 +571,13 @@
 }
 
 .ictv-custom .search-results-table .view-ctrl-column {
-   max-width: 70px;
-   width: fit-content;
+   vertical-align: middle;  /* optional */
+   white-space: nowrap;      /* keep buttons on one line */
+   width: 1%;               /* let table auto-size this column to content */
+}
+.ictv-custom .search-results-table .view-ctrl-column > button {
+   display: inline-block;
+   white-space: normal;     /* allow button text to wrap inside if needed */
 }
 
 .ictv-custom .search-results-table .view-search-result-ctrl {

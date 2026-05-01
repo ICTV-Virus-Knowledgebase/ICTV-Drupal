@@ -16,6 +16,7 @@ class Taxon {
   public ?string $levelName;
   public ?int $levelID;
   public ?string $lineage;
+  public ?int $mslReleaseNum;
   public ?int $nextDeltaCount;
   public ?int $nodeDepth;
   public ?int $numChildren;
@@ -28,40 +29,10 @@ class Taxon {
   public ?int $treeID;
   public ?string $memberOf = null;
 
-
-  // LRM (02102025): I was having issues using the constructor. For example, the arugments passed in array did not match what was found here.
-  // Possible C-tor arguments: ?string $childTaxaCount = NULL, ?string $filename, ?string $immediateChildTaxaCount, bool $isExpanded = false, bool $isReference = false,
-  // ?string $levelName, ?int $levelID, ?string $lineage, ?int $nextDeltaCount, ?int $nodeDepth, ?int $numChildren, ?int $parentID, ?int $parentLevelID,
-  // ?string $parentLevelName, ?int $prevDeltaCount, ?string $taxonName, ?int $taxnodeID, ?int $treeID
-  // C-tor
-  // public function __construct() {
-
-  //   $this->childTaxaCount = $childTaxaCount;
-  //   $this->filename = $filename;
-  //   $this->immediateChildTaxaCount = $immediateChildTaxaCount;
-  //   $this->isExpanded = $isExpanded;
-  //   $this->isReference = $isReference;
-  //   $this->levelName = $levelName;
-  //   $this->levelID = $levelID;
-  //   $this->lineage = $lineage;
-  //   $this->nextDeltaCount = $nextDeltaCount;
-  //   $this->nodeDepth = $nodeDepth;
-  //   $this->numChildren = $numChildren;
-  //   $this->parentID = $parentID;
-  //   $this->parentLevelID = $parentLevelID;
-  //   $this->parentLevelName = $parentLevelName;
-  //   $this->prevDeltaCount = $prevDeltaCount;
-  //   $this->taxonName = $taxonName;
-  //   $this->taxnodeID = $taxnodeID;
-  //   $this->treeID = $treeID;
-    
-  // }
-
   /**
    * Equivalent to `process()` in the C# code.
    * i.e. apply italics
    */
-
   public function process(): void {
     if ($this->taxonName !== null && Common::italicizeTaxaName($this->taxonName)) {
       $this->taxonName = "<i>{$this->taxonName}</i>";
@@ -84,6 +55,7 @@ class Taxon {
     $taxon->levelName               = $data['level_name'] ?? null;
     $taxon->levelID                 = isset($data['level_id']) ? (int)$data['level_id'] : null;
     $taxon->lineage                 = $data['lineage'] ?? null;
+    $taxon->mslReleaseNum           = isset($data['msl_release_num']) ? (int)$data['msl_release_num'] : 0;
     $taxon->nextDeltaCount          = isset($data['next_delta_count']) ? (int)$data['next_delta_count'] : 0;
     $taxon->nodeDepth               = isset($data['node_depth']) ? (int)$data['node_depth'] : 0;
     $taxon->numChildren             = isset($data['num_children']) ? (int)$data['num_children'] : 0;
@@ -109,6 +81,7 @@ class Taxon {
       'levelID'                 => $this->levelID,
       'lineage'                 => $this->lineage,
       'memberOf'                => $this->memberOf, // Calculated by getMemberOf()
+      'mslReleaseNum'           => $this->mslReleaseNum,
       'nextDeltaCount'          => $this->nextDeltaCount,
       'nodeDepth'               => $this->nodeDepth,
       'numChildren'             => $this->numChildren,

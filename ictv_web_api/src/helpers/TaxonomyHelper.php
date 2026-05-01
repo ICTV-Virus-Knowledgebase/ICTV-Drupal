@@ -41,6 +41,7 @@ class TaxonomyHelper {
       tl.name AS level_name,
       tl.id AS level_id,
       tn.lineage,
+      tn.msl_release_num,
       (SELECT COUNT(*) 
        FROM taxonomy_node_delta
        WHERE prev_taxid = tn.taxnode_id
@@ -471,8 +472,11 @@ class TaxonomyHelper {
     // If it's a reference species, add that star HTML
     $html .= $isRefHTML;
 
+    // Only include the CSS class "has-tooltip" for ranks above species.
+    $hasTooltip = $taxon->levelName != "species" ? " has-tooltip" : "";
+
     // The taxon node element
-    $html .= '<div class="tc-node has-tooltip" '
+    $html .= '<div class="tc-node'.$hasTooltip.'" '
       . 'data-id="' . $taxon->taxnodeID . '" '
 
       // dmd 04/28/26 Replaced data-child-taxa with data-tippy-content.

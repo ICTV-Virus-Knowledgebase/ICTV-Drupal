@@ -172,7 +172,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
 
-         console.log(`file ${fileIndex_}`)
+         console.log(`file ${fileIndex_}`, file_)
 
          file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
 
@@ -186,7 +186,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
             let row = `<tr class="${rowClass}">
                <td class="">${resultCount}</td>
-               <td class="">${file_.name}</td>
+               <td class="">${file_.filename}</td>
                <td class="">${sequence_.qseqid}</td>
                <td class="">${hits}</td>
                <td class="controls">
@@ -216,9 +216,9 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          })
       })
 
-      let html = `<table class="sequence-results-table">
+      let html = `<table class="query-results-table">
          <thead>
-            <tr>
+            <tr class="header-row">
                <th>#</th>
                <th>Filename</th>
                <th>Query ID</th>
@@ -513,7 +513,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          return;
       }
 
-      let html = this.createResultsTableHTML();
+      let resultsHTML = this.createResultsTableHTML();
 
       // Generate HTML for the search results.
       //this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
@@ -522,11 +522,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       
       // Populate the container
       this.elements.jobFiles.innerHTML = 
-         `<div class="sequence-results-title">Sequence results</div>
-         <div class="sequence-results">${html}</div>`;
+         `<div class="query-results-title">Query results</div>
+         <div class="query-results">${resultsHTML}</div>`;
 
       // Get references to DOM elements.
-      this.elements.sequenceResults = this.elements.jobFiles.querySelector(`.sequence-results`);
+      this.elements.sequenceResults = this.elements.jobFiles.querySelector(`.query-results`);
       if (!this.elements.sequenceResults) { throw new Error("Invalid sequence results element"); }
 
       // Add a click event handler.
