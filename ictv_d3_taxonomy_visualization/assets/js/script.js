@@ -44,7 +44,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    if (!taxonomyURL_) { throw new Error("Invalid taxonomy web service URL"); }
    const taxonomyURL = taxonomyURL_;
 
-   
+
    // Configuration settings (to replace hard-coded values below)
    const settings = {
       pageSize: 50,
@@ -72,14 +72,21 @@ window.ICTV.d3TaxonomyVisualization = function (
          interactiveBorder: 5,
          showDelay: 300
       },
-      xFactor: 0.5, // TODO: this is influencing Y offset, not X
-      yFactor: 300,
-      yOffset: 0,
-      zoom: {
-         scaleFactor: 0.19, //.17,
-         translateX: -(jQuery(window).width() * 2.5), //-3850,
-         translateY: -(jQuery(window).height() * 0.45), //-1800
-      },
+
+      // This was how the SVG was positioned before.
+      // The jQuery window made sense, but it was being multiplied by seemingly magic numbers for the view to show right.
+      // I implemented a different approach to hopefully be a more dynamic way of doing it.
+      // Search for DYNAMIC INITIAL ALIGNMENT to find implementation.
+      // ===========================================================================
+      // xFactor: 0.5, // TODO: this is influencing Y offset, not X
+      // yFactor: 300,
+      // yOffset: 0,
+      // zoom: {
+      //    scaleFactor: 0.19, //.17,
+      //    translateX: -(jQuery(window).width()), //-3850,
+      //    translateY: -(jQuery(window).height() * 0.45), //-1800
+      // },
+      // ===========================================================================
    };
 
    // Global variables
@@ -149,7 +156,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
    // Create an instance of the search panel object and initialize it.
    const searchPanel = new window.ICTV.SearchPanel(currentReleaseNumber, selectSearchResult, `${containerSelector} .search-results-panel`,
-   `${containerSelector} .search-panel`, taxonDetailsURL, taxonomyURL);
+      `${containerSelector} .search-panel`, taxonDetailsURL, taxonomyURL);
 
    searchPanel.initialize();
 
@@ -179,35 +186,36 @@ window.ICTV.d3TaxonomyVisualization = function (
       togglePaginate = document.querySelector(`${containerSelector} .header-panel .paginate-ctrl`);
       if (!togglePaginate) { throw new Error("Invalid paginate toggle Element"); }
 
-   togglePaginate.addEventListener("change", async function () {
-      if (!currentTreeRoot || !currentTreeUpdate) return;
+      togglePaginate.addEventListener("change", async function () {
+         if (!currentTreeRoot || !currentTreeUpdate) return;
 
-      // Re-display the current release to rebuild the tree with or without pagination
-      const releaseYear = releaseControlEl.value;
-      if (releaseYear) {
-         await displayReleaseTaxonomy(releaseYear);
+         // Re-display the current release to rebuild the tree with or without pagination
+         const releaseYear = releaseControlEl.value;
+         if (releaseYear) {
+            await displayReleaseTaxonomy(releaseYear);
          }
       });
    }
 
    // Follow target node as they're opened after clicking on search result
    // Called inside expandPath function
+   // TODO: It jumps over when it starts to pan, I need to leverage logic inside the Font Size slider to fix it.
    function panToNode(node, duration) {
-   if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
+      if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
 
-   const currentTransform = d3.zoomTransform(currentSvgZoom.node());
-   const scale = currentTransform.k;
+      const currentTransform = d3.zoomTransform(currentSvgZoom.node());
+      const scale = currentTransform.k;
 
-   // node.y = horizontal position, node.x = vertical position (tree is rotated)
-   const tx = (settings.svg.width / 3) - scale * node.y;
-   const ty = (settings.svg.height / 2) - scale * node.x;
+      // node.y = horizontal position, node.x = vertical position (tree is rotated)
+      const tx = (settings.svg.width / 3) - scale * node.y;
+      const ty = (settings.svg.height / 2) - scale * node.x;
 
-   currentSvgZoom.transition()
-      .duration(duration || settings.animationDuration)
-      .call(
-         currentZoom.transform,
-         d3.zoomIdentity.translate(tx, ty).scale(scale)
-      );
+      currentSvgZoom.transition()
+         .duration(duration || settings.animationDuration)
+         .call(
+            currentZoom.transform,
+            d3.zoomIdentity.translate(tx, ty).scale(scale)
+         );
    }
 
    // TODO: What button? Give this a better name!
@@ -216,6 +224,13 @@ window.ICTV.d3TaxonomyVisualization = function (
       // Get a reference to the panel Element.
       let buttonE1 = document.querySelector(`${containerSelector} .font-size-panel`);
       if (!buttonE1) { throw new Error("Invalid font size panel Element"); }
+
+	  // "Expand to Fit" button
+      let expandToFitBtn = d3
+         .select(`${containerSelector} .font-size-panel`)
+         .append("button")
+         .attr("class", "screenshot-button expand-to-fit-btn")
+         .html(`<i class="fa fa-expand"></i> Expand to Fit`)
 
       // Create a button.
       let buttonClickE1 = d3
@@ -374,14 +389,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                .style('font-style', 'normal')
                // adobe illustrator does not read text-transform
                // instead, use JS to capitalize the first letter for rank columns
-               .each(function() {
+               .each(function () {
                   // Get current text
                   let currentText = d3.select(this).text();
                   // Capitalize the first letter of the text
                   let capitalizedText = currentText.charAt(0).toUpperCase() + currentText.slice(1);
                   // Set the new text
                   d3.select(this).text(capitalizedText);
-              })
+               })
                // adobe illustrator likes this for text rotation
                .attr('transform', function (d, i) {
                   return 'rotate(-45, 50, 50)';
@@ -469,14 +484,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                .style('fill', 'black')
                // adobe illustrator does not read text-transform
                // instead, use JS to capitalize the first letter for rank columns
-               .each(function() {
+               .each(function () {
                   // Get current text
                   let currentText = d3.select(this).text();
                   // Capitalize the first letter of the text
                   let capitalizedText = currentText.charAt(0).toUpperCase() + currentText.slice(1);
                   // Set the new text
                   d3.select(this).text(capitalizedText);
-              })
+               })
                // adobe illustrator likes this for text rotation
                .attr('transform', function (d, i) {
                   return 'rotate(-45, 50, 50)';
@@ -547,6 +562,61 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
 
       });
+
+	  // Click handler for Expand to Fit
+      expandToFitBtn.on("click", function () {
+         if (!currentZoom || !currentSvgZoom || !currentTreeRoot) return;
+
+         // Get the bounds of the tree group to calculate the required scale
+         const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
+         if (group.empty()) return;
+
+         const bounds = group.node().getBBox();
+         const fullWidth = settings.svg.width;
+         const fullHeight = settings.svg.height;
+
+         if (bounds.width === 0 || bounds.height === 0) return;
+
+         // Calculate the scale needed to fit the tree within the viewable SVG area.
+         // Add a padding factor (e.g., 0.85) so it doesn't touch the very edges.
+         const padding = 0.85;
+         const scaleWidth = fullWidth / bounds.width;
+         const scaleHeight = fullHeight / bounds.height;
+         
+         // Use the smaller scale so the entire tree fits, but clamp it to reasonable min/max
+         let newScale = Math.min(scaleWidth, scaleHeight) * padding;
+         
+         // Fetch the horizontal (y) and vertical (x) coordinates of the topmost left node (Realm)
+         let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
+         let realmDataX = currentTreeRoot.children ? currentTreeRoot.children[0].x : (currentTreeRoot._children ? currentTreeRoot._children[0].x : 0);
+         
+         // Define exactly how many pixels away from the edges to pin the Realm node
+         let desiredLeftPadding = 20; 
+         // You might want to adjust desiredTopPadding based on the scale or keep it fixed
+         let desiredTopPadding = 70; 
+         
+         // Calculate target translations using the pinning logic from your font slider
+         let calculatedX = desiredLeftPadding - (realmDataY * newScale);
+         
+         // To center vertically instead of pinning to top, use bounds:
+         // let calculatedY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
+         // Pins nodes to the top left:
+         let calculatedY = desiredTopPadding - (realmDataX * newScale);
+
+         // Animate the zoom and translation so the tree fits bounds and aligns top-left
+         currentSvgZoom.transition()
+            .duration(settings.animationDuration)
+            .call(
+               currentZoom.transform,
+               d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
+            );
+            
+         // Sync sliders if needed (e.g., if you have ZoomSliderEl)
+         if (ZoomSliderEl) {
+            ZoomSliderEl.property("value", newScale);
+         }
+      });
+
    }
 
    let zoom = d3.zoom()
@@ -554,18 +624,6 @@ window.ICTV.d3TaxonomyVisualization = function (
          d3.select(`${containerSelector} .taxonomy-panel svg g`)
             .attr("transform", event.transform);
       });
-
-   var svg_zoom = d3
-      .select(`${containerSelector} .taxonomy-panel svg`)
-      .call(
-         zoom.translateBy,
-         settings.zoom.translateX,
-         settings.zoom.translateY
-      )
-      .call(zoom.scaleBy, settings.zoom.scaleFactor)
-      .call(zoom)
-      .on("dblclick.zoom", null);
-
 
    // Use the release year to lookup and return the corresponding release data.
    function getRelease(releaseYear) {
@@ -862,62 +920,38 @@ window.ICTV.d3TaxonomyVisualization = function (
          d3.selectAll(`${containerSelector} .taxonomy-panel text.pager-node-text`)
             .style("font-size", fontSize + "rem");
 
+
          if (currentTreeRoot && currentTreeUpdate) {
             currentTreeUpdate(currentTreeRoot);
 
             setTimeout(function () {
                if (!currentZoom || !currentSvgZoom || !initialZoomTransform) return;
 
-               const fontScale = (parseFloat(fontSize) || 4) / 4;
+               // Determine the new scale to accommodate the larger bounding box 
+               const fontScale = (parseFloat(currentFontSize) || 4) / 4;
                const newScale = initialZoomTransform.k / Math.sqrt(fontScale);
 
-               // 1. Find the horizontal (y) data coordinate of the first visible column (usually Realm)
-               let firstColY = currentTreeRoot.y;
-               if (currentTreeRoot.children && currentTreeRoot.children.length > 0) {
-                  firstColY = currentTreeRoot.children[0].y;
-               } else if (currentTreeRoot._children && currentTreeRoot._children.length > 0) {
-                  firstColY = currentTreeRoot._children[0].y;
-               }
+               // Fetch the horizontal (y) and vertical (x) coordinates of the first column
+               let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
+               let realmDataX = currentTreeRoot.children ? currentTreeRoot.children[0].x : (currentTreeRoot._children ? currentTreeRoot._children[0].x : 0);
+               
+               // Define exactly how many pixels away from the edges to pin the Realm node
+               let desiredLeftPadding = 20; 
+               let desiredTopPadding = 70; 
+               
+               // Calculate target translations
+               let calculatedX = desiredLeftPadding - (realmDataY * newScale);
+               let calculatedY = desiredTopPadding - (realmDataX * newScale);
 
-               // 2. Identify where this column originally anchored to the screen at a normal font size (fontScale = 1).
-               // Since your update() does `d.y = d.depth * w * fontScale`, dividing by fontScale gives you original unscaled Y.
-               const originalY = firstColY / fontScale;
-               const targetScreenX = initialZoomTransform.x + (originalY * initialZoomTransform.k);
+               // Anchor the SVG using the calculations
+               currentSvgZoom.transition()
+                  .duration(100) // fast transition since the slider is being dragged
+                  .call(
+                     currentZoom.transform,
+                     d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
+                  );
 
-               // 3. Set txDefault so that after scaling, this column stays EXACTLY at that screen coordinate
-               const txDefault = targetScreenX - (firstColY * newScale);
-
-               // 4. Vertical default logic (scaling cleanly outward from the center of the viewport)
-               const scaleRatio = newScale / initialZoomTransform.k;
-               const svgHeight = settings.svg.height;
-               const tyDefault = (svgHeight / 2) - scaleRatio * ((svgHeight / 2) - initialZoomTransform.y);
-
-
-               if (selectedNode && !isNaN(selectedNode.x) && !isNaN(selectedNode.y)) {
-                  // A node is selected — re-center on it at the adjusted scale
-                  const txSelected = (settings.svg.width / 2) - newScale * selectedNode.y;
-                  const tySelected = (settings.svg.height / 2) - newScale * selectedNode.x;
-
-                  // Use whichever tx is smaller (more scrolled to the right) to avoid drifting left of the base alignment
-                  const tx = Math.min(txSelected, txDefault);
-                  const ty = tx === txDefault ? tyDefault : tySelected;
-
-                  currentSvgZoom.transition()
-                     .duration(100)
-                     .call(
-                        currentZoom.transform,
-                        d3.zoomIdentity.translate(tx, ty).scale(newScale)
-                     );
-               } else {
-                  // No node is selected — cleanly anchor using the initial-position logic
-                  currentSvgZoom.transition()
-                     .duration(100)
-                     .call(
-                        currentZoom.transform,
-                        d3.zoomIdentity.translate(txDefault, tyDefault).scale(newScale)
-                     );
-               }
-
+               // Optionally sync the zoom slider with the newly applied scale
                if (ZoomSliderEl) {
                   ZoomSliderEl.property("value", newScale);
                }
@@ -1014,12 +1048,12 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       // Determine the filename for the taxonomy JSON file.
       const jsonFilename = `${dataURL}/data/taxonomy_${releaseYear_}.json`;
-      
+
       // lrm 6-20-2024
       // nonSpeciesFilename was being loaded twice, I took the commented code above
       // and put it where it was being loaded a 2nd time.
       d3.json(jsonFilename).then(function (data) {
-         
+
          var genus = false;
 
          // Set the width and height available within the SVG.
@@ -1061,9 +1095,9 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          // TODO: Consider renaming "ds" to "root"
          const ds = d3.hierarchy(data, function (d) {
-            
+
             if (d.children === null) { return; }
-            
+
             do {
                let str = d.child_counts;
                var result;
@@ -1086,7 +1120,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      }
                   }
                }
-            } 
+            }
             while (num > 1000);
             const max = Math.max(...arr);
             num_flag = true;
@@ -1124,27 +1158,19 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             var svg_zoom = d3
                .select(`${containerSelector} .taxonomy-panel svg`)
-               .call(
-                  zoom.translateBy,
-                  settings.zoom.translateX,
-                  settings.zoom.translateY
-               )
-               .call(zoom.scaleBy, settings.zoom.scaleFactor)
                .call(zoom)
                .on("dblclick.zoom", null);
 
-            // Variables declared at the top to handle svg resizing once the font slider give horizontal/vertical spacing to account for bigger font
             currentZoom = zoom;
             currentSvgZoom = svg_zoom;
-            initialZoomTransform = d3.zoomTransform(svg_zoom.node());
+            // Delaying initialZoomTransform until tree is dynamically aligned below.
 
             // Use d3 to generate the tree layout/structure.
             const treeLayout = d3.tree().size([availableHeight, availableWidth]);
 
             treeLayout(ds);
 
-
-            // initializePagination(ds, settings.pageSize);
+            // Update tree based on pagination option.
             if (isPaginationEnabled()) {
                initializePagination(ds, settings.pageSize);
             } else {
@@ -1158,26 +1184,36 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             update(ds);
 
-            // If font size has been changed from default, apply zoom compensation
-            // so the tree doesn't appear too zoomed in when rebuilt
-            if (currentFontSize && parseFloat(currentFontSize) !== 4) {
-               const fontScale = parseFloat(currentFontSize) / 4;
-               const newScale = initialZoomTransform.k / Math.sqrt(fontScale);
-               const scaleRatio = newScale / initialZoomTransform.k;
-               const leftPadding = (1 - scaleRatio) * settings.svg.width * 0.09;
-               const newTx = scaleRatio * initialZoomTransform.x - leftPadding;
-               const svgHeight = settings.svg.height;
-               const newTy = svgHeight / 2 - scaleRatio * (svgHeight / 2 - initialZoomTransform.y);
+            // ================================================================================================
+            //                                    DYNAMIC INITIAL ALIGNMENT
+            // ================================================================================================
+            // Get horizontal (y) and vertical (x) coordinates of the first column
+            // Check both children and _children in case the node is collapsed.
+            let realmDataY = ds.children ? ds.children[0].y : (ds._children ? ds._children[0].y : 0);
+            let realmDataX = ds.children ? ds.children[0].x : (ds._children ? ds._children[0].x : 0);
+            
+            // Set initial scale factor (e.g. 0.19)
+            let startScale = 0.19; 
+            
+            // Define how many pixels away from the left edge of the screen the Realm should sit
+            let desiredLeftPadding = 20; 
 
-               svg_zoom.call(
-                  zoom.transform,
-                  d3.zoomIdentity.translate(newTx, newTy).scale(newScale)
-               );
-
-               if (ZoomSliderEl) {
-                  ZoomSliderEl.property("value", newScale);
-               }
-            }
+            // Define exactly how many pixels from the top edge the first row to sit
+            let desiredTopPadding = 50; 
+            
+            // Calculate translations
+            let calculatedX = desiredLeftPadding - (realmDataY * startScale);
+            let calculatedY = desiredTopPadding - (realmDataX * startScale);
+            
+            // Apply the exact calculation
+            svg_zoom.call(
+               zoom.transform,
+               d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
+            );
+            
+            // Capture this as a starting baseline for font-resizing logic
+            initialZoomTransform = d3.zoomTransform(svg_zoom.node());
+            // ================================================================================================
 
             function update(source) {
 
@@ -1191,13 +1227,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                var currentNodeCount = parent.length;
                const fontScale = (currentFontSize || 4) / 4; // 4 is the default/min font size
                const scaleFactor = Math.min(1, settings.svg.height / 90);
-               // const dx = 21 * scaleFactor;
-               const dx = 21 * scaleFactor * fontScale;  // vertical spacing scales with font
-               // const dy = settings.svg.height / (currentNodeCount + 1);
+               const dx = 21 * scaleFactor;
+               // const dx = 21 * scaleFactor * fontScale;  // vertical spacing scales with font
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
                var links = info.descendants().slice(1);
-               // console.log(links);
                const treeNodes = treeLayout(ds);
                treeNodes.each((d) => {
                   const x = d.x; // the x-coordinate of the node in the layout
@@ -1205,6 +1239,10 @@ window.ICTV.d3TaxonomyVisualization = function (
                   // use x and y to position the node in the visualization
                });
 
+               // This overrides the positioning of the x and y coordinate from treeNodes.each((d).
+               // The original developers did this to fit the ranks into the viewport (I think).
+               // TODO: I do not like how it is using magic numbers, I may need to find a way to do this more dynamically based on users viewport. 
+               // But for now, it works fine.
                parent.forEach(function (d) {
                   var h = settings.svg.height / 125;
                   var w = (settings.svg.width * 5) / rankCount;
@@ -1223,11 +1261,13 @@ window.ICTV.d3TaxonomyVisualization = function (
                   if (typeof result === "string" && result.length > 0) {
                      num = parseInt(result.match(/\d+/)[0]);
                   }
-
-                  d.x = d.x * h;                               // vertical position
+                  
+                  // You can use Math.sqrt to minimize the space, if needed.
                   // d.x = d.x * h * Math.sqrt(fontScale);
-                  // d.y = d.depth * w * Math.sqrt(fontScale);    // horizontal position
-                  d.y = d.depth * w * fontScale;
+                  // d.y = d.depth * w * Math.sqrt(fontScale);
+
+                  d.x = d.x * h;                 // vertical position of nodes
+                  d.y = d.depth * w * fontScale; // horizontal position of nodes
                });
 
                var children = svg.selectAll("g.node").data(parent, function (d) {
@@ -1276,7 +1316,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .on("click", click);
 
                // Append the bridging rect ONLY for ghost nodes
-               Enter.filter(function(d) { return isGhostNode(d); })
+               Enter.filter(function (d) { return isGhostNode(d); })
                   .append("rect")
                   .attr("class", "ghost-bridge")
                   .style("stroke", "black")
@@ -1291,7 +1331,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .attr("class", "node")
                   .style("stroke", "black")
                   .style("stroke-width", `${settings.node.strokeWidth}px`)
-                  
+
                   // Make tree/root node invisible?
                   .style("opacity", function (d) {
                      return !d.data.parentDistance ? 0 : 1;
@@ -1376,7 +1416,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      if (d.data.name === "Unassigned" || d.data.rankName === "tree") {
                         if (d.data.taxNodeID === "legend") {
                            return d.data.rankName;
-                        } 
+                        }
                         else if (
                            d.data.rankName === "realm" ||
                            d.data.has_assigned_siblings === true
@@ -1416,7 +1456,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      // return d.bbox.height;
                   })
                   // .style("fill", "white")
-                  .style("fill", function(d) {
+                  .style("fill", function (d) {
                      return isGhostNode(d) ? "transparent" : "white";
                   })
                   .attr("dx", settings.node.textDx)
@@ -1435,7 +1475,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("stroke-width", "2px")
                   .style("fill", function (d) {
                      // Need to return findParent(d) so it actually applies the color!
-                     return findParent(d); 
+                     return findParent(d);
                   })
                   .attr("cursor", "pointer");
 
@@ -1452,14 +1492,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                         return settings.node.radius;
                      }
                   })
-                  
+
                   .style("fill", function (d) {
 
                      // lrm 5-20-2024
                      // update DOM element's appended circle when clicked
                      if (this === clickedCircle) {
                         return "#006CB5";
-                     } else  if(this !== clickedCircle){
+                     } else if (this !== clickedCircle) {
                         return "white";
                      }
 
@@ -1476,7 +1516,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      // lrm 5-30-2024
                      // clicked text is the highlighted text
                      // clickedText is global varible assigned in the click function
-                     if(this == clickedText){
+                     if (this == clickedText) {
                         return "#006CB5";
                      } else {
                         return "#000000";
@@ -1502,7 +1542,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      // lrm 6-10-2024
                      // clicked text is the highlighted text
                      // clickedText is global varible assigned in the click function
-                     if(this == clickedText){
+                     if (this == clickedText) {
                         return "#006CB5";
                      } else {
                         return "#000000";
@@ -1513,7 +1553,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("font-size", fontSliderEl.property("value") + "rem");
 
                updateTextRect(Update);
-                  
+
                var Exit = children
                   .exit()
                   .transition()
@@ -1569,7 +1609,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   });
 
                var linkUpdate = linkEnter.merge(link);
-                  
+
 
                linkUpdate
                   .transition("path.link")
@@ -1580,7 +1620,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      // Do not draw links to ghost nodes
                      // This helps the link line colors stay consistent
                      if (!isGhostNode(d)) {
-                        if (isPagerNode(d)){
+                        if (isPagerNode(d)) {
                            return null;
                         }
                         if (isGhostNode(d.parent)) {
@@ -1640,6 +1680,10 @@ window.ICTV.d3TaxonomyVisualization = function (
                   return path;
                }
 
+               // var simulation = d3
+               //    .forceSimulation()
+               //    .force("link", d3.forceLink().distance(500).strength(0.1));
+
                function findParent(par) {
                   if (par.depth < 2) {
                      return par.data.name;
@@ -1669,7 +1713,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      if (d.children) {
                         collapseNode(d);
-                     } else if (d._children){
+                     } else if (d._children) {
                         expandNode(d);
                      }
 
@@ -1682,13 +1726,13 @@ window.ICTV.d3TaxonomyVisualization = function (
                      update(d);
                   }
                }
-               
+
                // lrm 5-20-2024
                // function to determine what is a ghost node
                function isGhostNode(d) {
                   if (!d || !d.data) {
                      return false;
-                 }
+                  }
 
                   if (d.data.rank_index === 0) {
                      // “Tree” has a rank index of zero and a numeric comparison is faster than a string comparison.
@@ -1707,16 +1751,19 @@ window.ICTV.d3TaxonomyVisualization = function (
                // It will traverse until it finds a parent that is not a ghost node
                function findNonGhostParent(node) {
                   if (node.parent) {
-                      if (isGhostNode(node.parent)) {
-                          return findNonGhostParent(node.parent);
-                      } else {
-                          return node.parent;
-                      }
+                     if (isGhostNode(node.parent)) {
+                        return findNonGhostParent(node.parent);
+                     } else {
+                        return node.parent;
+                     }
                   } else {
-                      return null;
+                     return null;
                   }
-              }
- 
+               }
+
+               // The first parameter is the element that acts as a delegate for child elements with
+               // tippy instances. The second parameter defines the tippy instances that will be assigned
+               // to the child elements (qualified by the "target" attribute). 
                //
                // https://atomiks.github.io/tippyjs/
                window.tippy.delegate(`${containerSelector} svg`, {
@@ -1761,7 +1808,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      instance.setContent(html);
                   },
-                  
                   placement: "left-start",
                   target: "g.node text.node-text",
                   theme: "ICTV-Tooltip"
@@ -1894,10 +1940,6 @@ window.ICTV.d3TaxonomyVisualization = function (
             if (pageChanged || expanded) {
                currentTreeUpdate(parentNode);
 
-               // Call panToNode helper function at subfamily rank (it does not need to pan from the beginning)
-               // if (currentNode.depth >= 8) {
-               //    panToNode(currentNode, settings.animationDuration);
-               // }
                panToNode(currentNode, settings.animationDuration);
                await wait(settings.animationDelay);
             }
@@ -1936,9 +1978,6 @@ window.ICTV.d3TaxonomyVisualization = function (
             circleToHighlight.style.fill = "#006CB5";
             clickedCircle = circleToHighlight;
          }
-
-         // panToNode(node, settings.animationDuration + 100);
-         
       }
 
       async function openNodes() {
@@ -1971,53 +2010,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       }
 
       setTimeout(openNodes, settings.animationDelay);
-
-      // TODO: Use lineage to select taxa nodes after the tree has been refreshed
-
-      /*-------------------------------------------------------------------------------------------------------------------
-
-      NOTE: this commented code is the previous attempt to select a node using taxnodeID. It worked in 
-      some cases, but broke when there was a "ghost node". Ghost nodes are ranks that are missing 
-      in a lineage. For example, in the lineage of species "White spot syndrome virus", there isn't a
-      taxon with the rank "Order" between Class and Family:
-
-         Class: Naldaviricetes
-         Family: Nimaviridae
-         Genus: Whispovirus
-         Species: White spot syndrome virus
-
-      I left the code here in case it provides any inspiration.
-      
-      -------------------------------------------------------------------------------------------------------------------
-
-
-      // Older code
-      name = "";
-      const taxa = lineage_.split(">");
-      taxa.forEach((taxon_) => {
-         console.log(taxon_)
-         name = taxa[0];
-         collapse(name);
-         console.log("name", taxon_.pa);
-
-      })
-      console.log(taxa.length)
-      len = taxa.length
-      Sflag = true;
-      res = taxa;
-      svg_zoom
-         .transition()
-         .call(
-            zoom.transform,
-            d3.zoomIdentity
-               .translate(settings.zoom.translateX, settings.zoom.translateY)
-               .scale(1 / 0.19)
-         )
-         .on("end", function () {
-            svg_zoom.transition()
-               .duration(750)
-               .call(zoom.scaleBy, settings.zoom.scaleFactor);
-         });*/
    }
 
 };
