@@ -200,23 +200,57 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Follow target node as they're opened after clicking on search result
    // Called inside expandPath function
    // TODO: It jumps over when it starts to pan, I need to leverage logic inside the Font Size slider to fix it.
-   function panToNode(node, duration) {
+   // 20260505: It still jumps, but it is not as aggressive
+   function panToNode(node, duration, expandToFit = false) {
       if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
+
+      if (expandToFit) {
+         // Grab bounding box of the whole tree to scale out
+         const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
+         if (group.empty()) return;
+
+         const bounds = group.node().getBBox();
+         const fullWidth = settings.svg.width;
+         const fullHeight = settings.svg.height;
+
+         if (bounds.width === 0 || bounds.height === 0) return;
+
+         const padding = 0.85;
+         const scaleWidth = fullWidth / bounds.width;
+         const scaleHeight = fullHeight / bounds.height;
+         let newScale = Math.min(scaleWidth, scaleHeight) * padding;
+
+         // Center the bounding box perfectly in the SVG viewport
+         let finalX = (fullWidth / 2) - newScale * (bounds.x + bounds.width / 2);
+         let finalY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
+
+         currentSvgZoom.transition()
+            .duration(duration || settings.animationDuration)
+            .call(
+               currentZoom.transform,
+               d3.zoomIdentity.translate(finalX, finalY).scale(newScale)
+            );
+            
+         // Sync zoom slider
+         if (ZoomSliderEl) ZoomSliderEl.property("value", newScale);
+         
+         return; // Exit early, skipping the normal node-panning logic
+      }
 
       const currentTransform = d3.zoomTransform(currentSvgZoom.node());
       const scale = currentTransform.k;
-
+      
       // node.y = horizontal position, node.x = vertical position (tree is rotated)
-      const tx = (settings.svg.width / 3) - scale * node.y;
+      const tx = (settings.svg.width / 6) - scale * node.y;
       const ty = (settings.svg.height / 2) - scale * node.x;
 
-      currentSvgZoom.transition()
-         .duration(duration || settings.animationDuration)
-         .call(
-            currentZoom.transform,
-            d3.zoomIdentity.translate(tx, ty).scale(scale)
-         );
-   }
+         currentSvgZoom.transition()
+            .duration(duration || settings.animationDuration)
+            .call(
+               currentZoom.transform,
+               d3.zoomIdentity.translate(tx, ty).scale(scale)
+            );
+      }
 
    // TODO: What button? Give this a better name!
    function initializeButton() {
@@ -611,7 +645,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
             );
             
-         // Sync sliders if needed (e.g., if you have ZoomSliderEl)
+         // Sync sliders
          if (ZoomSliderEl) {
             ZoomSliderEl.property("value", newScale);
          }
@@ -870,15 +904,25 @@ window.ICTV.d3TaxonomyVisualization = function (
          .attr("type", "range")
          .attr("min", 0.19)
          .attr("max", 1)
-         .attr("step", 0.01)
+         .attr("step", 0.001)
          .attr("value", 0.19);
 
       ZoomSliderEl.on("input", function (e) {
-         const zoomValue = e.target.value;
-         const svg = d3.select(`${containerSelector} .taxonomy-panel svg`);
+         const zoomValue = parseFloat(e.target.value);
+         // const svg = d3.select(`${containerSelector} .taxonomy-panel svg`);
 
-         let currentTransform = d3.zoomTransform(svg.node());
-         svg.call(zoom.transform, d3.zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(zoomValue));
+         // let currentTransform = d3.zoomTransform(svg.node());
+         // svg.call(zoom.transform, d3.zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(zoomValue));
+
+         // Make sure the tree is fully loaded
+         if (currentZoom && currentSvgZoom) {
+            // Find the exact center of the SVG viewport
+            const centerX = settings.svg.width / 2;
+            const centerY = settings.svg.height / 2;
+            
+            // Use D3's native scaleTo logic to zoom in around that specific center point
+            currentSvgZoom.call(currentZoom.scaleTo, zoomValue, [centerX, centerY]);
+         }
       });
    }
 
@@ -1227,8 +1271,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                var currentNodeCount = parent.length;
                const fontScale = (currentFontSize || 4) / 4; // 4 is the default/min font size
                const scaleFactor = Math.min(1, settings.svg.height / 90);
-               const dx = 21 * scaleFactor;
-               // const dx = 21 * scaleFactor * fontScale;  // vertical spacing scales with font
+               // const dx = 21 * scaleFactor;
+               const dx = 21 * scaleFactor * fontScale;  // vertical spacing scales with font
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
                var links = info.descendants().slice(1);
@@ -2004,6 +2048,9 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
 
          await highlightNode(finalNode);
+
+         // --- Trigger the final expand-to-fit centered view ---
+         panToNode(finalNode, settings.animationDuration, true);
 
          paginationData.childDisplayOrder = NaN;
          paginationData.parentTaxnodeID = null;
