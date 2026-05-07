@@ -79,7 +79,7 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
          `<div class="input-group search-controls">
             <input type="text" class="form-control search-text" placeholder="Search current release..." spellcheck="false" />
             <button class="btn search-button"><i class="fa fa-search"></i> Search</button>
-            <button class="btn clear-button"><i class="fa fa-times"></i> Reset</button>
+            <button class="btn clear-button"><i class="fa fa-times"></i> Clear</button>
          </div>
          <div class="all-releases-row">
             <input type="checkbox" class="include-all-releases" />
@@ -193,11 +193,9 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
       const searchResults = await jQuery.ajax({
          dataType: "json",
          processData: true,
-         type: "POST",
+         type: "GET",
          url: self.taxonomyURL,
          data: {
-            // action_code: "search_visual_taxonomy",
-            action_code: "search_taxonomy",
             current_release: self.releaseNumber.current,
             include_all_releases: includeAllReleases,
             search_text: searchText,
