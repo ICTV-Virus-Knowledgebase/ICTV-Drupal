@@ -10,6 +10,8 @@ export class BlastIsolate {
 
    accession: string;
    hsps: BlastHSP[];
+   isolateAbbrev: string;
+   isolateDesignation: string;
    isolateExemplar: string;
    isolateID: string;
    isolateName: string; 
@@ -23,9 +25,11 @@ export class BlastIsolate {
       if (hit_ === null) { throw new Error("Invalid BLAST hit in BlastIsolate"); }
 
       this.accession = null; // This should be populated below.
+      this.isolateAbbrev = Utils.safeTrim(hit_.sseq_ictv.isolate_abbrev);
+      this.isolateDesignation = Utils.safeTrim(hit_.sseq_ictv.isolate_designation);
       this.isolateExemplar = Utils.safeTrim(hit_.sseq_ictv.isolate_exemplar);
-      this.isolateID = hit_.sseq_ictv.isolate_id;
-      this.isolateName = hit_.sseq_ictv.isolate_name;
+      this.isolateID = Utils.safeTrim(hit_.sseq_ictv.isolate_id);
+      this.isolateName = Utils.safeTrim(hit_.sseq_ictv.isolate_name);
       if (!this.isolateName) { this.isolateName = "unknown"; }
 
       this.sequenceLength = hit_.length;

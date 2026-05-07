@@ -18,7 +18,7 @@ export enum BlastStatus {
 // The available BLAST programs.
 export enum BlastTask {
    megablast = "megablast",
-   dcMegablast = "dc-megablast",
+   dcMegablast = "dcMegablast",
    blastn = "blastn",
    blastp = "blastp",
    blastx = "blastx"
@@ -60,11 +60,13 @@ export enum Icon {
    dna = `<i class=\"fa-solid fa-dna\"></i>`,
    edit = `<i class=\"fa-solid fa-pen-to-square\"></i>`,
    error = `<i class=\"fa-solid fa-triangle-exclamation error\"></i>`,
+   files = `<i class=\"fa-regular fa-files\"></i>`,
    download = `<i class=\"fa fa-download\"></i>`,
    html = `<i class=\"fa-regular fa-file-lines\"></i>`,
    info = `<i class=\"fa-solid fa-circle-info\"></i>`,
    lineageDelimiter = `<i class=\"fa-light fa-chevron-right\"></i>`,
    link = `<i class=\"fa-solid fa-link\"></i>`,
+   magicWand = `<i class=\"fa-solid fa-wand-magic-sparkles\"></i>`,
    next = `<i class=\"fa-regular fa-angle-right\"></i>`,
    paste = `<i class=\"fa-solid fa-paste\"></i>`,
    run = `<i class="fa-sharp fa-circle-play"></i>`,
@@ -157,6 +159,37 @@ export const Constants = {
 // Functions
 //----------------------------------------------------------------------------------------------------------------
 
+/*
+export function CreateInfoIcon(infoHTML_: string, infoKey_: string, label_: string, title_: string): string {
+
+   infoHTML_ = Utils.safeTrim(infoHTML_);
+   if (infoHTML_.length < 1) { throw new Error("Invalid info HTML parameter"); }
+
+   const encodedHTML = Utils.htmlEncode(infoHTML_);
+   
+   infoKey_ = Utils.safeTrim(infoKey_);
+   if (infoKey_.length < 1) { throw new Error("Invalid info key parameter"); }
+
+   label_ = Utils.safeTrim(label_);
+   if (label_.length < 1) { throw new Error("Invalid label parameter"); }
+   
+   title_ = Utils.safeTrim(title_);
+   if (title_.length < 1) { title_ = label_; }
+
+   let tooltipText = `Click to view more information about ${label_}`;
+
+   let html = `<i 
+      class=\"fa-solid fa-circle-info info-icon has-tooltip\"
+      data-html=\"${encodedHTML}\"
+      data-info-key=\"${infoKey_}\"
+      data-tippy-content=\"${tooltipText}\"
+      data-title=\"${title_}\"
+   ></i>`;
+
+   return html;
+}*/
+
+
 // Return a lowercase version of the name and replace whitespace with underscores.
 export function CreateKeyFromName(name_: string): string {
    return name_.toLowerCase().replace(/\W+/g, '_');
@@ -235,7 +268,7 @@ export function GenerateUUID() {
 
 
 // Labels for the available BLAST programs.
-export function GetBlastTaskDescription(task_: BlastTask|string) {
+export function GetBlastTaskDescription(task_: BlastTask|string): string {
 
    let label = "";
 
@@ -265,6 +298,57 @@ export function GetBlastTaskDescription(task_: BlastTask|string) {
 
    return label;
 }
+
+export function GetBlastTaskInfo(task_: BlastTask): string {
+
+   let text = "";
+
+   switch (task_) {
+      case BlastTask.blastn:
+         text = `<ul>
+            <li><b>What it does:</b> Compares a nucleotide query sequence against a nucleotide database to find regions of similarity.</li>
+            <li><b>When to use:</b> General nucleotide-nucleotide searches (e.g., DNA vs. DNA) where you want alignments that include mismatches and gaps. Good for detecting more distant homology than highly optimized nucleotide modes.</li>
+            <li><b>Key behavior:</b> Uses a nucleotide substitution scoring scheme and default word sizes tuned for sensitivity; can detect shorter or less-conserved matches than megablast.</li>
+         </ul>`;
+         break;
+      case BlastTask.blastp:
+         text = `<ul>
+            <li><b>What it does:</b> Compares an amino-acid (protein) query against a protein database to find similar proteins.</li>
+            <li><b>When to use:</b> Protein-protein similarity searches (e.g., annotate proteins, find homologs, infer function).</li>
+            <li><b>Key behavior:</b> Uses protein substitution matrices (e.g., BLOSUM62) and gap penalties appropriate for proteins; reports percent identity, positives, and alignment scores.</li>
+         </ul>`;
+         break;
+      case BlastTask.dcMegablast:
+         text = `<ul>
+            <li><b>What it does:</b> A variant of megablast that uses a discontiguous word (spaced seed) model to improve sensitivity for moderately diverged nucleotide sequences while retaining speed.</li>
+            <li><b>When to use:</b> Best when comparing more divergent nucleotide sequences than megablast can detect (e.g., different species within a genus) but you still want faster performance than blastn.</li>
+            <li><b>Key behavior:</b> Uses spaced seeds (patterns allowing mismatches within the word) to catch alignments with substitutions; balanced between speed and sensitivity.</li>
+         </ul>`;
+         break;
+      case BlastTask.megablast:
+         text = `<ul>
+            <li><b>What it does:</b> Fast nucleotide-nucleotide search optimized for finding highly similar sequences (near-exact matches).</li>
+            <li><b>When to use:</b> Best for comparing closely related DNA sequences (e.g., same species, strains, rapid identification, contamination checks). Use when high speed and high identity matches are expected.</li>
+            <li><b>Key behavior:</b> Uses large word sizes and greedy/heuristic extensions to maximize speed; less sensitive for distant relationships.</li>
+         </ul>`;
+         break;
+      case BlastTask.blastx:
+         text = `<ul>
+            <li><b>What it does:</b> Translates a nucleotide query in all six reading frames and searches the resulting conceptual proteins against a protein database.</li>
+            <li><b>When to use:</b> When you have nucleotide sequences (e.g., contigs, transcripts) and want to find protein-level matches (e.g., to detect coding regions, distant homology, or frame-shifted genes).</li>
+            <li><b>Key behavior:</b> Reports frame(s) producing significant protein matches and aligns translated query to protein subjects; more sensitive for detecting coding similarity than nucleotide–nucleotide comparisons.</li>
+            <li><b>Input type:</b> nucleotide or protein (or nucleotide translated).</li>
+            <li><b>Best for:</b> short phrase (e.g., "close nucleotide matches", "protein homology", "translated nucleotide → protein").</li>
+            <li><b>Speed vs sensitivity:</b> quick indicator (fast / balanced / sensitive).</li>
+         </ul>`;
+         break;
+      default:
+         text = `Unknown task \"${(task_ as string)}\"`;
+   }
+
+   return text;
+}
+
 
 export function GetSequenceTypeFromBlastTask(task_: BlastTask) {
    switch(task_) {
@@ -352,6 +436,7 @@ export function ToggleAccordion(containerEl: HTMLElement, itemID_: string) {
    return;
 }
 
+/*
 // Is this a valid FASTA filename?
 export function ValidateFastaFilename(filename_: string): boolean {
 
@@ -367,4 +452,4 @@ export function ValidateFastaFilename(filename_: string): boolean {
    if (!extension) { return false; }
 
    return Constants.ACCEPTED_FILE_TYPES.includes(extension);
-}
+}*/

@@ -9,7 +9,8 @@
    --ictv-dark-grey-color: #555;
    --ictv-disabled-color: #999;
    --ictv-grey-color: #777;
-   --ictv-icon-color: #888;
+   --ictv-icon-color: #999;
+   --ictv-info-icon-color: #155daa;
    --ictv-lightest-grey-color: #efefef;
    --ictv-light-grey-color: #888;
    --ictv-link-color: #0066cc;
@@ -35,7 +36,7 @@
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
-   font-size: 0.9rem;
+   font-size: 0.8rem;
    margin-right: 0.5rem;
    padding: .2rem .5rem;
    text-align: center;
@@ -47,7 +48,15 @@
    pointer-events: none;
 }
 
-
+#ictv_taxablast_container i.info-icon {
+   background-color: #fff;
+   border-radius: 15px;
+   color: var(--ictv-icon-color);
+   cursor: pointer;
+   font-size: 0.8rem;
+   text-align: center;
+   vertical-align: middle;
+}
 
 /* Icons in the FASTA dialog's message section */
 #fasta_dialog .fasta-message i.success {
@@ -146,7 +155,7 @@
    border-style: solid;
    border-width: 1px;
    cursor: pointer;
-   font-size: 0.9rem;
+   /*font-size: 0.9rem;*/
    margin-right: 0.5rem;
    padding: .2rem .5rem;
    text-align: center;
@@ -212,6 +221,14 @@ The panel title
 
 /* The panel controls */
 #ictv_taxablast_container .panel-controls {
+   align-items: center;
+   display: flex;
+   flex-flow: row;
+   justify-content: flex-start;
+   margin: 0 0 0.5rem 0;
+   width: 100%;
+}
+#ictv_taxablast_container .blast-hits-panel-controls {
    align-items: center;
    display: flex;
    flex-flow: row;
@@ -296,9 +313,8 @@ The panel title
 }
 
 #ictv_taxablast_container .ictv-accordion-control {
-   /*color: #fff;*/
    font-weight: 400;
-   /*padding: 0.5rem 1.0rem 0.5rem 0.5rem;*/
+   min-width: 2.5rem;
    text-align: center;
    transition: ease .3s transform;
    width: 2.5rem;
@@ -396,10 +412,19 @@ The panel title
    width: 100%;
 }
 #ictv_taxablast_container .blast-hits .species-accordion-label {
-   font-weight: normal; /* placeholder */
+   /*align-items: top;*/
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-between;
+   width: 100%;
+}
+#ictv_taxablast_container .blast-hits .species-accordion-label .left-side {
+   display: flex;
+   flex-flow: column;
+   justify-content: flex-start;
 }
 #ictv_taxablast_container .blast-hits .species-rank-and-name {
-   align-items: flex-start;
+   align-items: baseline;
    display: flex;
    flex-flow: row nowrap;
    font-size: 1.2rem;
@@ -411,9 +436,33 @@ The panel title
 }
 #ictv_taxablast_container .blast-hits .species-rank-and-name .species-name {
    font-style: italic;
-   font-weight: 700;
    white-space: nowrap;
 }
+#ictv_taxablast_container .blast-hits .species-rank-and-name .species-name a {
+   color: #0000EE;
+} 
+#ictv_taxablast_container .blast-hits .species-rank-and-name .segment-name {
+   font-size: 1.0rem;
+   font-weight: normal;
+   margin-left: 0.25rem;
+}
+
+/* The right side of the species title containing the highest bitscore. */
+#ictv_taxablast_container .blast-hits .species-accordion-label .right-side {
+   display: flex;
+   flex-flow: row;
+   font-size: 0.9rem;
+   justify-content: space-between;
+}
+#ictv_taxablast_container .blast-hits .species-accordion-label .right-side .bitscore-label {
+   margin-right: 0.25rem;
+}
+#ictv_taxablast_container .blast-hits .species-accordion-label .right-side .bitscore {
+   font-weight: 700;
+   width: 80px;
+}
+
+
 #ictv_taxablast_container .blast-hits .species-lineage {
    align-items: flex-start;
    display: flex;
@@ -422,7 +471,6 @@ The panel title
    justify-content: flex-start;
    width: 100%;
 }
-
 #ictv_taxablast_container .blast-hits .species-lineage .lineage-chevron {
    font-size: 0.75rem;
    font-weight: normal;
@@ -435,6 +483,7 @@ The panel title
    cursor: pointer;
 }
 
+
 /* An isolate group in a species tile. */
 #ictv_taxablast_container .isolate-group {
    font-size: 1.0rem !important;
@@ -445,11 +494,15 @@ The panel title
    margin-bottom: 0.25rem;
 }
 
+#ictv_taxablast_container .isolate-group .isolate-details a {
+   color: #0000EE;
+}
+
 #ictv_taxablast_container .isolate-group .isolate-details .hit-label {
    font-weight: normal; /* placeholder */
 }
 #ictv_taxablast_container .isolate-group .isolate-details .virus-name {
-   font-weight: 700;
+   font-weight: normal;
 }
 
 
@@ -473,55 +526,87 @@ The panel title
 }
 #ictv_taxablast_container .isolate-group table.hsp-table * {
    font-size: 0.9rem;
-   vertical-align: top;
+   /*vertical-align: top;*/
 }
-#ictv_taxablast_container .isolate-group  table.hsp-table {
+#ictv_taxablast_container .isolate-group table.hsp-table {
    margin: 0;
    width: 100%;
 }
-#ictv_taxablast_container .isolate-group  table.hsp-table tr.even {
+#ictv_taxablast_container .isolate-group table.hsp-table tr.header-row {
+   background-color: var(--ictv-grey-color);
+}
+#ictv_taxablast_container .isolate-group table.hsp-table tr.even {
    background-color: #fff;
 }
-#ictv_taxablast_container .isolate-group  table.hsp-table tr.odd {
+#ictv_taxablast_container .isolate-group table.hsp-table tr.odd {
    background-color: var(--ictv-alt-row-bg);
 }
-#ictv_taxablast_container .isolate-group  table.hsp-table th,
-#ictv_taxablast_container .isolate-group  table.hsp-table td {
+
+#ictv_taxablast_container .isolate-group table.hsp-table th {
+   color: #fff;
+   font-size: 0.9rem;
+   font-weight: normal;
+   padding: 2px 0;
+   text-align: center;
+}
+#ictv_taxablast_container .isolate-group table.hsp-table td {
    padding: 3px 6px;
+   text-align: center;
 }
 
 /* HSP table columns */
-#ictv_taxablast_container .isolate-group .hsp-table td.hit-index {
-	padding: 3px 6px !important;
-   text-align: right;
+#ictv_taxablast_container .isolate-group .hsp-table th.hit-index {
    width: 2.7rem !important;
+}
+#ictv_taxablast_container .isolate-group .hsp-table td.hit-index {
+	text-align: right;
+}
+
+#ictv_taxablast_container .isolate-group .hsp-table th.bitscore {
+	width: 100px !important;
 }
 #ictv_taxablast_container .isolate-group .hsp-table td.bitscore {
    text-align: right;
-	width: 80px !important;
 }
-#ictv_taxablast_container .isolate-group .hsp-table td.evalue {
+
+/*#ictv_taxablast_container .isolate-group .hsp-table td.evalue {
    text-align: right;
+   width: 100px !important;
+}*/
+
+#ictv_taxablast_container .isolate-group .hsp-table th.length {
    width: 100px !important;
 }
 #ictv_taxablast_container .isolate-group .hsp-table td.length {
    text-align: right;
-   width: 80px !important;
+}
+
+#ictv_taxablast_container .isolate-group .hsp-table th.pident {
+   width: 100px !important;
 }
 #ictv_taxablast_container .isolate-group .hsp-table td.pident {
    text-align: right;
-   width: 80px !important;
 }
+
+#ictv_taxablast_container .isolate-group .hsp-table th.protein-id,
 #ictv_taxablast_container .isolate-group .hsp-table td.protein-id {
 	width: 160px !important;
 }
+#ictv_taxablast_container .isolate-group .hsp-table th.product,
 #ictv_taxablast_container .isolate-group .hsp-table td.product {
 	width: 260px !important;
 }
 /*#ictv_taxablast_container .isolate-group .hsp-table td.note {
 	width: auto;
 }*/
+#ictv_taxablast_container .isolate-group .hsp-table .alignment {
+   text-align: center;
+}
 
+#ictv_taxablast_container .isolate-group .hsp-table .start-or-end {
+   text-align: center;
+   width: 100px;
+}
 
 
 /* Panel views */
@@ -793,7 +878,7 @@ The panel title
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_taxablast_container table.query-results-table {
    background-color: #fff;
-   border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius) ;
+   border-radius: var(--ictv-border-radius);
    border-width: 0; /* 0 0 1px 0; */
    margin: 0;
    /*min-width: 800px;*/
@@ -841,16 +926,30 @@ The panel title
 #ictv_taxablast_container table.query-results-table td.qseqid {
    width: auto;
 }*/
-#ictv_taxablast_container table.query-results-table .index {
+#ictv_taxablast_container table.query-results-table th.query-index {
    max-width: 30px;
-   text-align: right;
    width: 30px;
 }
+#ictv_taxablast_container table.query-results-table td.query-index {
+   text-align: right;
+}
 
-#ictv_taxablast_container table.query-results-table .hits {
+#ictv_taxablast_container table.query-results-table .filename {
+   font-weight: normal; /* placeholder */
+}
+
+#ictv_taxablast_container table.query-results-table .query-id {
+   font-weight: normal; /* placeholder */
+}
+
+#ictv_taxablast_container table.query-results-table th.hits {
    text-align: center;
    width: 60px;
 }
+#ictv_taxablast_container table.query-results-table td.hits {
+   text-align: center;
+}
+
 #ictv_taxablast_container table.query-results-table .controls {
    white-space: nowrap;
    width: 1%;
@@ -860,6 +959,7 @@ The panel title
 #ictv_taxablast_container table.query-results-table td {
    padding: 0.5rem;
 }
+
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -875,8 +975,19 @@ The panel title
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
-   margin-bottom: 1.0rem;
+   margin-bottom: 1.5rem;
 }
+
+#ictv_taxablast_container .job-submission-panel .input-section .controls-title {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   font-size: 1.0rem;
+   justify-content: flex-start;
+   margin-bottom: 0.25rem;
+   width: 100%;
+}
+
 #ictv_taxablast_container .job-submission-panel .input-section .number-column {
    width: 1.0rem;
 }
@@ -885,27 +996,61 @@ The panel title
    flex-shrink: 1;
 }
 
-#ictv_taxablast_container .job-submission-panel .control-row {
+/* The BLAST parameter rows */
+#ictv_taxablast_container .job-submission-panel .max-target-seqs-row,
+#ictv_taxablast_container .job-submission-panel .max-hsps-row {
    align-items: center;
    display: flex;
-   flex-flow: row; /* nowrap */
+   flex-flow: row nowrap;
    justify-content: flex-start;
-   margin-bottom: 1.0rem;
 }
-#ictv_taxablast_container .job-submission-panel .control-row label {
-   font-weight: normal;
+#ictv_taxablast_container .job-submission-panel .max-target-seqs-row {
+   margin: 1.0rem 0 0 0;
 }
-#ictv_taxablast_container .job-submission-panel .control-row .horizontal-control {
+#ictv_taxablast_container .job-submission-panel .max-hsps-row {
+   margin-top: 1.0rem;
+}
+#ictv_taxablast_container .job-submission-panel .max-target-seqs-row label,
+#ictv_taxablast_container .job-submission-panel .max-hsps-row label {
+   font-weight: 700;
+   text-align: left;
+   width: 240px;
+}
+
+/* The max HSPs and max target seqs input controls */
+#ictv_taxablast_container .job-submission-panel .max-hsps,
+#ictv_taxablast_container .job-submission-panel .max-target-seqs { 
+   padding: 0;
+   text-align: right;
+   width: 5.0rem;
+}
+#ictv_taxablast_container .job-submission-panel .max-target-seqs-comment {
+   display: none;
+   visibility: hidden;
+}
+#ictv_taxablast_container .job-submission-panel .max-target-seqs-comment:not(:empty) {
+   color: var(--ictv-dark-grey-color);
+   display: block;
+   font-size: 0.9rem;
+   visibility: visible;
+}
+#ictv_taxablast_container .job-submission-panel input[type=number]::-webkit-outer-spin-button,
+#ictv_taxablast_container .job-submission-panel input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance:caret; /* TESTING! */
+  /*margin: 0;*/
+}
+
+/*#ictv_taxablast_container .job-submission-panel .control-row .horizontal-control {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-start;
    width: 30%;
-}
+}*/
 
 /* "Select files" button */
 #ictv_taxablast_container .job-submission-panel .select-files-button {
-   margin-left: 0.25rem;
+   margin-left: 0.5rem;
    padding: 0.25rem 0.5rem;
 }
 #ictv_taxablast_container .job-submission-panel .select-files-button.active {
@@ -940,7 +1085,6 @@ The panel title
 }
 #ictv_taxablast_container .selected-files-section.active {
    display: block;
-   margin-top: 1.5rem;
    visibility: visible;
 }
 
@@ -983,6 +1127,7 @@ The panel title
 
 /* The selected files table */
 #ictv_taxablast_container .job-submission-panel table.selected-files {
+   margin-bottom: 0;
    width: 100%;
 }
 #ictv_taxablast_container .job-submission-panel table.selected-files td {
@@ -1042,7 +1187,7 @@ The panel title
 
 /* The BLAST tasks table */
 #ictv_taxablast_container .job-submission-panel table.blast-tasks {
-   margin: 0.5rem 0 0 0;
+   margin: 0.5rem 0 1.0rem 0;
    width: 100%;
 }
 #ictv_taxablast_container .job-submission-panel table.blast-tasks td {
@@ -1064,7 +1209,7 @@ The panel title
    width: 24px;
 }
 #ictv_taxablast_container .job-submission-panel table.blast-tasks .header-row th.task-column {
-   width: 310px;
+   width: 400px;
 }
 #ictv_taxablast_container .job-submission-panel table.blast-tasks .header-row th.description-column {
    width: 700px;
@@ -1106,18 +1251,7 @@ The panel title
 
 }
 
-/* The max HSPs and max target seqs input boxes */
-#ictv_taxablast_container .job-submission-panel .max-hsps,
-#ictv_taxablast_container .job-submission-panel .max-target-seqs { 
-   padding: 0;
-   text-align: right;
-   width: 5.0rem;
-}
-#ictv_taxablast_container .job-submission-panel input[type=number]::-webkit-outer-spin-button,
-#ictv_taxablast_container .job-submission-panel input[type=number]::-webkit-inner-spin-button {
-  -webkit-appearance:caret; /* TESTING! */
-  /*margin: 0;*/
-}
+
 
 /* TODO: how is this different from the standard input box style above? */
 #ictv_taxablast_container .job-submission-panel .job-name {
@@ -1273,17 +1407,16 @@ The panel title
 
 
 #ictv_taxablast_container .ictv-modal-footer {
-   padding: 0 0.5rem 0.5rem 0.5rem;
-}
-#ictv_taxablast_container .ictv-modal-footer {
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
    justify-content: flex-end;
+   padding: 0 0.5rem 0.5rem 0.5rem;
 }
 #ictv_taxablast_container .ictv-modal-footer .btn {
    cursor: pointer; 
    font-size: 1.0rem;
+   min-width: 160px;
    padding: .2rem .5rem;
    text-align: center;
 }
@@ -1369,6 +1502,15 @@ The panel title
       visibility: visible;
    }
 
+   #ictv_taxablast_container .blast-hits .species-lineage .higher-ranks {
+      display: inline-block;
+      visibility: visible;
+   }
+
+   #ictv_taxablast_container .blast-hits .species-lineage .display-ranks-button {
+      display: none;
+      visibility: hidden;
+   }
 }
 
 /* Mobile */
@@ -1394,6 +1536,20 @@ The panel title
    #ictv_taxablast_container .job-details-panel table.details-table .blast-parameter-row {
       flex-flow: column nowrap;
    }
+
+   #ictv_taxablast_container .blast-hits .species-lineage .higher-ranks {
+      display: none;
+      visibility: hidden;
+   }
+
+   /*
+   #ictv_taxablast_container .blast-hits .species-lineage .display-ranks-button {
+      background-color: var(--ictv-dark-grey-color);
+      color: black;
+      display: inline-block;
+      margin-left: 1.0rem;
+      visibility: visible;
+   }*/
 }
 
 
@@ -1403,7 +1559,20 @@ The panel title
    Sweet Alert 2 modal dialogs
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-.swal2-html-container button.swal2-confirm {
+/* dmd testing 050426 */
+.swal2-html-container .alert-builder-icon-info {
+   text-align: left !important;
+}
+
+.swal2-html-container .alert-builder-icon-info li {
+   margin-bottom: 0.25rem;
+}
+
+.swal2-actions {
+   margin-top: 0 !important;
+}
+
+.swal2-actions button.swal2-confirm {
    background-color: var(--ictv-button-bg); 
    border-color: var(--ictv-border-color);
    border-radius: 5px;
@@ -1411,6 +1580,7 @@ The panel title
    border-width: 1px;
    color: #000;
    font-size: 0.9rem;
+   min-width: 160px;
    padding: .2rem .5rem;
    text-align: center;
 }
@@ -1435,4 +1605,3 @@ The panel title
    margin-bottom: 0.5rem;
    text-align: left;
 }
-

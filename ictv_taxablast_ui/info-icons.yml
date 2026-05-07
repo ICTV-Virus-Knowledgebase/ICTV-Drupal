@@ -1,0 +1,80 @@
+# info-icons.yml
+
+# BLAST parameters
+maxHsps:
+  html: |
+    The maximum number of distinct high-scoring segment pairs (HSPs) to report for each subject (target) sequence. 
+    An HSP is an individual local alignment between the query and a region of the subject. Setting this limits how many separate alignments 
+    (e.g., different matching regions or multiple alignments with different scores) you see for the same subject sequence; higher values show more 
+    HSPs per subject, lower values keep only the top N HSPs per subject. 
+  label: "Max HSPs per target sequence"
+  title: ""
+  tooltip: ""
+   
+maxTargetSeqs:
+  html: |
+    The maximum number of subject (database) sequences to return in the results. BLAST ranks subject 
+    sequences by score (or E-value) and returns up to this many distinct subjects. Each returned subject may include up to the number of HSPs 
+    set by the previous parameter.
+  label: "Max target sequences"
+  title: ""
+  tooltip: ""
+
+# BLAST tasks
+blastn:
+  html: |
+    <ul>
+      <li><b>What it does:</b> Compares a nucleotide query sequence against a nucleotide database to find regions of similarity.</li>
+      <li><b>When to use:</b> General nucleotide-nucleotide searches (e.g., DNA vs. DNA) where you want alignments that include mismatches and gaps. Good for detecting more distant homology than highly optimized nucleotide modes.</li>
+      <li><b>Key behavior:</b> Uses a nucleotide substitution scoring scheme and default word sizes tuned for sensitivity; can detect shorter or less-conserved matches than megablast.</li>
+    </ul>
+  label: "blastn"
+  title: ""
+  tooltip: ""
+
+blastp:
+  html: |
+    <ul>
+      <li><b>What it does:</b> Compares an amino-acid (protein) query against a protein database to find similar proteins.</li>
+      <li><b>When to use:</b> Protein-protein similarity searches (e.g., annotate proteins, find homologs, infer function).</li>
+      <li><b>Key behavior:</b> Uses protein substitution matrices (e.g., BLOSUM62) and gap penalties appropriate for proteins; reports percent identity, positives, and alignment scores.</li>
+    </ul>
+  label: "blastp"
+  title: ""
+  tooltip: ""
+
+blastx:
+  html: |
+    <ul>
+      <li><b>What it does:</b> Translates a nucleotide query in all six reading frames and searches the resulting conceptual proteins against a protein database.</li>
+      <li><b>When to use:</b> When you have nucleotide sequences (e.g., contigs, transcripts) and want to find protein-level matches (e.g., to detect coding regions, distant homology, or frame-shifted genes).</li>
+      <li><b>Key behavior:</b> Reports frame(s) producing significant protein matches and aligns translated query to protein subjects; more sensitive for detecting coding similarity than nucleotide–nucleotide comparisons.</li>
+      <li><b>Input type:</b> nucleotide or protein (or nucleotide translated).</li>
+      <li><b>Best for:</b> short phrase (e.g., "close nucleotide matches", "protein homology", "translated nucleotide → protein").</li>
+      <li><b>Speed vs sensitivity:</b> quick indicator (fast / balanced / sensitive).</li>
+    </ul>
+  label: "blastx"
+  title: ""
+  tooltip: ""
+
+dcMegablast:
+  html: |
+    <ul>
+      <li><b>What it does:</b> A variant of megablast that uses a discontiguous word (spaced seed) model to improve sensitivity for moderately diverged nucleotide sequences while retaining speed.</li>
+      <li><b>When to use:</b> Best when comparing more divergent nucleotide sequences than megablast can detect (e.g., different species within a genus) but you still want faster performance than blastn.</li>
+      <li><b>Key behavior:</b> Uses spaced seeds (patterns allowing mismatches within the word) to catch alignments with substitutions; balanced between speed and sensitivity.</li>
+    </ul>
+  label: "dc-megablast (discontiguous megablast)"
+  title: ""
+  tooltip: ""
+
+megablast:
+  html: |
+    <ul>
+      <li><b>What it does:</b> Fast nucleotide-nucleotide search optimized for finding highly similar sequences (near-exact matches).</li>
+      <li><b>When to use:</b> Best for comparing closely related DNA sequences (e.g., same species, strains, rapid identification, contamination checks). Use when high speed and high identity matches are expected.</li>
+      <li><b>Key behavior:</b> Uses large word sizes and greedy/heuristic extensions to maximize speed; less sensitive for distant relationships.</li>
+    </ul>
+  label: "megablast"
+  title: ""
+  tooltip: ""

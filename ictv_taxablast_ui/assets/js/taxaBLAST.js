@@ -34,6 +34,9 @@
             // Create a new TaxaBLAST instance.
             const taxaBLAST = new window.ICTV_TaxaBLAST.TaxaBLAST(authToken, containerSelector, userEmail, userName, userUID);
 
+            // If the settings have info icon data, add it to the taxaBLAST instance.
+            if (settings_.infoIcons) { taxaBLAST.infoIcons = JSON.parse(settings_.infoIcons); }
+
             // Initialize and display the UI.
             taxaBLAST.initialize();
         }

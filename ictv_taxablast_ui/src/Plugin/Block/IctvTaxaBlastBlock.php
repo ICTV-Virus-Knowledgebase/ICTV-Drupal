@@ -3,6 +3,8 @@
 namespace Drupal\ictv_taxablast_ui\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Extension\ModuleHandlerInterface;
+use Symfony\Component\Yaml\Yaml;
 
 
 /**
@@ -64,9 +66,13 @@ class IctvTaxaBlastBlock extends BlockBase {
          ],
       ];
 
+      // Get info icon JSON from the info-icons YAML file.
+      $infoIcons = $this->loadInfoIcons();
+
       // Populate drupalSettings with variables needed by the ICTV_TaxaBLAST object.
       $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
       $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
+      $build['#attached']['drupalSettings']['infoIcons'] = $infoIcons;
       $build['#attached']['drupalSettings']['taxonHistoryPage'] = $this->taxonHistoryPage;
       $build['#attached']['drupalSettings']['userEmail'] = $email;
       $build['#attached']['drupalSettings']['userName'] = $name;
@@ -85,6 +91,38 @@ class IctvTaxaBlastBlock extends BlockBase {
       return 2;
    }
 
+   public function loadInfoIcons() {
+
+      $json = "";
+
+      try {
+
+         /** 
+          * @var \Drupal\Core\Extension\ModuleHandlerInterface $module_handler 
+         */
+         $module_handler = \Drupal::service('module_handler');
+
+         // Get the module's full path and include the YAML file name. Then make sure the YAML file exists.
+         $path = $module_handler->getModule("ictv_taxablast_ui")->getPath();
+         $file_path = DRUPAL_ROOT.DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR."info-icons.yml";
+         if (!file_exists($file_path)) {
+            return "";
+         }
+
+         // Load the contents of the file, parse it as YAML, and then encode as JSON.
+         $yaml_text = file_get_contents($file_path);
+         $data = Yaml::parse($yaml_text);
+         $json = json_encode($data);
+
+      } catch (\Throwable $e) {
+         
+         // Get the error message and add it to Drupal's error log.
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger("ictv_taxablast_ui")->error($errorMessage);
+      }
+
+      return $json;
+   }
 
    public function loadData() {
 
