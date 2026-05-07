@@ -27,6 +27,9 @@ export class BlastSpecies {
    // The viral segment (if appropriate)
    segmentAccession: string;
    segmentName: string;
+   
+   // The highest bitscore of the species' HSPs.
+   topBitscore: number; 
 
    // Lineage names
    realm: string;
@@ -60,6 +63,7 @@ export class BlastSpecies {
       this.filename = Utils.safeTrim(filename_);
       this.segmentAccession = Utils.safeTrim(hit_.sseq_ictv.segment_accession);
       this.segmentName = Utils.safeTrim(hit_.sseq_ictv.segment_name);
+      this.topBitscore = 0;
 
       if (hit_.sseq_ictv.lineage === null) { 
          throw new Error("The sseq_ictv.lineage is invalid in BlastSpecies"); 

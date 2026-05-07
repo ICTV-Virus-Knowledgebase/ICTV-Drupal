@@ -1,6 +1,9 @@
 
+import { AppSettings } from "../global/AppSettings";
 import { AllNonNtProteinCodes, NucleotideCodes, NucleotideAmbiguityCodes, ProteinCodes, 
    ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType } from "../global/Types";
+import { Identifiers } from "../models/Identifiers";
+import { IIdentifierData } from "../models/IIdentifierData";
 import { SequenceMetadata } from "../models/SequenceMetadata";
 
 
@@ -166,6 +169,11 @@ export class Utils {
       return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${displayText}</a>`;
    }
 
+   // Create a link to the taxon details page using an id (with a text prefix that indicates what type of identifier it is) and a display label.
+   static createTaxonDetailsLink(id_: string, label_: string): string {
+      return `<a href="${AppSettings.taxonHistoryPage}?id=${id_}" target="_blank">${label_}</a>`;
+   }
+
    // Format a number of bytes as Bytes, KB, MB, etc.
    static formatBytes(bytes_: number, decimals_?: number): string {
    
@@ -295,6 +303,60 @@ export class Utils {
       setTimeout(removeStyles, duration_ + 50);
    }
 
+   // HTML-decode an HTML-encoded string value.
+   static htmlDecode(text_: string | null | undefined) {
+
+      if (!text_) return "";
+
+      const entityMap: Record<string, string> = {
+         '&amp;': '&',
+         '&lt;': '<',
+         '&gt;': '>',
+         '&quot;': '"',
+         '&#39;': "'",
+         '&#x2F;': '/',
+         '&#x60;': '`',
+         '&#x3D;': '='
+      };
+
+      const numericDec = /^&#(\d+);?$/;
+      const numericHex = /^&#x([0-9A-Fa-f]+);?$/;
+
+      return text_.replace(/&[#A-Za-z0-9]+;?/g, (entity: string): string => {
+         
+         if (entityMap[entity]) return entityMap[entity];
+
+         const decMatch = entity.match(numericDec);
+         if (decMatch) {
+            const code = Number(decMatch[1]);
+            return Number.isFinite(code) ? String.fromCharCode(code) : entity;
+         }
+
+         const hexMatch = entity.match(numericHex);
+         if (hexMatch) {
+            const code = parseInt(hexMatch[1], 16);
+            return Number.isFinite(code) ? String.fromCharCode(code) : entity;
+         }
+
+         return entity;
+      });
+   }
+
+   // HTML-encode a string value.
+   static htmlEncode(text_: string) {
+
+      if (!text_) return "";
+
+      return String(text_).replace(/[&<>""]/g, (ch) => {
+         return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+         }[ch];
+      });
+   }
 
    // Is the user's browser on iOS?
    static isIOS() {

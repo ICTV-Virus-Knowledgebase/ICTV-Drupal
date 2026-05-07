@@ -33,8 +33,8 @@ export class SelectedFiles {
    // Add a new FASTA file.
    addFile(fastaFile_: FastaFile) {
 
-      console.log("In selected files addFile() with file: ", fastaFile_);
-
+      console.log("adding a file to selected files ", fastaFile_)
+      
       // Has a file with this name already been added?
       if (this.nameLookup.has(fastaFile_.filename)) { throw new Error(`File ${fastaFile_.filename} has already been added`); }
             
@@ -48,7 +48,6 @@ export class SelectedFiles {
          throw new Error(`The total size of all uploaded files must be less than ${maxSizeLabel}.`);
       }
       if (fastaFile_.records.length > Constants.MAX_SEQUENCE_COUNT) {
-         
          
          let errorMessage = `The maximum number of sequences you can submit is ${Constants.MAX_SEQUENCE_COUNT} and your `;
          const sequenceCount = fastaFile_.records.length;
@@ -81,7 +80,7 @@ export class SelectedFiles {
       return errorCount;
    }
 
-   getErrors(includeFilename_: boolean): Array<string> {
+   getErrors(): Array<string> {
 
       let errors = new Array<string>();
 
@@ -116,8 +115,9 @@ export class SelectedFiles {
          }
       }
 
+      // Include errors from all files.
       this.files.forEach((file_: FastaFile) => {
-         errors = errors.concat(file_.getErrors(includeFilename_));
+         errors = errors.concat(file_.getErrors());
       })
 
       return errors;

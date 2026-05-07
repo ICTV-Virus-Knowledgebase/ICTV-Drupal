@@ -3,10 +3,12 @@ import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
 import { ButtonClass, Constants, FormatDate, FormatDuration, GetSpinnerHTML, Icon, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
+import { InfoIcon } from "../../helpers/InfoIcon";
+import { InfoIconType, JobStatus, WebStorageKey } from "../../global/Types";
 import { ITaxaBlastJob } from "./ITaxaBlastJob";
 import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
-import { JobStatus, WebStorageKey } from "../../global/Types";
-import { JobSubmission } from "./JobSubmission";
+
+//import { JobSubmission } from "./JobSubmission";
 import * as pako from "pako";
 import { TaxaBlastService } from "../../services/TaxaBlastService";
 import { Utils } from "../../helpers/Utils";
@@ -36,10 +38,14 @@ export class TaxaBLAST {
       messagePanel: HTMLElement
    }
 
+   // Metadata that's used to generate info icons.
+   infoIcons: Record<string, InfoIconType> = null;
+
+   // A TaxaBLAST job
    job: ITaxaBlastJob = null;
 
    // This keeps track of a submitted job and its status.
-   jobSubmission: JobSubmission = null;
+   //jobSubmission: JobSubmission = null;
 
    // The collection of panels used by this component.
    panels: Map<PanelKey, ITaxaBlastPanel>;
@@ -156,7 +162,7 @@ export class TaxaBLAST {
                <td>${this.job.status}</td>
             </tr>
             <tr>
-               <th>Program and version</th>
+               <th>Program</th>
                <td>${programName}</td>
             </tr>
             <tr>
@@ -342,6 +348,25 @@ export class TaxaBLAST {
       link.click();
 
       return;
+   }
+
+   // Generate HTML for an info icon with the specified control key.
+   getInfoIconHTML(controlKey_: string): string {
+
+      if (this.infoIcons === null) {
+         console.error("No info icons are available");
+         return ""; 
+
+      } else if (!Object.prototype.hasOwnProperty.call(this.infoIcons, controlKey_)) {
+         console.error(`No info icon is available for ${controlKey_}`);
+         return "";
+      }
+
+      // Get the info for this control key.
+      const info = this.infoIcons[controlKey_] as InfoIconType;
+
+      // Use the InfoIcon object to create HTML.
+      return InfoIcon.CreateHTML(info.html, controlKey_, info.label, info.title, info.tooltip);
    }
 
    // Retrieve the job with this UID.

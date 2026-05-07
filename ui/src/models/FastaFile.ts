@@ -1,4 +1,5 @@
 
+import { FastaError } from "./FastaError";
 import { FastaStatus, SequenceType } from "../global/Types";
 import { FastaRecord } from "./FastaRecord";
 import { Utils } from "../helpers/Utils";
@@ -10,13 +11,15 @@ export class FastaFile {
    errorCount: number;
 
    // An array of error messages. Note that this will be updated at the end of the validation process.
-   errors: string[];
+   errors: FastaError[];
 
    // The raw FASTA text.
    fasta: string;
 
    // The name of the file.
    filename: string;
+
+   longestSequence: number;
 
    // The parsed FASTA records.
    records: FastaRecord[];
@@ -42,7 +45,7 @@ export class FastaFile {
    constructor(fasta_: string, filename_: string, size_: number) {
 
       // Initialize collections
-      this.errors = new Array<string>();
+      this.errors = new Array<FastaError>();
       this.records = new Array<FastaRecord>();
       this.sequenceTypes = new Set<SequenceType>();
       this.warnings = new Array<string>();
@@ -51,6 +54,7 @@ export class FastaFile {
       this.errorCount = 0;
       this.fasta = fasta_;
       this.filename = filename_;
+      this.longestSequence = 0;
       this.records = [];
       this.size = size_;
       this.status = FastaStatus.unvalidated;
@@ -62,30 +66,61 @@ export class FastaFile {
    // Add a record to the collection.
    addRecord(record_: FastaRecord) {
 
-      console.log("In addRecord with record: ", record_);
-
       if (record_ == null) { return; }
 
       // Validate the record before adding it.
       record_.validate();
 
-      // Update the file's error count.
-      this.errorCount += record_.errors.length;
-      this.records.push(record_);
+      if (record_.errors.length > 0) {
+         this.errors = this.errors.concat(record_.errors);
+      }
 
       // Update the file's sequence types.
       this.sequenceTypes.add(record_.sequenceType);
+
+      // Is this the longest sequence we have encountered?
+      if (record_.sequence.length > this.longestSequence) { 
+         this.longestSequence = record_.sequence.length; 
+      }
+
+      // Add the record to the collection.
+      this.records.push(record_);
    }
 
+   // Return an array of error messages by record number.
+   getErrors(): Array<string> {
+      return this.errors.map(error_ => error_.formatMessage());
+   }
+
+   // Get the length of the longest sequence in this file's records.
+   getLongestSequenceLength(): number {
+
+      return this.longestSequence;
+      /*
+      let longest = 0;
+
+      console.log("in getLongestSequenceLength this.records = ", this.records)
+
+
+      if (this.records.length < 1) { return 0; }
+
+      this.records.forEach(record_ => {
+         if (record_.sequence.length > longest) { 
+            longest = record_.sequence.length; 
+         }
+      })
+
+      return longest;*/
+   }
+
+
+   /*
    // Return an array of error messages by record number.
    getErrors(includeFilename_: boolean): Array<string> {
 
       if (this.errorCount < 1) { return []; }
 
       let errors = Array<string>();
-
-      // TEST
-      let warnings = Array<string>();
 
       const recordCount = this.records.length;
 
@@ -129,7 +164,7 @@ export class FastaFile {
       })
 
       return errors;
-   }
+   }*/
 
    // Parse the FASTA into FastaRecord objects.
    populateRecords() {
@@ -156,10 +191,10 @@ export class FastaFile {
             if (record !== null) { this.addRecord(record); }
    
             // Create a new record.
-            record = new FastaRecord();
+            record = new FastaRecord(this.filename, this.records.length + 1);
    
             // Populate the header
-            record.header = line + "\n";
+            record.header = line;
             record.headerLineNumber = lineNumber;
    
             // Skip to the next line.
@@ -167,12 +202,9 @@ export class FastaFile {
          }
    
          if (record == null) {
-            
-            console.log("record is null and line = ", line)
 
-            record = new FastaRecord();
-            record.addError("Invalid header/defline", lineNumber);
-            continue;
+            // Create a FASTA record (even though there isn't a header).
+            record = new FastaRecord(this.filename, this.records.length + 1);
          }
    
          // Add this line to the record's sequence.
@@ -184,21 +216,21 @@ export class FastaFile {
          this.addRecord(record); 
       }
 
-      if (this.sequenceTypes.size > 1) {
-         let warning = "This file appears to contain a mix of nucleotide and protein sequences";
-         this.warnings.push(warning);
-      }
-
-      // Set the file's overall sequence type. If there are multiple sequence types, set it to "mixed". If there are no valid sequence types, set it to "unknown".
+      // Set the file's overall sequence type. If there are multiple sequence types, set it to "mixed". 
+      // If there are no valid sequence types, set it to "unknown".
       if (this.sequenceTypes.size === 0) {
          this.sequenceType = SequenceType.unknown;
       } else if (this.sequenceTypes.size === 1) {
          this.sequenceType = this.sequenceTypes.values().next().value;
       } else if (this.sequenceTypes.size > 1) {
          this.sequenceType = SequenceType.mixed;
+         this.warnings.push("This file appears to contain a mix of nucleotide and protein sequences");
       }
 
+      // Set the error count
+      this.errorCount = this.errors.length;
+
       // Set the overall status.
-      this.status = FastaStatus.validated;
+      this.status = this.errorCount > 0 ? FastaStatus.invalid : FastaStatus.validated;
    }
 }

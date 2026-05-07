@@ -10,10 +10,15 @@ export class FastaRecord {
    // Errors encountered while parsing the record.
    errors: FastaError[];
 
+   // The name of the file that contains the record.
+   filename: string; 
+
    // The header/defline
    header: string;
 
    headerLineNumber: number;
+
+   recordNumber: number;
 
    // The sequence of nucleotide or protein bases.
    sequence: string;
@@ -25,28 +30,30 @@ export class FastaRecord {
    status: FastaStatus;
 
    // How confident are we in the sequence type? 
-   typeConfidence: number;
+   //typeConfidence: number;
 
-   // TEST
+   // Warnings
    warnings: string[];
 
 
    // C-tor
-   constructor() {
+   constructor(filename_: string, recordNumber_: number) {
       this.errors = [];
+      this.filename = filename_;
       this.header = "";
       this.headerLineNumber = NaN;
+      this.recordNumber = recordNumber_;
       this.sequence = "";
       this.sequenceType = SequenceType.unknown;
       this.status = FastaStatus.unvalidated;
-      this.typeConfidence = NaN;
+      //this.typeConfidence = NaN;
       this.warnings = [];
    }
 
    // Add an error and invalidate the record.
    addError(message_: string, lineNumber_?: number): void { 
       this.status = FastaStatus.invalid;
-      this.errors.push(new FastaError(message_, lineNumber_));
+      this.errors.push(new FastaError(message_, lineNumber_, this.filename, this.recordNumber));
    }
 
    // Get the ID from the FASTA header.
@@ -54,8 +61,9 @@ export class FastaRecord {
 
       if (!this.header) { return ""; }
 
+      // Everything after the > and before the first space is the ID.
       const spaceIndex = this.header.indexOf(" ");
-      if (spaceIndex > -1) {
+      if (spaceIndex > -1) {  
          return this.header.substring(1, spaceIndex);
       } else {
          return this.header.substring(1);
@@ -68,18 +76,8 @@ export class FastaRecord {
       // Do we already know that it's invalid?
       if (this.status === FastaStatus.invalid) { return; }
 
-      let isHeaderEmpty = false;
-      let isHeaderValid = true;
       let isSequenceEmpty = false;
       let isSequenceValid = true;
-
-      // Validate the FASTA header/defline
-      this.header = Utils.safeTrim(this.header);
-      if (this.header.length === 1) {
-         isHeaderValid = false;
-      } else if (this.header.length < 1) { 
-         isHeaderEmpty = true; 
-      }
 
       // Trim the sequence, remove whitespace, and validate it.
       this.sequence = Utils.safeTrim(this.sequence).replace(/\s+/g, "");
@@ -91,20 +89,15 @@ export class FastaRecord {
 
       // Determine the sequence type and confidence level.
       const typeResult = Utils.classifyFastaSequence(this.sequence);
-      console.log("In fastaRecord validate, typeResult = ", typeResult);
       this.sequenceType = typeResult.type;
 
-      if (isHeaderEmpty && isSequenceEmpty) {
+      if (isSequenceEmpty) {
          this.status = FastaStatus.empty;
-
-      } else if (isHeaderEmpty || !isHeaderValid) {
-         this.addError("The header/defline is invalid", this.headerLineNumber);
-
-      } else if (isSequenceEmpty) {
-         this.addError("No sequence data was provided", this.headerLineNumber);
+         this.addError("No sequence data was provided");
 
       } else if (!isSequenceValid) {
-         this.addError("The sequence contains symbols that aren't IUPAC-approved nucleotide or protein bases", this.headerLineNumber);
+         this.status = FastaStatus.invalid;
+         this.addError("The sequence contains symbols that aren't IUPAC-approved nucleotide or protein bases");
 
       } else {
          this.status = FastaStatus.valid;

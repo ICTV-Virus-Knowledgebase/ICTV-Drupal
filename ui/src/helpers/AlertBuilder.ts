@@ -94,6 +94,25 @@ export class AlertBuilder {
       this.displayAlert(AlertIcon.error, message, title_, onClose_).then(result_ => { return result_; })
    }
 
+   // Display information when the user has clicked an info icon.
+   static async displayIconInfo(message_: string | HTMLElement, title_: string): Promise<SweetAlertResult<any>> {
+
+      if (!message_) { throw new Error("Unable to display info: Invalid message"); }
+      if (!title_) { throw new Error("Unable to display info: Invalid title"); }
+
+      message_ = `<div class=\"alert-builder-icon-info\">${message_}</div>`;
+
+      let options: SweetAlertOptions = {
+         heightAuto: false,
+         html: message_,
+         target: "body",
+         titleText: title_,
+         width: 800
+      }
+
+      return Swal.fire(options);
+   }
+
    // Display an info message
    static async displayInfo(message_: string | HTMLElement, title_?: string, onClose_?: Function): Promise<SweetAlertResult<any>> {
       return this.displayAlert(AlertIcon.info, message_, title_, onClose_);

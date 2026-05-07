@@ -155,6 +155,9 @@ class TaxaBlastJob {
       $createdOn = $row["created_on"];
       if (Utils::isNullOrEmpty($createdOn)) { $createdOn = ""; }
 
+      $durationInSeconds = $row["duration_in_seconds"];
+      if (!is_numeric($durationInSeconds)) { $durationInSeconds = 0; }
+
       $endedOn = $row["ended_on"];
       if (Utils::isNullOrEmpty($endedOn)) { $endedOn = ""; }
 
@@ -191,6 +194,7 @@ class TaxaBlastJob {
       return [
          "createdOn" => $createdOn,
          "data" => $data,
+         "duration" => (int)$durationInSeconds,
          "endedOn" => $endedOn,
          "files" => null,
          "name" => $name,

@@ -38,6 +38,10 @@ BEGIN
    -- Get the job with the specified UID.
    SELECT
       created_on,
+      CASE 
+         WHEN ended_on IS NULL THEN TIMESTAMPDIFF(SECOND, created_on, NOW())
+         ELSE TIMESTAMPDIFF(SECOND, created_on, ended_on)
+      END AS duration_in_seconds,
       ended_on,
       `json`,
       `message`,

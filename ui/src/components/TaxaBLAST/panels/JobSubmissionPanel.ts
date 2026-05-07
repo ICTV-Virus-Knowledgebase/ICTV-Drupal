@@ -1,11 +1,13 @@
 
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { BlastParams } from "../BlastParams";
-import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription, GetBlastTaskLabel, Icon, PanelKey, 
-   ReadFileAsync, ValidateFastaFilename } from "../Common";
+import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription,
+   GetBlastTaskInfo, GetBlastTaskLabel, Icon, PanelKey, 
+   ReadFileAsync } from "../Common";
 import { DialogBuilder } from "../../../helpers/DialogBuilder";
 import { FastaFile } from "../../../models/FastaFile";
 import { FastaStatus, JobStatus, SequenceType } from "../../../global/Types";
+import { InfoIcon } from "../../../helpers/InfoIcon";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { ISubmissionResult } from "../ISubmissionResult";
 import { JobSubmission } from "../JobSubmission";
@@ -27,6 +29,33 @@ enum ControlClass {
    visible = "visible"
 }
 
+/* From duck.ai:
+
+// merge into a const object
+export const ControlKey = {
+  ...BlastTask,
+  something: "something",
+  somethingElse: "somethingElse",
+} as const;
+
+export type ControlKey = typeof ControlKey[keyof typeof ControlKey];
+
+// usage 
+const k: ControlKey = ControlKey.blastn;
+
+*/
+
+const ControlKey = {
+   ...BlastTask,
+   maxHsps: "maxHsps",
+   maxTargetSeqs: "maxTargetSeqs"
+} as const;
+
+type ControlKey = typeof ControlKey[keyof typeof ControlKey];
+
+
+
+
 export class JobSubmissionPanel implements ITaxaBlastPanel {
 
    // A (virtual) file populated by the FASTA text dialog. If the file is valid and the user 
@@ -40,6 +69,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       // BLAST parameters
       blastMaxHSPS: HTMLInputElement,
       blastMaxTargetSeqs: HTMLInputElement,
+      blastMaxTargetSeqsComment: HTMLElement,
       blastTaskTable: HTMLTableElement,
       
       enterFastaButton: HTMLButtonElement,
@@ -66,6 +96,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    // This is used to only run validation on the FASTA textarea in the dialog after the user finishes typing.
    debounceTimer: number;
 
+   //infoIcons: Map<ControlKey, InfoIcon> = null;
+
    // Is the panel currently active/displayed?
    isActive: boolean;
 
@@ -88,6 +120,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements = {
          blastMaxHSPS: null,
          blastMaxTargetSeqs: null,
+         blastMaxTargetSeqsComment: null,
          blastTaskTable: null,
          container: containerEl_,
          dialogAddButton: null,
@@ -107,76 +140,110 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       }
 
       // Create a new job submission object.
-      this.parent.jobSubmission = new JobSubmission();
+      // this.parent.jobSubmission = new JobSubmission();
 
       // Create a new SelectedFiles instance.
       this.selectedFiles = new SelectedFiles();
+
+      /*
+      this.infoIcons = new Map<ControlKey, InfoIcon>([
+
+         // BLAST parameters
+         [ControlKey.maxHsps, new InfoIcon(`The maximum number of distinct high-scoring segment pairs (HSPs) to report for each subject (target) sequence. 
+            An HSP is an individual local alignment between the query and a region of the subject. Setting this limits how many separate alignments 
+            (e.g., different matching regions or multiple alignments with different scores) you see for the same subject sequence; higher values show more 
+            HSPs per subject, lower values keep only the top N HSPs per subject.`, 
+            ControlKey.maxHsps, 
+            "Max HSPs per target sequence")
+         ],
+         [ControlKey.maxTargetSeqs, new InfoIcon(`The maximum number of subject (database) sequences to return in the results. BLAST ranks subject 
+            sequences by score (or E-value) and returns up to this many distinct subjects. Each returned subject may include up to the number of HSPs 
+            set by the previous parameter.`,
+            ControlKey.maxTargetSeqs,
+            "Max target sequences")
+         ],
+
+         // BLAST tasks
+         [ControlKey.blastn, new InfoIcon(GetBlastTaskInfo(BlastTask.blastn),
+            ControlKey.blastn,
+            GetBlastTaskLabel(BlastTask.blastn))
+         ],
+         [ControlKey.blastp, new InfoIcon(GetBlastTaskInfo(BlastTask.blastp),
+            ControlKey.blastp,
+            GetBlastTaskLabel(BlastTask.blastp))
+         ],
+         [ControlKey.blastx, new InfoIcon(GetBlastTaskInfo(BlastTask.blastx),
+            ControlKey.blastx,
+            GetBlastTaskLabel(BlastTask.blastx))
+         ],
+         [ControlKey.dcMegablast, new InfoIcon(GetBlastTaskInfo(BlastTask.dcMegablast),
+            ControlKey.dcMegablast,
+            GetBlastTaskLabel(BlastTask.dcMegablast))
+         ],
+         [ControlKey.megablast, new InfoIcon(GetBlastTaskInfo(BlastTask.megablast),
+            ControlKey.megablast,
+            GetBlastTaskLabel(BlastTask.megablast))
+         ]
+      ]);*/
+
    }
 
    // Create HTML controls for BLAST task selection.
    createBlastTaskHTML() {
 
-      const html = 
-         `<table class="blast-tasks">
-            <thead>
-               <tr class="header-row">
-                  <th class="control-column"></th>
-                  <th class="task-column">BLAST program</th>
-                  <th class="description-column">Description</th>
-                  <th class="input-column">Query input</th>
-               </tr>
-            </thead>
-            <tbody>
-               <tr class="task-row even">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" checked /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.megablast)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
-                  <td>nucleotide</td>
-               </tr>
-               <tr class="task-row odd">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.dcMegablast}" /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.dcMegablast)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.dcMegablast)}</td>
-                  <td>nucleotide</td>
-               </tr>
-               <tr class="task-row even">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.blastn)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
-                  <td>nucleotide</td>
-               </tr>
-               <tr class="task-row odd">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.blastp}" /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.blastp)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.blastp)}</td>
-                  <td>amino acid</td>
-               </tr>
-               <tr class="task-row odd">
-                  <td><input type="radio" name="blast-task" value="${BlastTask.blastx}" /></td>
-                  <td>${GetBlastTaskLabel(BlastTask.blastx)}</td>
-                  <td>${GetBlastTaskDescription(BlastTask.blastx)}</td>
-                  <td>nucleotide</td>
-               </tr>
-            </tbody>
-         </table>`;
-
-      return html;
+      return `<table class="blast-tasks">
+         <thead>
+            <tr class="header-row">
+               <th class="control-column"></th>
+               <th class="task-column">BLAST program</th>
+               <th class="description-column">Description</th>
+               <th class="input-column">Query input</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr class="task-row even">
+               <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" checked class="blast-task-control" /></td>
+               <td>${GetBlastTaskLabel(BlastTask.megablast)} ${this.parent.getInfoIconHTML(ControlKey.megablast)}</td>
+               <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
+               <td>nucleotide</td>
+            </tr>
+            <tr class="task-row odd">
+               <td><input type="radio" name="blast-task" value="${BlastTask.dcMegablast}" class="blast-task-control" /></td>
+               <td>${GetBlastTaskLabel(BlastTask.dcMegablast)} ${this.parent.getInfoIconHTML(ControlKey.dcMegablast)}</td>
+               <td>${GetBlastTaskDescription(BlastTask.dcMegablast)}</td>
+               <td>nucleotide</td>
+            </tr>
+            <tr class="task-row even">
+               <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" class="blast-task-control" /></td>
+               <td>${GetBlastTaskLabel(BlastTask.blastn)} ${this.parent.getInfoIconHTML(ControlKey.blastn)}</td>
+               <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
+               <td>nucleotide</td>
+            </tr>
+            <tr class="task-row odd">
+               <td><input type="radio" name="blast-task" value="${BlastTask.blastp}" class="blast-task-control" /></td>
+               <td>${GetBlastTaskLabel(BlastTask.blastp)} ${this.parent.getInfoIconHTML(ControlKey.blastp)}</td>
+               <td>${GetBlastTaskDescription(BlastTask.blastp)}</td>
+               <td>amino acid</td>
+            </tr>
+            <tr class="task-row odd">
+               <td><input type="radio" name="blast-task" value="${BlastTask.blastx}" class="blast-task-control" /></td>
+               <td>${GetBlastTaskLabel(BlastTask.blastx)} ${this.parent.getInfoIconHTML(ControlKey.blastx)}</td>
+               <td>${GetBlastTaskDescription(BlastTask.blastx)}</td>
+               <td>nucleotide</td>
+            </tr>
+         </tbody>
+      </table>`;
    }
 
-   // Create HTML for the "enter FASTA text" dialog.
+   // Create HTML for the "enter a sequence" dialog.
    createFastaDialogHTML() {
       
       const id = "fasta_dialog";
-      const title = "Enter FASTA text to upload";
+      const title = "Enter a nucleotide or protein sequence";
 
       let body = 
          `<div class="dialog-row">
-            <label>Filename</label>
-            <input type="text" class="${ControlClass.fastaFilename}" placeholder="Optional" spellcheck="false" value="" />
-            <div class="${ControlClass.fastaFilenameMessage}"></div>
-         </div>
-         <div class="dialog-row">
-            <textarea class="${ControlClass.fastaText}" rows="15" placeholder="Enter FASTA here" spellcheck="false" 
+            <textarea class="${ControlClass.fastaText}" rows="15" placeholder="Enter the sequence here" spellcheck="false" 
                data-file-size="0"
                data-record-count="0"
                data-status="${FastaStatus.empty}"
@@ -185,8 +252,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          <div class="${ControlClass.fastaMessage}" data-status="${FastaStatus.empty}"></div>`;
 
       // Create dialog buttons    
-      let addButton = DialogBuilder.CreateButtonHTML(ButtonClass.add, "Add FASTA", Icon.add, true);
-      let closeButton = DialogBuilder.CreateButtonHTML(ButtonClass.cancel, "Cancel", Icon.close);
+      let addButton = DialogBuilder.CreateButtonHTML(ButtonClass.add, "Ok", null, true);
+      let closeButton = DialogBuilder.CreateButtonHTML(ButtonClass.cancel, "Cancel");
 
       let footer = `${addButton} ${closeButton}`;
 
@@ -219,7 +286,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       return `<div class="error-title">${Icon.error} ${title}</div>${body}`;
    }
-   
+
+
    /* 
    NOTE: This is not currently used because file errors are displayed in a tool tip. If they need to be displayed
    in a bulleted list, we would want to use this function.
@@ -254,11 +322,15 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    // Display the list of selected files and their metadata.
    displaySelectedFiles() {
 
+      // If there aren't any selected files, do some cleanup.
       if (this.selectedFiles.isEmpty()) {
+
          this.elements.selectedFilesContents.innerHTML = "";
          this.elements.selectedFilesSection.classList.remove("active");
 
-         console.log("in displaySelectedFiles, no selected files");
+         // Restore the default to the max target seqs control and clear/hide its comment.
+         this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
+         this.elements.blastMaxTargetSeqsComment.innerHTML = "";
 
          // Make the start button inactive.
          this.elements.startButton.classList.remove("active");
@@ -286,18 +358,17 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             </div>
          </div>`;
       
-      const includeFilename = false;
       let rows = "";
 
-      // Keep track of the sequence types found in the selected files. This is used to determine which BLAST tasks are valid for the selected   
-      // files and provide warnings to users if they select BLAST tasks that may not be appropriate for their data.
+      // Keep track of the sequence types found in the selected files. This determines which BLAST tasks are valid for the selected   
+      // files and provides warnings to users if they select BLAST tasks that may not be appropriate for their data.
       const sequenceTypes = new Set<SequenceType>();
+
+      let longestSequence = 0;
 
       // Add a row element for every selected file.
       this.selectedFiles.files.forEach((file_: FastaFile, index_: number) => {
 
-         console.log("in displaySelectedFiles, file_ = ", file_);
-         
          // Update the set of sequence types found in the selected files.
          sequenceTypes.add(file_.sequenceType);
 
@@ -312,8 +383,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
             errorClass = " error";
 
-            let errorText = file_.getErrors(includeFilename).join("; ");
+            // Concatenate all errors separated by semicolons.
+            let errorText = file_.getErrors().join("; ");
+
             let errorsLabel = file_.errorCount == 1 ? "1 error" : `${file_.errorCount} errors`;
+
             status = `<button class="${ButtonClass.errorLink} has-tooltip" 
                data-filename="${file_.filename}"
                data-tippy-content="${errorText}"
@@ -321,6 +395,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          }
 
          const sequenceType = file_.sequenceType || SequenceType.unknown;
+
+         // Compare the longest sequence in this file to the longest we've found so far.
+         const sequenceLength = file_.getLongestSequenceLength();
+         console.log(`file ${file_.filename}: sequenceLength = ${sequenceLength}`)
+         if (sequenceLength > longestSequence) { longestSequence = sequenceLength; }
 
          const rowClass = index_ % 2 === 0 ? "even" : "odd";
 
@@ -352,7 +431,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements.selectedFilesSection.classList.add("active");
 
       // Re-initialize tippy tooltips for buttons.
-      tippy(".has-tooltip"); // .selected-files-section .contents .selected-files 
+      tippy(".has-tooltip");
 
       // Make the start button active.
       this.elements.startButton.classList.add("active");
@@ -361,6 +440,9 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          let warning = "The selected files appear to contain a mix of nucleotide and protein sequences, so some BLAST tasks may not be appropriate for all of the selected files.";
          AlertBuilder.displayWarningSync(warning);
       }
+
+      // Depending on the longest sequence length, the BLAST parameters might need to be updated.
+      this.updateBlastParameters(longestSequence);
    }
 
    // Get BLAST parameters from the panel.
@@ -380,6 +462,50 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       if (isNaN(maxTargetSeqs) || maxTargetSeqs < 1) { maxTargetSeqs = Constants.DEFAULT_MAX_TARGET_SEQS; }
       
       return new BlastParams(maxHSPS, maxTargetSeqs, task);
+   }
+
+   /*
+   // A wrapper function that generates an info icon's HTML if the info icon is valid.
+   getInfoIconHTML(controlKey_: ControlKey): string {
+
+      console.log("in getInfoIconHTML with ", controlKey_)
+
+      if (this.parent.infoIcons === null) { 
+         return ""; 
+      } else if (!Object.prototype.hasOwnProperty.call(this.parent.infoIcons, controlKey_)) {
+         console.log("infoicons doesn't have control key ", controlKey_)
+         return "";
+      }
+
+      const info = this.parent.infoIcons[controlKey_ as string] as InfoIconData;
+      console.log("info = ", info)
+
+      return InfoIcon.CreateHTML(info.html, controlKey_, info.label, info.title, info.tooltip);
+   }*/
+
+   // Handle the selection of a BLAST task radio button.
+   handleBlastTaskSelection(radioButton_: HTMLInputElement) {
+      
+      console.log("handleBlastTaskSelection")
+
+      if (!radioButton_) { return; }
+      if (radioButton_.name !== "blast-task") { return; }
+
+      switch (radioButton_.value) {
+         case BlastTask.blastn:
+         case BlastTask.blastp:
+         case BlastTask.dcMegablast:
+         case BlastTask.megablast:
+            // if (this.elements.)
+            break;
+
+         case BlastTask.blastx:
+
+            break;
+      }
+
+      console.log("radioButton_ value = ", radioButton_.value)
+      return;
    }
 
    // Handle a click in the "selected files" section.
@@ -535,17 +661,18 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          `<div class="input-section">
             <div class="number-column">1.</div>
             <div class="content-column">
-               Select one or more FASTA files or enter FASTA text.
-               <button class=\"btn ${ButtonClass.selectFiles} active has-tooltip\"
-                  data-tippy-content="Click to select one or more FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
-               >${Icon.search} Select files</button>
-               <button class=\"btn ${ButtonClass.enterFASTA} active has-tooltip\"
-                  data-tippy-content="Click to enter FASTA text to be uploaded. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be included."
-               >${Icon.edit} Enter FASTA text</button>
-               <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
-               ${appleWarning}
+               <div class="controls-title">Select one or more FASTA files or enter a sequence.
+                  <button class=\"btn ${ButtonClass.selectFiles} active has-tooltip\"
+                     data-tippy-content="Click to select one or more FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
+                  >${Icon.files} Select files</button>
+                  <button class=\"btn ${ButtonClass.enterFASTA} active has-tooltip\"
+                     data-tippy-content="Click to enter a nucleotide or amino acid sequence to be processed. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be included."
+                  >${Icon.edit} Enter a sequence</button>
+                  <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
+                  ${appleWarning}
+               </div>
                <div class="selected-files-section">
-                  <div class="title">Selected files</div>
+                  <div class="title">Selected files and sequences</div>
                   <div class="contents"></div>
                </div>  
             </div>
@@ -553,30 +680,37 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          
          <div class="input-section">
             <div class="number-column">2.</div>
-            <div class="content-column">Enter BLAST parameters (optional)
-               <div class="control-row">${blastTaskHTML}</div>
-               <div class="control-row">
-                  <div class="horizontal-control">
-                     <label>Max target sequences </label>
-                     <input type="number" class="max-target-seqs" value="${Constants.DEFAULT_MAX_TARGET_SEQS}" />
-                  </div>
-                  <div class="horizontal-control">
-                     <label>Max HSPs per target sequence </label>
-                     <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
-                  </div>
-               </div>
+            <div class="content-column">
+               <div class="controls-title">Select a BLAST program</div>
+               ${blastTaskHTML}
             </div>
          </div>
 
          <div class="input-section">
             <div class="number-column">3.</div>
             <div class="content-column">
-               Enter a job name <input type=\"text\" class=\"job-name\" placeholder=\"optional\" spellcheck=\"false\" />
+               <div class="controls-title">Enter BLAST parameters (optional)</div>
+               <div class="max-target-seqs-row">
+                  <label>Max target sequences</label>
+                  <input type="number" class="max-target-seqs" value="${Constants.DEFAULT_MAX_TARGET_SEQS}" />
+               </div>
+               <div class="max-target-seqs-comment"></div>
+               <div class="max-hsps-row">
+                  <label>Max HSPs per target sequence</label>
+                  <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
+               </div> 
             </div>
          </div>
 
          <div class="input-section">
             <div class="number-column">4.</div>
+            <div class="content-column">
+               Enter a job name <input type=\"text\" class=\"job-name\" placeholder=\"optional\" spellcheck=\"false\" />
+            </div>
+         </div>
+
+         <div class="input-section">
+            <div class="number-column">5.</div>
             <div class="content-column">
                Upload FASTA files and run TaxaBLAST <button class=\"btn start-button has-tooltip\" 
                   data-tippy-content=\"Click to submit the selected FASTA files and run TaxaBLAST\">Start</button>
@@ -584,19 +718,19 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          </div>
          ${this.createFastaDialogHTML()}`;
 
-      this.elements.container.innerHTML = html;
+      /*
+      previous formatting of blast task HTML:
+      <div class="control-row">${blastTaskHTML}</div>
+      */
 
       /*
-      previous formatting for blast params
-      <div class="control-row">
-                  <label>Max HSPs per target sequence </label>
-                  <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
-               </div>
-               <div class="control-row">
-                  <label>Max target sequences </label>
-                  <input type="number" class="max-target-seqs" value="${Constants.DEFAULT_MAX_TARGET_SEQS}" />
-               </div>
+      NOTE: Here's an example of what to include in a label to give it an info icon:
+
+      ${this.infoIcons.get(ControlKey.maxTargetSeqs).toHTML()}
+
       */
+      this.elements.container.innerHTML = html;
+
       //------------------------------------------------------------------------------------------------------------------------
       // Get references to the DOM elements.
       //------------------------------------------------------------------------------------------------------------------------
@@ -617,12 +751,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements.fastaDialog = this.elements.container.querySelector("#fasta_dialog");
       if (!this.elements.fastaDialog) { throw new Error("Invalid FASTA dialog"); }
 
-      this.elements.dialogFilename = this.elements.fastaDialog.querySelector(`.${ControlClass.fastaFilename}`);
-      if (!this.elements.dialogFilename) { throw new Error("Invalid filename control in the dialog"); }
-
-      this.elements.dialogFilenameMessage = this.elements.fastaDialog.querySelector(`.${ControlClass.fastaFilenameMessage}`);
-      if (!this.elements.dialogFilenameMessage) { throw new Error("Invalid filename message in the dialog"); }
-
       this.elements.dialogFasta = this.elements.fastaDialog.querySelector(`.${ControlClass.fastaText}`);
       if (!this.elements.dialogFasta) { throw new Error("Invalid FASTA text control in the dialog"); }
 
@@ -640,20 +768,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          clearTimeout(this.debounceTimer);
 
-         if (target.classList.contains(ControlClass.fastaFilename)) {
-            // TODO: Make sure there isn't already a file with this name in this.selectedFiles?
-
-            let filename = (target as HTMLInputElement).value;
-
-            if (!ValidateFastaFilename(filename)) {
-               this.elements.dialogFilenameMessage.innerHTML = `${Icon.error} Invalid filename`;
-               this.elements.dialogFilenameMessage.classList.add("active");
-            } else {           
-               this.elements.dialogFilenameMessage.innerHTML = "";
-               this.elements.dialogFilenameMessage.classList.remove("active");
-            }
-
-         } else if (target.classList.contains(ControlClass.fastaText)) {
+         if (target.classList.contains(ControlClass.fastaText)) {
             
             this.debounceTimer = window.setTimeout(async () => {
 
@@ -680,12 +795,10 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          } else if (target.classList.contains(ButtonClass.add)) {
             try {
-               // Did the user enter a filename? If not, provide a default.
-               let filename = Utils.safeTrim(this.elements.dialogFilename.value);
-               if (!filename) {
-                  let index = Array.isArray(this.selectedFiles.files) ? this.selectedFiles.files.length + 1 : 1;
-                  filename = `user_fasta_${index}.fasta`
-               }
+               // Generate a default filename.
+               let index = Array.isArray(this.selectedFiles.files) ? this.selectedFiles.files.length + 1 : 1;
+
+               let filename = `user_fasta_${index}.fasta`
 
                this.dialogFile.filename = filename;
 
@@ -733,34 +846,20 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       const blastTaskRadios = this.elements.container.querySelectorAll('input[name="blast-task"]') as NodeListOf<HTMLInputElement>;
       if (!blastTaskRadios || blastTaskRadios.length < 1) { throw new Error("Invalid BLAST task radio elements"); }
 
-      // TODO: change handler for blast task radio buttons!
       this.elements.blastTaskTable = this.elements.container.querySelector("table.blast-tasks");
       if (!this.elements.blastTaskTable) { throw new Error("Invalid BLAST task table element"); }
 
-      /*this.elements.blastTaskTable.addEventListener("change", (event_: Event) => {
+      // Handle a change to the selected BLAST task.
+      this.elements.blastTaskTable.addEventListener("change", (event_: Event) => {
 
          const target = event_.target as HTMLElement;
 
-         // Get the closest radio button Element to the target Element.
-         const radioEl = target.closest(`input[type="radio"][name="blast-task"]`) as HTMLInputElement;
-         if (!radioEl) { return; }
-
-         switch (radioEl.value) {
-            case BlastTask.blastn:
-            case BlastTask.blastp:
-            case BlastTask.dcMegablast:
-            case BlastTask.megablast:
-               if (this.elements.)
-               break;
-
-            case BlastTask.blastx:
-
-               break;
+         if (target.classList.contains("blast-task-control") ) {
+            this.handleBlastTaskSelection(target as HTMLInputElement);
          }
-         console.log("radioEl value = ", radioEl.value)
 
          return;
-      })*/
+      })
 
       // The max HSPs input box
       this.elements.blastMaxHSPS = this.elements.container.querySelector(".max-hsps") as HTMLInputElement;
@@ -777,12 +876,22 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements.blastMaxTargetSeqs = this.elements.container.querySelector(".max-target-seqs") as HTMLInputElement;
       if (!this.elements.blastMaxTargetSeqs) { throw new Error("Invalid max target seqs input element"); }
 
-      // Replace an empty value with the default.
+      // Handle a change to the max target seqs control.
       this.elements.blastMaxTargetSeqs.addEventListener("change", () => {
+
          if (isNaN(parseInt(this.elements.blastMaxTargetSeqs.value))) {
             this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
          }
+
+         console.log("this.elements.blastMaxTargetSeqs.value = ", this.elements.blastMaxTargetSeqs.value)
+
+         // Clear the control's comment message.
+         this.elements.blastMaxTargetSeqsComment.innerHTML = "";
       })
+
+      // The max target seqs comment.
+      this.elements.blastMaxTargetSeqsComment = this.elements.container.querySelector(".max-target-seqs-comment");
+      if (!this.elements.blastMaxTargetSeqsComment) { throw new Error("Invalid max target seqs comment element"); }
 
       // The job name input box
       this.elements.jobName = this.elements.container.querySelector(".job-name") as HTMLInputElement;
@@ -796,6 +905,9 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
+
+      // Add an event listener for info icons.
+      this.elements.container.addEventListener("click", InfoIcon.handleClick);
 
       return;
    }
@@ -837,8 +949,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       // Clear the FastaFile created by the dialog.
       this.dialogFile = null;
 
-      // Clear the filename and FASTA controls.
-      this.elements.dialogFilename.value = "";
+      // Clear the FASTA control.
       this.elements.dialogFasta.value = "";
 
       // Disable the add button
@@ -860,8 +971,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          const blastParams = await this.getBlastParams();
 
          // Include the errors found during validation.
-         const includeFilename = true;
-         const errors = this.selectedFiles.getErrors(includeFilename);
+         const errors = this.selectedFiles.getErrors();
 
          if (errors.length > 0) {
 
@@ -869,10 +979,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             let s = errors.length === 1 ? "" : "s";
             let errorTitle = `Please resolve the following error${s}:`;
 
-            let bullets = "";
-            errors.forEach((error_) => {
-               bullets += `<li class="bullet">${error_}</li>`;
-            })
+            // Add errors as bullet points.
+            let bullets = errors.map(error_ => `<li class="bullet">${error_}</li>`);
 
             let errorHTML = `<div class="alert-details">
                <div class="title">${errorTitle}</div>
@@ -994,6 +1102,41 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       return;
    }
 
+   // TODO: do we care what blast task is selected?
+   updateBlastParameters(longestSequence_: number) {
+
+      // Get the selected radio button.
+      const radioButtonEl = this.elements.blastTaskTable.querySelector(`input[name="blast-task"]:checked`) as HTMLInputElement;
+      if (!radioButtonEl) { throw new Error("No BLAST task has been selected"); }
+
+      // Get the selected value
+      let selectedTask = radioButtonEl.value as BlastTask;
+      console.log(`the selected task is ${selectedTask} and the longest sequence is ${longestSequence_}`)
+
+      // Get the current value in the max target sequences input field. If it's not a valid 
+      // number, we will update it to a default value.
+      //let maxTargetSeqs = parseInt(Utils.safeTrim(this.elements.blastMaxTargetSeqs.value));
+      
+      // If the longest sequence length in the user's selected files is greater than zero and 
+      // the user hasn't changed the max target sequences value from the default, we will calculate
+      // a default value based on the longest sequence length.
+      if (longestSequence_ > 0) {
+
+         // (isNaN(maxTargetSeqs))) && maxTargetSeqs !== Constants.DEFAULT_MAX_TARGET_SEQS
+
+         // The new default value is the length of the longest sequence divided by 1000.
+         const defaultValue = Math.max(Math.floor(longestSequence_/1000), Constants.DEFAULT_MAX_TARGET_SEQS);
+
+         this.elements.blastMaxTargetSeqs.value = defaultValue.toString();
+
+         const longest = this.selectedFiles.recordCount === 1 ? "" : "longest ";
+         const message = `${Icon.magicWand} Auto-calculated from your ${longest}sequence length (${longestSequence_.toLocaleString()} bp). You can change this.`;
+
+         // Update the field's comment.
+         this.elements.blastMaxTargetSeqsComment.innerHTML = message;
+      }
+   }
+
    // Update the FASTA text control's data attributes and message.
    updateFastaControlStatus(status_: FastaStatus, fileSize_: number, recordCount_: number, errors_?: string[]) {
 
@@ -1049,8 +1192,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    
          if (this.dialogFile.errorCount > 0) { 
             status = FastaStatus.invalid;
-            const includeFilename = false;
-            errors = this.dialogFile.getErrors(includeFilename);
+            errors = this.dialogFile.getErrors();
 
          } else if (this.dialogFile.records.length < 1) {
             status = FastaStatus.empty;

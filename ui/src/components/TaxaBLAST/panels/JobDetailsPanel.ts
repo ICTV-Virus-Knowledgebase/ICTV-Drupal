@@ -4,6 +4,7 @@ import { ButtonClass, Constants, CreateKeyFromName, CreateNewSearchURL, FormatDa
 import { ISequence } from "../ISequence";
 import { ISequenceFile } from "../ISequenceFile";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
+import { DateTime } from "luxon";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
@@ -23,14 +24,15 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       detailsView: HTMLElement,
       jobName: HTMLInputElement,
       jobNameLabel: HTMLElement,
-      panelControls: HTMLElement,
+      detailsPanelControls: HTMLElement,
       jobFiles: HTMLElement,
       sequenceResults: HTMLElement,
 
       // The pending job view and its children.
       pendingView: HTMLElement,
       pendingElapsed: HTMLElement,
-      pendingJobName: HTMLElement
+      pendingJobName: HTMLElement,
+      pendingPanelControls: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -40,19 +42,20 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
    parent: TaxaBLAST = null;
 
    // Data used for the pending job view.
-   pendingData = {
-      pollIntervalID: NaN,
+   pendingData: {
+      pollIntervalID: number,
       timespan: {
          
          // The number of times getJob has been called.
-         attempts: 1,
+         attempts: number,
 
-         elapsed: 0,
+         // The number of seconds that have elapsed from when the job was created until it ends or now (which ever comes first).
+         elapsed: number,
 
-         intervalID: NaN,
+         intervalID: number,
 
          // The number of seconds until getJob is called again.
-         remainingSeconds: Math.floor(Constants.JOB_POLLING_INTERVAL / 1000)
+         remainingSeconds: number
       }
    }
    
@@ -72,11 +75,23 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          jobFiles: null,
          jobName: null,
          jobNameLabel: null,
-         panelControls: null,
+         detailsPanelControls: null,
          pendingJobName: null,
          pendingElapsed: null,
+         pendingPanelControls: null,
          pendingView: null,
          sequenceResults: null
+      }
+
+      // Initialize the data that keeps track of pending jobs.
+      this.pendingData = {
+         pollIntervalID: NaN,
+         timespan: {
+            attempts: 1,
+            elapsed: 0,
+            intervalID: NaN,
+            remainingSeconds: Math.floor(Constants.JOB_POLLING_INTERVAL / 1000)
+         }
       }
    }
 
@@ -86,6 +101,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       await this.parent.getJob();
 
       if (this.parent.job) {
+
          if (this.parent.job.status === JobStatus.complete) {
 
             if (typeof this.pendingData.pollIntervalID === "number") {
@@ -185,10 +201,10 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
             const rowClass = resultCount % 2 === 0 ? "even-row" : "odd-row";
 
             let row = `<tr class="${rowClass}">
-               <td class="">${resultCount}</td>
-               <td class="">${file_.filename}</td>
-               <td class="">${sequence_.qseqid}</td>
-               <td class="">${hits}</td>
+               <td class="query-index">${resultCount}</td>
+               <td class="filename">${file_.filename}</td>
+               <td class="query-id">${sequence_.qseqid}</td>
+               <td class="hits">${hits}</td>
                <td class="controls">
                   <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip"
                      data-file-index="${fileIndex_}"
@@ -219,11 +235,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       let html = `<table class="query-results-table">
          <thead>
             <tr class="header-row">
-               <th>#</th>
-               <th>Filename</th>
-               <th>Query ID</th>
-               <th>Hits</th>
-               <th></th>
+               <th class="query-index">#</th>
+               <th class="filename">Filename</th>
+               <th class="query-id">Query ID</th>
+               <th class="hits">Hits</th>
+               <th class="controls"></th>
             </tr>
          </thead>
          <tbody>
@@ -343,11 +359,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       this.elements.detailsView.innerHTML = html;
 
       // Get a reference to the "panel controls" DOM element.
-      this.elements.panelControls = this.elements.detailsView.querySelector(".panel-controls");
-      if (!this.elements.panelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
+      this.elements.detailsPanelControls = this.elements.detailsView.querySelector(".panel-controls");
+      if (!this.elements.detailsPanelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
 
       // Handle clicks in the panel controls.
-      this.elements.panelControls.addEventListener("click", async (event_) => {
+      this.elements.detailsPanelControls.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.detailsView, event_.target as HTMLElement);
       })
 
@@ -376,41 +392,34 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       this.elements.pendingJobName.innerHTML = jobName;
 
+      // Initialize the pending data's elapsed seconds from the job's duration (in seconds) attribute.
+      if (this.parent.job !== null && !isNaN(this.parent.job.duration)) {
+         this.pendingData.timespan.elapsed = this.parent.job.duration;
+      }
+
       // Check for the job results based on the defined interval.
       this.pendingData.pollIntervalID = window.setInterval(async () => {
 
+         // Calculate the number of seconds until we check the job status again.
          this.pendingData.timespan.remainingSeconds = Math.floor(Constants.JOB_POLLING_INTERVAL / 1000);
 
          // Load the job to see if it has completed.
-         await this.checkJobStatus()
+         await this.checkJobStatus();
 
+         // Update the pending data with the job duration provided by the server.
+         this.pendingData.timespan.elapsed = this.parent.job.duration;
          this.pendingData.timespan.attempts += 1;
-
-         //this.elements.pendingAttempts.innerHTML = `${this.pendingData.timespan.attempts}`;
 
       }, Constants.JOB_POLLING_INTERVAL);
 
-      // Reset the timespan's number of seconds remaining until the next "get job" (converting milliseconds to seconds).
-      //this.pendingData.timespan.remainingSeconds = Constants.JOB_POLLING_INTERVAL / 1000;
-
+      // This is called every second to update the number of elapsed seconds.
       this.pendingData.timespan.intervalID = window.setInterval(() => {
 
+         // Display the number of elapsed seconds (the job duration) and then increment by one.
          this.elements.pendingElapsed.innerHTML = Utils.formatSeconds(this.pendingData.timespan.elapsed);
-
          this.pendingData.timespan.elapsed += 1;
 
       }, 1000);
-
-      /*
-      // Update the number of seconds remaining every second.
-      this.pendingData.timespan.intervalID = window.setInterval(async () => {
-         
-         console.log(`in the timespan interval remainingSeconds = ${this.pendingData.timespan.remainingSeconds}`)
-
-         this.elements.pendingTimespan.innerHTML = Utils.formatSeconds(this.pendingData.timespan.remainingSeconds);
-         this.pendingData.timespan.remainingSeconds -= 1;
-      }, 1000);
-      */
 
       // Display the pending view and hide the others.
       this.elements.pendingView.classList.add("active");
@@ -466,15 +475,32 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       // Make the container visible.
       this.elements.container.classList.add("active");
       
+
+      // Create link panel HTML with a link to the current job's details.
+      const linkPanelHTML = this.parent.createLinkRow(PanelKey.jobDetails);
+
+      // The URL for a new search.
+      const newSearchURL = CreateNewSearchURL();
+
+      //----------------------------------------------------------------------------------------------------------------
+      // Generate HTML for the job details and pending job views.
+      //----------------------------------------------------------------------------------------------------------------
       const html = 
          `<div class="job-details panel-view"></div>
          <div class="pending-message panel-view">
+            <div class="panel-controls">
+               ${linkPanelHTML}
+               <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+                  data-url="${newSearchURL}"
+               >${Icon.search} New search</button>
+            </div>
             <div class="pending-job-name"></div>
             <div class="processing-message">Your job is being processed. This can take several minutes depending on the size of your input 
             FASTA file(s) and the current load on the system.</div>
             <div class="pending-elapsed-panel">
                <label>Elapsed time:</label>
-               <span class="pending-elapsed"></span>
+               <span class="pending-elapsed">calculating...</span>
             </div>
          </div>
          <div class="error-message panel-view"></div>`;
@@ -498,6 +524,24 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       this.elements.pendingElapsed = this.elements.pendingView.querySelector(".pending-elapsed");
       if (!this.elements.pendingElapsed) { throw new Error("Invalid pending elapsed element"); }
+
+      this.elements.pendingPanelControls = this.elements.pendingView.querySelector(".panel-controls");
+      if (!this.elements.pendingPanelControls) { throw new Error("Invalid pending panel controls element"); }
+
+      // Handle clicks in the pending view's new search row.
+      this.elements.pendingPanelControls.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.pendingPanelControls, event_.target as HTMLElement);
+      })
+
+      // Get a reference to the "panel controls" DOM element.
+      //this.elements.detailsPanelControls = this.elements.detailsView.querySelector(".panel-controls");
+      //if (!this.elements.detailsPanelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
+
+      // Handle clicks in the panel controls.
+      //this.elements.detailsPanelControls.addEventListener("click", async (event_) => {
+      //   return await this.parent.handleClickEvent(this.elements.detailsView, event_.target as HTMLElement);
+      //})
+
 
       // Get the job associated with the job UID.
       await this.parent.getJob();
