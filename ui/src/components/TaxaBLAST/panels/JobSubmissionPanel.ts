@@ -46,7 +46,10 @@ const k: ControlKey = ControlKey.blastn;
 */
 
 const ControlKey = {
+   // Include all BlastTask enums as control keys.
    ...BlastTask,
+
+   // BLAST parameters
    maxHsps: "maxHsps",
    maxTargetSeqs: "maxTargetSeqs"
 } as const;
@@ -139,53 +142,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          startButton: null
       }
 
-      // Create a new job submission object.
-      // this.parent.jobSubmission = new JobSubmission();
-
       // Create a new SelectedFiles instance.
       this.selectedFiles = new SelectedFiles();
-
-      /*
-      this.infoIcons = new Map<ControlKey, InfoIcon>([
-
-         // BLAST parameters
-         [ControlKey.maxHsps, new InfoIcon(`The maximum number of distinct high-scoring segment pairs (HSPs) to report for each subject (target) sequence. 
-            An HSP is an individual local alignment between the query and a region of the subject. Setting this limits how many separate alignments 
-            (e.g., different matching regions or multiple alignments with different scores) you see for the same subject sequence; higher values show more 
-            HSPs per subject, lower values keep only the top N HSPs per subject.`, 
-            ControlKey.maxHsps, 
-            "Max HSPs per target sequence")
-         ],
-         [ControlKey.maxTargetSeqs, new InfoIcon(`The maximum number of subject (database) sequences to return in the results. BLAST ranks subject 
-            sequences by score (or E-value) and returns up to this many distinct subjects. Each returned subject may include up to the number of HSPs 
-            set by the previous parameter.`,
-            ControlKey.maxTargetSeqs,
-            "Max target sequences")
-         ],
-
-         // BLAST tasks
-         [ControlKey.blastn, new InfoIcon(GetBlastTaskInfo(BlastTask.blastn),
-            ControlKey.blastn,
-            GetBlastTaskLabel(BlastTask.blastn))
-         ],
-         [ControlKey.blastp, new InfoIcon(GetBlastTaskInfo(BlastTask.blastp),
-            ControlKey.blastp,
-            GetBlastTaskLabel(BlastTask.blastp))
-         ],
-         [ControlKey.blastx, new InfoIcon(GetBlastTaskInfo(BlastTask.blastx),
-            ControlKey.blastx,
-            GetBlastTaskLabel(BlastTask.blastx))
-         ],
-         [ControlKey.dcMegablast, new InfoIcon(GetBlastTaskInfo(BlastTask.dcMegablast),
-            ControlKey.dcMegablast,
-            GetBlastTaskLabel(BlastTask.dcMegablast))
-         ],
-         [ControlKey.megablast, new InfoIcon(GetBlastTaskInfo(BlastTask.megablast),
-            ControlKey.megablast,
-            GetBlastTaskLabel(BlastTask.megablast))
-         ]
-      ]);*/
-
    }
 
    // Create HTML controls for BLAST task selection.
@@ -398,7 +356,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          // Compare the longest sequence in this file to the longest we've found so far.
          const sequenceLength = file_.getLongestSequenceLength();
-         console.log(`file ${file_.filename}: sequenceLength = ${sequenceLength}`)
          if (sequenceLength > longestSequence) { longestSequence = sequenceLength; }
 
          const rowClass = index_ % 2 === 0 ? "even" : "odd";
@@ -464,30 +421,9 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       return new BlastParams(maxHSPS, maxTargetSeqs, task);
    }
 
-   /*
-   // A wrapper function that generates an info icon's HTML if the info icon is valid.
-   getInfoIconHTML(controlKey_: ControlKey): string {
-
-      console.log("in getInfoIconHTML with ", controlKey_)
-
-      if (this.parent.infoIcons === null) { 
-         return ""; 
-      } else if (!Object.prototype.hasOwnProperty.call(this.parent.infoIcons, controlKey_)) {
-         console.log("infoicons doesn't have control key ", controlKey_)
-         return "";
-      }
-
-      const info = this.parent.infoIcons[controlKey_ as string] as InfoIconData;
-      console.log("info = ", info)
-
-      return InfoIcon.CreateHTML(info.html, controlKey_, info.label, info.title, info.tooltip);
-   }*/
-
    // Handle the selection of a BLAST task radio button.
    handleBlastTaskSelection(radioButton_: HTMLInputElement) {
       
-      console.log("handleBlastTaskSelection")
-
       if (!radioButton_) { return; }
       if (radioButton_.name !== "blast-task") { return; }
 
@@ -609,24 +545,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       // Navigate to the job details panel.
       this.parent.displayPanel(PanelKey.jobDetails);
       
-      /*
-      // Display the "pending results" sub-panel.
-      await this.changePanelMode(PanelMode.pending_results);
-
-      // Load the pending job to see if it has completed.
-      await this.getJobStatus();
-
-      if (!this.submissionStatus.isComplete) {
-
-         // Check for the job results every few seconds.
-         this.submissionStatus.intervalID = window.setInterval(async () => {
-
-            // Load the pending job to see if it has completed.
-            return this.getJobStatus();
-
-         }, Constants.JOB_POLLING_INTERVAL);
-      }*/
-      
       return;
    }
 
@@ -718,17 +636,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          </div>
          ${this.createFastaDialogHTML()}`;
 
-      /*
-      previous formatting of blast task HTML:
-      <div class="control-row">${blastTaskHTML}</div>
-      */
-
-      /*
-      NOTE: Here's an example of what to include in a label to give it an info icon:
-
-      ${this.infoIcons.get(ControlKey.maxTargetSeqs).toHTML()}
-
-      */
       this.elements.container.innerHTML = html;
 
       //------------------------------------------------------------------------------------------------------------------------
@@ -1111,18 +1018,10 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       // Get the selected value
       let selectedTask = radioButtonEl.value as BlastTask;
-      console.log(`the selected task is ${selectedTask} and the longest sequence is ${longestSequence_}`)
+      if (selectedTask !== BlastTask.blastx) { return; }
 
-      // Get the current value in the max target sequences input field. If it's not a valid 
-      // number, we will update it to a default value.
-      //let maxTargetSeqs = parseInt(Utils.safeTrim(this.elements.blastMaxTargetSeqs.value));
-      
-      // If the longest sequence length in the user's selected files is greater than zero and 
-      // the user hasn't changed the max target sequences value from the default, we will calculate
-      // a default value based on the longest sequence length.
+      // For blastx, calculate a default value based on the longest sequence length.
       if (longestSequence_ > 0) {
-
-         // (isNaN(maxTargetSeqs))) && maxTargetSeqs !== Constants.DEFAULT_MAX_TARGET_SEQS
 
          // The new default value is the length of the longest sequence divided by 1000.
          const defaultValue = Math.max(Math.floor(longestSequence_/1000), Constants.DEFAULT_MAX_TARGET_SEQS);
@@ -1134,6 +1033,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
          // Update the field's comment.
          this.elements.blastMaxTargetSeqsComment.innerHTML = message;
+      } else {
+         
+         // Use the default max target seqs value and clear/hide the "auto-calculated" comment.
+         this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
+         this.elements.blastMaxTargetSeqsComment.innerHTML = "";
       }
    }
 

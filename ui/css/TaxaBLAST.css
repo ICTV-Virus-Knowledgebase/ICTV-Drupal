@@ -11,7 +11,8 @@
    --ictv-grey-color: #777;
    --ictv-icon-color: #999;
    --ictv-info-icon-color: #155daa;
-   --ictv-lightest-grey-color: #efefef;
+   --ictv-lightest-grey-color: #f7f7f7;
+   --ictv-lightest-grey-color-alt: #e5e5e5;
    --ictv-light-grey-color: #888;
    --ictv-link-color: #0066cc;
    --ictv-link-hover-color: #004999;
@@ -36,7 +37,7 @@
    border-radius: 5px;
    border-style: solid;
    border-width: 1px;
-   font-size: 0.8rem;
+   font-size: 0.9rem;
    margin-right: 0.5rem;
    padding: .2rem .5rem;
    text-align: center;
@@ -257,7 +258,7 @@ The panel title
    border-radius: var(--ictv-border-radius);
    border-style: solid;
    border-width: 1px;
-   margin-bottom: 0.25rem;
+   margin-bottom: 0.5rem;
    width: 100%;
 }
 #ictv_taxablast_container .ictv-accordion-item.active {
@@ -291,9 +292,16 @@ The panel title
    color: #000;
    padding: 0.5rem 0.5rem 0.5rem 0;
 }
+#ictv_taxablast_container .ictv-accordion-item.even .ictv-accordion-header.blast-hits-header {
+   background-color: var(--ictv-lightest-grey-color-alt);
+}
 #ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-header.blast-hits-header {
    background-color: var(--ictv-panel-header-color);
    color: #fff;
+}
+#ictv_taxablast_container .ictv-accordion-item.active .ictv-accordion-header.blast-hits-header a {
+   color: #ffda68;
+   text-decoration: underline;
 }
 
 /* The accordion label */
@@ -329,11 +337,11 @@ The panel title
 
 /* The accordion body */
 #ictv_taxablast_container .ictv-accordion-body {
-   background-color: #efefef;
+   background-color: #f7f7f7;
    border-radius: 0 0 var(--ictv-border-radius) var(--ictv-border-radius);
    max-height: 0;
    opacity: 0;
-   overflow: hidden;
+   overflow: visible;
    transition: all 0.25s ease-out;
    visibility: hidden;
    will-change: max-height;
@@ -342,7 +350,7 @@ The panel title
    border-width: 1px 0 0 0;
    border-color: rgba(0, 0, 0, 0.3);
    border-style: solid;
-   max-height: 100%;
+   max-height: fit-content;
    opacity: 1;
    visibility: visible;
 }
@@ -351,6 +359,7 @@ The panel title
    border-width: 0;
    border-style: none;
    margin: 0;
+   padding: 1.0rem;
 }
 
 
@@ -360,7 +369,7 @@ The panel title
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_taxablast_container .blast-hits-panel {
    min-width: 900px;
-   overflow-x: auto;
+   /* overflow-x: auto; */
 }
 
 /* The title above the query sequence (details) panel */
@@ -439,7 +448,8 @@ The panel title
    white-space: nowrap;
 }
 #ictv_taxablast_container .blast-hits .species-rank-and-name .species-name a {
-   color: #0000EE;
+   color: var(--ictv-primary-color);
+   text-decoration: underline;
 } 
 #ictv_taxablast_container .blast-hits .species-rank-and-name .segment-name {
    font-size: 1.0rem;
@@ -487,27 +497,56 @@ The panel title
 /* An isolate group in a species tile. */
 #ictv_taxablast_container .isolate-group {
    font-size: 1.0rem !important;
-   margin: 1.0rem 0 1.0rem 1.0rem;
+   /*margin: 0.75rem 1.0rem 1.0rem 1.0rem;*/
 }
-#ictv_taxablast_container .isolate-group .isolate-details {
-   font-size: 1.0rem;
-   margin-bottom: 0.25rem;
+#ictv_taxablast_container .isolate-group a {
+   color: var(--ictv-link-color);
+   text-decoration: underline;
 }
-
-#ictv_taxablast_container .isolate-group .isolate-details a {
-   color: #0000EE;
+#ictv_taxablast_container .isolate-group .hit-names {
+   font-size: 1.2rem;
+   margin-bottom: 0;
 }
-
-#ictv_taxablast_container .isolate-group .isolate-details .hit-label {
+#ictv_taxablast_container .isolate-group .hit-names .hit-label {
    font-weight: normal; /* placeholder */
 }
-#ictv_taxablast_container .isolate-group .isolate-details .virus-name {
+#ictv_taxablast_container .isolate-group .hit-names .isolate-name {
    font-weight: normal;
 }
+#ictv_taxablast_container .isolate-group .hit-names .isolate-name::first-letter,
+#ictv_taxablast_container .isolate-group .hit-names .isolate-name a::first-letter {
+   text-transform: uppercase;
+}
+#ictv_taxablast_container .isolate-group .hit-names .e-or-a {
+   background-color: #ddd;
+   border-color: #aaa;
+   border-radius: 15px;
+   border-style: solid;
+   border-width: 1px;
+   font-size: 0.9rem;
+   margin-left: 0.5rem;
+   padding: 0 0.5rem;
+}
 
-
-#ictv_taxablast_container .isolate-group .isolate-details .e-or-a {
+#ictv_taxablast_container .isolate-group .hit-other-names {
+   font-size: 1.0rem;
+   margin-bottom: 1.0rem;
+}
+#ictv_taxablast_container .isolate-group .accession-label {
    font-weight: normal; /* placeholder */
+}
+#ictv_taxablast_container .isolate-group .accession {
+   font-weight: normal; /* placeholder */
+}
+#ictv_taxablast_container .isolate-group .abbrev-label {
+   font-weight: normal; /* placeholder */
+}
+#ictv_taxablast_container .isolate-group .abbrev {
+   font-weight: normal; /* placeholder */
+}
+#ictv_taxablast_container .isolate-group .name-delimiter {
+   margin-right: 0.5rem;
+   text-align: left;
 }
 
 /* Style the DataTable's "entries per page" select list and label. */
@@ -701,7 +740,7 @@ The panel title
 }
 #ictv_taxablast_container table.details-table .blast-parameter-row .blast-command {
    font-family: monospace;
-   font-size: 0.8rem;
+   font-size: 0.9rem;
    max-width: 600px;
 }
 
@@ -1450,15 +1489,16 @@ The panel title
     Overriding DataTables CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* The "Showing x of y entries" text */
-#taxonomy_browser_container .dt-info {
-   font-size: 0.8rem;
+#ictv_taxablast_container .dt-info {
+   font-size: 0.9rem;
+   margin-bottom: 0.25rem;
 }
 
 /* The "Show ___ entries" row above the table */
 #ictv_taxablast_container .dt-length {
    display: flex;
    flex-flow: row nowrap;
-   margin-bottom: 1.0rem;
+   margin-bottom: 0.5rem;
 }
 #ictv_taxablast_container .dt-length label {
    align-items: center;
