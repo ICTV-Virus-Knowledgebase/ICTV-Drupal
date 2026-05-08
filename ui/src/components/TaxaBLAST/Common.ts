@@ -430,7 +430,7 @@ export function ToggleAccordion(containerEl: HTMLElement, itemID_: string) {
       bodyEl.style.maxHeight = "0";
    } else {
       accordionItemEl.classList.add("active");
-      bodyEl.style.maxHeight = `${bodyEl.scrollHeight}px`;
+      bodyEl.style.maxHeight = "fit-content";  // dmd 050826`${bodyEl.scrollHeight}px`;
    }
 
    return;

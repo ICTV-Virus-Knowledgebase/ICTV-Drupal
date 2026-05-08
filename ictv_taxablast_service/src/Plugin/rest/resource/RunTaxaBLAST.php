@@ -229,7 +229,7 @@ try {
          $sql = "UPDATE job_file SET 
          status_tid = (SELECT id FROM term WHERE full_key = 'job_status.".$jobStatusValue."') 
             WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1) 
-            AND filename = '".$file["name"]."' ";
+            AND filename = '".$file["filename"]."' ";
 
          $fileQuery = $connection->query($sql);
          $fileResult = $fileQuery->execute();

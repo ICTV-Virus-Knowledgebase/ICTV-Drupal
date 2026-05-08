@@ -15,6 +15,7 @@ import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 import { ISequenceFile } from "../ISequenceFile";
 import { ISequence } from "../ISequence";
+import { AlertBuilder } from "../../../helpers/AlertBuilder";
 
 
 export class BlastHitsPanel implements ITaxaBlastPanel {
@@ -41,11 +42,12 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
    // Configuration settings and constants.
    settings = {
-      // Should we display all taxonomic ranks, or just family and below?
-      displayAllRanks: true,
-
+      
       // In some situations, text longer than this will be truncated with "(...)" appended.
-      MAX_CHARS_FROM_LONG_TEXT: 40
+      MAX_CHARS_FROM_LONG_TEXT: 40,
+
+      // Use this delimiter in a range like query start/end and hit start/end.
+      rangeDelimiter: "&mdash;" 
    }
 
    // C-tor
@@ -182,8 +184,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          let hitRange = "";
 
          if (!isNaN(hsp_.queryStart) && !isNaN(hsp_.queryEnd) && !isNaN(hsp_.hitStart) && !isNaN(hsp_.hitEnd)) {
-            queryRange = `${hsp_.queryStart} - ${hsp_.queryEnd}`;
-            hitRange = `${hsp_.hitStart} - ${hsp_.hitEnd}`;
+            queryRange = `${hsp_.queryStart}${this.settings.rangeDelimiter}${hsp_.queryEnd}`;
+            hitRange = `${hsp_.hitStart}${this.settings.rangeDelimiter}${hsp_.hitEnd}`;
          }
 
          html += `<tr class="${rowClass}">
@@ -192,10 +194,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
             <td class="length">${hsp_.length.toLocaleString("en-US")}</td>
             <td class="pident">${pIdent}</td>
             ${proteinColumns}
-            <td class="start-or-end">${hsp_.queryStart}</td>
-            <td class="start-or-end">${hsp_.queryEnd}</td>
-            <td class="start-or-end">${hsp_.hitStart}</td>
-            <td class="start-or-end">${hsp_.hitEnd}</td>
+            <td class="start-or-end">${queryRange}</td>
+            <td class="start-or-end">${hitRange}</td>
          </tr>`;
 
          // <td class="evalue">${eValue}</td>
@@ -209,16 +209,27 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    createIsolateHTML(isolate_: BlastIsolate) {
 
       // Is this an exemplar or an additional isolate?
-      let exemplarOrAdditional = isolate_.isolateExemplar === "E" ? "Exemplar" : "Additional";
+      let exemplarOrAdditional = isolate_.isolateExemplar.toUpperCase() === "E" ? "Exemplar" : "Additional";
 
       let linkedIsolateName = isolate_.accession.length > 0 
          ? Utils.createTaxonDetailsLink(isolate_.isolateID, isolate_.isolateName)
-         //Utils.createGenBankAccessionLink(isolate_.accession, isolate_.isolateName)
          : isolate_.isolateName;
 
-      let accessionLink = isolate_.accession.length > 0 
-         ? Utils.createGenBankAccessionLink(isolate_.accession, isolate_.accession)
+      let designation = isolate_.isolateDesignation.length > 0
+         ? `<span class="designation">(${isolate_.isolateDesignation})</span>`
          : "";
+
+      let otherNames = "";
+
+      if (isolate_.accession.length > 0) {
+         const accessionLink = Utils.createGenBankAccessionLink(isolate_.accession, isolate_.accession)
+         otherNames += `<span class="accession-label">Accession:</span> <span class="accession">${accessionLink}</span>`;
+      }
+
+      if (isolate_.isolateAbbrev.length > 0) {
+         if (isolate_.accession.length > 0) { otherNames += `<span class="name-delimiter">;</span>`; }
+         otherNames += `<span class="abbrev-label">Abbrev:</span> <span class="abbrev">${isolate_.isolateAbbrev}</span>`
+      }
 
       // Create rows for the HSPs
       const hspRows = this.createHspRowsHTML(isolate_.hsps);
@@ -230,11 +241,13 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          : "";
       
       let html = `<div class="isolate-group">
-         <div class="isolate-details">
+         <div class="hit-names">
             <span class="hit-label">Hit:</span>
-            <span class="virus-name">${linkedIsolateName}</span>
-            (<span class="e-or-a">${exemplarOrAdditional} virus</span>; ${accessionLink}; Designation: ${isolate_.isolateDesignation})
+            <span class="isolate-name">${linkedIsolateName}</span>
+            ${designation}
+            <span class="e-or-a">${exemplarOrAdditional} virus</span>
          </div>
+         <div class="hit-other-names">${otherNames}</div>
          <table class="hsp-table" data-isolate-id="${isolate_.isolateID}" data-hsp-count="${isolate_.hsps.length}">
             <thead>
                <tr class="header-row">
@@ -243,10 +256,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                   <th class="length">Length</th>
                   <th class="pident">% Identity</th>
                   ${proteinHeaders}
-                  <th class="start-or-end">Query start</th>
-                  <th class="start-or-end">Query end</th>
-                  <th class="start-or-end">Hit start</th>
-                  <th class="start-or-end">Hit end</th>
+                  <th class="start-or-end">Query start${this.settings.rangeDelimiter}end</th>
+                  <th class="start-or-end">Hit start${this.settings.rangeDelimiter}end</th>
                </tr>
             </thead>
             <tbody>
@@ -294,7 +305,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          </table>`;
    }
 
-   createSpeciesTile(species_: BlastSpecies): string {
+   createSpeciesTile(species_: BlastSpecies, speciesIndex_: number): string {
 
       // Format the species' lineage.
       const lineage = this.formatLineage(species_);
@@ -324,8 +335,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          isolatesHTML += this.createIsolateHTML(isolate_);
       })
 
+      const itemClass = speciesIndex_ % 2 === 0 ? "even" : "odd";
+
       let html =
-         `<div class="ictv-accordion-item" data-id="${species_.ictvID}">
+         `<div class="ictv-accordion-item ${itemClass}" data-id="${species_.ictvID}">
             <div class="ictv-accordion-header blast-hits-header" data-id="${species_.ictvID}">
                <div class="ictv-accordion-control" data-id="${species_.ictvID}">${Icon.chevronDown}</div>
                <div class="species-accordion-label">
@@ -339,7 +352,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                   </div>
                   <div class="right-side">
                      <div class="bitscore-label">Top bitscore:</div>
-                     <div class="bitscore">${species_.topBitscore}</div>
+                     <div class="bitscore">${species_.topBitscore.toLocaleString("en-US")}</div>
                   </div>
                </div>
             </div>
@@ -431,48 +444,47 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
       hspTableEls.forEach((hspTableEl_) => {
       
-         console.log("hspTableEl_.dataset = ", hspTableEl_.dataset)
-         
          const isolateID = hspTableEl_.dataset.isolateId;
-         //getAttribute("data-isolate-id");
          if (!isolateID) { return; }
 
          const strHspCount = hspTableEl_.dataset.hspCount;
-         // hspTableEl_.getAttribute("data-hsp-count");
          const hspCount = parseInt(strHspCount);
          if (isNaN(hspCount)) { return; }
 
-         let bottomEnd = {
-            paging: { buttons: 4}
-         }
-
-         let info = true;
-         let ordering = true;
-         let paging = true;
+         
+         
+         let displayInfo = true;
+         let useOrdering = true;
+         let usePaging = true;
          
          // Tables with less than 5 HSPs don't need to have paging, info, or ordering.
          if (hspCount < 5) { 
-            bottomEnd = null;
-            info = false;
-            ordering = false;
-            paging = false;
+            displayInfo = false;
+            useOrdering = false;
+            usePaging = false;
          }
 
          new DataTables(`.isolate-group table.hsp-table[data-isolate-id="${isolateID}"]`, {
             autoWidth: false,
-            /*columnDefs: [
-               { width: "50px", targets: 0},
-               { width: "100px", targets: 1},
-               { width: "120px", targets: 2},
-               { width: "120px", targets: 3},
-               { width: "120px", targets: 4},
-            ],*/
-            info: info,
-            layout: {
-               bottomEnd: bottomEnd
+            info: displayInfo,
+            language: {
+               info: "Showing _START_ - _END_ of _TOTAL_ high-scoring pairs",
+               lengthLabels: { "-1": "All"},
+               lengthMenu: "_MENU_ high-scoring pairs per page"
             },
-            ordering: ordering,
-            paging: paging,
+            layout: {
+               topStart: "pageLength",
+               topEnd: null,
+               bottomStart: "info",
+               bottomEnd: {
+                  paging: {
+                     buttons: 4
+                  }
+               }
+            },
+            lengthMenu: [5, 25, 50, 100, -1],
+            ordering: useOrdering,
+            paging: usePaging,
             searching: false
          });
       })
@@ -488,160 +500,167 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Validate the state
       if (isNaN(this.parent.state.fileIndex) || isNaN(this.parent.state.sequenceIndex)) { return this.displayErrorMessage("The panel state is invalid"); }
       
-      // Get the job associated with the job UID.
-      await this.parent.getJob();
+      try {
+         // Get the job associated with the job UID.
+         await this.parent.getJob();
 
-      // Validate the job and its data.
-      if (!this.parent.job || !this.parent.job.data) {
-         return this.displayErrorMessage("The specified job is invalid");
-      }
+         // Validate the job and its data.
+         if (!this.parent.job || !this.parent.job.data) {
+            return this.displayErrorMessage("The specified job is invalid");
+         }
 
-      if (this.parent.job.status !== JobStatus.complete) {
-         return this.displayErrorMessage("The specified job has not yet completed");
-      }
+         if (this.parent.job.status !== JobStatus.complete) {
+            return this.displayErrorMessage("The specified job has not yet completed");
+         }
 
-      // Make sure the job has files.
-      if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
-         this.parent.job.data.files.length < this.parent.state.fileIndex + 1) {
+         // Make sure the job has files.
+         if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
+            this.parent.job.data.files.length < this.parent.state.fileIndex + 1) {
 
-         return this.displayErrorMessage("The data files for this job are invalid");
-      }
+            return this.displayErrorMessage("The data files for this job are invalid");
+         }
 
-      // Get the specified file.
-      const file = this.parent.job.data.files[this.parent.state.fileIndex];
-      if (!file) { return this.displayErrorMessage("The specified input file is invalid"); }
+         // Get the specified file.
+         const file = this.parent.job.data.files[this.parent.state.fileIndex];
+         if (!file) { return this.displayErrorMessage("The specified input file is invalid"); }
 
-      // Validate the file's sequences and the specified sequence index.
-      if (!Array.isArray(file.sequences) || file.sequences.length < 1 || file.sequences.length < this.parent.state.sequenceIndex + 1) { 
-         return this.displayErrorMessage("The specified sequence is invalid"); 
-      }
+         // Validate the file's sequences and the specified sequence index.
+         if (!Array.isArray(file.sequences) || file.sequences.length < 1 || file.sequences.length < this.parent.state.sequenceIndex + 1) { 
+            return this.displayErrorMessage("The specified sequence is invalid"); 
+         }
 
-      // Get the sequence.
-      const sequence = file.sequences[this.parent.state.sequenceIndex];
-      if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
+         // Get the sequence.
+         const sequence = file.sequences[this.parent.state.sequenceIndex];
+         if (!sequence) { return this.displayErrorMessage("The specified sequence is invalid"); }
 
-      if (sequence.status === BlastStatus.NO_HITS) {
-         return this.displayErrorMessage(`No BLAST hits were found for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename}`);
-      } else if (!Array.isArray(sequence.hits) || sequence.hits.length < 1) { 
-         return this.displayErrorMessage(`The BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} are invalid`);
-      }
+         if (sequence.status === BlastStatus.NO_HITS) {
+            return this.displayErrorMessage(`No BLAST hits were found for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename}`);
+         } else if (!Array.isArray(sequence.hits) || sequence.hits.length < 1) { 
+            return this.displayErrorMessage(`The BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} are invalid`);
+         }
 
-      // Use the BLAST task to determine the sequence type.
-      const sequenceType: SequenceType = GetSequenceTypeFromBlastTask(this.parent.job.data.task as BlastTask);
+         // Use the BLAST task to determine the sequence type.
+         const sequenceType: SequenceType = GetSequenceTypeFromBlastTask(this.parent.job.data.task as BlastTask);
 
-      // BLAST tasks blastp and blastx will have protein results in the HSPs.
-      this.includeProteinResults = [ BlastTask.blastp, BlastTask.blastx].includes(this.parent.job.data.task as BlastTask);
+         // BLAST tasks blastp and blastx will have protein results in the HSPs.
+         this.includeProteinResults = [ BlastTask.blastp, BlastTask.blastx].includes(this.parent.job.data.task as BlastTask);
 
-      // Consolidate the BLAST hits by species and isolates.
-      const speciesMap = this.consolidateBlastHits(file.filename, sequence.hits, sequenceType);
-      if (speciesMap === null || speciesMap.size < 1) { 
-         return this.displayErrorMessage(`The species information in the BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} is invalid`);
-      }
+         // Consolidate the BLAST hits by species and isolates.
+         const speciesMap = this.consolidateBlastHits(file.filename, sequence.hits, sequenceType);
+         if (speciesMap === null || speciesMap.size < 1) { 
+            return this.displayErrorMessage(`The species information in the BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} is invalid`);
+         }
 
-      let speciesTilesHTML = "";
+         let speciesIndex = 0;
+         let speciesTilesHTML = "";
+         
+         // Generate "species tile" HTML for all species in the map.
+         speciesMap.forEach((species_: BlastSpecies) => {
+            speciesTilesHTML += this.createSpeciesTile(species_, speciesIndex);
+            speciesIndex += 1;
+         })
       
-      // Generate "species tile" HTML for all species in the map.
-      speciesMap.forEach((species_: BlastSpecies) => {
-         speciesTilesHTML += this.createSpeciesTile(species_); 
-      })
-     
-      // Use the query ID for the CSV filename.
-      const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
+         // Use the query ID for the CSV filename.
+         const csvName = `${sequence.qseqid.replace(" ", "_")}.csv`;
 
-      // Create HTML for the query sequence details displayed at the top.
-      const queryDetailsHTML = this.createQueryDetailsHTML(file, sequence);
+         // Create HTML for the query sequence details displayed at the top.
+         const queryDetailsHTML = this.createQueryDetailsHTML(file, sequence);
 
-      // Create a URL for the job details page.
-      const jobDetailsURL = this.parent.createPanelURL(PanelKey.jobDetails);
+         // Create a URL for the job details page.
+         const jobDetailsURL = this.parent.createPanelURL(PanelKey.jobDetails);
 
-      // Create a link that will display a page with BLAST hits for this job, file, and sequence.
-      const linkPanelHTML = this.parent.createLinkRow(PanelKey.blastHits);
+         // Create a link that will display a page with BLAST hits for this job, file, and sequence.
+         const linkPanelHTML = this.parent.createLinkRow(PanelKey.blastHits);
 
-      // Don't emphasize the job name since this isn't the most important detail for users to see at a glance.
-      const emphasizeFirstRow = false;
+         // Don't emphasize the job name since this isn't the most important detail for users to see at a glance.
+         const emphasizeFirstRow = false;
 
-      // Create the job details table HTML.
-      const tableClass = "no-borders";
-      const jobDetailsHTML = this.parent.createJobDetailsTable(emphasizeFirstRow, tableClass);
-      
-      // A key for the job details accordion item.
-      const detailsKey = "job_details";
+         // Create the job details table HTML.
+         const tableClass = "no-borders";
+         const jobDetailsHTML = this.parent.createJobDetailsTable(emphasizeFirstRow, tableClass);
+         
+         // A key for the job details accordion item.
+         const detailsKey = "job_details";
 
-      // Create the panel's HTML.
-      this.elements.container.innerHTML = 
-         `${queryDetailsHTML}
-         <div class="ictv-accordion-item job-details" data-id="${detailsKey}">
-            <div class="ictv-accordion-header blast-hits-header" data-id="${detailsKey}">
-               <div class="ictv-accordion-control" data-id="${detailsKey}">${Icon.chevronDown}</div>
-               <div class="ictv-accordion-label">Job details</div>
+         // Create the panel's HTML.
+         this.elements.container.innerHTML = 
+            `${queryDetailsHTML}
+            <div class="ictv-accordion-item job-details" data-id="${detailsKey}">
+               <div class="ictv-accordion-header blast-hits-header" data-id="${detailsKey}">
+                  <div class="ictv-accordion-control" data-id="${detailsKey}">${Icon.chevronDown}</div>
+                  <div class="ictv-accordion-label">Job details</div>
+               </div>
+               <div class="ictv-accordion-body" data-id="${detailsKey}">
+                  <div class="ictv-accordion-content">${jobDetailsHTML}</div>
+               </div>
             </div>
-            <div class="ictv-accordion-body" data-id="${detailsKey}">
-               <div class="ictv-accordion-content">${jobDetailsHTML}</div>
+            <div class="blast-hits-title">BLAST hits</div>
+            <div class="blast-hits-panel-controls">
+               ${linkPanelHTML}
+               <div class="sequence-controls">
+                  <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
+                     data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
+                     data-url="${jobDetailsURL}"
+                  >${Icon.back}<span class="btn-label">Return to search results</span></button>
+
+                  <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip"
+                     data-filename="${sequence.blast_html}"
+                     data-tippy-content="View the alignments in a new tab"
+                     data-title="${sequence.qseqid}"
+                  >${Icon.html}<span class="btn-label">View alignments</span></button>
+
+                  <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip"
+                     data-filename="${sequence.blast_csv}"
+                     data-tippy-content="Download the BLAST hits as a CSV file"
+                     data-title="${csvName}"
+                  >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
+
+                  <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                     data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+                     data-url="${this.parent.createPanelURL(PanelKey.jobSubmission)}"
+                  >${Icon.search}<span class="btn-label">New search</span></button>
+               </div>
             </div>
-         </div>
-         <div class="blast-hits-title">BLAST hits</div>
-         <div class="blast-hits-panel-controls">
-            ${linkPanelHTML}
-            <div class="sequence-controls">
-               <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
-                  data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
-                  data-url="${jobDetailsURL}"
-               >${Icon.back}<span class="btn-label">Return to search results</span></button>
-
-               <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip"
-                  data-filename="${sequence.blast_html}"
-                  data-tippy-content="View the alignments in a new tab"
-                  data-title="${sequence.qseqid}"
-               >${Icon.html}<span class="btn-label">View alignments</span></button>
-
-               <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip"
-                  data-filename="${sequence.blast_csv}"
-                  data-tippy-content="Download the BLAST hits as a CSV file"
-                  data-title="${csvName}"
-               >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
-
-               <button class="btn ${ButtonClass.newSearch} has-tooltip"
-                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
-                  data-url="${this.parent.createPanelURL(PanelKey.jobSubmission)}"
-               >${Icon.search}<span class="btn-label">New search</span></button>
-            </div>
-         </div>
-         <div class="blast-hits">${speciesTilesHTML}</div>`;
+            <div class="blast-hits">${speciesTilesHTML}</div>`;
 
 
-      // Initialize tippy tooltips for buttons.
-      tippy(".has-tooltip");
+         // Initialize tippy tooltips for buttons.
+         tippy(".has-tooltip");
 
-      // Get a reference to the BLAST hits element.
-      this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
-      if (!this.elements.blastHits) { throw new Error("Invalid blast hits DOM element"); }
+         // Get a reference to the BLAST hits element.
+         this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
+         if (!this.elements.blastHits) { throw new Error("Invalid blast hits DOM element"); }
 
-      // Get a reference to the job details accordion element.
-      this.elements.jobDetails = this.elements.container.querySelector(".job-details");
-      if (!this.elements.jobDetails) { throw new Error("Invalid job details DOM element"); }
-      
-      // Get a reference to the panel controls element.
-      this.elements.panelControls = this.elements.container.querySelector(".blast-hits-panel-controls");
-      if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
+         // Get a reference to the job details accordion element.
+         this.elements.jobDetails = this.elements.container.querySelector(".job-details");
+         if (!this.elements.jobDetails) { throw new Error("Invalid job details DOM element"); }
+         
+         // Get a reference to the panel controls element.
+         this.elements.panelControls = this.elements.container.querySelector(".blast-hits-panel-controls");
+         if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
 
-      // Handle clicks in the BLAST hits element. 
-      this.elements.blastHits.addEventListener("click", async (event_) => {
-         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
-      })
+         // Handle clicks in the BLAST hits element. 
+         this.elements.blastHits.addEventListener("click", async (event_) => {
+            return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+         })
 
-      // Handle clicks in the job details element. 
-      this.elements.jobDetails.addEventListener("click", async (event_) => {
-         return await this.parent.handleClickEvent(this.elements.jobDetails, event_.target as HTMLElement);
-      })
+         // Handle clicks in the job details element. 
+         this.elements.jobDetails.addEventListener("click", async (event_) => {
+            return await this.parent.handleClickEvent(this.elements.jobDetails, event_.target as HTMLElement);
+         })
 
-      // Handle clicks in the panel controls.
-      this.elements.panelControls.addEventListener("click", async (event_) => {
-         return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
-      })
+         // Handle clicks in the panel controls.
+         this.elements.panelControls.addEventListener("click", async (event_) => {
+            return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
+         })
 
-      // Convert the HSP tables into DataTable instances.
-      //this.initializeHspTables();
-      
+         // Convert the HSP tables into DataTable instances.
+         this.initializeHspTables();
+         
+      } catch (error_: any) {
+         await AlertBuilder.displayError(error_);
+      }
+
       return;
    }
 

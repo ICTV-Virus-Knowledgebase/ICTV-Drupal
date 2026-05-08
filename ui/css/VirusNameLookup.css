@@ -299,6 +299,7 @@
    Data tables
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 #ictv_virus_name_lookup_container table.results-table {
+   margin-bottom: 0;
    min-width: 800px;
    overflow: visible !important;
    width: 100%;
