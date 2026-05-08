@@ -48,23 +48,28 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Configuration settings (to replace hard-coded values below)
    const settings = {
       pageSize: 50,
+      pageStep: 5,
       animationDuration: 900,
-      animationDelay: 1100,
+      animationDelay: 1000,
       node: {
-         radius: 17.5,
+         // radius: 17.5,
+         radius: 20,
          strokeWidth: 3,
          textDx: 25,
          textDy: 25,
       },
       svg: {
-         height: jQuery(window).height() * 0.8,
+         // height: jQuery(window).height() * 0.8,
+         height: jQuery(`${containerSelector} .taxonomy-panel`).height() || jQuery(window).height() * 0.8,
+         // height: 579.33,
          margin: {
             top: 0,
             right: 0,
             bottom: 0,
             left: 0
          },
-         width: jQuery(window).width(),
+         // width: jQuery(window).width(),
+         width: jQuery(`${containerSelector} .taxonomy-panel`).width() || jQuery(window).width(),
       },
       tooltip: {
          animation: "scale",
@@ -83,7 +88,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       // yOffset: 0,
       // zoom: {
       //    scaleFactor: 0.19, //.17,
-      //    translateX: -(jQuery(window).width()), //-3850,
+      //    translateX: -(jQuery(window).width()), * 2.5 //-3850,
       //    translateY: -(jQuery(window).height() * 0.45), //-1800
       // },
       // ===========================================================================
@@ -107,10 +112,30 @@ window.ICTV.d3TaxonomyVisualization = function (
    let currentTreeRoot = null;
    let currentTreeUpdate = null;
 
+   // Assigned by createTree() so outside controls can clear measured spacing before a normal rerender.
+   let currentTreeResetAutoSpacing = null;
+
+   // Assigned by createTree() so search expansion can wait until measured spacing has settled.
+   let currentTreeWaitForAutoSpacing = null;
+
+   // Remember the last spacing that cleared overlap so a rebuilt tree can start with the same scale.
+   let rememberedAutoSpacing = {
+      horizontalScale: 1,
+      verticalScale: 1
+   };
+
    // Zoom behavior for font slider
    let currentZoom = null;
    let currentSvgZoom = null;
    let initialZoomTransform = null;
+   const zoomScaleSettings = {
+      minScale: 0.01,
+      defaultScale: 0.19,
+      maxScale: 1,
+      sliderMin: 0,
+      sliderMax: 100,
+      sliderStep: 0.1
+   };
 
    // nodeHeight is used in pageNodes() to determine which page to display when searching
    var nodeHeight = null;
@@ -181,6 +206,99 @@ window.ICTV.d3TaxonomyVisualization = function (
       return !togglePaginate || togglePaginate.checked;
    }
 
+   function getCurrentZoomExtent() {
+      return currentZoom ? currentZoom.scaleExtent() : [zoomScaleSettings.minScale, zoomScaleSettings.maxScale];
+   }
+
+   function clampZoomScale(scale) {
+      const extent = getCurrentZoomExtent();
+      return Math.max(extent[0], Math.min(extent[1], scale));
+   }
+
+   function zoomScaleToSliderValue(scale) {
+      const extent = getCurrentZoomExtent();
+      const minLog = Math.log(extent[0]);
+      const maxLog = Math.log(extent[1]);
+      const clampedScale = clampZoomScale(scale);
+      const t = (Math.log(clampedScale) - minLog) / (maxLog - minLog);
+
+      return zoomScaleSettings.sliderMin + (t * (zoomScaleSettings.sliderMax - zoomScaleSettings.sliderMin));
+   }
+
+   function sliderValueToZoomScale(value) {
+      const extent = getCurrentZoomExtent();
+      const sliderRange = zoomScaleSettings.sliderMax - zoomScaleSettings.sliderMin;
+      const t = (parseFloat(value) - zoomScaleSettings.sliderMin) / sliderRange;
+      const minLog = Math.log(extent[0]);
+      const maxLog = Math.log(extent[1]);
+
+      return Math.exp(minLog + (Math.max(0, Math.min(1, t)) * (maxLog - minLog)));
+   }
+
+   function syncZoomSlider(transformOrScale) {
+      if (!ZoomSliderEl) { return; }
+
+      const scale = typeof transformOrScale === "number" ? transformOrScale : transformOrScale.k;
+      const sliderValue = zoomScaleToSliderValue(scale);
+
+      ZoomSliderEl
+         .property("value", sliderValue)
+         .attr("aria-valuetext", `${Math.round(clampZoomScale(scale) * 100)}%`);
+   }
+
+   function getSvgViewportSize() {
+      const svgNode = currentSvgZoom ? currentSvgZoom.node() : null;
+      const rect = svgNode ? svgNode.getBoundingClientRect() : null;
+
+      return {
+         width: rect && rect.width ? rect.width : settings.svg.width,
+         height: rect && rect.height ? rect.height : settings.svg.height
+      };
+   }
+
+   function getZoomFocusPoint() {
+      const viewport = getSvgViewportSize();
+      const fallback = [viewport.width / 2, viewport.height / 2];
+      const groupNode = document.querySelector(`${containerSelector} .taxonomy-panel svg g`);
+
+      if (!groupNode || !currentSvgZoom) { return fallback; }
+
+      let bounds;
+
+      try {
+         bounds = groupNode.getBBox();
+      } catch (e) {
+         return fallback;
+      }
+
+      if (!bounds || bounds.width === 0 || bounds.height === 0) { return fallback; }
+
+      const transform = d3.zoomTransform(currentSvgZoom.node());
+      const left = transform.applyX(bounds.x);
+      const right = transform.applyX(bounds.x + bounds.width);
+      const top = transform.applyY(bounds.y);
+      const bottom = transform.applyY(bounds.y + bounds.height);
+      const visibleLeft = Math.max(0, Math.min(viewport.width, left));
+      const visibleRight = Math.max(0, Math.min(viewport.width, right));
+      const visibleTop = Math.max(0, Math.min(viewport.height, top));
+      const visibleBottom = Math.max(0, Math.min(viewport.height, bottom));
+
+      return [
+         visibleRight > visibleLeft ? (visibleLeft + visibleRight) / 2 : fallback[0],
+         visibleBottom > visibleTop ? (visibleTop + visibleBottom) / 2 : fallback[1]
+      ];
+   }
+
+   function fitScaleForBounds(bounds, padding) {
+      if (!bounds || bounds.width === 0 || bounds.height === 0) { return null; }
+
+      const viewport = getSvgViewportSize();
+      const scaleWidth = viewport.width / bounds.width;
+      const scaleHeight = viewport.height / bounds.height;
+
+      return clampZoomScale(Math.min(scaleWidth, scaleHeight) * padding);
+   }
+
    // Pagination toggle
    function initializePaginateToggle() {
       togglePaginate = document.querySelector(`${containerSelector} .header-panel .paginate-ctrl`);
@@ -210,15 +328,15 @@ window.ICTV.d3TaxonomyVisualization = function (
          if (group.empty()) return;
 
          const bounds = group.node().getBBox();
-         const fullWidth = settings.svg.width;
-         const fullHeight = settings.svg.height;
+         const viewport = getSvgViewportSize();
+         const fullWidth = viewport.width;
+         const fullHeight = viewport.height;
 
          if (bounds.width === 0 || bounds.height === 0) return;
 
          const padding = 0.85;
-         const scaleWidth = fullWidth / bounds.width;
-         const scaleHeight = fullHeight / bounds.height;
-         let newScale = Math.min(scaleWidth, scaleHeight) * padding;
+         let newScale = fitScaleForBounds(bounds, padding);
+         if (newScale === null) return;
 
          // Center the bounding box perfectly in the SVG viewport
          let finalX = (fullWidth / 2) - newScale * (bounds.x + bounds.width / 2);
@@ -230,10 +348,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                currentZoom.transform,
                d3.zoomIdentity.translate(finalX, finalY).scale(newScale)
             );
-            
-         // Sync zoom slider
-         if (ZoomSliderEl) ZoomSliderEl.property("value", newScale);
-         
          return; // Exit early, skipping the normal node-panning logic
       }
 
@@ -241,8 +355,9 @@ window.ICTV.d3TaxonomyVisualization = function (
       const scale = currentTransform.k;
       
       // node.y = horizontal position, node.x = vertical position (tree is rotated)
-      const tx = (settings.svg.width / 6) - scale * node.y;
-      const ty = (settings.svg.height / 2) - scale * node.x;
+      const viewport = getSvgViewportSize();
+      const tx = (viewport.width / 6) - scale * node.y;
+      const ty = (viewport.height / 2) - scale * node.x;
 
          currentSvgZoom.transition()
             .duration(duration || settings.animationDuration)
@@ -259,12 +374,19 @@ window.ICTV.d3TaxonomyVisualization = function (
       let buttonE1 = document.querySelector(`${containerSelector} .font-size-panel`);
       if (!buttonE1) { throw new Error("Invalid font size panel Element"); }
 
-	  // "Expand to Fit" button
+	   // "Expand to Fit" button
       let expandToFitBtn = d3
          .select(`${containerSelector} .font-size-panel`)
          .append("button")
          .attr("class", "screenshot-button expand-to-fit-btn")
          .html(`<i class="fa fa-expand"></i> Expand to Fit`)
+
+      // "Reset View" button
+      let resetViewBtn = d3
+         .select(`${containerSelector} .font-size-panel`)
+         .append("button")
+         .attr("class", "screenshot-button reset-view-btn")
+         .html(`<i class="fa fa-home"></i> Reset View`);
 
       // Create a button.
       let buttonClickE1 = d3
@@ -606,19 +728,19 @@ window.ICTV.d3TaxonomyVisualization = function (
          if (group.empty()) return;
 
          const bounds = group.node().getBBox();
-         const fullWidth = settings.svg.width;
-         const fullHeight = settings.svg.height;
+         const viewport = getSvgViewportSize();
+         const fullWidth = viewport.width;
+         const fullHeight = viewport.height;
 
          if (bounds.width === 0 || bounds.height === 0) return;
 
          // Calculate the scale needed to fit the tree within the viewable SVG area.
          // Add a padding factor (e.g., 0.85) so it doesn't touch the very edges.
          const padding = 0.85;
-         const scaleWidth = fullWidth / bounds.width;
-         const scaleHeight = fullHeight / bounds.height;
          
          // Use the smaller scale so the entire tree fits, but clamp it to reasonable min/max
-         let newScale = Math.min(scaleWidth, scaleHeight) * padding;
+         let newScale = fitScaleForBounds(bounds, padding);
+         if (newScale === null) return;
          
          // Fetch the horizontal (y) and vertical (x) coordinates of the topmost left node (Realm)
          let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
@@ -644,11 +766,34 @@ window.ICTV.d3TaxonomyVisualization = function (
                currentZoom.transform,
                d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
             );
-            
-         // Sync sliders
-         if (ZoomSliderEl) {
-            ZoomSliderEl.property("value", newScale);
-         }
+      });
+
+      // Click handler for Reset View
+      resetViewBtn.on("click", function () {
+         if (!currentZoom || !currentSvgZoom || !currentTreeRoot || !initialZoomTransform) return;
+
+         // Use the initial scale (e.g., 0.19)
+         let startScale = initialZoomTransform.k;
+
+         // Fetch the horizontal (y) and vertical (x) coordinates of the topmost left node (Realm)
+         let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
+         let realmDataX = currentTreeRoot.children ? currentTreeRoot.children[0].x : (currentTreeRoot._children ? currentTreeRoot._children[0].x : 0);
+
+         // Standard padding for resetting
+         let desiredLeftPadding = 20;
+         let desiredTopPadding = 50; // 50 matches your DYNAMIC INITIAL ALIGNMENT padding
+
+         // Calculate exact translations to pin the Realm node
+         let calculatedX = desiredLeftPadding - (realmDataY * startScale);
+         let calculatedY = desiredTopPadding - (realmDataX * startScale);
+
+         // Animate back to the calculated translation and initial scale
+         currentSvgZoom.transition()
+            .duration(settings.animationDuration)
+            .call(
+               currentZoom.transform,
+               d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
+            );
       });
 
    }
@@ -684,12 +829,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return node.allChildren || node.children || node._children || null;
    }
 
-   function getPageItemCount(pageSize) {
-      return Math.max(pageSize - 2, 1);
-   }
-
-   function getDefaultPageIndex(node, itemCount, pageCount) {
-      let pageIndex = 0;
+   function getDefaultScrollStartIndex(node, visibleCount, totalCount) {
+      let scrollStartIndex = 0;
 
       if (
          !!node &&
@@ -698,30 +839,46 @@ window.ICTV.d3TaxonomyVisualization = function (
          paginationData.parentTaxnodeID == node.data.parentTaxNodeID &&
          !isNaN(paginationData.childDisplayOrder)
       ) {
-         pageIndex = Math.floor((paginationData.childDisplayOrder - 1) / itemCount);
+         scrollStartIndex = paginationData.childDisplayOrder - 1;
       }
 
-      return Math.max(0, Math.min(pageIndex, pageCount - 1));
+      const maxStartIndex = Math.max(totalCount - visibleCount, 0);
+      return Math.max(0, Math.min(scrollStartIndex, maxStartIndex));
    }
 
-   function createPagerNode(parentNode, pageIndex) {
+   function getWindowItemCount(pageSize) {
+      return Math.max(pageSize - 2, 1);
+   }
+
+   function createPagerNode(parentNode, direction, scrollStartIndex, disabled, remainingCount, rangeStart, rangeEnd, totalCount) {
       if (!isPaginationEnabled()) { return null; }
 
+      const parentTaxNodeID = parentNode?.data?.taxNodeID || "";
+      const pagerName = direction === "up" ? "\u25B2" : "\u25BC";
+      const remaining = Math.max(remainingCount || 0, 0);
+
       return {
+         id: `pager-${parentTaxNodeID}-${direction}`,
          data: {
-            name: "More...",
+            name: `${pagerName} ${remaining}`,
             rankName: "Shift",
-            taxNodeID: "",
-            parentTaxNodeID: parentNode?.data?.taxNodeID || "",
+            taxNodeID: `pager-${parentTaxNodeID}-${direction}`,
+            parentTaxNodeID,
             rankIndex: (parseInt(parentNode?.data?.rankIndex) || 0) + 1,
             is_assigned: true,
             has_species: 0,
-            isPager: true
+            isPager: true,
+            isPagerDisabled: disabled === true,
+            pagerDirection: direction,
+            pagerRemainingCount: remaining,
+            pagerRangeStart: rangeStart,
+            pagerRangeEnd: rangeEnd,
+            pagerTotalCount: totalCount
          },
          parent: parentNode,
          depth: (parentNode?.depth || 0) + 1,
          height: 0,
-         page: pageIndex,
+         scrollStartIndex,
          children: null,
          _children: null,
          allChildren: null
@@ -743,22 +900,29 @@ window.ICTV.d3TaxonomyVisualization = function (
          return node.allChildren;
       }
 
-      const pageIndex = Math.max(0, Math.min(node.pagination.currentPage, node.pagination.pageCount - 1));
-      const startRange = pageIndex * node.pagination.itemCount;
-      const endRange = startRange + node.pagination.itemCount;
+      const visibleCount = node.pagination.visibleCount;
+      const maxStartIndex = Math.max(node.allChildren.length - visibleCount, 0);
+      const startRange = Math.max(0, Math.min(node.pagination.scrollStartIndex, maxStartIndex));
+      const endRange = startRange + visibleCount;
       const visibleChildren = node.allChildren.slice(startRange, endRange);
 
-      if (node.pagination.pageCount < 2) {
+      node.pagination.scrollStartIndex = startRange;
+
+      if (maxStartIndex < 1) {
          return visibleChildren;
       }
 
-      const previousPage = pageIndex === 0 ? node.pagination.pageCount - 1 : pageIndex - 1;
-      const nextPage = pageIndex === node.pagination.pageCount - 1 ? 0 : pageIndex + 1;
+      const previousStart = Math.max(startRange - node.pagination.scrollStep, 0);
+      const nextStart = Math.min(startRange + node.pagination.scrollStep, maxStartIndex);
+      const remainingAbove = startRange;
+      const remainingBelow = Math.max(node.allChildren.length - endRange, 0);
+      const rangeStart = startRange + 1;
+      const rangeEnd = Math.min(endRange, node.allChildren.length);
 
       return [
-         createPagerNode(node, previousPage),
+         createPagerNode(node, "up", previousStart, startRange === 0, remainingAbove, rangeStart, rangeEnd, node.allChildren.length),
          ...visibleChildren,
-         createPagerNode(node, nextPage)
+         createPagerNode(node, "down", nextStart, startRange === maxStartIndex, remainingBelow, rangeStart, rangeEnd, node.allChildren.length)
       ].filter(Boolean);
    }
 
@@ -779,17 +943,18 @@ window.ICTV.d3TaxonomyVisualization = function (
       return false;
    }
 
-   function setNodePage(node, pageIndex) {
+   function setNodeScrollStart(node, scrollStartIndex) {
       if (!isPaginationEnabled() || !node || !node.pagination) { return false; }
 
-      const normalizedPageIndex = ((pageIndex % node.pagination.pageCount) + node.pagination.pageCount) % node.pagination.pageCount;
-      const pageChanged = node.pagination.currentPage !== normalizedPageIndex;
-      node.pagination.currentPage = normalizedPageIndex;
+      const maxStartIndex = Math.max(node.allChildren.length - node.pagination.visibleCount, 0);
+      const normalizedScrollStartIndex = Math.max(0, Math.min(scrollStartIndex, maxStartIndex));
+      const scrollChanged = node.pagination.scrollStartIndex !== normalizedScrollStartIndex;
+      node.pagination.scrollStartIndex = normalizedScrollStartIndex;
 
-      return syncVisibleChildren(node) || pageChanged;
+      return syncVisibleChildren(node) || scrollChanged;
    }
 
-   function setNodePageForChild(parentNode, childNode) {
+   function setNodeScrollStartForChild(parentNode, childNode) {
       if (!isPaginationEnabled() || !parentNode || !parentNode.pagination || !parentNode.allChildren || !childNode) {
          return false;
       }
@@ -805,8 +970,15 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       if (childIndex === -1) { return false; }
 
-      const targetPageIndex = Math.floor(childIndex / parentNode.pagination.itemCount);
-      return setNodePage(parentNode, targetPageIndex);
+      const visibleCount = parentNode.pagination.visibleCount;
+      const currentStartIndex = parentNode.pagination.scrollStartIndex;
+
+      if (childIndex >= currentStartIndex && childIndex < currentStartIndex + visibleCount) {
+         return false;
+      }
+
+      const targetScrollStartIndex = childIndex - Math.floor(visibleCount / 2);
+      return setNodeScrollStart(parentNode, targetScrollStartIndex);
    }
 
    function expandNode(node) {
@@ -832,13 +1004,12 @@ window.ICTV.d3TaxonomyVisualization = function (
       node.allChildren.forEach((childNode) => initializePagination(childNode, pageSize));
 
       if (node.allChildren.length > pageSize) {
-         const itemCount = getPageItemCount(pageSize);
-         const pageCount = Math.ceil(node.allChildren.length / itemCount);
+         const visibleCount = getWindowItemCount(pageSize);
 
          node.pagination = {
-            itemCount,
-            pageCount,
-            currentPage: getDefaultPageIndex(node, itemCount, pageCount)
+            visibleCount,
+            scrollStep: settings.pageStep,
+            scrollStartIndex: getDefaultScrollStartIndex(node, visibleCount, node.allChildren.length)
          };
 
          node.children = getVisibleChildren(node);
@@ -892,23 +1063,24 @@ window.ICTV.d3TaxonomyVisualization = function (
       if (ZoomPanelEl.classList.contains("show")) { ZoomPanelEl.classList.remove("show"); }
 
       d3
-         .select(".font-size-panel")
+         .select(`${containerSelector} .font-size-panel`)
          .append("div")
          .attr("class", "label")
          .text("Zoom");
 
       ZoomSliderEl = d3
-         .select(".font-size-panel")
+         .select(`${containerSelector} .font-size-panel`)
          .append("input")
          .attr("class", "slider")
          .attr("type", "range")
-         .attr("min", 0.19)
-         .attr("max", 1)
-         .attr("step", 0.001)
-         .attr("value", 0.19);
+         .attr("min", zoomScaleSettings.sliderMin)
+         .attr("max", zoomScaleSettings.sliderMax)
+         .attr("step", zoomScaleSettings.sliderStep)
+         .attr("value", zoomScaleToSliderValue(zoomScaleSettings.defaultScale))
+         .attr("aria-label", "Zoom");
 
       ZoomSliderEl.on("input", function (e) {
-         const zoomValue = parseFloat(e.target.value);
+         const zoomValue = sliderValueToZoomScale(e.target.value);
          // const svg = d3.select(`${containerSelector} .taxonomy-panel svg`);
 
          // let currentTransform = d3.zoomTransform(svg.node());
@@ -916,12 +1088,10 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          // Make sure the tree is fully loaded
          if (currentZoom && currentSvgZoom) {
-            // Find the exact center of the SVG viewport
-            const centerX = settings.svg.width / 2;
-            const centerY = settings.svg.height / 2;
+            const focusPoint = getZoomFocusPoint();
             
-            // Use D3's native scaleTo logic to zoom in around that specific center point
-            currentSvgZoom.call(currentZoom.scaleTo, zoomValue, [centerX, centerY]);
+            // Use D3's native scaleTo logic to zoom around the visible tree content.
+            currentSvgZoom.call(currentZoom.scaleTo, zoomValue, focusPoint);
          }
       });
    }
@@ -958,6 +1128,13 @@ window.ICTV.d3TaxonomyVisualization = function (
       fontSliderEl.on("input", function (e) {
          const fontSize = e.target.value;
          currentFontSize = fontSize;
+
+         // Start from the normal layout whenever the user changes font size.
+         // The overlap detector below will add spacing back only if the new text boxes collide.
+         if (currentTreeResetAutoSpacing) {
+            currentTreeResetAutoSpacing();
+         }
+
          d3.selectAll(`${containerSelector} .taxonomy-panel text.node-text`)
             .style("font-size", fontSize + "rem");
 
@@ -967,39 +1144,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          if (currentTreeRoot && currentTreeUpdate) {
             currentTreeUpdate(currentTreeRoot);
-
-            setTimeout(function () {
-               if (!currentZoom || !currentSvgZoom || !initialZoomTransform) return;
-
-               // Determine the new scale to accommodate the larger bounding box 
-               const fontScale = (parseFloat(currentFontSize) || 4) / 4;
-               const newScale = initialZoomTransform.k / Math.sqrt(fontScale);
-
-               // Fetch the horizontal (y) and vertical (x) coordinates of the first column
-               let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
-               let realmDataX = currentTreeRoot.children ? currentTreeRoot.children[0].x : (currentTreeRoot._children ? currentTreeRoot._children[0].x : 0);
-               
-               // Define exactly how many pixels away from the edges to pin the Realm node
-               let desiredLeftPadding = 20; 
-               let desiredTopPadding = 70; 
-               
-               // Calculate target translations
-               let calculatedX = desiredLeftPadding - (realmDataY * newScale);
-               let calculatedY = desiredTopPadding - (realmDataX * newScale);
-
-               // Anchor the SVG using the calculations
-               currentSvgZoom.transition()
-                  .duration(100) // fast transition since the slider is being dragged
-                  .call(
-                     currentZoom.transform,
-                     d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
-                  );
-
-               // Optionally sync the zoom slider with the newly applied scale
-               if (ZoomSliderEl) {
-                  ZoomSliderEl.property("value", newScale);
-               }
-            }, settings.animationDuration + 50);
          }
       });
    }
@@ -1083,8 +1227,16 @@ window.ICTV.d3TaxonomyVisualization = function (
       len = 0;
       counter = 0;
       res = [];
+
+      // Stop any pending overlap measurement before the release rebuild removes the old SVG.
+      if (currentTreeResetAutoSpacing) {
+         currentTreeResetAutoSpacing(false);
+      }
+
       currentTreeRoot = null;
       currentTreeUpdate = null;
+      currentTreeResetAutoSpacing = null;
+      currentTreeWaitForAutoSpacing = null;
 
       // If there's already an SVG element in the taxonomy panel, delete it.
       const existingSVG = document.querySelector(`${containerSelector} .taxonomy-panel svg `);
@@ -1193,11 +1345,12 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             let zoom = d3.zoom()
                // zoom constraints
-               // .05: Zoom out to 5% of the original size
-               // .5: Zoom in to .5 times the original size
-               .scaleExtent([0.05, .5])
+               // .01: Zoom out to 1% of the original size
+               // 1: Zoom in to the original size
+               .scaleExtent([zoomScaleSettings.minScale, zoomScaleSettings.maxScale])
                .on("zoom", function (event) {
                   svg.attr("transform", event.transform);
+                  syncZoomSlider(event.transform);
                });
 
             var svg_zoom = d3
@@ -1226,53 +1379,303 @@ window.ICTV.d3TaxonomyVisualization = function (
             currentTreeRoot = ds;
             currentTreeUpdate = update;
 
-            update(ds);
+            // Track measured spacing separately from font size so compact layouts stay compact until labels collide.
+            // Seed from the last measured layout so tree rebuilds, such as search reloads, start already spaced.
+            const autoSpacingState = {
+               horizontalScale: rememberedAutoSpacing.horizontalScale,
+               verticalScale: rememberedAutoSpacing.verticalScale,
+               maxScale: 6,
+               scaleTolerance: 0.03,
+               horizontalPadding: 36,
+               verticalPadding: 8,
+               maxPasses: 3,
+               passCount: 0,
+               alignAfterInitialSpacing: false,
+               timer: null
+            };
 
-            // ================================================================================================
-            //                                    DYNAMIC INITIAL ALIGNMENT
-            // ================================================================================================
-            // Get horizontal (y) and vertical (x) coordinates of the first column
-            // Check both children and _children in case the node is collapsed.
-            let realmDataY = ds.children ? ds.children[0].y : (ds._children ? ds._children[0].y : 0);
-            let realmDataX = ds.children ? ds.children[0].x : (ds._children ? ds._children[0].x : 0);
-            
-            // Set initial scale factor (e.g. 0.19)
-            let startScale = 0.19; 
-            
-            // Define how many pixels away from the left edge of the screen the Realm should sit
-            let desiredLeftPadding = 20; 
+            // Reset automatic spacing so the next normal update starts from the compact layout.
+            function resetAutoSpacing(resetRememberedSpacing) {
+               if (autoSpacingState.timer) {
+                  clearTimeout(autoSpacingState.timer);
+                  autoSpacingState.timer = null;
+               }
 
-            // Define exactly how many pixels from the top edge the first row to sit
-            let desiredTopPadding = 50; 
-            
-            // Calculate translations
-            let calculatedX = desiredLeftPadding - (realmDataY * startScale);
-            let calculatedY = desiredTopPadding - (realmDataX * startScale);
-            
-            // Apply the exact calculation
-            svg_zoom.call(
-               zoom.transform,
-               d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
-            );
-            
-            // Capture this as a starting baseline for font-resizing logic
-            initialZoomTransform = d3.zoomTransform(svg_zoom.node());
-            // ================================================================================================
+               autoSpacingState.horizontalScale = 1;
+               autoSpacingState.verticalScale = 1;
+               autoSpacingState.passCount = 0;
+               autoSpacingState.alignAfterInitialSpacing = false;
 
-            function update(source) {
+               if (resetRememberedSpacing !== false) {
+                  rememberedAutoSpacing.horizontalScale = 1;
+                  rememberedAutoSpacing.verticalScale = 1;
+               }
+            }
+
+            currentTreeResetAutoSpacing = resetAutoSpacing;
+
+            // Let search workflows wait until any pending overlap checks and auto-spacing passes are finished.
+            async function waitForAutoSpacing() {
+               const waitInterval = 100;
+               const maxWait = settings.animationDelay * (autoSpacingState.maxPasses + 1);
+               let elapsed = 0;
+
+               while (autoSpacingState.timer && elapsed < maxWait) {
+                  await wait(waitInterval);
+                  elapsed += waitInterval;
+               }
+            }
+
+            currentTreeWaitForAutoSpacing = waitForAutoSpacing;
+
+            // Build occupied node rectangles in the same coordinate space used by the tree layout.
+            // This includes both the label and the visible circle so text from another rank cannot cover the circle.
+            function getVisibleNodeBoxes() {
+               const boxes = [];
+
+               svg.selectAll("g.node").each(function (d) {
+                  if (!d) { return; }
+
+                  const group = d3.select(this);
+                  const textNode = group.select("text").node();
+                  const circleNode = group.select("circle.node").node();
+                  const nodeBoxes = [];
+
+                  if (textNode && textNode.textContent.trim()) {
+                     try {
+                        const textBBox = textNode.getBBox();
+                        if (textBBox && textBBox.width > 0 && textBBox.height > 0) {
+                           nodeBoxes.push(textBBox);
+                        }
+                     } catch (e) {
+                        // Ignore SVG elements that cannot be measured during a transient render state.
+                     }
+                  }
+
+                  if (circleNode) {
+                     const circleSelection = d3.select(circleNode);
+                     const radius = parseFloat(circleSelection.attr("r")) || 0;
+                     const opacity = parseFloat(circleSelection.style("opacity"));
+
+                     if (radius > 0 && opacity !== 0) {
+                        try {
+                           const circleBBox = circleNode.getBBox();
+                           if (circleBBox && circleBBox.width > 0 && circleBBox.height > 0) {
+                              nodeBoxes.push(circleBBox);
+                           }
+                        } catch (e) {
+                           // Ignore SVG elements that cannot be measured during a transient render state.
+                        }
+                     }
+                  }
+
+                  if (nodeBoxes.length < 1) { return; }
+
+                  const bbox = {
+                     x: Math.min.apply(null, nodeBoxes.map(function (box) { return box.x; })),
+                     y: Math.min.apply(null, nodeBoxes.map(function (box) { return box.y; })),
+                     width: Math.max.apply(null, nodeBoxes.map(function (box) { return box.x + box.width; })),
+                     height: Math.max.apply(null, nodeBoxes.map(function (box) { return box.y + box.height; }))
+                  };
+
+                  bbox.width -= bbox.x;
+                  bbox.height -= bbox.y;
+
+                  boxes.push({
+                     depth: d.depth,
+                     nodeX: d.x,
+                     nodeY: d.y,
+                     left: d.y + bbox.x,
+                     right: d.y + bbox.x + bbox.width,
+                     top: d.x + bbox.y,
+                     bottom: d.x + bbox.y + bbox.height
+                  });
+               });
+
+               return boxes;
+            }
+
+            // Check whether two one-dimensional ranges overlap once padding is included.
+            function rangesOverlap(startA, endA, startB, endB, padding) {
+               return startA <= endB + padding && startB <= endA + padding;
+            }
+
+            // Measure rendered labels and calculate the smallest extra spacing scale that clears collisions.
+            function getRequiredAutoSpacing() {
+               const boxes = getVisibleNodeBoxes();
+               const required = {
+                  horizontalScale: autoSpacingState.horizontalScale,
+                  verticalScale: autoSpacingState.verticalScale
+               };
+               const boxesByDepth = {};
+
+               boxes.forEach(function (box) {
+                  if (!boxesByDepth[box.depth]) {
+                     boxesByDepth[box.depth] = [];
+                  }
+                  boxesByDepth[box.depth].push(box);
+               });
+
+               // Same-rank labels stack vertically, so measure top/bottom collisions within each depth.
+               Object.keys(boxesByDepth).forEach(function (depth) {
+                  const depthBoxes = boxesByDepth[depth].sort(function (a, b) {
+                     return a.top - b.top;
+                  });
+
+                  let previous = depthBoxes[0];
+                  for (let i = 1; i < depthBoxes.length; i++) {
+                     const current = depthBoxes[i];
+                     const overlap = previous.bottom + autoSpacingState.verticalPadding - current.top;
+                     const nodeGap = Math.abs(current.nodeX - previous.nodeX);
+
+                     if (overlap > 0 && nodeGap > 0) {
+                        required.verticalScale = Math.max(
+                           required.verticalScale,
+                           autoSpacingState.verticalScale * ((nodeGap + overlap) / nodeGap)
+                        );
+                     }
+
+                     // Keep comparing against the lowest label bottom to catch chained overlaps.
+                     if (current.bottom > previous.bottom) {
+                        previous = current;
+                     }
+                  }
+               });
+
+               const boxesByTop = boxes.slice().sort(function (a, b) {
+                  return a.top - b.top;
+               });
+
+               // Cross-rank labels collide horizontally when their vertical ranges overlap.
+               for (let i = 0; i < boxesByTop.length; i++) {
+                  const first = boxesByTop[i];
+
+                  for (let j = i + 1; j < boxesByTop.length; j++) {
+                     const second = boxesByTop[j];
+
+                     if (second.top > first.bottom + autoSpacingState.verticalPadding) {
+                        break;
+                     }
+
+                     if (first.depth === second.depth) { continue; }
+                     if (!rangesOverlap(first.top, first.bottom, second.top, second.bottom, autoSpacingState.verticalPadding)) { continue; }
+
+                     const leftBox = first.nodeY <= second.nodeY ? first : second;
+                     const rightBox = leftBox === first ? second : first;
+                     const overlap = leftBox.right + autoSpacingState.horizontalPadding - rightBox.left;
+                     const nodeGap = Math.abs(rightBox.nodeY - leftBox.nodeY);
+
+                     if (overlap > 0 && nodeGap > 0) {
+                        required.horizontalScale = Math.max(
+                           required.horizontalScale,
+                           autoSpacingState.horizontalScale * ((nodeGap + overlap) / nodeGap)
+                        );
+                     }
+                  }
+               }
+
+               required.horizontalScale = Math.min(required.horizontalScale, autoSpacingState.maxScale);
+               required.verticalScale = Math.min(required.verticalScale, autoSpacingState.maxScale);
+
+               return required;
+            }
+
+            // Re-run the layout after transitions only when the measured labels still overlap.
+            function scheduleAutoSpacingCheck(source, animationDuration) {
+               if (autoSpacingState.timer) {
+                  clearTimeout(autoSpacingState.timer);
+               }
+
+               autoSpacingState.timer = setTimeout(function () {
+                  autoSpacingState.timer = null;
+
+                  if (autoSpacingState.passCount >= autoSpacingState.maxPasses) {
+                     autoSpacingState.alignAfterInitialSpacing = false;
+                     return;
+                  }
+
+                  const required = getRequiredAutoSpacing();
+                  const needsHorizontalSpacing = required.horizontalScale > autoSpacingState.horizontalScale + autoSpacingState.scaleTolerance;
+                  const needsVerticalSpacing = required.verticalScale > autoSpacingState.verticalScale + autoSpacingState.scaleTolerance;
+
+                  if (!needsHorizontalSpacing && !needsVerticalSpacing) {
+                     autoSpacingState.alignAfterInitialSpacing = false;
+                     return;
+                  }
+
+                  autoSpacingState.horizontalScale = required.horizontalScale;
+                  autoSpacingState.verticalScale = required.verticalScale;
+                  autoSpacingState.passCount++;
+                  rememberedAutoSpacing.horizontalScale = autoSpacingState.horizontalScale;
+                  rememberedAutoSpacing.verticalScale = autoSpacingState.verticalScale;
+
+                  update(source, true, animationDuration, true);
+
+                  // If the initial render needed auto-spacing, pin Realm again using the new coordinates.
+                  if (source === ds && autoSpacingState.alignAfterInitialSpacing) {
+                     alignInitialTreeView();
+                  }
+               }, animationDuration + 50);
+            }
+
+            function alignInitialTreeView() {
+               // ================================================================================================
+               //                                    DYNAMIC INITIAL ALIGNMENT
+               // ================================================================================================
+               // Run after the first layout pass so Realm/rank coordinates include the current node spacing.
+               let realmDataY = ds.children ? ds.children[0].y : (ds._children ? ds._children[0].y : 0);
+               let realmDataX = ds.children ? ds.children[0].x : (ds._children ? ds._children[0].x : 0);
+
+               // Set initial scale factor (e.g. 0.19)
+               let startScale = zoomScaleSettings.defaultScale;
+
+               // Define how many pixels away from the left edge of the screen the Realm should sit
+               let desiredLeftPadding = 20;
+
+               // Define exactly how many pixels from the top edge the first row to sit
+               let desiredTopPadding = 50;
+
+               // Calculate translations
+               let calculatedX = desiredLeftPadding - (realmDataY * startScale);
+               let calculatedY = desiredTopPadding - (realmDataX * startScale);
+
+               // Apply the exact calculation
+               svg_zoom.call(
+                  zoom.transform,
+                  d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
+               );
+
+               // Capture this as a starting baseline for reset-view logic.
+               initialZoomTransform = d3.zoomTransform(svg_zoom.node());
+               // ================================================================================================
+            }
+
+            update(ds, true, undefined, true);
+            autoSpacingState.alignAfterInitialSpacing = true;
+            alignInitialTreeView();
+
+            function update(source, preserveAutoSpacing, animationDuration, isAutoSpacingUpdate) {
 
                if (!source) {
                   console.error("in update and source is invalid");
                   return;
                }
 
+               const updateDuration = Number.isFinite(animationDuration) ? animationDuration : settings.animationDuration;
+
+               if (!preserveAutoSpacing) {
+                  resetAutoSpacing();
+               } else if (!isAutoSpacingUpdate) {
+                  // External preserved updates, such as clicks or search expansion, should keep spacing
+                  // but restart measurement passes in case the newly visible nodes need more room.
+                  autoSpacingState.passCount = 0;
+               }
+
                var info = treeLayout(ds);
                var parent = info.descendants();
                var currentNodeCount = parent.length;
-               const fontScale = (currentFontSize || 4) / 4; // 4 is the default/min font size
                const scaleFactor = Math.min(1, settings.svg.height / 90);
-               // const dx = 21 * scaleFactor;
-               const dx = 21 * scaleFactor * fontScale;  // vertical spacing scales with font
+               const dx = 21 * scaleFactor * autoSpacingState.verticalScale;
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
                var links = info.descendants().slice(1);
@@ -1306,12 +1709,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                      num = parseInt(result.match(/\d+/)[0]);
                   }
                   
-                  // You can use Math.sqrt to minimize the space, if needed.
-                  // d.x = d.x * h * Math.sqrt(fontScale);
-                  // d.y = d.depth * w * Math.sqrt(fontScale);
-
-                  d.x = d.x * h;                 // vertical position of nodes
-                  d.y = d.depth * w * fontScale; // horizontal position of nodes
+                  // Vertical and horizontal spacing stay at 1 unless the overlap detector raises them.
+                  d.x = d.x * h;
+                  d.y = d.depth * w * autoSpacingState.horizontalScale;
                });
 
                var children = svg.selectAll("g.node").data(parent, function (d) {
@@ -1352,9 +1752,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                      return d.data.rankIndex;
                   })
                   .attr("transform", function (d) {
+                     if (isPagerNode(d)) {
+                        return "translate(" + d.y + "," + d.x + ")";
+                     }
+
                      if (!d || isNaN(source.x0) || isNaN(source.y0)) {
                         return null;
                      }
+
                      return "translate(" + source.y0 + "," + source.x0 + ")";
                   })
                   .on("click", click);
@@ -1501,14 +1906,16 @@ window.ICTV.d3TaxonomyVisualization = function (
                   })
                   // .style("fill", "white")
                   .style("fill", function (d) {
-                     return isGhostNode(d) ? "transparent" : "white";
+                     // return isGhostNode(d) ? "transparent" : "white";
+                     return isGhostNode(d) ? "transparent" : "rgba(255, 255, 255, 0.8)";
                   })
                   .attr("dx", settings.node.textDx)
                   .attr("dy", settings.node.textDy);
 
                var Update = Enter.merge(children);
+
                Update.transition()
-                  .duration(settings.animationDuration)
+                  .duration(updateDuration)
                   .attr("transform", function (d) {
                      return "translate(" + d.y + "," + d.x + ")";
                   });
@@ -1594,22 +2001,34 @@ window.ICTV.d3TaxonomyVisualization = function (
                   })
 
                Update.select("text.pager-node-text")
-                  .style("font-size", fontSliderEl.property("value") + "rem");
+                  .attr("cursor", function (d) {
+                     return d.data.isPagerDisabled ? "default" : "pointer";
+                  })
+                  .style("fill", function (d) {
+                     return d.data.isPagerDisabled ? "#999999" : "#0062cc";
+                  })
+                  .style("font-size", fontSliderEl.property("value") + "rem")
+                  .style("font-style", "normal")
+                  .style("font-weight", "bold");
 
                updateTextRect(Update);
 
-               var Exit = children
-                  .exit()
+               var Exit = children.exit();
+
+               Exit.filter(function (d) { return isPagerNode(d); })
+                  .remove();
+
+               var ExitTransition = Exit.filter(function (d) { return !isPagerNode(d); })
                   .transition()
-                  .duration(settings.animationDuration)
+                  .duration(updateDuration)
                   .attr("transform", function (d) {
                      return "translate(" + source.y + "," + source.x + ")";
                   })
                   .remove();
 
-               Exit.select("circle").attr("r", 1);
+               ExitTransition.select("circle").attr("r", 1);
 
-               Exit.select("text").style("fill-opacity", 1);
+               ExitTransition.select("text").style("fill-opacity", 1);
 
                var link = svg.selectAll("path.link").data(links, function (d) {
                   return d.id;
@@ -1657,7 +2076,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                linkUpdate
                   .transition("path.link")
-                  .duration(settings.animationDuration)
+                  .duration(updateDuration)
                   .attr("d", function (d) {
 
                      // lrm 6-12-2024
@@ -1692,7 +2111,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                var linkExit = link
                   .exit()
                   .transition()
-                  .duration(settings.animationDuration)
+                  .duration(updateDuration)
                   .attr("d", function (d) {
                      var pos = { x: source.x, y: source.y };
                      return diagonal(pos, pos);
@@ -1703,6 +2122,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                   d.x0 = d.x;
                   d.y0 = d.y;
                });
+
+               scheduleAutoSpacingCheck(source, updateDuration);
 
                function diagonal(s, t) {
                   // Validate s and t
@@ -1747,8 +2168,15 @@ window.ICTV.d3TaxonomyVisualization = function (
                function click(event, d) {
                   if (d.data.taxNodeID !== "legend") {
                      if (isPagerNode(d)) {
-                        setNodePage(d.parent, d.page);
-                        update(d.parent);
+                        if (d.data.isPagerDisabled) { return; }
+
+                        setNodeScrollStart(d.parent, d.scrollStartIndex || 0);
+
+                        // Restart overlap checks without clearing the spacing that is already applied.
+                        autoSpacingState.passCount = 0;
+
+                        // Keep small pager shifts steady; normal expand/collapse transitions are too noisy here.
+                        update(d.parent, true, 0);
                         return;
                      }
 
@@ -1767,7 +2195,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                      clickedCircle = event.currentTarget.querySelector("circle");
                      clickedText = event.currentTarget.querySelector("text");
 
-                     update(d);
+                     // Restart overlap checks without clearing the spacing that is already applied.
+                     autoSpacingState.passCount = 0;
+
+                     // Preserve measured spacing on node clicks so overlap spacing does not visibly disappear.
+                     update(d, true);
                   }
                }
 
@@ -1857,27 +2289,28 @@ window.ICTV.d3TaxonomyVisualization = function (
                   theme: "ICTV-Tooltip"
                })
 
-               // Tippy pop-up that shows the number of children under the "More..." pagination button
                window.tippy.delegate(`${containerSelector} svg`, {
                   allowHTML: true,
                   animation: settings.tooltip.animation,
                   appendTo: () => document.body,
-                  delay: [0, 0],
+                  delay: [settings.tooltip.showDelay, settings.tooltip.hideDelay],
                   onShow(instance) {
                      const d = instance.reference.__data__;
-                     if (!d || !isPagerNode(d) || !d.parent || !d.parent.pagination || !d.parent.allChildren) {
+                     if (!d || !isPagerNode(d) || !d.data) {
                         return false;
                      }
 
-                     const pagination = d.parent.pagination;
-                     const total = d.parent.allChildren.length;
-                     const pageStart = pagination.currentPage * pagination.itemCount;
-                     const pageEnd = Math.min(pageStart + pagination.itemCount, total);
-                     const onPage = pageEnd - pageStart;
-                     const remaining = total - onPage;
+                     const directionText = d.data.pagerDirection === "up" ? "above" : "below";
+                     const remaining = d.data.pagerRemainingCount || 0;
+                     const rangeStart = d.data.pagerRangeStart || 0;
+                     const rangeEnd = d.data.pagerRangeEnd || 0;
+                     const total = d.data.pagerTotalCount || 0;
 
                      instance.setContent(
-                        `<div class="ictv-tax-viz-tooltip">${remaining} more taxa (${total} total)</div>`
+                        `<div class="ictv-tax-viz-tooltip">
+                           <div>${remaining} taxa ${directionText}</div>
+                           <div>Showing ${rangeStart}-${rangeEnd} of ${total}</div>
+                        </div>`
                      );
                   },
                   placement: "right",
@@ -1885,7 +2318,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   theme: "ICTV-Tooltip"
                });
 
-            }
+	            }
          }
 
       });
@@ -1978,11 +2411,17 @@ window.ICTV.d3TaxonomyVisualization = function (
          for (let i = 1; i < path.length; i++) {
             const parentNode = path[i - 1];
             const currentNode = path[i];
-            const pageChanged = setNodePageForChild(parentNode, currentNode);
+            const scrollChanged = setNodeScrollStartForChild(parentNode, currentNode);
             const expanded = expandNode(parentNode);
 
-            if (pageChanged || expanded) {
-               currentTreeUpdate(parentNode);
+            if (scrollChanged || expanded) {
+               // Preserve measured spacing during search expansion so opened nodes do not briefly overlap.
+               currentTreeUpdate(parentNode, true);
+
+               // Wait for any new spacing needed by the expanded branch before continuing the search path.
+               if (currentTreeWaitForAutoSpacing) {
+                  await currentTreeWaitForAutoSpacing();
+               }
 
                panToNode(currentNode, settings.animationDuration);
                await wait(settings.animationDelay);
@@ -1999,7 +2438,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          clickedCircle = selectedNodeEl ? selectedNodeEl.querySelector("circle") : null;
          clickedText = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
 
-         currentTreeUpdate(node);
+         // Preserve measured spacing when the searched node is highlighted.
+         currentTreeUpdate(node, true);
          await wait(settings.animationDelay);
 
          document.querySelectorAll("text.node-text, text.unassigned-text").forEach((textElementReset) => {
@@ -2086,5 +2526,3 @@ async function wait(t) {
       setTimeout(resolve, t);
    })
 }
-
-

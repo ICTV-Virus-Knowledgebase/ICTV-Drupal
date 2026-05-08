@@ -98,7 +98,8 @@ body .block-ictv-d3-taxonomy-visualization {
 ----------------------------------------------------------------------------------------------------------------*/
 #d3_taxonomy_vis_container .slider {
    margin: 0 1.3rem 0 0;
-   max-width: 80px;
+   max-width: 130px;
+   width: 130px;
 }
 
 /*  slider track */
@@ -143,6 +144,36 @@ body .block-ictv-d3-taxonomy-visualization {
    width: 14px;
 }
 
+#d3_taxonomy_vis_container .taxonomy-pan-slider {
+   accent-color: #0062cc;
+   margin: 0;
+   opacity: 0.8;
+   position: absolute;
+   z-index: 5;
+}
+
+#d3_taxonomy_vis_container .taxonomy-pan-slider:disabled {
+   opacity: 0.35;
+}
+
+#d3_taxonomy_vis_container .taxonomy-pan-slider-x {
+   left: 24px;
+   max-width: none;
+   right: 44px;
+   top: 8px;
+   width: auto;
+}
+
+#d3_taxonomy_vis_container .taxonomy-pan-slider-y {
+   bottom: 24px;
+   height: auto;
+   max-width: none;
+   right: 8px;
+   top: 40px;
+   width: 16px;
+   writing-mode: vertical-lr;
+}
+
 
 /*----------------------------------------------------------------------------------------------------------------
   The screenshot button and format list 
@@ -164,6 +195,10 @@ body .block-ictv-d3-taxonomy-visualization {
    -webkit-user-select: none;
    -moz-user-select: none;
    -ms-user-select: none;
+}
+#d3_taxonomy_vis_container .reset-view-btn {
+   margin-right: 5px;
+   border-radius: 5px;
 }
 #d3_taxonomy_vis_container .expand-to-fit-btn {
    margin-right: 5px;
@@ -410,6 +445,8 @@ body .block-ictv-d3-taxonomy-visualization {
 
 #d3_taxonomy_vis_container .taxonomy-panel {
    height: 100%;
+   overflow: hidden;
+   position: relative;
    /* width: 82vw; */
    width: 100%;
 }
