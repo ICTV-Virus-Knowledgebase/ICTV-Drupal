@@ -48,7 +48,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Configuration settings (to replace hard-coded values below)
    const settings = {
       pageSize: 50,
-      pageStep: 5,
+      pageStep: 25,
       animationDuration: 900,
       animationDelay: 1000,
       node: {
@@ -339,7 +339,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          if (newScale === null) return;
 
          // Center the bounding box perfectly in the SVG viewport
-         let finalX = (fullWidth / 2) - newScale * (bounds.x + bounds.width / 2);
+         let finalX = (fullWidth / 2.8) - newScale * (bounds.x + bounds.width / 2.8);
          let finalY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
 
          currentSvgZoom.transition()
