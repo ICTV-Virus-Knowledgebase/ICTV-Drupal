@@ -1911,7 +1911,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .attr("dy", settings.node.textDy)
                   .call(getBB);
 
-               Enter.insert("rect", "circle")
+               Enter.filter(function (d) {
+                  // Do not append rect with class of "text-bg" to rank columns
+                  return d.data.taxNodeID !== "legend";
+               })
+                  .insert("rect", "circle")
                   .attr("class", "text-bg")
                   .attr("x", function (d) {
                      return d.bbox.x - 6;
