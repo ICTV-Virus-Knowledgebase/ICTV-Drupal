@@ -319,53 +319,56 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Called inside expandPath function
    // TODO: It jumps over when it starts to pan, I need to leverage logic inside the Font Size slider to fix it.
    // 20260505: It still jumps, but it is not as aggressive
-   function panToNode(node, duration, expandToFit = false) {
-      if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
+   // function panToNode(node, duration, expandToFit = false) {
+   //    if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
 
-      if (expandToFit) {
-         // Grab bounding box of the whole tree to scale out
-         const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
-         if (group.empty()) return;
+   //    if (expandToFit) {
+   //       // Grab bounding box of the whole tree to scale out
+   //       const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
+   //       if (group.empty()) return;
 
-         const bounds = group.node().getBBox();
-         const viewport = getSvgViewportSize();
-         const fullWidth = viewport.width;
-         const fullHeight = viewport.height;
+   //       const bounds = group.node().getBBox();
+   //       const viewport = getSvgViewportSize();
+   //       const fullWidth = viewport.width;
+   //       const fullHeight = viewport.height;
 
-         if (bounds.width === 0 || bounds.height === 0) return;
+   //       if (bounds.width === 0 || bounds.height === 0) return;
 
-         const padding = 0.85;
-         let newScale = fitScaleForBounds(bounds, padding);
-         if (newScale === null) return;
+   //       const padding = 0.85;
+   //       let newScale = fitScaleForBounds(bounds, padding);
+   //       if (newScale === null) return;
 
-         // Center the bounding box perfectly in the SVG viewport
-         let finalX = (fullWidth / 2.8) - newScale * (bounds.x + bounds.width / 2.8);
-         let finalY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
+   //       // Center the bounding box perfectly in the SVG viewport
+   //       let finalX = (fullWidth / 2.8) - newScale * (bounds.x + bounds.width / 2.8);
+   //       let finalY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
 
-         currentSvgZoom.transition()
-            .duration(duration || settings.animationDuration)
-            .call(
-               currentZoom.transform,
-               d3.zoomIdentity.translate(finalX, finalY).scale(newScale)
-            );
-         return; // Exit early, skipping the normal node-panning logic
-      }
+   //       currentSvgZoom.transition()
+   //          .duration(duration || settings.animationDuration)
+   //          .call(
+   //             currentZoom.transform,
+   //             d3.zoomIdentity.translate(finalX, finalY).scale(newScale)
+   //          );
+   //       return; // Exit early, skipping the normal node-panning logic
+   //    }
 
-      const currentTransform = d3.zoomTransform(currentSvgZoom.node());
-      const scale = currentTransform.k;
+   //    const currentTransform = d3.zoomTransform(currentSvgZoom.node());
+   //    const scale = currentTransform.k;
+   //    // console.log(scale);
       
-      // node.y = horizontal position, node.x = vertical position (tree is rotated)
-      const viewport = getSvgViewportSize();
-      const tx = (viewport.width / 6) - scale * node.y;
-      const ty = (viewport.height / 2) - scale * node.x;
+   //    // node.y = horizontal position, node.x = vertical position (tree is rotated)
+   //    const viewport = getSvgViewportSize();
+   //    const tx = (viewport.width / 6) - scale * node.y;
+   //    // const tx = scale * node.y;
+   //    // console.log(node.y);
+   //    const ty = (viewport.height / 2) - scale * node.x;
 
-         currentSvgZoom.transition()
-            .duration(duration || settings.animationDuration)
-            .call(
-               currentZoom.transform,
-               d3.zoomIdentity.translate(tx, ty).scale(scale)
-            );
-      }
+   //    currentSvgZoom.transition()
+   //       .duration(duration || settings.animationDuration)
+   //       .call(
+   //          currentZoom.transform,
+   //          d3.zoomIdentity.translate(tx, ty).scale(scale)
+   //       );
+   // }
 
    // TODO: What button? Give this a better name!
    function initializeButton() {
@@ -2403,6 +2406,40 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
 
          return false;
+      }
+
+      async function triggerExpandToFitIfNeeded() {
+         if (!currentZoom || !currentSvgZoom || !currentTreeRoot) return;
+
+         const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
+         if (group.empty()) return;
+
+         // const transform = d3.zoomTransform(svg.node());
+         // console.log("transform: " + transform);
+
+         const bounds = group.node().getBBox();
+         // console.log(bounds);
+         const viewport = getSvgViewportSize(); // Uses existing helper
+         // const currentScale = viewport.width / bounds.width;
+         // console.log("currentScale: " + currentScale);
+
+         const transform = d3.zoomTransform(currentSvgZoom.node());
+         const currentScale = transform.k
+         // console.log("currentScale: " + currentScale);
+
+         // Check if the tree width or height is larger than the visible viewport
+         if (Math.floor(bounds.width * currentScale) > viewport.width || bounds.height * currentScale > (viewport.height * 0.95)) {
+            console.log("bounds.width without scale: " + bounds.width);
+            console.log("bounds.width with scale applied: " + bounds.width * currentScale);
+            console.log("viewport.width: " + viewport.width);
+            const expandBtn = document.querySelector(`${containerSelector} .expand-to-fit-btn`);
+            if (expandBtn) {
+               // Simulate the click
+               expandBtn.click();
+               // Wait for the Expand to Fit animation to complete before the next node shifts
+               await wait(settings.animationDuration);
+            }
+         }
       }
 
       async function expandPath(path) {
