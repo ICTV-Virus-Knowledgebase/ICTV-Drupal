@@ -2482,8 +2482,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                   await currentTreeWaitForAutoSpacing();
                }
 
-               panToNode(currentNode, settings.animationDuration);
+               // Wait for the node expansion animation first
                await wait(settings.animationDelay);
+
+               // Check if the new expansion pushed it off screen, click expand to fit, and wait
+               await triggerExpandToFitIfNeeded();
+
+               // panToNode(currentNode, settings.animationDuration);
+               // await wait(settings.animationDelay);
             }
          }
       }
@@ -2549,7 +2555,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          await highlightNode(finalNode);
 
          // --- Trigger the final expand-to-fit centered view ---
-         panToNode(finalNode, settings.animationDuration, true);
+         // panToNode(finalNode, settings.animationDuration, true);
 
          paginationData.childDisplayOrder = NaN;
          paginationData.parentTaxnodeID = null;
