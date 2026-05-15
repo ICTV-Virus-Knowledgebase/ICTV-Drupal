@@ -640,7 +640,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                // 64px = 4rem
                // adobe illustrator did not like rem
                .style('font-style', 'normal')
-               .style('fill', 'black')
+               // .style('fill', 'black')
                // adobe illustrator does not read text-transform
                // instead, use JS to capitalize the first letter for rank columns
                .each(function () {
@@ -668,6 +668,10 @@ window.ICTV.d3TaxonomyVisualization = function (
                // Restore the user's font size after export
                .style('font-size', ((currentFontSize || 4) * 16) + 'px')
                .style('fill', 'black')
+
+            // Stop the rectangle that surrounds text from filling in black
+            svgSelection.selectAll('rect.text-bg')
+               .style('fill', 'none')
 
             // Serialize the SVG to a string
             let serializer = new XMLSerializer();
