@@ -1783,7 +1783,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .attr("cursor", "pointer");
 
                // lrm 5-22-2024
-               Enter.append("circle")
+               Enter.filter(function (d) {
+                  // Only append circles to nodes that are NOT legend columns
+                  return d.data.taxNodeID !== "legend";
+               })
+                  .append("circle")
                   .attr("class", "node")
                   .style("stroke", "black")
                   .style("stroke-width", `${settings.node.strokeWidth}px`)
@@ -1795,6 +1799,20 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("pointer-events", function (d, i) {
                      return !d.data.parentDistance ? "none" : "all";
                   });
+
+               // lrm 5-22-2024
+               // Enter.append("circle")
+               //    .attr("class", "node")
+               //    .style("stroke", "black")
+               //    .style("stroke-width", `${settings.node.strokeWidth}px`)
+
+               //    // Make tree/root node invisible?
+               //    .style("opacity", function (d) {
+               //       return !d.data.parentDistance ? 0 : 1;
+               //    })
+               //    .style("pointer-events", function (d, i) {
+               //       return !d.data.parentDistance ? "none" : "all";
+               //    });
 
                function getBB(ds) {
                   ds.each(function (d) {
