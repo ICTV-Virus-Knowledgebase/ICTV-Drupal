@@ -1268,33 +1268,6 @@ window.ICTV.d3TaxonomyVisualization = function (
             settings.svg.width -
             settings.svg.margin.top -
             settings.svg.margin.bottom;
-         var zoom = d3.zoom().on("zoom", handleZoom);
-
-         function handleZoom(e) {
-            d3.select(`${containerSelector} svg g`).attr("transform", e.transform);
-         }
-
-
-         let drag = d3
-            .drag()
-            .on("start", start)
-            .on("drag", dragged)
-            .on("end", dragend);
-
-         function start(d) {
-            d.fixed = true;
-         }
-
-         function dragged() {
-            var x = event.x;
-            var y = event.y;
-            var current = d3.select(`${containerSelector} svg g`);
-            current.attr("transform", `translate(${x},${y})`);
-         }
-
-         function dragend(d) {
-            d.fixed = false;
-         }
 
          // TODO: Consider renaming "ds" to "root"
          const ds = d3.hierarchy(data, function (d) {
@@ -2186,14 +2159,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   }
                }
 
-               function findParentLinks(par) {
-                  if (par.target.depth < 2) {
-                     return par.target.name;
-                  } else {
-                     return findParent(par.target.parent);
-                  }
-               }
-
                function click(event, d) {
                   if (d.data.taxNodeID !== "legend") {
                      if (isPagerNode(d)) {
@@ -2569,26 +2534,6 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
 };
-
-
-function expandTreeToNode(data) {
-   let node = traverseTreeToFindNode(ds, data);
-   expandTree(node);
-}
-
-
-function traverseTreeToFindNode(currentNode, node) {
-   if (currentNode.name === node) {
-      return currentNode;
-   }
-   for (let i = 0; i < currentNode.children.length; i++) {
-      let result = traverseTreeToFindNode(currentNode.children[i], node);
-      if (result != null) {
-         return result;
-      }
-   }
-   return null;
-}
 
 async function wait(t) {
    return new Promise((resolve) => {
