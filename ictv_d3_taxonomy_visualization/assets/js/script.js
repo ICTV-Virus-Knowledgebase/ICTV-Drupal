@@ -96,12 +96,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
    // Global variables
 
-   // This is used by openNode() to maintain details of the previously selected node.
-   let previousNode = {
-      parentTaxNodeID: null,
-      parentRankIndex: NaN
-   }
-
    const paginationData = {
       // The display order of a target child node.
       childDisplayOrder: NaN,
@@ -137,23 +131,14 @@ window.ICTV.d3TaxonomyVisualization = function (
       sliderStep: 0.1
    };
 
-   // nodeHeight is used in pageNodes() to determine which page to display when searching
-   var nodeHeight = null;
-   var globalTaxNodeId = null;
    var currentFontSize;
    var selectedNode;
    var clickedText;
    var clickedCircle;
-   var selected;
-   var num_flag = false;
    var num;
    var name = "";
    var arr = [];
    var temp = 0;
-   var Flag = true;
-   var max = 0;
-   var fs = 0;
-   var Sflag = false
    var counter = 0;
    var len = 0;
    var res = [];
@@ -166,15 +151,13 @@ window.ICTV.d3TaxonomyVisualization = function (
    let ZoomPanelEl = null;
    let ZoomSliderEl = null;
 
-   //DOM element for ss button
-   let buttonE1 = null;
-   let buttonClickE1 = null
+   // Not in use: these globals are shadowed by local variables in initializeButton().
+   // TODO: Should these be used inside initializeButton() instead of making new local variables?
+   // let buttonE1 = null;
+   // let buttonClickE1 = null
 
    // The DOM Element for the release control (this is assigned in "initializeReleaseControl").
    let releaseControlEl = null;
-
-   // This will be populated with a release's species data.
-   let speciesData = null;
 
    // Choose to paginate taxa (by default it is on)
    let togglePaginate = null;
@@ -735,9 +718,6 @@ window.ICTV.d3TaxonomyVisualization = function (
          if (group.empty()) return;
 
          const bounds = group.node().getBBox();
-         const viewport = getSvgViewportSize();
-         const fullWidth = viewport.width;
-         const fullHeight = viewport.height;
 
          if (bounds.width === 0 || bounds.height === 0) return;
 
@@ -804,12 +784,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       });
 
    }
-
-   let zoom = d3.zoom()
-      .on("zoom", function (event) {
-         d3.select(`${containerSelector} .taxonomy-panel svg g`)
-            .attr("transform", event.transform);
-      });
 
    // Use the release year to lookup and return the corresponding release data.
    function getRelease(releaseYear) {
@@ -1227,10 +1201,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       num = 0;
       temp = 0;
       arr = [];
-      Flag = false;
-      Sflag = false;
-      num_flag = false;
-      max = 0;
       len = 0;
       counter = 0;
       res = [];
@@ -1257,8 +1227,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       // and put it where it was being loaded a 2nd time.
       d3.json(jsonFilename).then(function (data) {
 
-         var genus = false;
-
          // Set the width and height available within the SVG.
          const availableHeight =
             settings.svg.height -
@@ -1270,6 +1238,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             settings.svg.margin.bottom;
 
          // TODO: Consider renaming "ds" to "root"
+         // TODO: Can this be reduced to just const ds = d3.hierarchy(data);?
          const ds = d3.hierarchy(data, function (d) {
 
             if (d.children === null) { return; }
@@ -1297,9 +1266,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                   }
                }
             }
+            // TODO: While loop appears unnecessary, could be replaced with regular if block or taken out 
             while (num > 1000);
-            const max = Math.max(...arr);
-            num_flag = true;
+
             return d.children;
          });
 
@@ -1659,12 +1628,15 @@ window.ICTV.d3TaxonomyVisualization = function (
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
                var links = info.descendants().slice(1);
-               const treeNodes = treeLayout(ds);
-               treeNodes.each((d) => {
-                  const x = d.x; // the x-coordinate of the node in the layout
-                  const y = d.y; // the y-coordinate of the node in the layout
-                  // use x and y to position the node in the visualization
-               });
+               treeLayout(ds);
+               // Not in use: treeNodes/x/y were only assigned for explanatory comments.
+               // Pretty sure this if overridden in the below parent.forEach loop below.
+               // const treeNodes = treeLayout(ds);
+               // treeNodes.each((d) => {
+               //    const x = d.x; // the x-coordinate of the node in the layout
+               //    const y = d.y; // the y-coordinate of the node in the layout
+               //    // use x and y to position the node in the visualization
+               // });
 
                // This overrides the positioning of the x and y coordinate from treeNodes.each((d).
                // The original developers did this to fit the ranks into the viewport (I think).
@@ -1960,8 +1932,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   })
                   .attr("cursor", "pointer")
 
-               var font;
-
                Update.select("text.node-text")
                   .attr("cursor", "pointer")
                   .style("fill", function (d) {
@@ -2110,7 +2080,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      }
                   });
 
-               var linkExit = link
+               link
                   .exit()
                   .transition()
                   .duration(updateDuration)
@@ -2174,7 +2144,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                         return;
                      }
 
-                     selected = d.data.name;
                      selectedNode = d;
 
                      if (d.children) {
