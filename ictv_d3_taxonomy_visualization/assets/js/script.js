@@ -10,7 +10,7 @@ if (!window.tippy) {
       // Since tippy.js isn't available, add a dummy delegate function so tooltips will fail gracefully.
       console.error("Unable to find the tippy.js library");
       window.tippy = {
-         delegate: function (dummyOne, dummyTwo) { }
+         delegate: function (/* Not in use: dummyOne, dummyTwo */) { }
       };
    }
 }
@@ -250,7 +250,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       try {
          bounds = groupNode.getBBox();
-      } catch (e) {
+      } catch {
+         // Not in use: catch binding e.
          return fallback;
       }
 
@@ -397,7 +398,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          .text(function (d) { return d.toUpperCase(); });
 
       // Click on button to get screenshot.
-      buttonClickE1.on("click", function (e) {
+      buttonClickE1.on("click", function (/* Not in use: e */) {
 
          const selectedFormat = selectFormat.node().value;
 
@@ -412,7 +413,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             // Apply inline CSS to match SVG before
             svgSelection.selectAll('text.legend-node-text')
                .style('font-style', 'normal')
-               .attr('transform', function (d, i) {
+               .attr('transform', function (/* Not in use: d, i */) {
                   return 'rotate(-45, 50, 50)';
                })
 
@@ -443,7 +444,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Function to process the SVG and convert it to an image
             let processPanel = () => {
-               return new Promise((resolve, reject) => {
+               // Not in use: reject callback is not needed.
+               return new Promise((resolve) => {
 
                   // Serialize the SVG element to a string
                   let serializer = new XMLSerializer();
@@ -540,7 +542,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   d3.select(this).text(capitalizedText);
                })
                // adobe illustrator likes this for text rotation
-               .attr('transform', function (d, i) {
+               .attr('transform', function (/* Not in use: d, i */) {
                   return 'rotate(-45, 50, 50)';
                });
 
@@ -635,7 +637,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   d3.select(this).text(capitalizedText);
                })
                // adobe illustrator likes this for text rotation
-               .attr('transform', function (d, i) {
+               .attr('transform', function (/* Not in use: d, i */) {
                   return 'rotate(-45, 50, 50)';
                });
 
@@ -1396,7 +1398,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                         if (textBBox && textBBox.width > 0 && textBBox.height > 0) {
                            nodeBoxes.push(textBBox);
                         }
-                     } catch (e) {
+                     } catch {
+                        // Not in use: catch binding e.
                         // Ignore SVG elements that cannot be measured during a transient render state.
                      }
                   }
@@ -1412,7 +1415,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                            if (circleBBox && circleBBox.width > 0 && circleBBox.height > 0) {
                               nodeBoxes.push(circleBBox);
                            }
-                        } catch (e) {
+                        } catch {
+                           // Not in use: catch binding e.
                            // Ignore SVG elements that cannot be measured during a transient render state.
                         }
                      }
@@ -1741,7 +1745,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("opacity", function (d) {
                      return !d.data.parentDistance ? 0 : 1;
                   })
-                  .style("pointer-events", function (d, i) {
+                  .style("pointer-events", function (d /* Not in use: i */) {
                      return !d.data.parentDistance ? "none" : "all";
                   });
 
@@ -1809,7 +1813,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      return className;
                   })
-                  .attr("x", function (d, i) {
+                  .attr("x", function (d /* Not in use: i */) {
                      if (d.data.rankIndex === 0) {
                         return d.children || d._children ? 10 : -10;
                      } else if (d.data.taxNodeID !== "legend") {
@@ -1848,7 +1852,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                         return d.data.name;
                      }
                   })
-                  .attr("fill", function (d) {
+                  .attr("fill", function (/* Not in use: d */) {
                      return "#000000";
                   })
 
@@ -1934,7 +1938,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                Update.select("text.node-text")
                   .attr("cursor", "pointer")
-                  .style("fill", function (d) {
+                  .style("fill", function (/* Not in use: d */) {
 
                      // lrm 5-30-2024
                      // clicked text is the highlighted text
@@ -1948,7 +1952,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("font-size", fontSliderEl.property("value") + "rem");
                // Transform
                Update.select("text.legend-node-text")
-                  .attr("transform", function (d, i) {
+                  .attr("transform", function (/* Not in use: d, i */) {
                      /*if (d.data.taxNodeID === "legend") {
                        return "rotate(-45 0,-110)";
                      }*/
@@ -1960,7 +1964,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                Update.select("text.unassigned-text")
                   .style("font-size", fontSliderEl.property("value") + "rem")
-                  .style("fill", function (d) {
+                  .style("fill", function (/* Not in use: d */) {
 
                      // lrm 6-10-2024
                      // clicked text is the highlighted text
@@ -1993,7 +1997,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                var ExitTransition = Exit.filter(function (d) { return !isPagerNode(d); })
                   .transition()
                   .duration(updateDuration)
-                  .attr("transform", function (d) {
+                  .attr("transform", function (/* Not in use: d */) {
                      return "translate(" + source.y + "," + source.x + ")";
                   })
                   .remove();
@@ -2084,7 +2088,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .exit()
                   .transition()
                   .duration(updateDuration)
-                  .attr("d", function (d) {
+                  .attr("d", function (/* Not in use: d */) {
                      var pos = { x: source.x, y: source.y };
                      return diagonal(pos, pos);
                   })
@@ -2335,6 +2339,10 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Instead of passing JSON IDs and JSON Lineage, pass taxNodeIDLineage and taxNodeId from callback function in searchPanel.js
    // JSON IDs were changing when updating DB, this caused the search to break here
    function selectSearchResult(event_, displayOrder_, parentTaxNodeID_, taxNodeId_, releaseNumber_, taxNodeIdLineage_) {
+
+      // Not in use: event_ and taxNodeId_ are callback placeholders kept to preserve argument order.
+      void event_;
+      void taxNodeId_;
 
       // Update the global pagination data.
       paginationData.childDisplayOrder = parseInt(displayOrder_);
