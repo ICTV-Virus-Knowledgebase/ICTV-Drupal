@@ -124,7 +124,6 @@ window.ICTV.d3TaxonomyVisualization = function (
    let initialZoomTransform = null;
    const zoomScaleSettings = {
       minScale: 0.01,
-      defaultScale: 0.19,
       maxScale: 1,
       sliderMin: 0,
       sliderMax: 100,
@@ -779,27 +778,12 @@ window.ICTV.d3TaxonomyVisualization = function (
       resetViewBtn.on("click", function () {
          if (!currentZoom || !currentSvgZoom || !currentTreeRoot || !initialZoomTransform) return;
 
-         // Use the initial scale (e.g., 0.19)
-         let startScale = initialZoomTransform.k;
-
-         // Fetch the horizontal (y) and vertical (x) coordinates of the topmost left node (Realm)
-         let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
-         let realmDataX = currentTreeRoot.children ? currentTreeRoot.children[0].x : (currentTreeRoot._children ? currentTreeRoot._children[0].x : 0);
-
-         // Standard padding for resetting
-         let desiredLeftPadding = 20;
-         let desiredTopPadding = 50; // 50 matches your DYNAMIC INITIAL ALIGNMENT padding
-
-         // Calculate exact translations to pin the Realm node
-         let calculatedX = desiredLeftPadding - (realmDataY * startScale);
-         let calculatedY = desiredTopPadding - (realmDataX * startScale);
-
-         // Animate back to the calculated translation and initial scale
+         // Animate back to the captured initial placement and scale
          currentSvgZoom.transition()
             .duration(settings.animationDuration)
             .call(
                currentZoom.transform,
-               d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
+               initialZoomTransform
             );
       });
 
@@ -1106,15 +1090,11 @@ window.ICTV.d3TaxonomyVisualization = function (
          .attr("min", zoomScaleSettings.sliderMin)
          .attr("max", zoomScaleSettings.sliderMax)
          .attr("step", zoomScaleSettings.sliderStep)
-         .attr("value", zoomScaleToSliderValue(zoomScaleSettings.defaultScale))
+         .attr("value", zoomScaleToSliderValue(zoomScaleSettings.minScale))
          .attr("aria-label", "Zoom");
 
       ZoomSliderEl.on("input", function (e) {
          const zoomValue = sliderValueToZoomScale(e.target.value);
-         // const svg = d3.select(`${containerSelector} .taxonomy-panel svg`);
-
-         // let currentTransform = d3.zoomTransform(svg.node());
-         // svg.call(zoom.transform, d3.zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(zoomValue));
 
          // Make sure the tree is fully loaded
          if (currentZoom && currentSvgZoom) {
@@ -1613,37 +1593,76 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                   update(source, true, animationDuration, true);
 
-                  // If the initial render needed auto-spacing, pin Realm again using the new coordinates.
+                  // If the initial render needed auto-spacing, realign using the new coordinates.
                   if (source === ds && autoSpacingState.alignAfterInitialSpacing) {
                      alignInitialTreeView();
                   }
                }, animationDuration + 50);
             }
 
-            // Position the freshly rendered tree so the first Realm row starts near the top-left of the viewport.
+            // Build data-space bounds for the visible initial tree before the zoom transform is applied.
+            // Text and circle boxes come from rendered SVG elements, while the hidden root point is added
+            // explicitly so the root group is still kept inside the parent SVG.
+            function getInitialTreeBounds() {
+               const boxes = getVisibleNodeBoxes();
+               const rootX = Number.isFinite(ds.x) ? ds.x : 0;
+               const rootY = Number.isFinite(ds.y) ? ds.y : 0;
+               const bounds = {
+                  left: rootY - settings.node.radius,
+                  right: rootY + settings.node.radius,
+                  top: rootX - settings.node.radius,
+                  bottom: rootX + settings.node.radius
+               };
+
+               boxes.forEach(function (box) {
+                  bounds.left = Math.min(bounds.left, box.left);
+                  bounds.right = Math.max(bounds.right, box.right);
+                  bounds.top = Math.min(bounds.top, box.top);
+                  bounds.bottom = Math.max(bounds.bottom, box.bottom);
+               });
+
+               return {
+                  x: bounds.left,
+                  y: bounds.top,
+                  width: Math.max(1, bounds.right - bounds.left),
+                  height: Math.max(1, bounds.bottom - bounds.top)
+               };
+            }
+
+            // Calculate the largest initial zoom that fits the measured tree bounds inside the SVG viewport.
+            // Pixel padding is subtracted before calculating the scale so the fitted tree does not touch the edges.
+            function getInitialScaleForBounds(bounds, padding) {
+               const viewport = getSvgViewportSize();
+               const availableWidth = Math.max(1, viewport.width - padding.left - padding.right);
+               const availableHeight = Math.max(1, viewport.height - padding.top - padding.bottom);
+
+               return clampZoomScale(Math.min(
+                  availableWidth / bounds.width,
+                  availableHeight / bounds.height
+               ));
+            }
+
+            // Position the freshly rendered tree so its measured bounds start inside the viewport.
             // Called after initial render and again if initial auto-spacing changes node coordinates.
             function alignInitialTreeView() {
                // ================================================================================================
                //                                    DYNAMIC INITIAL ALIGNMENT
                // ================================================================================================
-               // Run after the first layout pass so Realm/rank coordinates include the current node spacing.
-               let realmDataY = ds.children ? ds.children[0].y : (ds._children ? ds._children[0].y : 0);
-               let realmDataX = ds.children ? ds.children[0].x : (ds._children ? ds._children[0].x : 0);
+               const initialPadding = {
+                  // We want to align left, and do not need padding.
+                  left: 0,
+                  // We need to prevent text from getting cut off!
+                  right: 150,
+                  top: 50,
+                  bottom: 20
+               };
+               const treeBounds = getInitialTreeBounds();
+               const startScale = getInitialScaleForBounds(treeBounds, initialPadding);
 
-               // Set initial scale factor (e.g. 0.19)
-               let startScale = zoomScaleSettings.defaultScale;
+               // Translate from the measured tree bounds so the whole initial tree lands inside the SVG.
+               const calculatedX = initialPadding.left - (treeBounds.x * startScale);
+               const calculatedY = initialPadding.top - (treeBounds.y * startScale);
 
-               // Define how many pixels away from the left edge of the screen the Realm should sit
-               let desiredLeftPadding = 20;
-
-               // Define exactly how many pixels from the top edge the first row to sit
-               let desiredTopPadding = 50;
-
-               // Calculate translations
-               let calculatedX = desiredLeftPadding - (realmDataY * startScale);
-               let calculatedY = desiredTopPadding - (realmDataX * startScale);
-
-               // Apply the exact calculation
                svg_zoom.call(
                   zoom.transform,
                   d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
@@ -1699,9 +1718,12 @@ window.ICTV.d3TaxonomyVisualization = function (
                // The original developers did this to fit the ranks into the viewport (I think).
                // TODO: I do not like how it is using magic numbers, I may need to find a way to do this more dynamically based on users viewport. 
                // But for now, it works fine.
+               var h = settings.svg.height / 125;
+               var w = (settings.svg.width * 5) / rankCount;
+               var rankColumnSpacing = w * autoSpacingState.horizontalScale;
+               var rootToFirstRankGap = settings.node.radius * 3;
+
                parent.forEach(function (d) {
-                  var h = settings.svg.height / 125;
-                  var w = (settings.svg.width * 5) / rankCount;
 
                   let str = d.data.child_counts;
 
@@ -1720,7 +1742,13 @@ window.ICTV.d3TaxonomyVisualization = function (
                   
                   // Vertical and horizontal spacing stay at 1 unless the overlap detector raises them.
                   d.x = d.x * h;
-                  d.y = d.depth * w * autoSpacingState.horizontalScale;
+                  d.y = d.depth * rankColumnSpacing;
+
+                  // Bring root tree node closer to the first rank column.
+                  // This helps keep the initial root g element positioned on the viewport.
+                  if (d.depth === 0 && (d.children || d._children)) {
+                     d.y = Math.max(0, rankColumnSpacing - rootToFirstRankGap);
+                  }
                });
 
                var children = svg.selectAll("g.node").data(parent, function (d) {
@@ -2452,24 +2480,13 @@ window.ICTV.d3TaxonomyVisualization = function (
          const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
          if (group.empty()) return;
 
-         // const transform = d3.zoomTransform(svg.node());
-         // console.log("transform: " + transform);
-
          const bounds = group.node().getBBox();
-         // console.log(bounds);
          const viewport = getSvgViewportSize(); // Uses existing helper
-         // const currentScale = viewport.width / bounds.width;
-         // console.log("currentScale: " + currentScale);
-
          const transform = d3.zoomTransform(currentSvgZoom.node());
          const currentScale = transform.k
-         // console.log("currentScale: " + currentScale);
 
          // Check if the tree width or height is larger than the visible viewport
          if (Math.floor(bounds.width * currentScale) > viewport.width || bounds.height * currentScale > (viewport.height * 0.95)) {
-            console.log("bounds.width without scale: " + bounds.width);
-            console.log("bounds.width with scale applied: " + bounds.width * currentScale);
-            console.log("viewport.width: " + viewport.width);
             const expandBtn = document.querySelector(`${containerSelector} .expand-to-fit-btn`);
             if (expandBtn) {
                // Simulate the click
