@@ -189,15 +189,21 @@ window.ICTV.d3TaxonomyVisualization = function (
       return !togglePaginate || togglePaginate.checked;
    }
 
+   // Return the active D3 zoom scale limits, falling back to configured defaults before the SVG exists.
+   // Used by zoom slider conversion helpers and tree-fit calculations.
    function getCurrentZoomExtent() {
       return currentZoom ? currentZoom.scaleExtent() : [zoomScaleSettings.minScale, zoomScaleSettings.maxScale];
    }
 
+   // Keep a requested zoom scale inside the current D3 zoom extent.
+   // Used before applying slider, reset, and expand-to-fit zoom values.
    function clampZoomScale(scale) {
       const extent = getCurrentZoomExtent();
       return Math.max(extent[0], Math.min(extent[1], scale));
    }
 
+   // Convert a D3 zoom scale to the linear slider range using logarithmic spacing.
+   // Used when initializing and syncing the zoom slider with mouse or touch zoom events.
    function zoomScaleToSliderValue(scale) {
       const extent = getCurrentZoomExtent();
       const minLog = Math.log(extent[0]);
@@ -208,6 +214,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return zoomScaleSettings.sliderMin + (t * (zoomScaleSettings.sliderMax - zoomScaleSettings.sliderMin));
    }
 
+   // Convert a linear slider value back to a D3 zoom scale using the same logarithmic mapping.
+   // Used by the zoom slider input handler before calling D3 zoom behavior.
    function sliderValueToZoomScale(value) {
       const extent = getCurrentZoomExtent();
       const sliderRange = zoomScaleSettings.sliderMax - zoomScaleSettings.sliderMin;
@@ -218,6 +226,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return Math.exp(minLog + (Math.max(0, Math.min(1, t)) * (maxLog - minLog)));
    }
 
+   // Update the zoom slider UI to match the current zoom transform or scale value.
+   // Called from the D3 zoom handler so wheel and pan gestures keep the control in sync.
    function syncZoomSlider(transformOrScale) {
       if (!ZoomSliderEl) { return; }
 
@@ -229,6 +239,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          .attr("aria-valuetext", `${Math.round(clampZoomScale(scale) * 100)}%`);
    }
 
+   // Read the rendered SVG viewport size, with configured dimensions as a fallback.
+   // Used by zoom focus and fit-to-bounds calculations.
    function getSvgViewportSize() {
       const svgNode = currentSvgZoom ? currentSvgZoom.node() : null;
       const rect = svgNode ? svgNode.getBoundingClientRect() : null;
@@ -239,6 +251,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       };
    }
 
+   // Find a stable viewport point to zoom around, preferring the visible tree bounds over the viewport center.
+   // Used by the zoom slider so scaling stays centered on the currently visible taxonomy.
    function getZoomFocusPoint() {
       const viewport = getSvgViewportSize();
       const fallback = [viewport.width / 2, viewport.height / 2];
@@ -273,6 +287,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       ];
    }
 
+   // Calculate the largest zoom scale that fits a bounds rectangle in the SVG viewport.
+   // Used by Expand to Fit and search-driven viewport checks.
    function fitScaleForBounds(bounds, padding) {
       if (!bounds || bounds.width === 0 || bounds.height === 0) { return null; }
 
@@ -283,7 +299,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return clampZoomScale(Math.min(scaleWidth, scaleHeight) * padding);
    }
 
-   // Pagination toggle
+   // Wire the pagination toggle and rebuild the active release when the user changes it.
+   // Used during startup to switch the tree between full and paginated child lists.
    function initializePaginateToggle() {
       togglePaginate = document.querySelector(`${containerSelector} .header-panel .paginate-ctrl`);
       if (!togglePaginate) { throw new Error("Invalid paginate toggle Element"); }
@@ -354,7 +371,8 @@ window.ICTV.d3TaxonomyVisualization = function (
    //       );
    // }
 
-   // TODO: What button? Give this a better name!
+   // Build the toolbar buttons and export format selector in the font-size panel.
+   // Used during startup to support PNG/SVG/PDF export plus Expand to Fit and Reset View controls.
    function initializeButton() {
 
       // Get a reference to the panel Element.
@@ -802,16 +820,22 @@ window.ICTV.d3TaxonomyVisualization = function (
       return release;
    }
 
+   // Identify synthetic pager rows inserted into large child lists.
+   // Used throughout pagination, click handling, rendering, and search path traversal.
    function isPagerNode(node) {
       return !!(node && node.data && node.data.isPager === true);
    }
 
+   // Return the complete child collection for a node regardless of expanded, collapsed, or paginated state.
+   // Used by collapse, search path lookup, and pagination state reset logic.
    function getNodeChildren(node) {
       if (!node) { return null; }
 
       return node.allChildren || node.children || node._children || null;
    }
 
+   // Pick the initial pagination window for a node, centering search targets when possible.
+   // Used by initializePagination when a selected search result has supplied display-order metadata.
    function getDefaultScrollStartIndex(node, visibleCount, totalCount) {
       let scrollStartIndex = 0;
 
@@ -829,10 +853,14 @@ window.ICTV.d3TaxonomyVisualization = function (
       return Math.max(0, Math.min(scrollStartIndex, maxStartIndex));
    }
 
+   // Reserve two rows in each paginated window for the up and down pager controls.
+   // Used when configuring pagination for nodes with many children.
    function getWindowItemCount(pageSize) {
       return Math.max(pageSize - 2, 1);
    }
 
+   // Create a synthetic up or down pager node that D3 can render like a normal tree row.
+   // Used by getVisibleChildren when a child list is larger than the configured page size.
    function createPagerNode(parentNode, direction, scrollStartIndex, disabled, remainingCount, rangeStart, rangeEnd, totalCount) {
       if (!isPaginationEnabled()) { return null; }
 
@@ -868,6 +896,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       };
    }
 
+   // Return the children currently visible for a node, inserting pager controls when pagination is active.
+   // Used by expand, collapse, and render paths so large sibling groups display as a scrollable window.
    function getVisibleChildren(node) {
       if (!node) { return null; }
 
@@ -909,6 +939,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       ].filter(Boolean);
    }
 
+   // Replace a node's expanded or collapsed child list with the current visible pagination window.
+   // Used after page shifts so the rendered tree matches the stored pagination state.
    function syncVisibleChildren(node) {
       if (!node || !node.allChildren) { return false; }
 
@@ -926,6 +958,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return false;
    }
 
+   // Move a paginated node to a requested child-window start index.
+   // Used by pager clicks and search expansion when a target child is outside the current window.
    function setNodeScrollStart(node, scrollStartIndex) {
       if (!isPaginationEnabled() || !node || !node.pagination) { return false; }
 
@@ -937,6 +971,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return syncVisibleChildren(node) || scrollChanged;
    }
 
+   // Shift a parent node's pagination window until a specific child is visible.
+   // Used by search-result expansion before opening each node in the lineage.
    function setNodeScrollStartForChild(parentNode, childNode) {
       if (!isPaginationEnabled() || !parentNode || !parentNode.pagination || !parentNode.allChildren || !childNode) {
          return false;
@@ -964,6 +1000,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return setNodeScrollStart(parentNode, targetScrollStartIndex);
    }
 
+   // Expand a collapsed node while preserving any paginated visible-child window.
+   // Used by normal node clicks and search path expansion.
    function expandNode(node) {
       if (!node || !node._children) { return false; }
 
@@ -972,6 +1010,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return true;
    }
 
+   // Collapse an expanded node while preserving any paginated visible-child window.
+   // Used by normal node clicks and initial tree collapse logic.
    function collapseNode(node) {
       if (!node || !node.children) { return false; }
 
@@ -980,6 +1020,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return true;
    }
 
+   // Walk the hierarchy and attach pagination metadata to nodes whose child count exceeds the page size.
+   // Used when a release is loaded while pagination is enabled.
    function initializePagination(node, pageSize) {
       if (!node || !node.children) { return; }
 
@@ -1002,6 +1044,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       }
    }
 
+   // Remove pagination metadata and restore full child arrays throughout the hierarchy.
+   // Used when a release is loaded with pagination disabled.
    function clearPaginationState(node) {
       if (!node || isPagerNode(node)) { return; }
 
@@ -1016,7 +1060,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       children.forEach((childNode) => clearPaginationState(childNode));
    }
 
-   // Force target node onto screen when paginated?
+   // Find the hierarchy path to a tax node, looking through expanded, collapsed, and paginated children.
+   // Used by search-result expansion to open every ancestor between the root and target node.
    function findPathToTaxNode(node, targetTaxNodeID) {
       if (!node) { return null; }
 
@@ -1039,6 +1084,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return null;
    }
 
+   // Build the zoom slider UI and connect it to the active D3 zoom behavior.
+   // Used during startup; the input handler becomes active once createTree assigns currentZoom and currentSvgZoom.
    function initializeZoomPanel() {
       ZoomPanelEl = document.querySelector(`${containerSelector} .font-size-panel`);
       if (!ZoomPanelEl) { throw new Error("Invalid font size panel Element"); }
@@ -1281,6 +1328,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          // TODO: this needs a more informative name.
          var i = 0;
 
+         // Create the SVG, D3 zoom behavior, layout state, and render and update closures for one release tree.
+         // Called by displayReleaseTaxonomy after the release JSON has been loaded and converted to a hierarchy.
          function createTree(ds) {
 
             var svg = d3
@@ -1571,6 +1620,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                }, animationDuration + 50);
             }
 
+            // Position the freshly rendered tree so the first Realm row starts near the top-left of the viewport.
+            // Called after initial render and again if initial auto-spacing changes node coordinates.
             function alignInitialTreeView() {
                // ================================================================================================
                //                                    DYNAMIC INITIAL ALIGNMENT
@@ -1607,6 +1658,8 @@ window.ICTV.d3TaxonomyVisualization = function (
             autoSpacingState.alignAfterInitialSpacing = true;
             alignInitialTreeView();
 
+            // Recompute the D3 tree layout and reconcile nodes, labels, links, and transitions.
+            // Used by clicks, search expansion, font-size changes, pagination shifts, and auto-spacing passes.
             function update(source, preserveAutoSpacing, animationDuration, isAutoSpacingUpdate) {
 
                if (!source) {
@@ -1763,6 +1816,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                //       return !d.data.parentDistance ? "none" : "all";
                //    });
 
+               // Store each entered text element bounding box on its datum for background-rect sizing.
+               // Used as a D3 call immediately after node labels are appended.
                function getBB(ds) {
                   ds.each(function (d) {
                      d.bbox = this.getBBox();
@@ -2101,6 +2156,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                scheduleAutoSpacingCheck(source, updateDuration);
 
+               // Generate the curved SVG path between a parent and child node.
+               // Used when links enter, update, or exit during tree transitions.
                function diagonal(s, t) {
                   // Validate s and t
                   if (
@@ -2125,6 +2182,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                //    .forceSimulation()
                //    .force("link", d3.forceLink().distance(500).strength(0.1));
 
+               // Walk up to the first high-level ancestor and return its name for color assignment.
+               // Used when filling ghost bridge rectangles and legend-related elements.
                function findParent(par) {
                   if (par.depth < 2) {
                      return par.data.name;
@@ -2133,6 +2192,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                   }
                }
 
+               // Handle node clicks for pagination shifts, expand-collapse toggles, and selection highlighting.
+               // Registered on each rendered node group in the update enter selection.
                function click(event, d) {
                   if (d.data.taxNodeID !== "legend") {
                      if (isPagerNode(d)) {
@@ -2216,6 +2277,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   delay: [settings.tooltip.showDelay, settings.tooltip.hideDelay],
                   interactive: true,
                   interactiveBorder: settings.tooltip.interactiveBorder,
+                  // Build the taxon tooltip just before it appears so it reflects the node under the cursor.
                   onShow(instance) {
 
                      // Validate the instance
@@ -2256,11 +2318,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                   theme: "ICTV-Tooltip"
                })
 
+               // Attach a separate tooltip for synthetic pager nodes that explains the hidden range.
+               // Used by the up and down pager labels inserted for large child lists.
                window.tippy.delegate(`${containerSelector} svg`, {
                   allowHTML: true,
                   animation: settings.tooltip.animation,
                   appendTo: () => document.body,
                   delay: [settings.tooltip.showDelay, settings.tooltip.hideDelay],
+                  // Build the pager tooltip just before it appears so range counts stay in sync with pagination state.
                   onShow(instance) {
                      const d = instance.reference.__data__;
                      if (!d || !isPagerNode(d) || !d.data) {
@@ -2293,6 +2358,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       return;
    }
 
+   // Recursively collapse the release tree into its initial display state while preserving special Unassigned branches.
+   // Called on each root child when createTree first builds the hierarchy.
    function collapse(d) {
       const children = getNodeChildren(d);
       if (!children) { return; }
@@ -2361,7 +2428,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       clearButtonEl.dispatchEvent(new Event("click"));
 
 
-      // dmd testing 070224
+      // Poll until the newly selected release has finished creating its root and update closure.
+      // Used before search expansion starts opening the requested lineage.
       async function waitForTreeReady() {
          const maxAttempts = 30;
 
@@ -2376,6 +2444,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          return false;
       }
 
+      // Expand the viewport if search expansion has pushed the tree outside the visible SVG area.
+      // Used between lineage expansion steps to keep subsequent target nodes reachable on screen.
       async function triggerExpandToFitIfNeeded() {
          if (!currentZoom || !currentSvgZoom || !currentTreeRoot) return;
 
@@ -2410,6 +2480,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
       }
 
+      // Open each ancestor in a path and shift pagination windows so the next lineage node is visible.
+      // Used by openNodes for every taxNodeID in the selected search-result lineage.
       async function expandPath(path) {
          if (!path || path.length < 2) { return; }
 
@@ -2440,6 +2512,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
       }
 
+      // Mark the final searched node as selected and update its text and circle highlight styles.
+      // Called after all lineage nodes have been opened.
       async function highlightNode(node) {
          if (!node || !node.data || !node.data.taxNodeID || !currentTreeUpdate) { return; }
 
@@ -2475,6 +2549,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
       }
 
+      // Drive the full search-result workflow: wait for the tree, expand lineage nodes, and highlight the target.
+      // Scheduled after the release selector change so the new taxonomy has time to render.
       async function openNodes() {
          const treeReady = await waitForTreeReady();
          if (!treeReady) { return; }
@@ -2511,7 +2587,8 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
 };
-
+// Resolve after the requested number of milliseconds.
+// Used to sequence D3 transitions during search expansion and tree readiness polling.
 async function wait(t) {
    return new Promise((resolve) => {
       setTimeout(resolve, t);
