@@ -1298,7 +1298,16 @@ window.ICTV.d3TaxonomyVisualization = function (
             // TODO: While loop appears unnecessary, could be replaced with regular if block or taken out 
             while (num > 1000);
 
-            return d.children;
+            // Each release JSON repeats the tree root as its own leaf child.
+            // Keep the actual hierarchy root and skip that self-referential copy.
+            return d.children.filter(function (child) {
+               return !(
+                  d.rankName === "tree" &&
+                  child.rankName === "tree" &&
+                  String(child.taxNodeID) === String(d.taxNodeID) &&
+                  String(child.parentTaxNodeID) === String(d.taxNodeID)
+               );
+            });
          });
 
          // Create and populate the tree structure.
