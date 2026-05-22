@@ -134,13 +134,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    var selectedNode;
    var clickedText;
    var clickedCircle;
-   var num;
    var name = "";
-   var arr = [];
-   var temp = 0;
-   var counter = 0;
-   var len = 0;
-   var res = [];
 
    // The DOM Element for the font size panel and slider (these are assigned in "iniitializeFontSizePanel").
    let fontSizePanelEl = null;
@@ -1226,14 +1220,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       const rankCount = release.rankCount;
 
-      // TODO: Figure out the purpose of these variables and give them better names!
-      num = 0;
-      temp = 0;
-      arr = [];
-      len = 0;
-      counter = 0;
-      res = [];
-
       // Stop any pending overlap measurement before the release rebuild removes the old SVG.
       if (currentTreeResetAutoSpacing) {
          currentTreeResetAutoSpacing(false);
@@ -1266,37 +1252,10 @@ window.ICTV.d3TaxonomyVisualization = function (
             settings.svg.margin.top -
             settings.svg.margin.bottom;
 
-         // TODO: Consider renaming "ds" to "root"
-         // TODO: Can this be reduced to just const ds = d3.hierarchy(data);?
-         const ds = d3.hierarchy(data, function (d) {
+         const root = d3.hierarchy(data, function (d) {
 
-            if (d.children === null) { return; }
-
-            do {
-               let str = d.child_counts;
-               var result;
-               const regex = /(\d+)/;
-               if (typeof str === "string" && str.length > 0) {
-                  if (str.includes("species")) {
-                     result = str.replace(/, .*species|,.*$/, "");
-                  } else {
-                     result = str?.match(regex);
-                  }
-               }
-               if (typeof result === "string" && result.length > 0) {
-                  num = parseInt(result.match(/\d+/)[0]);
-                  if (num > 500) {
-                     num = temp;
-                  } else {
-                     if (num > temp) {
-                        arr.push(temp);
-                        temp = num;
-                     }
-                  }
-               }
-            }
-            // TODO: While loop appears unnecessary, could be replaced with regular if block or taken out 
-            while (num > 1000);
+            // Safeguard: if there are no children, return null/undefined so D3 knows it is a leaf.
+            if (!d.children) { return; }
 
             // Each release JSON repeats the tree root as its own leaf child.
             // Keep the actual hierarchy root and skip that self-referential copy.
@@ -1311,7 +1270,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          });
 
          // Create and populate the tree structure.
-         createTree(ds);
+         createTree(root);
 
 
          // TODO: this needs a more informative name.
@@ -1319,7 +1278,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          // Create the SVG, D3 zoom behavior, layout state, and render and update closures for one release tree.
          // Called by displayReleaseTaxonomy after the release JSON has been loaded and converted to a hierarchy.
-         function createTree(ds) {
+         function createTree(root) {
 
             var svg = d3
                .select(`${containerSelector} .taxonomy-panel`)
@@ -1354,18 +1313,18 @@ window.ICTV.d3TaxonomyVisualization = function (
             // Use d3 to generate the tree layout/structure.
             const treeLayout = d3.tree().size([availableHeight, availableWidth]);
 
-            treeLayout(ds);
+            treeLayout(root);
 
             // Update tree based on pagination option.
             if (isPaginationEnabled()) {
-               initializePagination(ds, settings.pageSize);
+               initializePagination(root, settings.pageSize);
             } else {
-               clearPaginationState(ds);
+               clearPaginationState(root);
             }
 
-            const rootChildren = getNodeChildren(ds) || [];
+            const rootChildren = getNodeChildren(root) || [];
             rootChildren.forEach(collapse);
-            currentTreeRoot = ds;
+            currentTreeRoot = root;
             currentTreeUpdate = update;
 
             // Track measured spacing separately from font size so compact layouts stay compact until labels collide.
@@ -1603,7 +1562,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   update(source, true, animationDuration, true);
 
                   // If the initial render needed auto-spacing, realign using the new coordinates.
-                  if (source === ds && autoSpacingState.alignAfterInitialSpacing) {
+                  if (source === root && autoSpacingState.alignAfterInitialSpacing) {
                      alignInitialTreeView();
                   }
                }, animationDuration + 50);
@@ -1614,14 +1573,14 @@ window.ICTV.d3TaxonomyVisualization = function (
             // explicitly so the root group is still kept inside the parent SVG.
             function getInitialTreeBounds() {
                const boxes = getVisibleNodeBoxes();
-               const rootX = Number.isFinite(ds.x) ? ds.x : 0;
-               const rootY = Number.isFinite(ds.y) ? ds.y : 0;
+               const rootX = Number.isFinite(root.x) ? root.x : 0;
+               const rootY = Number.isFinite(root.y) ? root.y : 0;
                const bounds = {
                   left: rootY - settings.node.radius,
                   right: rootY + settings.node.radius,
                   top: rootX - settings.node.radius,
                   bottom: rootX + settings.node.radius
-               };
+                  };
 
                boxes.forEach(function (box) {
                   bounds.left = Math.min(bounds.left, box.left);
@@ -1682,7 +1641,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                // ================================================================================================
             }
 
-            update(ds, true, undefined, true);
+            update(root, true, undefined, true);
             autoSpacingState.alignAfterInitialSpacing = true;
             alignInitialTreeView();
 
@@ -1705,18 +1664,18 @@ window.ICTV.d3TaxonomyVisualization = function (
                   autoSpacingState.passCount = 0;
                }
 
-               var info = treeLayout(ds);
-               var parent = info.descendants();
-               var currentNodeCount = parent.length;
+               var info = treeLayout(root);
+               var allNodes = info.descendants();
+               var currentNodeCount = allNodes.length;
                const scaleFactor = Math.min(1, settings.svg.height / 90);
                const dx = 21 * scaleFactor * autoSpacingState.verticalScale;
                const dy = settings.svg.height / (currentNodeCount + 1);
                treeLayout.nodeSize([dx, dy]);
                var links = info.descendants().slice(1);
-               treeLayout(ds);
+               treeLayout(root);
                // Not in use: treeNodes/x/y were only assigned for explanatory comments.
                // Pretty sure this if overridden in the below parent.forEach loop below.
-               // const treeNodes = treeLayout(ds);
+               // const treeNodes = treeLayout(root);
                // treeNodes.each((d) => {
                //    const x = d.x; // the x-coordinate of the node in the layout
                //    const y = d.y; // the y-coordinate of the node in the layout
@@ -1732,23 +1691,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                var rankColumnSpacing = w * autoSpacingState.horizontalScale;
                var rootToFirstRankGap = settings.node.radius * 3;
 
-               parent.forEach(function (d) {
+               allNodes.forEach(function (d) {
 
-                  let str = d.data.child_counts;
-
-                  var result;
-                  const regex = /(\d+)/;
-                  if (typeof str === "string" && str.length > 0) {
-                     if (str.includes("species")) {
-                        result = str.replace(/, .*species|,.*$/, "");
-                     } else {
-                        result = str?.match(regex);
-                     }
-                  }
-                  if (typeof result === "string" && result.length > 0) {
-                     num = parseInt(result.match(/\d+/)[0]);
-                  }
-                  
                   // Vertical and horizontal spacing stay at 1 unless the overlap detector raises them.
                   d.x = d.x * h;
                   d.y = d.depth * rankColumnSpacing;
@@ -1760,7 +1704,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   }
                });
 
-               var children = svg.selectAll("g.node").data(parent, function (d) {
+               var children = svg.selectAll("g.node").data(allNodes, function (d) {
                   return d.id || (d.id = ++i);
                });
 
@@ -2186,7 +2130,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   })
                   .remove();
 
-               parent.forEach(function (d) {
+               allNodes.forEach(function (d) {
                   d.x0 = d.x;
                   d.y0 = d.y;
                });
@@ -2400,15 +2344,6 @@ window.ICTV.d3TaxonomyVisualization = function (
    function collapse(d) {
       const children = getNodeChildren(d);
       if (!children) { return; }
-
-      if (d.data.name === name && counter < len - 1) {
-         counter++;
-         name = res[counter];
-         children.forEach(collapse);
-         d.children = getVisibleChildren(d);
-         d._children = null;
-         return;
-      }
 
       children.forEach(collapse);
 
