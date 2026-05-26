@@ -1242,16 +1242,6 @@ window.ICTV.d3TaxonomyVisualization = function (
       // and put it where it was being loaded a 2nd time.
       d3.json(jsonFilename).then(function (data) {
 
-         // Set the width and height available within the SVG.
-         const availableHeight =
-            settings.svg.height -
-            settings.svg.margin.left -
-            settings.svg.margin.right;
-         const availableWidth =
-            settings.svg.width -
-            settings.svg.margin.top -
-            settings.svg.margin.bottom;
-
          const root = d3.hierarchy(data, function (d) {
 
             // Safeguard: if there are no children, return null/undefined so D3 knows it is a leaf.
@@ -1311,9 +1301,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             // Delaying initialZoomTransform until tree is dynamically aligned below.
 
             // Use d3 to generate the tree layout/structure.
-            const treeLayout = d3.tree().size([availableHeight, availableWidth]);
-
-            treeLayout(root);
+            const treeLayout = d3.tree();
 
             // Update tree based on pagination option.
             if (isPaginationEnabled()) {
@@ -1664,45 +1652,25 @@ window.ICTV.d3TaxonomyVisualization = function (
                   autoSpacingState.passCount = 0;
                }
 
-               var info = treeLayout(root);
-               var allNodes = info.descendants();
-               var currentNodeCount = allNodes.length;
                const scaleFactor = Math.min(1, settings.svg.height / 90);
-               const dx = 21 * scaleFactor * autoSpacingState.verticalScale;
-               const dy = settings.svg.height / (currentNodeCount + 1);
-               treeLayout.nodeSize([dx, dy]);
-               var links = info.descendants().slice(1);
-               treeLayout(root);
-               // Not in use: treeNodes/x/y were only assigned for explanatory comments.
-               // Pretty sure this if overridden in the below parent.forEach loop below.
-               // const treeNodes = treeLayout(root);
-               // treeNodes.each((d) => {
-               //    const x = d.x; // the x-coordinate of the node in the layout
-               //    const y = d.y; // the y-coordinate of the node in the layout
-               //    // use x and y to position the node in the visualization
-               // });
-
-               // This overrides the positioning of the x and y coordinate from treeNodes.each((d).
-               // The original developers did this to fit the ranks into the viewport (I think).
-               // TODO: I do not like how it is using magic numbers, I may need to find a way to do this more dynamically based on users viewport. 
-               // But for now, it works fine.
                var h = settings.svg.height / 125;
                var w = (settings.svg.width * 5) / rankCount;
                var rankColumnSpacing = w * autoSpacingState.horizontalScale;
                var rootToFirstRankGap = settings.node.radius * 3;
+               const dx = 21 * scaleFactor * h * autoSpacingState.verticalScale;
+               const dy = rankColumnSpacing;
 
-               allNodes.forEach(function (d) {
+               treeLayout.nodeSize([dx, dy]);
 
-                  // Vertical and horizontal spacing stay at 1 unless the overlap detector raises them.
-                  d.x = d.x * h;
-                  d.y = d.depth * rankColumnSpacing;
+               var info = treeLayout(root);
+               var allNodes = info.descendants();
+               var links = allNodes.slice(1);
 
-                  // Bring root tree node closer to the first rank column.
-                  // This helps keep the initial root g element positioned on the viewport.
-                  if (d.depth === 0 && (d.children || d._children)) {
-                     d.y = Math.max(0, rankColumnSpacing - rootToFirstRankGap);
+               // Bring the hidden root node closer to the first rank column while leaving the rest of
+               // the tree at the coordinates produced by the single D3 layout pass.
+               if (root.depth === 0 && (root.children || root._children)) {
+                  root.y = Math.max(0, dy - rootToFirstRankGap);
                   }
-               });
 
                var children = svg.selectAll("g.node").data(allNodes, function (d) {
                   return d.id || (d.id = ++i);
