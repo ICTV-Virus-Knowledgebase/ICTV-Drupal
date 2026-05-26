@@ -1364,6 +1364,47 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             currentTreeWaitForAutoSpacing = waitForAutoSpacing;
 
+            // Return the taxonomy rank index used for horizontal column placement.
+            // Rank indexes are one-based for visible ranks; the hidden tree root is zero.
+            function getNodeRankIndex(node) {
+               if (!node || !node.data) { return null; }
+
+               const rankIndex = parseInt(node.data.rankIndex, 10);
+               return Number.isFinite(rankIndex) ? rankIndex : null;
+            }
+
+            // Lay ranks out in a wider internal coordinate space, then let the initial
+            // fit-to-view zoom scale the full tree back into the SVG viewport. This keeps
+            // long labels from visually compressing the rank-column spacing.
+            function getRankColumnSpacing() {
+               const viewport = getSvgViewportSize();
+               const horizontalGutter = settings.node.radius * 2;
+               const availableWidth = Math.max(
+                  settings.node.radius * 4,
+                  viewport.width - (horizontalGutter * 2)
+               );
+               const rankGaps = Math.max(rankCount - 1, 1);
+               const layoutSpreadMultiplier = 5;
+
+               return (availableWidth * layoutSpreadMultiplier) / rankGaps;
+            }
+
+            // D3 still owns node row ordering; rankIndex owns the horizontal column.
+            function applyRankColumnPositions(nodes, rankColumnSpacing, leftGutter, rootToFirstRankGap) {
+               nodes.forEach(function (d) {
+                  const rankIndex = getNodeRankIndex(d);
+
+                  if (rankIndex > 0) {
+                     d.y = leftGutter + ((rankIndex - 1) * rankColumnSpacing);
+                  } else if (d.depth === 0) {
+                     const rootLeftPadding = settings.node.radius + settings.node.strokeWidth + 2;
+                     d.y = Math.max(rootLeftPadding, leftGutter - rootToFirstRankGap);
+                  } else {
+                     d.y = leftGutter + (Math.max(d.depth - 1, 0) * rankColumnSpacing);
+                  }
+               });
+            }
+
             // Build occupied node rectangles in the same coordinate space used by the tree layout.
             // This includes both the label and the visible circle so text from another rank cannot cover the circle.
             function getVisibleNodeBoxes() {
@@ -1558,7 +1599,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Build data-space bounds for the visible initial tree before the zoom transform is applied.
             // Text and circle boxes come from rendered SVG elements, while the hidden root point is added
-            // explicitly so the root group is still kept inside the parent SVG.
+            // explicitly so the root group and first visible circle stay inside the parent SVG.
             function getInitialTreeBounds() {
                const boxes = getVisibleNodeBoxes();
                const rootX = Number.isFinite(root.x) ? root.x : 0;
@@ -1568,7 +1609,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   right: rootY + settings.node.radius,
                   top: rootX - settings.node.radius,
                   bottom: rootX + settings.node.radius
-                  };
+               };
 
                boxes.forEach(function (box) {
                   bounds.left = Math.min(bounds.left, box.left);
@@ -1654,8 +1695,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                const scaleFactor = Math.min(1, settings.svg.height / 90);
                var h = settings.svg.height / 125;
-               var w = (settings.svg.width * 5) / rankCount;
-               var rankColumnSpacing = w * autoSpacingState.horizontalScale;
+               const rankColumnLeftGutter = settings.node.radius * 2;
+               const rankColumnSpacing = getRankColumnSpacing() * autoSpacingState.horizontalScale;
                var rootToFirstRankGap = settings.node.radius * 3;
                const dx = 21 * scaleFactor * h * autoSpacingState.verticalScale;
                const dy = rankColumnSpacing;
@@ -1666,11 +1707,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                var allNodes = info.descendants();
                var links = allNodes.slice(1);
 
-               // Bring the hidden root node closer to the first rank column while leaving the rest of
-               // the tree at the coordinates produced by the single D3 layout pass.
-               if (root.depth === 0 && (root.children || root._children)) {
-                  root.y = Math.max(0, dy - rootToFirstRankGap);
-                  }
+               applyRankColumnPositions(allNodes, rankColumnSpacing, rankColumnLeftGutter, rootToFirstRankGap);
 
                var children = svg.selectAll("g.node").data(allNodes, function (d) {
                   return d.id || (d.id = ++i);
