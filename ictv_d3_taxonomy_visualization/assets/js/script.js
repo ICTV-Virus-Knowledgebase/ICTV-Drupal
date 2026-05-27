@@ -105,6 +105,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
    let currentTreeRoot = null;
    let currentTreeUpdate = null;
+   let currentTreeExpandToFit = null;
+   let currentTreeIsExpandedToFit = false;
 
    // Assigned by createTree() so outside controls can clear measured spacing before a normal rerender.
    let currentTreeResetAutoSpacing = null;
@@ -280,16 +282,34 @@ window.ICTV.d3TaxonomyVisualization = function (
       ];
    }
 
+   // Use the same viewport padding for initial tree alignment and expand-to-fit.
+   function getInitialTreePadding() {
+      return {
+         // We want to align left, and do not need padding.
+         left: 0,
+         // We need to prevent text from getting cut off!
+         right: 150,
+         top: 50,
+         bottom: 20
+      };
+   }
+
    // Calculate the largest zoom scale that fits a bounds rectangle in the SVG viewport.
-   // Used by Expand to Fit and search-driven viewport checks.
+   // Used by initial alignment, Expand to Fit, and search-driven viewport checks.
    function fitScaleForBounds(bounds, padding) {
       if (!bounds || bounds.width === 0 || bounds.height === 0) { return null; }
 
       const viewport = getSvgViewportSize();
-      const scaleWidth = viewport.width / bounds.width;
-      const scaleHeight = viewport.height / bounds.height;
+      const scalePadding = typeof padding === "number" ? padding : 1;
+      const pixelPadding = typeof padding === "object" && padding !== null
+         ? padding
+         : { left: 0, right: 0, top: 0, bottom: 0 };
+      const availableWidth = Math.max(1, viewport.width - pixelPadding.left - pixelPadding.right);
+      const availableHeight = Math.max(1, viewport.height - pixelPadding.top - pixelPadding.bottom);
+      const scaleWidth = availableWidth / bounds.width;
+      const scaleHeight = availableHeight / bounds.height;
 
-      return clampZoomScale(Math.min(scaleWidth, scaleHeight) * padding);
+      return clampZoomScale(Math.min(scaleWidth, scaleHeight) * scalePadding);
    }
 
    // Wire the pagination toggle and rebuild the active release when the user changes it.
@@ -723,49 +743,10 @@ window.ICTV.d3TaxonomyVisualization = function (
       });
 
 	  // Click handler for Expand to Fit
-      expandToFitBtn.on("click", function () {
-         if (!currentZoom || !currentSvgZoom || !currentTreeRoot) return;
-
-         // Get the bounds of the tree group to calculate the required scale
-         const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
-         if (group.empty()) return;
-
-         const bounds = group.node().getBBox();
-
-         if (bounds.width === 0 || bounds.height === 0) return;
-
-         // Calculate the scale needed to fit the tree within the viewable SVG area.
-         // Add a padding factor (e.g., 0.85) so it doesn't touch the very edges.
-         const padding = 0.85;
-         
-         // Use the smaller scale so the entire tree fits, but clamp it to reasonable min/max
-         let newScale = fitScaleForBounds(bounds, padding);
-         if (newScale === null) return;
-         
-         // Fetch the horizontal (y) and vertical (x) coordinates of the topmost left node (Realm)
-         let realmDataY = currentTreeRoot.children ? currentTreeRoot.children[0].y : (currentTreeRoot._children ? currentTreeRoot._children[0].y : 0);
-         let realmDataX = currentTreeRoot.children ? currentTreeRoot.children[0].x : (currentTreeRoot._children ? currentTreeRoot._children[0].x : 0);
-         
-         // Define exactly how many pixels away from the edges to pin the Realm node
-         let desiredLeftPadding = 20; 
-         // You might want to adjust desiredTopPadding based on the scale or keep it fixed
-         let desiredTopPadding = 70; 
-         
-         // Calculate target translations using the pinning logic from your font slider
-         let calculatedX = desiredLeftPadding - (realmDataY * newScale);
-         
-         // To center vertically instead of pinning to top, use bounds:
-         // let calculatedY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
-         // Pins nodes to the top left:
-         let calculatedY = desiredTopPadding - (realmDataX * newScale);
-
-         // Animate the zoom and translation so the tree fits bounds and aligns top-left
-         currentSvgZoom.transition()
-            .duration(settings.animationDuration)
-            .call(
-               currentZoom.transform,
-               d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
-            );
+      expandToFitBtn.on("click", async function () {
+         if (currentTreeExpandToFit) {
+            await currentTreeExpandToFit();
+         }
       });
 
       // Click handler for Reset View
@@ -1133,9 +1114,10 @@ window.ICTV.d3TaxonomyVisualization = function (
          const fontSize = e.target.value;
          currentFontSize = fontSize;
 
-         // Start from the normal layout whenever the user changes font size.
+         // Start from the normal layout whenever the user changes font size,
+         // unless Expand to Fit has intentionally spread the rank columns.
          // The overlap detector below will add spacing back only if the new text boxes collide.
-         if (currentTreeResetAutoSpacing) {
+         if (currentTreeResetAutoSpacing && !currentTreeIsExpandedToFit) {
             currentTreeResetAutoSpacing();
          }
 
@@ -1147,7 +1129,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
 
          if (currentTreeRoot && currentTreeUpdate) {
-            currentTreeUpdate(currentTreeRoot);
+            currentTreeUpdate(currentTreeRoot, currentTreeIsExpandedToFit);
          }
       });
    }
@@ -1227,6 +1209,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       currentTreeRoot = null;
       currentTreeUpdate = null;
+      currentTreeExpandToFit = null;
+      currentTreeIsExpandedToFit = false;
       currentTreeResetAutoSpacing = null;
       currentTreeWaitForAutoSpacing = null;
 
@@ -1626,35 +1610,16 @@ window.ICTV.d3TaxonomyVisualization = function (
                };
             }
 
-            // Calculate the largest initial zoom that fits the measured tree bounds inside the SVG viewport.
-            // Pixel padding is subtracted before calculating the scale so the fitted tree does not touch the edges.
-            function getInitialScaleForBounds(bounds, padding) {
-               const viewport = getSvgViewportSize();
-               const availableWidth = Math.max(1, viewport.width - padding.left - padding.right);
-               const availableHeight = Math.max(1, viewport.height - padding.top - padding.bottom);
-
-               return clampZoomScale(Math.min(
-                  availableWidth / bounds.width,
-                  availableHeight / bounds.height
-               ));
-            }
-
             // Position the freshly rendered tree so its measured bounds start inside the viewport.
             // Called after initial render and again if initial auto-spacing changes node coordinates.
             function alignInitialTreeView() {
                // ================================================================================================
                //                                    DYNAMIC INITIAL ALIGNMENT
                // ================================================================================================
-               const initialPadding = {
-                  // We want to align left, and do not need padding.
-                  left: 0,
-                  // We need to prevent text from getting cut off!
-                  right: 150,
-                  top: 50,
-                  bottom: 20
-               };
+               const initialPadding = getInitialTreePadding();
                const treeBounds = getInitialTreeBounds();
-               const startScale = getInitialScaleForBounds(treeBounds, initialPadding);
+               const startScale = fitScaleForBounds(treeBounds, initialPadding);
+               if (startScale === null) return;
 
                // Translate from the measured tree bounds so the whole initial tree lands inside the SVG.
                const calculatedX = initialPadding.left - (treeBounds.x * startScale);
@@ -1669,6 +1634,94 @@ window.ICTV.d3TaxonomyVisualization = function (
                initialZoomTransform = d3.zoomTransform(svg_zoom.node());
                // ================================================================================================
             }
+
+            // Read the rendered SVG group bounds for the currently visible taxonomy tree.
+            // Used by expandCurrentTreeToFit before and after rank-column spreading so fit calculations
+            // are based on the real rendered node, label, and link extents.
+            function getRenderedTreeBounds() {
+               try {
+                  const svgNode = svg.node();
+                  return svgNode ? svgNode.getBBox() : null;
+               } catch {
+                  return null;
+               }
+            }
+
+            // Calculate the horizontal auto-spacing scale needed to spread rank columns across the fitted viewport.
+            // Used by expandCurrentTreeToFit after the current tree has zoomed out, keeping the existing
+            // spacing when it is already wider than the target spread.
+            function getSpreadHorizontalScale(bounds, fitScale, padding) {
+               if (!bounds || fitScale <= 0) { return autoSpacingState.horizontalScale; }
+
+               const viewport = getSvgViewportSize();
+               const availableWidth = Math.max(1, viewport.width - padding.left - padding.right);
+               const rankGaps = Math.max(rankCount - 1, 1);
+               const baseSpacing = getRankColumnSpacing();
+               const targetVisualSpacing = availableWidth / rankGaps;
+               const targetHorizontalScale = targetVisualSpacing / (baseSpacing * fitScale);
+
+               return Math.min(
+                  autoSpacingState.maxScale,
+                  Math.max(autoSpacingState.horizontalScale, targetHorizontalScale)
+               );
+            }
+
+            // Animate the current SVG zoom transform so the supplied tree bounds fit inside the viewport padding.
+            // Used by the Expand to Fit button and search-result auto-fit after a target node is reached.
+            function fitRenderedTreeBounds(bounds, duration) {
+               const initialPadding = getInitialTreePadding();
+               const newScale = fitScaleForBounds(bounds, initialPadding);
+               if (newScale === null) { return false; }
+
+               const calculatedX = initialPadding.left - (bounds.x * newScale);
+               const calculatedY = initialPadding.top - (bounds.y * newScale);
+
+               svg_zoom.transition()
+                  .duration(duration)
+                  .call(
+                     zoom.transform,
+                     d3.zoomIdentity.translate(calculatedX, calculatedY).scale(newScale)
+                  );
+
+               return true;
+            }
+
+            // Fit the visible tree, then spread rank columns across the fitted viewport when more room is needed.
+            // Assigned to currentTreeExpandToFit for the toolbar button and for search-result auto-fit.
+            async function expandCurrentTreeToFit() {
+               if (!currentZoom || !currentSvgZoom || !currentTreeRoot) { return; }
+
+               const initialPadding = getInitialTreePadding();
+               const bounds = getRenderedTreeBounds();
+               if (!fitRenderedTreeBounds(bounds, settings.animationDuration)) { return; }
+
+               await wait(settings.animationDuration);
+
+               const fittedTransform = d3.zoomTransform(svg_zoom.node());
+               const expandedHorizontalScale = getSpreadHorizontalScale(bounds, fittedTransform.k, initialPadding);
+
+               if (expandedHorizontalScale > autoSpacingState.horizontalScale + autoSpacingState.scaleTolerance) {
+                  autoSpacingState.horizontalScale = expandedHorizontalScale;
+                  autoSpacingState.passCount = 0;
+
+                  update(root, true, settings.animationDuration, true);
+                  await wait(settings.animationDuration);
+                  await waitForAutoSpacing();
+
+                  const spreadBounds = getRenderedTreeBounds();
+                  const spreadFitScale = fitScaleForBounds(spreadBounds, initialPadding);
+                  const spreadTransform = d3.zoomTransform(svg_zoom.node());
+
+                  if (spreadFitScale !== null && spreadFitScale < spreadTransform.k - autoSpacingState.scaleTolerance) {
+                     fitRenderedTreeBounds(spreadBounds, settings.animationDuration);
+                     await wait(settings.animationDuration);
+                  }
+               }
+
+               currentTreeIsExpandedToFit = true;
+            }
+
+            currentTreeExpandToFit = expandCurrentTreeToFit;
 
             update(root, true, undefined, true);
             autoSpacingState.alignAfterInitialSpacing = true;
@@ -2394,6 +2447,11 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       // console.log(`in selectSearchResult: taxNodeId_ = ${taxNodeId_}, taxNodeIdLineage_ = ${taxNodeIdLineage_}, displayOrder_ = ${displayOrder_}`);
 
+      // Start each search from the normal fitted tree spacing, not a previous Expand to Fit spread.
+      rememberedAutoSpacing.horizontalScale = 1;
+      rememberedAutoSpacing.verticalScale = 1;
+      currentTreeIsExpandedToFit = false;
+
       // Select the specified release.
       releaseControlEl.value = releaseNumber_;
       releaseControlEl.dispatchEvent(new Event("change"));
@@ -2422,7 +2480,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       }
 
       // Expand the viewport if search expansion has pushed the tree outside the visible SVG area.
-      // Used between lineage expansion steps to keep subsequent target nodes reachable on screen.
+      // Used after the selected target node has been reached and highlighted.
       async function triggerExpandToFitIfNeeded() {
          if (!currentZoom || !currentSvgZoom || !currentTreeRoot) return;
 
@@ -2436,12 +2494,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          // Check if the tree width or height is larger than the visible viewport
          if (Math.floor(bounds.width * currentScale) > viewport.width || bounds.height * currentScale > (viewport.height * 0.95)) {
-            const expandBtn = document.querySelector(`${containerSelector} .expand-to-fit-btn`);
-            if (expandBtn) {
-               // Simulate the click
-               expandBtn.click();
-               // Wait for the Expand to Fit animation to complete before the next node shifts
-               await wait(settings.animationDuration);
+            if (currentTreeExpandToFit) {
+               await currentTreeExpandToFit();
             }
          }
       }
@@ -2468,10 +2522,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                // Wait for the node expansion animation first
                await wait(settings.animationDelay);
-
-               // Check if the new expansion pushed it off screen, click expand to fit, and wait
-               await triggerExpandToFitIfNeeded();
-
                // panToNode(currentNode, settings.animationDuration);
                // await wait(settings.animationDelay);
             }
@@ -2540,7 +2590,10 @@ window.ICTV.d3TaxonomyVisualization = function (
             finalNode = currentNode;
          }
 
-         await highlightNode(finalNode);
+         if (finalNode) {
+            await highlightNode(finalNode);
+            await triggerExpandToFitIfNeeded();
+         }
 
          // --- Trigger the final expand-to-fit centered view ---
          // panToNode(finalNode, settings.animationDuration, true);
