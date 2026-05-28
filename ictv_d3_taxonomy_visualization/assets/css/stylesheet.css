@@ -1,24 +1,47 @@
 
-/* Drupal module div container */
-/* dmd 04/26/24 Replaced class "_none" here to avoid side effects outside the module. */
-body .block-ictv-d3-taxonomy-visualization { 
-   border-style: solid;
-   border-color: white;
-   border-width: 0px !important;
+/* Drupal Layout Builder wrapper around the taxonomy visualization block.
+   Scope this to the wrapper that contains this block so other _none layouts are unaffected. */
+body ._none:has(.block-ictv-d3-taxonomy-visualization) {
+   /* Center the widened wrapper relative to the viewport instead of the narrower parent column. */
+   margin-left: 50%;
+   transform: translateX(-50%);
+
+   /* Make the wrapper wider than its parent, but keep it inside the browser viewport. */
+   box-sizing: border-box;
+   max-width: 96vw;
+   width: calc(100% + 12rem);
+
+   /* Put the visible border on this outer wrapper so the SVG content has breathing room. */
+   border: 2px solid black !important;
+   border-left: 2px solid black !important;
+   border-radius: 10px !important;
+   box-shadow: none !important;
+   padding: 0.75rem 1rem !important;
 }
 
-/* The module's top-level container Element */
+/* Let each Drupal/Layout Builder wrapper inside the widened parent fill the available width. */
+body ._none:has(.block-ictv-d3-taxonomy-visualization) > .w-100,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .layout-builder__layout,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .col-12,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-visualization,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-visualization > .content {
+   max-width: none;
+   width: 100%;
+}
+
+/* The module container fills the bordered Drupal wrapper; the border is intentionally not here. */
 #d3_taxonomy_vis_container {
-   /*border-style: solid;
-   border-radius: 10px;
-   border-width: 1px;
-   border-color: #d3d3d3;*/
    height: 100%;
    overflow: hidden;
    width: 100%;
 }
 
-/* dmd 04/26/24 Experimenting with CSS variables */
+/* Allow the module container to grow vertically when script.js expands tall initial trees. */
+#d3_taxonomy_vis_container.taxonomy-panel-auto-height {
+   height: auto;
+   overflow: visible;
+}
+
 #d3_taxonomy_vis_container {
 
    /* Colors */
