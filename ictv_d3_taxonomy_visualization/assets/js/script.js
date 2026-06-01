@@ -458,29 +458,34 @@ window.ICTV.d3TaxonomyVisualization = function (
       let buttonE1 = document.querySelector(`${containerSelector} .font-size-panel`);
       if (!buttonE1) { throw new Error("Invalid font size panel Element"); }
 
+      const buttonGroup = d3
+         .select(`${containerSelector} .font-size-panel`)
+         .append("div")
+         .attr("class", "button-group view-buttons");
+
 	   // "Expand to Fit" button
       let expandToFitBtn = d3
-         .select(`${containerSelector} .font-size-panel`)
+         .select(buttonGroup.node())
          .append("button")
          .attr("class", "screenshot-button expand-to-fit-btn")
          .html(`<i class="fa fa-expand"></i> Expand to Fit`)
 
       // "Reset View" button
       let resetViewBtn = d3
-         .select(`${containerSelector} .font-size-panel`)
+         .select(buttonGroup.node())
          .append("button")
          .attr("class", "screenshot-button reset-view-btn")
          .html(`<i class="fa fa-home"></i> Reset View`);
 
       // Create a button.
       let buttonClickE1 = d3
-         .select(`${containerSelector} .font-size-panel`)
+         .select(buttonGroup.node())
          .append("button")
          .attr("class", "screenshot-button")
          .html(`<i class="fa fa-camera"></i> Export`);
 
       // Create a dropdown for format selection.
-      let selectFormat = d3.select(`${containerSelector} .font-size-panel`)
+      let selectFormat = d3.select(buttonGroup.node())
          .append("select")
          .attr("class", "selectFormat");
 
@@ -1186,14 +1191,18 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       if (ZoomPanelEl.classList.contains("show")) { ZoomPanelEl.classList.remove("show"); }
 
-      d3
+      const zoomControl = d3
          .select(`${containerSelector} .font-size-panel`)
+         .append("div")
+         .attr("class", "control-group zoom-control");
+
+      zoomControl
          .append("div")
          .attr("class", "label")
          .text("Zoom");
 
       ZoomSliderEl = d3
-         .select(`${containerSelector} .font-size-panel`)
+         .select(zoomControl.node())
          .append("input")
          .attr("class", "slider")
          .attr("type", "range")
@@ -1228,15 +1237,19 @@ window.ICTV.d3TaxonomyVisualization = function (
       fontSizePanelEl.classList.add("hide");
 
       // Create the font size label.
-      d3
-         .select(".font-size-panel")
+      const fontSizeControl = d3
+         .select(`${containerSelector} .font-size-panel`)
+         .append("div")
+         .attr("class", "control-group font-size-control");
+
+      fontSizeControl
          .append("div")
          .attr("class", "label")
          .text("Font size");
 
       // Create the slider control and a reference to it.
       fontSliderEl = d3
-         .select(".font-size-panel")
+         .select(fontSizeControl.node())
          .append("input")
          .attr("class", "slider")
          .attr("type", "range")
