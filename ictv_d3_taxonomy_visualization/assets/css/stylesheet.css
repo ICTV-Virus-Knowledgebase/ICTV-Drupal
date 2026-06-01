@@ -62,10 +62,12 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
 #d3_taxonomy_vis_container .header-panel {
    padding: 5px;
    align-items: center;
+   box-sizing: border-box;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: row wrap;
+   gap: 0.5rem 0.9rem;
    justify-content: flex-start;
-   margin-left: 0.5rem;
+   margin-left: 0;
    width: 100%;
 }
 
@@ -91,15 +93,47 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
 #d3_taxonomy_vis_container .header-panel .font-size-panel {
    align-items: center;
    display: flex;
-   flex-flow: row nowrap;
+   flex: 1 1 36rem;
+   flex-flow: row wrap;
+   gap: 0.4rem 0.75rem;
    justify-content: flex-start;
-   margin-left: 1.3rem;
+   margin-left: 0;
+   min-width: 0;
 }
 #d3_taxonomy_vis_container .font-size-panel.hide {
    display: none;
 }
 #d3_taxonomy_vis_container .font-size-panel.show {
+   display: contents;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .control-group,
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group {
+   align-items: center;
    display: flex;
+   min-width: 0;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .control-group {
+   flex: 0 1 13rem;
+   flex-flow: row nowrap;
+   gap: 0.25rem;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group {
+   flex: 0 1 auto;
+   flex-flow: row wrap;
+   gap: 0.3rem;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .screenshot-button,
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .selectFormat {
+   border-radius: 4px;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .expand-to-fit-btn,
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .reset-view-btn {
+   margin-right: 0;
 }
 
 #d3_taxonomy_vis_container .header-panel .paginate-toggle {
@@ -120,7 +154,7 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
   Sliders
 ----------------------------------------------------------------------------------------------------------------*/
 #d3_taxonomy_vis_container .slider {
-   margin: 0 1.3rem 0 0;
+   margin: 0;
    max-width: 130px;
    width: 130px;
 }
@@ -248,8 +282,9 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
   The search panel (searchPanel.js)
 ----------------------------------------------------------------------------------------------------------------*/
 #d3_taxonomy_vis_container .header-panel .search-panel {
-   justify-self: flex-end;
-   margin-left: 1.3rem;
+   flex: 0 1 22rem;
+   margin-left: 0;
+   min-width: 0;
    position: relative;
    top: 16px;
 }
@@ -262,6 +297,7 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    flex-flow: row nowrap;
    justify-content: flex-start;
    margin: 0;
+   min-width: 0;
 }
 
 #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
@@ -274,6 +310,8 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    font-size: var(--default-font-size);
    margin: 0;
    padding: var(--text-control-padding);
+   flex: 1 1 12rem;
+   min-width: 9rem;
    vertical-align: middle;
    width: 200px;
 }
@@ -451,6 +489,68 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    font-size: 1.0rem;
 }
 
+
+@media (max-width: 1150px) {
+   #d3_taxonomy_vis_container .header-panel {
+      align-items: flex-start;
+   }
+
+   #d3_taxonomy_vis_container .font-size-panel.show {
+      display: flex;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .font-size-panel {
+      flex-basis: 100%;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .search-panel {
+      margin-left: 0;
+      top: 0;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .paginate-toggle {
+      margin-left: 0;
+   }
+}
+
+@media (max-width: 720px) {
+   #d3_taxonomy_vis_container .header-panel .release-ctrl,
+   #d3_taxonomy_vis_container .header-panel .search-panel,
+   #d3_taxonomy_vis_container .header-panel .font-size-panel,
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .control-group,
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .button-group {
+      flex-basis: 100%;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .control-group {
+      justify-content: space-between;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .control-group .slider {
+      flex: 1 1 8rem;
+      max-width: none;
+      min-width: 8rem;
+      width: auto;
+   }
+
+   #d3_taxonomy_vis_container .search-panel .search-controls {
+      flex-flow: row wrap;
+      gap: 0.3rem;
+   }
+
+   #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
+      border-radius: 4px;
+      flex-basis: 100%;
+      min-width: 0;
+      width: 100%;
+   }
+
+   #d3_taxonomy_vis_container .search-panel .search-button,
+   #d3_taxonomy_vis_container .search-panel .clear-button,
+   #d3_taxonomy_vis_container .selectFormat {
+      border-radius: 4px;
+   }
+}
 
 /*---------------------------------------------------------------------------------------------------------------- 
   The body panel 
