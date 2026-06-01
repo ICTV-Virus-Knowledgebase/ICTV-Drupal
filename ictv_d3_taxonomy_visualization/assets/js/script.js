@@ -138,6 +138,9 @@ window.ICTV.d3TaxonomyVisualization = function (
    var clickedText;
    var clickedCircle;
    var name = "";
+   const selectedNodeHighlightColor = "#006CB5";
+   const defaultNodeTextColor = "#000000";
+   const defaultNodeCircleFill = "#FFFFFF";
 
    // The DOM Element for the font size panel and slider (these are assigned in "iniitializeFontSizePanel").
    let fontSizePanelEl = null;
@@ -1106,6 +1109,75 @@ window.ICTV.d3TaxonomyVisualization = function (
       return null;
    }
 
+   // Compare hierarchy nodes by object identity first and taxNodeID second.
+   // Used so highlights survive D3 enter/update cycles where element references can be replaced.
+   function isSelectedNodeDatum(node) {
+      // If node is null or no node been selected yet
+      if (!node || !selectedNode) { return false; }
+      // Is node the same object as selectedNode?
+      if (node === selectedNode) { return true; }
+      // Does node or selectedNode have D3 data?
+      if (!node.data || !selectedNode.data) { return false; }
+
+      return String(node.data.taxNodeID) === String(selectedNode.data.taxNodeID);
+   }
+
+   // Locate the rendered node group for a hierarchy node without relying on CSS escaping taxNodeID values.
+   // Used by click and search highlighting to keep clickedText/clickedCircle in sync.
+   function getRenderedNodeElement(node) {
+      if (!node || !node.data) { return null; }
+
+      const taxNodeID = String(node.data.taxNodeID);
+      const nodeElements = document.querySelectorAll(containerSelector + " g.node");
+
+      for (const nodeElement of nodeElements) {
+         const datum = nodeElement.__data__;
+         if (
+            datum === node ||
+            (!!datum && !!datum.data && String(datum.data.taxNodeID) === taxNodeID)
+         ) {
+            return nodeElement;
+         }
+      }
+
+      return null;
+   }
+
+   // Refresh the legacy clicked element references for the currently selected node.
+   // Used after search-driven updates where the highlighted node may have just entered the DOM.
+   function syncSelectedNodeElements(node) {
+      const selectedNodeEl = getRenderedNodeElement(node);
+      clickedCircle = selectedNodeEl ? selectedNodeEl.querySelector("circle.node") : null;
+      clickedText = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
+
+      return selectedNodeEl;
+   }
+
+   // Apply the selected-node styles directly after a search update has finished rendering.
+   // Used in addition to update() data-driven styles so the highlight is visible between transitions.
+   function applySelectedNodeStyles(node) {
+      document.querySelectorAll(containerSelector + " text.node-text, " + containerSelector + " text.unassigned-text").forEach((textElementReset) => {
+         textElementReset.style.fill = defaultNodeTextColor;
+      });
+
+      document.querySelectorAll(containerSelector + " circle.node").forEach((circleElementReset) => {
+         circleElementReset.style.fill = defaultNodeCircleFill;
+      });
+
+      const selectedNodeEl = syncSelectedNodeElements(node);
+      const textToHighlight = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
+      if (textToHighlight) {
+         textToHighlight.style.fill = selectedNodeHighlightColor;
+         clickedText = textToHighlight;
+      }
+
+      const circleToHighlight = selectedNodeEl ? selectedNodeEl.querySelector("circle.node") : null;
+      if (circleToHighlight) {
+         circleToHighlight.style.fill = selectedNodeHighlightColor;
+         clickedCircle = circleToHighlight;
+      }
+   }
+
    // Build the zoom slider UI and connect it to the active D3 zoom behavior.
    // Used during startup; the input handler becomes active once createTree assigns currentZoom and currentSvgZoom.
    function initializeZoomPanel() {
@@ -2071,7 +2143,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                      }
                   })
                   .attr("fill", function (/* Not in use: d */) {
-                     return "#000000";
+                     return defaultNodeTextColor;
                   })
 
                   .attr("dx", settings.node.textDx)
@@ -2144,10 +2216,10 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      // lrm 5-20-2024
                      // update DOM element's appended circle when clicked
-                     if (this === clickedCircle) {
-                        return "#006CB5";
-                     } else if (this !== clickedCircle) {
-                        return "white";
+                     if (isSelectedNodeDatum(d)) {
+                        return selectedNodeHighlightColor;
+                     } else {
+                        return defaultNodeCircleFill;
                      }
 
                      findParent(d);
@@ -2156,15 +2228,15 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                Update.select("text.node-text")
                   .attr("cursor", "pointer")
-                  .style("fill", function (/* Not in use: d */) {
+                  .style("fill", function (d) {
 
                      // lrm 5-30-2024
                      // clicked text is the highlighted text
                      // clickedText is global varible assigned in the click function
-                     if (this == clickedText) {
-                        return "#006CB5";
+                     if (isSelectedNodeDatum(d)) {
+                        return selectedNodeHighlightColor;
                      } else {
-                        return "#000000";
+                        return defaultNodeTextColor;
                      }
                   })
                   .style("font-size", fontSliderEl.property("value") + "rem");
@@ -2182,15 +2254,15 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                Update.select("text.unassigned-text")
                   .style("font-size", fontSliderEl.property("value") + "rem")
-                  .style("fill", function (/* Not in use: d */) {
+                  .style("fill", function (d) {
 
                      // lrm 6-10-2024
                      // clicked text is the highlighted text
                      // clickedText is global varible assigned in the click function
-                     if (this == clickedText) {
-                        return "#006CB5";
+                     if (isSelectedNodeDatum(d)) {
+                        return selectedNodeHighlightColor;
                      } else {
-                        return "#000000";
+                        return defaultNodeTextColor;
                      }
                   })
 
@@ -2291,12 +2363,12 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("stroke", function (d) {
                      // lrm 6-17-2024
                      // Check if the node is a leaf node and if it's the currently selected node
-                     if ((!d.children && !d._children) && d === selectedNode) {
-                        return "#006CB5";
+                     if ((!d.children && !d._children) && isSelectedNodeDatum(d)) {
+                        return selectedNodeHighlightColor;
                      } else if (d._children) {
                         return "#808080";
                      } else if (d.children) {
-                        return "#006CB5";
+                        return selectedNodeHighlightColor;
                      } else {
                         return "#808080";
                      }
@@ -2623,6 +2695,10 @@ window.ICTV.d3TaxonomyVisualization = function (
             const expanded = expandNode(parentNode);
 
             if (scrollChanged || expanded) {
+               const nodeToHighlight = parentNode.data && parentNode.data.parentDistance ? parentNode : currentNode;
+               selectedNode = nodeToHighlight;
+               syncSelectedNodeElements(nodeToHighlight);
+
                // Preserve measured spacing during search expansion so opened nodes do not briefly overlap.
                currentTreeUpdate(parentNode, true);
 
@@ -2631,8 +2707,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                   await currentTreeWaitForAutoSpacing();
                }
 
-               // Wait for the node expansion animation first
+               // Wait for the node expansion animation first, then lock the current lineage highlight in place.
                await wait(settings.animationDelay);
+               applySelectedNodeStyles(nodeToHighlight);
                // panToNode(currentNode, settings.animationDuration);
                // await wait(settings.animationDelay);
             }
@@ -2645,35 +2722,12 @@ window.ICTV.d3TaxonomyVisualization = function (
          if (!node || !node.data || !node.data.taxNodeID || !currentTreeUpdate) { return; }
 
          selectedNode = node;
-
-         let selectedNodeEl = document.querySelector(`g[taxNodeID="${node.data.taxNodeID}"]`);
-         clickedCircle = selectedNodeEl ? selectedNodeEl.querySelector("circle") : null;
-         clickedText = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
+         syncSelectedNodeElements(node);
 
          // Preserve measured spacing when the searched node is highlighted.
          currentTreeUpdate(node, true);
          await wait(settings.animationDelay);
-
-         document.querySelectorAll("text.node-text, text.unassigned-text").forEach((textElementReset) => {
-            textElementReset.style.fill = "#000000";
-         });
-
-         document.querySelectorAll("circle").forEach((circleElementReset) => {
-            circleElementReset.style.fill = "#FFFFFF";
-         });
-
-         selectedNodeEl = document.querySelector(`g[taxNodeID="${node.data.taxNodeID}"]`);
-         const textToHighlight = selectedNodeEl ? selectedNodeEl.querySelector("text") : null;
-         if (textToHighlight) {
-            textToHighlight.style.fill = "#006CB5";
-            clickedText = textToHighlight;
-         }
-
-         const circleToHighlight = selectedNodeEl ? selectedNodeEl.querySelector("circle") : null;
-         if (circleToHighlight) {
-            circleToHighlight.style.fill = "#006CB5";
-            clickedCircle = circleToHighlight;
-         }
+         applySelectedNodeStyles(node);
       }
 
       // Drive the full search-result workflow: wait for the tree, expand lineage nodes, and highlight the target.
