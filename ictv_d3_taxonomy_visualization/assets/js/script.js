@@ -47,7 +47,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
    // Configuration settings (to replace hard-coded values below)
    const settings = {
-      pageSize: 40, // Number of nodes on the screen when paginating.
+      pageSize: 25, // Number of nodes on the screen when paginating.
       pageStep: 25, // How many nodes are brought on from the next page when paginating.
       animationDuration: 900,
       animationDelay: 400,
@@ -620,10 +620,9 @@ window.ICTV.d3TaxonomyVisualization = function (
             // Get the bounding box of the SVG content
             let bbox = svg.getBBox();
             const fontScale = (currentFontSize || 4) / 4;
-            const leftTrim = (1 - 1 / Math.sqrt(fontScale)) * bbox.width * 0.25;
 
             // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
-            svg.setAttribute('viewBox', `${bbox.x + leftTrim} ${bbox.y} ${bbox.width - leftTrim} ${bbox.height}`);
+            svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
 
             // Create a D3 selection from the SVG
             let svgSelection = d3.select(svg);
@@ -714,10 +713,9 @@ window.ICTV.d3TaxonomyVisualization = function (
             let bbox = svg.getBBox();
             let padding = 15;
             const fontScale = (currentFontSize || 4) / 4;
-            const leftTrim = (1 - 1 / Math.sqrt(fontScale)) * bbox.width * 0.25;
 
             // Set the viewBox attribute to the bounding box dimensions to fit the SVG contents
-            svg.setAttribute('viewBox', `${bbox.x + leftTrim - padding} ${bbox.y - padding} ${bbox.width - leftTrim + 2 * padding} ${bbox.height + 2 * padding}`);
+            svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
 
             // Create a D3 selection from the SVG
             let svgSelection = d3.select(svg);
@@ -889,6 +887,19 @@ window.ICTV.d3TaxonomyVisualization = function (
       return Math.max(pageSize - 2, 1);
    }
 
+   // Keep dense first-rank columns intact so the initial auto-height logic can
+   // show those older releases without replacing rows with pager controls.
+   function shouldSkipPaginationForFirstRank(node) {
+      if (!node || !node.data || !node.allChildren) { return false; }
+
+      const rankIndex = parseInt(node.data.rankIndex, 10);
+      if (rankIndex !== 0 || node.data.rankName !== "tree") { return false; }
+
+      return node.allChildren.some(function (childNode) {
+         return childNode && childNode.data && parseInt(childNode.data.rankIndex, 10) === 1;
+      });
+   }
+
    // Create a synthetic up or down pager node that D3 can render like a normal tree row.
    // Used by getVisibleChildren when a child list is larger than the configured page size.
    function createPagerNode(parentNode, direction, scrollStartIndex, disabled, remainingCount, rangeStart, rangeEnd, totalCount) {
@@ -1058,7 +1069,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       node.allChildren = [...node.children];
       node.allChildren.forEach((childNode) => initializePagination(childNode, pageSize));
 
-      if (node.allChildren.length > pageSize) {
+      if (node.allChildren.length > pageSize && !shouldSkipPaginationForFirstRank(node)) {
          const visibleCount = getWindowItemCount(pageSize);
 
          node.pagination = {
@@ -1768,7 +1779,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                // ================================================================================================
                const initialPadding = getInitialTreePadding();
                const treeBounds = getInitialTreeBounds();
-               resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
+                  resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
 
                const startScale = fitScaleForBounds(treeBounds, initialPadding);
                if (startScale === null) return;
