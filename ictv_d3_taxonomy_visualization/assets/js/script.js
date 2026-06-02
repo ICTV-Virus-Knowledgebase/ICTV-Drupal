@@ -98,6 +98,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    let currentTreeRoot = null;
    let currentTreeUpdate = null;
    let currentTreeExpandToFit = null;
+   let currentTreeFitSearchExpansionIfClipped = null;
    let currentTreeIsExpandedToFit = false;
 
    // Assigned by createTree() so outside controls can clear measured spacing before a normal rerender.
@@ -1360,6 +1361,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       currentTreeRoot = null;
       currentTreeUpdate = null;
       currentTreeExpandToFit = null;
+      currentTreeFitSearchExpansionIfClipped = null;
       currentTreeIsExpandedToFit = false;
       currentTreeResetAutoSpacing = null;
       currentTreeWaitForAutoSpacing = null;
@@ -1896,6 +1898,22 @@ window.ICTV.d3TaxonomyVisualization = function (
                return true;
             }
 
+            // Keep search-result expansion visible without applying the final expand-to-fit spread.
+            // Assigned to currentTreeFitSearchExpansionIfClipped for each lineage expansion step.
+            async function fitSearchExpansionIfClipped() {
+               if (!currentZoom || !currentSvgZoom || !currentTreeRoot) { return false; }
+
+               await waitForAutoSpacing();
+
+               const bounds = getTreeBounds();
+               if (!fitTreeBounds(bounds, settings.animationDuration)) { return false; }
+
+               await wait(settings.animationDuration);
+               await waitForAutoSpacing();
+
+               return true;
+            }
+
             // Fit the visible tree when clipped, then spread rank columns into spare width.
             // Assigned to currentTreeExpandToFit for the toolbar button and for search-result auto-fit.
             async function expandCurrentTreeToFit() {
@@ -1922,6 +1940,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             }
 
             currentTreeExpandToFit = expandCurrentTreeToFit;
+            currentTreeFitSearchExpansionIfClipped = fitSearchExpansionIfClipped;
 
             update(root, true, undefined, true);
             autoSpacingState.alignAfterInitialSpacing = true;
@@ -2707,6 +2726,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                // Wait for any new spacing needed by the expanded branch before continuing the search path.
                if (currentTreeWaitForAutoSpacing) {
                   await currentTreeWaitForAutoSpacing();
+               }
+
+               // Keep the expanding search path visible when the newly opened tree is clipped.
+               if (currentTreeFitSearchExpansionIfClipped) {
+                  await currentTreeFitSearchExpansionIfClipped();
                }
 
                // Wait for the node expansion animation first, then lock the current lineage highlight in place.
