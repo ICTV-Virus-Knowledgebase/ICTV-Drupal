@@ -60,16 +60,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          baseVerticalSpacing: 200, // Adjust this number to increase/decrease row height
       },
       svg: {
-         // height: jQuery(window).height() * 0.8,
          height: jQuery(`${containerSelector} .taxonomy-panel`).height() || jQuery(window).height() * 0.8,
-         // height: 579.33,
-         margin: {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-         },
-         // width: jQuery(window).width(),
          width: jQuery(`${containerSelector} .taxonomy-panel`).width() || jQuery(window).width(),
       },
       tooltip: {
@@ -352,7 +343,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    function getInitialTreePadding() {
       return {
          // We want to align left, and do not need padding.
-         left: 0,
+         left: 5,
          // We need to prevent text from getting cut off!
          right: 150,
          top: 50,
@@ -1415,16 +1406,13 @@ window.ICTV.d3TaxonomyVisualization = function (
          // Called by displayReleaseTaxonomy after the release JSON has been loaded and converted to a hierarchy.
          function createTree(root) {
 
-            var svg = d3
+            const svg = d3
                .select(`${containerSelector} .taxonomy-panel`)
                .append("svg")
                .attr("width", settings.svg.width)
-               .attr("height", settings.svg.height)
-               .append("g")
-               .attr(
-                  "transform",
-                  `translate(${settings.svg.margin.left},${settings.svg.margin.top})`
-               );
+               .attr("height", settings.svg.height);
+
+            const treeGroup = svg.append("g");
 
             let zoom = d3.zoom()
                // zoom constraints
@@ -1432,17 +1420,16 @@ window.ICTV.d3TaxonomyVisualization = function (
                // 1: Zoom in to the original size
                .scaleExtent([zoomScaleSettings.minScale, zoomScaleSettings.maxScale])
                .on("zoom", function (event) {
-                  svg.attr("transform", event.transform);
+                  treeGroup.attr("transform", event.transform);
                   syncZoomSlider(event.transform);
                });
 
-            var svg_zoom = d3
-               .select(`${containerSelector} .taxonomy-panel svg`)
+            const svgZoom = svg
                .call(zoom)
                .on("dblclick.zoom", null);
 
             currentZoom = zoom;
-            currentSvgZoom = svg_zoom;
+            currentSvgZoom = svgZoom;
             // Delaying initialZoomTransform until tree is dynamically aligned below.
 
             // Use d3 to generate the tree layout/structure.
@@ -1555,7 +1542,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             function getVisibleNodeBoxes() {
                const boxes = [];
 
-               svg.selectAll("g.node").each(function (d) {
+               treeGroup.selectAll("g.node").each(function (d) {
                   if (!d) { return; }
 
                   const group = d3.select(this);
@@ -1742,10 +1729,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                }, animationDuration + 50);
             }
 
-            // Build data-space bounds for the visible initial tree before the zoom transform is applied.
+            // Build canonical data-space bounds for the visible tree before the zoom transform is applied.
             // Text and circle boxes come from rendered SVG elements, while the hidden root point is added
             // explicitly so the root group and first visible circle stay inside the parent SVG.
-            function getInitialTreeBounds() {
+            // Used by initial alignment, Expand to Fit, and search-time viewport fitting.
+            function getTreeBounds() {
                const boxes = getVisibleNodeBoxes();
                const rootX = Number.isFinite(root.x) ? root.x : 0;
                const rootY = Number.isFinite(root.y) ? root.y : 0;
@@ -1769,6 +1757,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   width: Math.max(1, bounds.right - bounds.left),
                   height: Math.max(1, bounds.bottom - bounds.top)
                };
+
             }
 
             // Position the freshly rendered tree so its measured bounds start inside the viewport.
@@ -1778,8 +1767,8 @@ window.ICTV.d3TaxonomyVisualization = function (
                //                                    DYNAMIC INITIAL ALIGNMENT
                // ================================================================================================
                const initialPadding = getInitialTreePadding();
-               const treeBounds = getInitialTreeBounds();
-                  resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
+               const treeBounds = getTreeBounds();
+               resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
 
                const startScale = fitScaleForBounds(treeBounds, initialPadding);
                if (startScale === null) return;
@@ -1788,26 +1777,14 @@ window.ICTV.d3TaxonomyVisualization = function (
                const calculatedX = initialPadding.left - (treeBounds.x * startScale);
                const calculatedY = initialPadding.top - (treeBounds.y * startScale);
 
-               svg_zoom.call(
+               svgZoom.call(
                   zoom.transform,
                   d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
                );
 
                // Capture this as a starting baseline for reset-view logic.
-               initialZoomTransform = d3.zoomTransform(svg_zoom.node());
+               initialZoomTransform = d3.zoomTransform(svgZoom.node());
                // ================================================================================================
-            }
-
-            // Read the rendered SVG group bounds for the currently visible taxonomy tree.
-            // Used by expandCurrentTreeToFit so fit calculations are based on the real
-            // rendered node, label, and link extents.
-            function getRenderedTreeBounds() {
-               try {
-                  const svgNode = svg.node();
-                  return svgNode ? svgNode.getBBox() : null;
-               } catch {
-                  return null;
-               }
             }
 
             // Convert data-space tree bounds into the current SVG viewport coordinate space.
@@ -1829,9 +1806,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                };
             }
 
-            // Check whether the rendered tree is already inside the visible SVG viewport.
+            // Check whether the canonical tree bounds are already inside the padded SVG viewport.
             // Expand to Fit should not keep zooming out when nothing is clipped.
-            function isRenderedTreeInsideViewport(bounds, padding) {
+            function isTreeInsideViewport(bounds, padding) {
                const viewportBounds = getViewportTreeBounds(bounds);
                if (!viewportBounds) { return false; }
 
@@ -1897,19 +1874,19 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Animate the current SVG zoom transform so the supplied tree bounds fit inside the viewport padding.
             // Used by the Expand to Fit button and search-result auto-fit after a target node is reached.
-            function fitRenderedTreeBounds(bounds, duration) {
+            function fitTreeBounds(bounds, duration) {
                const initialPadding = getInitialTreePadding();
-               if (isRenderedTreeInsideViewport(bounds, initialPadding)) { return false; }
+               if (isTreeInsideViewport(bounds, initialPadding)) { return false; }
 
                const newScale = fitScaleForBounds(bounds, initialPadding);
                if (newScale === null) { return false; }
 
-               const currentScale = d3.zoomTransform(svg_zoom.node()).k;
+               const currentScale = d3.zoomTransform(svgZoom.node()).k;
                const targetScale = Math.min(currentScale, newScale);
                const calculatedX = initialPadding.left - (bounds.x * targetScale);
                const calculatedY = initialPadding.top - (bounds.y * targetScale);
 
-               svg_zoom.transition()
+               svgZoom.transition()
                   .duration(duration)
                   .call(
                      zoom.transform,
@@ -1926,16 +1903,17 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                await waitForAutoSpacing();
 
-               let bounds = getRenderedTreeBounds();
-               if (fitRenderedTreeBounds(bounds, settings.animationDuration)) {
+               let bounds = getTreeBounds();
+
+               if (fitTreeBounds(bounds, settings.animationDuration)) {
                   await wait(settings.animationDuration);
                   await waitForAutoSpacing();
-                  bounds = getRenderedTreeBounds();
+                  bounds = getTreeBounds();
                }
 
                if (await spreadRankColumnsToFitWidth(bounds)) {
-                  bounds = getRenderedTreeBounds();
-                  if (fitRenderedTreeBounds(bounds, settings.animationDuration)) {
+                  bounds = getTreeBounds();
+                  if (fitTreeBounds(bounds, settings.animationDuration)) {
                      await wait(settings.animationDuration);
                   }
                }
@@ -1982,7 +1960,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                applyRankColumnPositions(allNodes, rankColumnSpacing, rankColumnLeftGutter, rootToFirstRankGap);
 
-               var children = svg.selectAll("g.node").data(allNodes, function (d) {
+               var children = treeGroup.selectAll("g.node").data(allNodes, function (d) {
                   return d.id || (d.id = ++i);
                });
 
@@ -2320,7 +2298,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                ExitTransition.select("text").style("fill-opacity", 1);
 
-               var link = svg.selectAll("path.link").data(links, function (d) {
+               var link = treeGroup.selectAll("path.link").data(links, function (d) {
                   return d.id;
                });
 
