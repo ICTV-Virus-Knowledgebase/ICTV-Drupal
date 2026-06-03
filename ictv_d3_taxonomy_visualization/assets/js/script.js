@@ -343,11 +343,10 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Use the same viewport padding for initial tree alignment and expand-to-fit.
    function getInitialTreePadding() {
       return {
-         // We want to align left, and do not need padding.
          left: 5,
          // We need to prevent text from getting cut off!
          right: 150,
-         top: 50,
+         top: 5,
          bottom: 0
       };
    }
@@ -386,61 +385,6 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
       });
    }
-
-   // Follow target node as they're opened after clicking on search result
-   // Called inside expandPath function
-   // TODO: It jumps over when it starts to pan, I need to leverage logic inside the Font Size slider to fix it.
-   // 20260505: It still jumps, but it is not as aggressive
-   // function panToNode(node, duration, expandToFit = false) {
-   //    if (!node || !currentZoom || !currentSvgZoom || isNaN(node.x) || isNaN(node.y)) return;
-
-   //    if (expandToFit) {
-   //       // Grab bounding box of the whole tree to scale out
-   //       const group = d3.select(`${containerSelector} .taxonomy-panel svg g`);
-   //       if (group.empty()) return;
-
-   //       const bounds = group.node().getBBox();
-   //       const viewport = getSvgViewportSize();
-   //       const fullWidth = viewport.width;
-   //       const fullHeight = viewport.height;
-
-   //       if (bounds.width === 0 || bounds.height === 0) return;
-
-   //       const padding = 0.85;
-   //       let newScale = fitScaleForBounds(bounds, padding);
-   //       if (newScale === null) return;
-
-   //       // Center the bounding box perfectly in the SVG viewport
-   //       let finalX = (fullWidth / 2.8) - newScale * (bounds.x + bounds.width / 2.8);
-   //       let finalY = (fullHeight / 2) - newScale * (bounds.y + bounds.height / 2);
-
-   //       currentSvgZoom.transition()
-   //          .duration(duration || settings.animationDuration)
-   //          .call(
-   //             currentZoom.transform,
-   //             d3.zoomIdentity.translate(finalX, finalY).scale(newScale)
-   //          );
-   //       return; // Exit early, skipping the normal node-panning logic
-   //    }
-
-   //    const currentTransform = d3.zoomTransform(currentSvgZoom.node());
-   //    const scale = currentTransform.k;
-   //    // console.log(scale);
-      
-   //    // node.y = horizontal position, node.x = vertical position (tree is rotated)
-   //    const viewport = getSvgViewportSize();
-   //    const tx = (viewport.width / 6) - scale * node.y;
-   //    // const tx = scale * node.y;
-   //    // console.log(node.y);
-   //    const ty = (viewport.height / 2) - scale * node.x;
-
-   //    currentSvgZoom.transition()
-   //       .duration(duration || settings.animationDuration)
-   //       .call(
-   //          currentZoom.transform,
-   //          d3.zoomIdentity.translate(tx, ty).scale(scale)
-   //       );
-   // }
 
    // Build the toolbar buttons and export format selector in the font-size panel.
    // Used during startup to support PNG/SVG/PDF export plus Expand to Fit and Reset View controls.
@@ -1544,6 +1488,95 @@ window.ICTV.d3TaxonomyVisualization = function (
             function getVisibleNodeBoxes() {
                const boxes = [];
 
+               function getElementRotationAngle(element) {
+                  // Normal node labels are not rotated, so only rank-column labels need this correction.
+                  if (!element || !element.classList.contains("legend-node-text")) { return 0; }
+
+                  // CSS exposes rotate(-45deg) as a matrix. atan2(b, a) recovers the rotation angle
+                  // without hard-coding it when the stylesheet value changes later.
+                  const transform = window.getComputedStyle(element).transform;
+                  const matrixMatch = transform && transform.match(/^matrix\(([^)]+)\)$/);
+
+                  if (matrixMatch) {
+                     const matrixValues = matrixMatch[1].split(",").map(function (value) {
+                        return parseFloat(value.trim());
+                     });
+
+                     if (matrixValues.length >= 2 && Number.isFinite(matrixValues[0]) && Number.isFinite(matrixValues[1])) {
+                        return Math.atan2(matrixValues[1], matrixValues[0]);
+                     }
+                  }
+
+                  // Match the stylesheet rule for rank-column labels when computed style is unavailable.
+                  return -45 * Math.PI / 180;
+               }
+
+               function getElementTransformOrigin(element, bbox) {
+                  // The rotation math needs to use the same origin as CSS transform-origin.
+                  // If it cannot be read, 0,0 matches the rank-label stylesheet intent.
+                  const fallback = { x: 0, y: 0 };
+                  if (!element || !bbox) { return fallback; }
+
+                  const transformOrigin = window.getComputedStyle(element).transformOrigin;
+                  if (!transformOrigin) { return fallback; }
+
+                  // Browsers report transform-origin as pixel values, for example "0px 0px".
+                  const parts = transformOrigin.split(/\s+/);
+                  const originX = parseFloat(parts[0]);
+                  const originY = parseFloat(parts[1]);
+
+                  return {
+                     x: Number.isFinite(originX) ? originX : fallback.x,
+                     y: Number.isFinite(originY) ? originY : fallback.y
+                  };
+               }
+
+               function getRotatedTextBBox(element, bbox) {
+                  // getBBox() returns the unrotated local SVG box. For rotated rank labels,
+                  // rotate its corners in the same local coordinate space before fitting.
+                  if (!bbox || bbox.width <= 0 || bbox.height <= 0) { return bbox; }
+
+                  const angle = getElementRotationAngle(element);
+                  if (!Number.isFinite(angle) || Math.abs(angle) < 0.001) { return bbox; }
+
+                  const origin = getElementTransformOrigin(element, bbox);
+                  const cos = Math.cos(angle);
+                  const sin = Math.sin(angle);
+
+                  function rotatePoint(x, y) {
+                     // Translate the point to the rotation origin, rotate it, then translate it back.
+                     const offsetX = x - origin.x;
+                     const offsetY = y - origin.y;
+
+                     return {
+                        x: origin.x + (offsetX * cos) - (offsetY * sin),
+                        y: origin.y + (offsetX * sin) + (offsetY * cos)
+                     };
+                  }
+
+                  const corners = [
+                     rotatePoint(bbox.x, bbox.y),
+                     rotatePoint(bbox.x + bbox.width, bbox.y),
+                     rotatePoint(bbox.x + bbox.width, bbox.y + bbox.height),
+                     rotatePoint(bbox.x, bbox.y + bbox.height)
+                  ];
+                  // Build a new axis-aligned box around the rotated corners so downstream
+                  // tree-fit and collision logic can keep using left/right/top/bottom ranges.
+                  const xs = corners.map(function (corner) { return corner.x; });
+                  const ys = corners.map(function (corner) { return corner.y; });
+                  const left = Math.min.apply(null, xs);
+                  const right = Math.max.apply(null, xs);
+                  const top = Math.min.apply(null, ys);
+                  const bottom = Math.max.apply(null, ys);
+
+                  return {
+                     x: left,
+                     y: top,
+                     width: right - left,
+                     height: bottom - top
+                  };
+               }
+
                treeGroup.selectAll("g.node").each(function (d) {
                   if (!d) { return; }
 
@@ -1554,7 +1587,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                   if (textNode && textNode.textContent.trim()) {
                      try {
-                        const textBBox = textNode.getBBox();
+                        const textBBox = getRotatedTextBBox(textNode, textNode.getBBox());
                         if (textBBox && textBBox.width > 0 && textBBox.height > 0) {
                            nodeBoxes.push(textBBox);
                         }
