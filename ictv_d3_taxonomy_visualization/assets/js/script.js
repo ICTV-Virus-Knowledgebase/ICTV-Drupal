@@ -125,6 +125,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       sliderStep: 0.1
    };
 
+   const defaultFontSize = 4;
    var currentFontSize;
    var selectedNode;
    var clickedText;
@@ -755,10 +756,35 @@ window.ICTV.d3TaxonomyVisualization = function (
       });
 
       // Click handler for Reset View
-      resetViewBtn.on("click", function () {
+      resetViewBtn.on("click", async function () {
          if (!currentZoom || !currentSvgZoom || !currentTreeRoot || !initialZoomTransform) return;
 
-         // Animate back to the captured initial placement and scale
+         currentTreeIsExpandedToFit = false;
+         currentFontSize = defaultFontSize;
+
+         if (fontSliderEl) {
+            fontSliderEl
+               .property("value", defaultFontSize)
+               .attr("value", defaultFontSize);
+         }
+
+         if (currentTreeResetAutoSpacing) {
+            currentTreeResetAutoSpacing();
+         }
+
+         d3.selectAll(`${containerSelector} .taxonomy-panel text`)
+            .style("font-size", defaultFontSize + "rem");
+
+         if (currentTreeUpdate) {
+            currentTreeUpdate(currentTreeRoot, true, 0, true);
+            await wait(0);
+         }
+
+         if (currentTreeWaitForAutoSpacing) {
+            await currentTreeWaitForAutoSpacing();
+         }
+
+         // Animate back to the original placement and scale captured at the default font size.
          currentSvgZoom.transition()
             .duration(settings.animationDuration)
             .call(
@@ -1202,7 +1228,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          .attr("type", "range")
          .attr("min", 4)
          .attr("max", 14)
-         .attr("value", 4);
+         .attr("value", defaultFontSize);
 
       // changing the font on change of slider
       fontSliderEl.on("input", function (e) {
