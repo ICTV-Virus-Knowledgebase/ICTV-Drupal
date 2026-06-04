@@ -50,9 +50,8 @@ window.ICTV.d3TaxonomyVisualization = function (
       pageSize: 25, // Number of nodes on the screen when paginating.
       pageStep: 25, // How many nodes are brought on from the next page when paginating.
       animationDuration: 900,
-      animationDelay: 400,
+      searchAnimationDuration: 800,
       node: {
-         // radius: 17.5,
          radius: 20,
          strokeWidth: 3,
          textDx: 25,
@@ -69,21 +68,6 @@ window.ICTV.d3TaxonomyVisualization = function (
          interactiveBorder: 5,
          showDelay: 300
       },
-
-      // This was how the SVG was positioned before.
-      // The jQuery window made sense, but it was being multiplied by seemingly magic numbers for the view to show right.
-      // I implemented a different approach to hopefully be a more dynamic way of doing it.
-      // Search for DYNAMIC INITIAL ALIGNMENT to find implementation.
-      // ===========================================================================
-      // xFactor: 0.5, // TODO: this is influencing Y offset, not X
-      // yFactor: 300,
-      // yOffset: 0,
-      // zoom: {
-      //    scaleFactor: 0.19, //.17,
-      //    translateX: -(jQuery(window).width()), * 2.5 //-3850,
-      //    translateY: -(jQuery(window).height() * 0.45), //-1800
-      // },
-      // ===========================================================================
    };
 
    // Global variables
@@ -95,10 +79,28 @@ window.ICTV.d3TaxonomyVisualization = function (
       parentTaxnodeID: null
    }
 
+   // Active D3 hierarchy root assigned by createTree(). Used by toolbar controls,
+   // release rebuilds, font-size changes, and search expansion to update the current tree.
    let currentTreeRoot = null;
+
+   // Active createTree() update closure. Used outside createTree() when controls need
+   // to rerender the current hierarchy without rebuilding the release data.
    let currentTreeUpdate = null;
+
+   // Active createTree() Expand to Fit closure. Used by the toolbar button and
+   // search-result workflow after a target lineage is opened.
    let currentTreeExpandToFit = null;
+
+   // Active createTree() Reset View closure. Used by the toolbar button to restore
+   // default font, spacing, initial scale, and current top-left alignment.
+   let currentTreeResetView = null;
+
+   // Active createTree() viewport-fit closure for incremental search expansion.
+   // Keeps each opened lineage step visible without applying the final fit spread.
    let currentTreeFitSearchExpansionIfClipped = null;
+
+   // Tracks whether the user has applied Expand to Fit. Font-size updates use this
+   // to decide whether to preserve expanded spacing or return to compact spacing.
    let currentTreeIsExpandedToFit = false;
 
    // Assigned by createTree() so outside controls can clear measured spacing before a normal rerender.
@@ -116,7 +118,6 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Zoom behavior for font slider
    let currentZoom = null;
    let currentSvgZoom = null;
-   let initialZoomTransform = null;
    const zoomScaleSettings = {
       minScale: 0.01,
       maxScale: 1,
@@ -400,7 +401,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          .append("div")
          .attr("class", "button-group view-buttons");
 
-	   // "Expand to Fit" button
+      // "Expand to Fit" button
       let expandToFitBtn = d3
          .select(buttonGroup.node())
          .append("button")
@@ -748,7 +749,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       });
 
-	  // Click handler for Expand to Fit
+      // Click handler for Expand to Fit
       expandToFitBtn.on("click", async function () {
          if (currentTreeExpandToFit) {
             await currentTreeExpandToFit();
@@ -757,7 +758,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       // Click handler for Reset View
       resetViewBtn.on("click", async function () {
-         if (!currentZoom || !currentSvgZoom || !currentTreeRoot || !initialZoomTransform) return;
+         if (!currentZoom || !currentSvgZoom || !currentTreeRoot || !currentTreeResetView) return;
 
          currentTreeIsExpandedToFit = false;
          currentFontSize = defaultFontSize;
@@ -784,13 +785,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             await currentTreeWaitForAutoSpacing();
          }
 
-         // Animate back to the original placement and scale captured at the default font size.
-         currentSvgZoom.transition()
-            .duration(settings.animationDuration)
-            .call(
-               currentZoom.transform,
-               initialZoomTransform
-            );
+         await currentTreeResetView(settings.animationDuration);
       });
 
    }
@@ -1191,7 +1186,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          // Make sure the tree is fully loaded
          if (currentZoom && currentSvgZoom) {
             const focusPoint = getZoomFocusPoint();
-            
+
             // Use D3's native scaleTo logic to zoom around the visible tree content.
             currentSvgZoom.call(currentZoom.scaleTo, zoomValue, focusPoint);
          }
@@ -1346,6 +1341,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       currentTreeRoot = null;
       currentTreeUpdate = null;
       currentTreeExpandToFit = null;
+      currentTreeResetView = null;
       currentTreeFitSearchExpansionIfClipped = null;
       currentTreeIsExpandedToFit = false;
       currentTreeResetAutoSpacing = null;
@@ -1417,7 +1413,6 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             currentZoom = zoom;
             currentSvgZoom = svgZoom;
-            // Delaying initialZoomTransform until tree is dynamically aligned below.
 
             // Use d3 to generate the tree layout/structure.
             const treeLayout = d3.tree();
@@ -1836,31 +1831,61 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             }
 
-            // Position the freshly rendered tree so its measured bounds start inside the viewport.
-            // Called after initial render and again if initial auto-spacing changes node coordinates.
-            function alignInitialTreeView() {
+            let initialTreeViewScale = null;
+
+            // Position the currently rendered tree so its measured bounds start inside the viewport.
+            // The bounds come from current node d.x/d.y coordinates plus rendered label boxes.
+            function alignTreeViewToCurrentBounds(duration, allowHeightResize, scaleOverride) {
                // ================================================================================================
-               //                                    DYNAMIC INITIAL ALIGNMENT
+               //                                    DYNAMIC TREE ALIGNMENT
                // ================================================================================================
                const initialPadding = getInitialTreePadding();
                const treeBounds = getTreeBounds();
-               resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
+               if (allowHeightResize) {
+                  resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
+               }
 
-               const startScale = fitScaleForBounds(treeBounds, initialPadding);
-               if (startScale === null) return;
+               const fittedScale = fitScaleForBounds(treeBounds, initialPadding);
+               if (fittedScale === null) return false;
 
-               // Translate from the measured tree bounds so the whole initial tree lands inside the SVG.
+               const startScale = Number.isFinite(scaleOverride)
+                  ? clampZoomScale(scaleOverride)
+                  : fittedScale;
+
+               // Translate from the measured tree bounds so the current tree lands inside the SVG.
                const calculatedX = initialPadding.left - (treeBounds.x * startScale);
                const calculatedY = initialPadding.top - (treeBounds.y * startScale);
+               const nextTransform = d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale);
+               const alignmentDuration = Number.isFinite(duration) ? duration : 0;
+               const zoomSelection = alignmentDuration > 0
+                  ? svgZoom.transition().duration(alignmentDuration)
+                  : svgZoom;
 
-               svgZoom.call(
+               zoomSelection.call(
                   zoom.transform,
-                  d3.zoomIdentity.translate(calculatedX, calculatedY).scale(startScale)
+                  nextTransform
                );
 
-               // Capture this as a starting baseline for reset-view logic.
-               initialZoomTransform = d3.zoomTransform(svgZoom.node());
+               return startScale;
                // ================================================================================================
+            }
+
+            // Called after initial render and again if initial auto-spacing changes node coordinates.
+            function alignInitialTreeView() {
+               const alignedScale = alignTreeViewToCurrentBounds(0, true);
+
+               if (alignedScale !== false) {
+                  initialTreeViewScale = alignedScale;
+               }
+            }
+
+            // Reset view uses the current expanded/collapsed coordinates, but the initial scale.
+            async function resetCurrentTreeView(duration) {
+               const resetDuration = Number.isFinite(duration) ? duration : settings.animationDuration;
+
+               if (alignTreeViewToCurrentBounds(resetDuration, false, initialTreeViewScale) !== false && resetDuration > 0) {
+                  await wait(resetDuration);
+               }
             }
 
             // Convert data-space tree bounds into the current SVG viewport coordinate space.
@@ -1974,15 +1999,16 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Keep search-result expansion visible without applying the final expand-to-fit spread.
             // Assigned to currentTreeFitSearchExpansionIfClipped for each lineage expansion step.
-            async function fitSearchExpansionIfClipped() {
+            async function fitSearchExpansionIfClipped(duration) {
                if (!currentZoom || !currentSvgZoom || !currentTreeRoot) { return false; }
 
                await waitForAutoSpacing();
 
                const bounds = getTreeBounds();
-               if (!fitTreeBounds(bounds, settings.animationDuration)) { return false; }
+               const fitDuration = Number.isFinite(duration) ? duration : settings.animationDuration;
+               if (!fitTreeBounds(bounds, fitDuration)) { return false; }
 
-               await wait(settings.animationDuration);
+               await wait(fitDuration);
                await waitForAutoSpacing();
 
                return true;
@@ -2014,6 +2040,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             }
 
             currentTreeExpandToFit = expandCurrentTreeToFit;
+            currentTreeResetView = resetCurrentTreeView;
             currentTreeFitSearchExpansionIfClipped = fitSearchExpansionIfClipped;
 
             update(root, true, undefined, true);
@@ -2131,20 +2158,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("pointer-events", function (d /* Not in use: i */) {
                      return !d.data.parentDistance ? "none" : "all";
                   });
-
-               // lrm 5-22-2024
-               // Enter.append("circle")
-               //    .attr("class", "node")
-               //    .style("stroke", "black")
-               //    .style("stroke-width", `${settings.node.strokeWidth}px`)
-
-               //    // Make tree/root node invisible?
-               //    .style("opacity", function (d) {
-               //       return !d.data.parentDistance ? 0 : 1;
-               //    })
-               //    .style("pointer-events", function (d, i) {
-               //       return !d.data.parentDistance ? "none" : "all";
-               //    });
 
                // Store each entered text element bounding box on its datum for background-rect sizing.
                // Used as a D3 call immediately after node labels are appended.
@@ -2508,10 +2521,6 @@ window.ICTV.d3TaxonomyVisualization = function (
                   return path;
                }
 
-               // var simulation = d3
-               //    .forceSimulation()
-               //    .force("link", d3.forceLink().distance(500).strength(0.1));
-
                // Walk up to the first high-level ancestor and return its name for color assignment.
                // Used when filling ghost bridge rectangles and legend-related elements.
                function findParent(par) {
@@ -2680,7 +2689,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                   theme: "ICTV-Tooltip"
                });
 
-	            }
+            }
          }
 
       });
@@ -2760,7 +2769,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          const maxAttempts = 30;
 
          for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            if (!!currentTreeRoot && !!currentTreeUpdate) {
+            if (!!currentTreeRoot && !!currentTreeUpdate && !!currentTreeWaitForAutoSpacing) {
+               await currentTreeWaitForAutoSpacing();
                return true;
             }
 
@@ -2768,6 +2778,18 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
 
          return false;
+      }
+
+      // Wait for a search-driven update to finish before opening the next lineage step
+      // or applying the selected-node highlight. Prefer the tree's auto-spacing wait
+      // so layout collision passes finish; fall back to the search animation duration
+      // when the tree wait hook is not available yet.
+      async function waitForSearchUpdate() {
+         if (currentTreeWaitForAutoSpacing) {
+            await currentTreeWaitForAutoSpacing();
+         } else {
+            await wait(settings.searchAnimationDuration);
+         }
       }
 
       // Expand the viewport if search expansion has pushed the tree outside the visible SVG area.
@@ -2795,23 +2817,18 @@ window.ICTV.d3TaxonomyVisualization = function (
                syncSelectedNodeElements(nodeToHighlight);
 
                // Preserve measured spacing during search expansion so opened nodes do not briefly overlap.
-               currentTreeUpdate(parentNode, true);
+               currentTreeUpdate(parentNode, true, settings.searchAnimationDuration);
 
                // Wait for any new spacing needed by the expanded branch before continuing the search path.
-               if (currentTreeWaitForAutoSpacing) {
-                  await currentTreeWaitForAutoSpacing();
-               }
+               await waitForSearchUpdate();
 
                // Keep the expanding search path visible when the newly opened tree is clipped.
                if (currentTreeFitSearchExpansionIfClipped) {
-                  await currentTreeFitSearchExpansionIfClipped();
+                  await currentTreeFitSearchExpansionIfClipped(settings.searchAnimationDuration);
                }
 
-               // Wait for the node expansion animation first, then lock the current lineage highlight in place.
-               await wait(settings.animationDelay);
+               // Lock the current lineage highlight after its search transition has finished.
                applySelectedNodeStyles(nodeToHighlight);
-               // panToNode(currentNode, settings.animationDuration);
-               // await wait(settings.animationDelay);
             }
          }
       }
@@ -2825,8 +2842,8 @@ window.ICTV.d3TaxonomyVisualization = function (
          syncSelectedNodeElements(node);
 
          // Preserve measured spacing when the searched node is highlighted.
-         currentTreeUpdate(node, true);
-         await wait(settings.animationDelay);
+         currentTreeUpdate(node, true, settings.searchAnimationDuration);
+         await waitForSearchUpdate();
          applySelectedNodeStyles(node);
       }
 
@@ -2860,14 +2877,11 @@ window.ICTV.d3TaxonomyVisualization = function (
             await triggerExpandToFitIfNeeded();
          }
 
-         // --- Trigger the final expand-to-fit centered view ---
-         // panToNode(finalNode, settings.animationDuration, true);
-
          paginationData.childDisplayOrder = NaN;
          paginationData.parentTaxnodeID = null;
       }
 
-      setTimeout(openNodes, settings.animationDelay);
+      setTimeout(openNodes, 0);
    }
 
 };
