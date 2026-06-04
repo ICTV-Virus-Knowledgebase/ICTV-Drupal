@@ -1255,6 +1255,19 @@ window.ICTV.d3TaxonomyVisualization = function (
       });
    }
 
+   // Restore font-size and measured spacing before rendering a different release tree.
+   function resetFontSizeSlider() {
+      currentFontSize = defaultFontSize;
+      rememberedAutoSpacing.horizontalScale = 1;
+      rememberedAutoSpacing.verticalScale = 1;
+
+      if (fontSliderEl) {
+         fontSliderEl
+            .property("value", defaultFontSize)
+            .attr("value", defaultFontSize);
+      }
+   }
+
    // Initialize the release control with MSL releases.
    function initializeReleaseControl() {
 
@@ -1294,6 +1307,8 @@ window.ICTV.d3TaxonomyVisualization = function (
 
          // Update the search panel's selected release.
          searchPanel.releaseNumber.selected = release.releaseNum;
+
+         resetFontSizeSlider();
 
          // Display the taxonomy of the selected release.
          await displayReleaseTaxonomy(releaseYear);
