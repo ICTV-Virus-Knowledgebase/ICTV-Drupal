@@ -59,6 +59,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          baseVerticalSpacing: 200, // Adjust this number to increase/decrease row height
       },
       svg: {
+         autoHeightScaleThreshold: 0.85, // Grow only when first-rank height forces more than minor zoom-out.
          height: jQuery(`${containerSelector} .taxonomy-panel`).height() || jQuery(window).height() * 0.8,
          width: jQuery(`${containerSelector} .taxonomy-panel`).width() || jQuery(window).width(),
       },
@@ -271,7 +272,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    // Grow the taxonomy viewport when the initial tree would otherwise have to zoom out
    // because of its height. This keeps dense first-rank releases readable without
    // changing the default height for smaller releases.
-   function resizeTaxonomyViewportHeightForBounds(bounds, padding) {
+   function resizeTaxonomyViewportHeightForBounds(bounds, padding, resizeTriggerBounds) {
       if (!bounds || bounds.width <= 0 || bounds.height <= 0) { return false; }
 
       const container = document.querySelector(containerSelector);
@@ -284,12 +285,16 @@ window.ICTV.d3TaxonomyVisualization = function (
       const viewport = getSvgViewportSize();
       const availableWidth = Math.max(1, viewport.width - padding.left - padding.right);
       const availableHeight = Math.max(1, viewport.height - padding.top - padding.bottom);
+      const triggerBounds = resizeTriggerBounds || bounds;
+      if (!triggerBounds || triggerBounds.width <= 0 || triggerBounds.height <= 0) { return false; }
+
       const widthLimitedScale = clampZoomScale(availableWidth / bounds.width);
-      const heightLimitedScale = availableHeight / bounds.height;
+      const heightLimitedScale = availableHeight / triggerBounds.height;
+      const resizeTriggerScale = widthLimitedScale * settings.svg.autoHeightScaleThreshold;
 
-      if (heightLimitedScale >= widthLimitedScale - 0.001) { return false; }
+      if (heightLimitedScale >= resizeTriggerScale - 0.001) { return false; }
 
-      const requiredHeight = Math.ceil((bounds.height * widthLimitedScale) + padding.top + padding.bottom);
+      const requiredHeight = Math.ceil((triggerBounds.height * widthLimitedScale) + padding.top + padding.bottom);
 
       if (requiredHeight <= viewport.height + 1) { return false; }
 
@@ -1667,6 +1672,9 @@ window.ICTV.d3TaxonomyVisualization = function (
                      depth: d.depth,
                      nodeX: d.x,
                      nodeY: d.y,
+                     rankIndex: getNodeRankIndex(d),
+                     isLegend: d.data && d.data.taxNodeID === "legend",
+                     isPager: isPagerNode(d),
                      left: d.y + bbox.x,
                      right: d.y + bbox.x + bbox.width,
                      top: d.x + bbox.y,
@@ -1800,20 +1808,24 @@ window.ICTV.d3TaxonomyVisualization = function (
                }, animationDuration + 50);
             }
 
-            // Build canonical data-space bounds for the visible tree before the zoom transform is applied.
-            // Text and circle boxes come from rendered SVG elements, while the hidden root point is added
-            // explicitly so the root group and first visible circle stay inside the parent SVG.
-            // Used by initial alignment, Expand to Fit, and search-time viewport fitting.
-            function getTreeBounds() {
-               const boxes = getVisibleNodeBoxes();
-               const rootX = Number.isFinite(root.x) ? root.x : 0;
-               const rootY = Number.isFinite(root.y) ? root.y : 0;
+            function getBoundsFromBoxes(boxes, includeRoot) {
+               if (!boxes || boxes.length < 1) { return null; }
+
                const bounds = {
-                  left: rootY - settings.node.radius,
-                  right: rootY + settings.node.radius,
-                  top: rootX - settings.node.radius,
-                  bottom: rootX + settings.node.radius
+                  left: boxes[0].left,
+                  right: boxes[0].right,
+                  top: boxes[0].top,
+                  bottom: boxes[0].bottom
                };
+
+               if (includeRoot) {
+                  const rootX = Number.isFinite(root.x) ? root.x : 0;
+                  const rootY = Number.isFinite(root.y) ? root.y : 0;
+                  bounds.left = Math.min(bounds.left, rootY - settings.node.radius);
+                  bounds.right = Math.max(bounds.right, rootY + settings.node.radius);
+                  bounds.top = Math.min(bounds.top, rootX - settings.node.radius);
+                  bounds.bottom = Math.max(bounds.bottom, rootX + settings.node.radius);
+               }
 
                boxes.forEach(function (box) {
                   bounds.left = Math.min(bounds.left, box.left);
@@ -1828,7 +1840,31 @@ window.ICTV.d3TaxonomyVisualization = function (
                   width: Math.max(1, bounds.right - bounds.left),
                   height: Math.max(1, bounds.bottom - bounds.top)
                };
+            }
 
+            // Build canonical data-space bounds for the visible tree before the zoom transform is applied.
+            // Text and circle boxes come from rendered SVG elements, while the hidden root point is added
+            // explicitly so the root group and first visible circle stay inside the parent SVG.
+            // Used by initial alignment, Expand to Fit, and search-time viewport fitting.
+            function getTreeBounds() {
+               const boxes = getVisibleNodeBoxes();
+
+               return getBoundsFromBoxes(boxes, true) || {
+                  x: 0,
+                  y: 0,
+                  width: 1,
+                  height: 1
+               };
+            }
+
+            // Return only the first visible taxonomy-rank column, excluding synthetic rank-label and pager nodes.
+            // Auto-height uses this so normal releases are not expanded by unrelated full-tree bounds.
+            function getFirstRankColumnBounds() {
+               const firstRankBoxes = getVisibleNodeBoxes().filter(function (box) {
+                  return box.rankIndex === 1 && !box.isLegend && !box.isPager;
+               });
+
+               return getBoundsFromBoxes(firstRankBoxes, false);
             }
 
             let initialTreeViewScale = null;
@@ -1842,7 +1878,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                const initialPadding = getInitialTreePadding();
                const treeBounds = getTreeBounds();
                if (allowHeightResize) {
-                  resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding);
+                  resizeTaxonomyViewportHeightForBounds(treeBounds, initialPadding, getFirstRankColumnBounds());
                }
 
                const fittedScale = fitScaleForBounds(treeBounds, initialPadding);
