@@ -781,6 +781,9 @@ window.ICTV.d3TaxonomyVisualization = function (
          d3.selectAll(`${containerSelector} .taxonomy-panel text`)
             .style("font-size", defaultFontSize + "rem");
 
+         d3.selectAll(`${containerSelector} .taxonomy-panel text.pager-node-text`)
+            .style("font-size", (defaultFontSize * 1.3) + "rem"); // Added 1.3x multiplier
+
          if (currentTreeUpdate) {
             currentTreeUpdate(currentTreeRoot, true, 0, true);
             await wait(0);
@@ -1246,7 +1249,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             .style("font-size", fontSize + "rem");
 
          d3.selectAll(`${containerSelector} .taxonomy-panel text.pager-node-text`)
-            .style("font-size", fontSize + "rem");
+            .style("font-size", (parseFloat(fontSize) * 1.3) + "rem"); // Added 1.3x multiplier
 
 
          if (currentTreeRoot && currentTreeUpdate) {
@@ -2417,9 +2420,12 @@ window.ICTV.d3TaxonomyVisualization = function (
                   .style("fill", function (d) {
                      return d.data.isPagerDisabled ? "#999999" : "#0062cc";
                   })
-                  .style("font-size", fontSliderEl.property("value") + "rem")
+                  .style("font-size", (parseFloat(fontSliderEl.property("value")) * 1.3) + "rem") // Added 1.3x multiplier
                   .style("font-style", "normal")
-                  .style("font-weight", "bold");
+                  .style("font-weight", "bold")
+                  .text(function (d) {
+                     return d.data.name;
+                  });
 
                updateTextRect(Update);
 
