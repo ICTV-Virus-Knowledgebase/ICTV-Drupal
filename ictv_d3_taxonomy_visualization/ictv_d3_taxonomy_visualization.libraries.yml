@@ -1,5 +1,5 @@
 d3TaxonomyVisualization:
-  version: 20250911
+  version: 20260608v2
   css:
     theme:
       assets/css/font-awesome.min.css: {}
