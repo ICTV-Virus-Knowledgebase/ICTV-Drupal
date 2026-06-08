@@ -88,14 +88,14 @@ window.ICTV.d3TaxonomyVisualization = function (
    // to rerender the current hierarchy without rebuilding the release data.
    let currentTreeUpdate = null;
 
-   // Active createTree() Expand to Fit closure. Used by the toolbar button and
+   // Active createTree() Fit Tree closure. Used by the toolbar button and
    // search-result workflow after a target lineage is opened.
    let currentTreeExpandToFit = null;
    // Active createTree() viewport-fit closure for incremental search expansion.
    // Keeps each opened lineage step visible without applying the final fit spread.
    let currentTreeFitSearchExpansionIfClipped = null;
 
-   // Tracks whether the user has applied Expand to Fit. Font-size updates use this
+   // Tracks whether the user has applied Fit Tree. Font-size updates use this
    // to decide whether to preserve expanded spacing or return to compact spacing.
    let currentTreeIsExpandedToFit = false;
 
@@ -185,7 +185,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
    // Keep a requested zoom scale inside the current D3 zoom extent.
-   // Used before applying slider, reset, and expand-to-fit zoom values.
+   // Used before applying slider, reset, and Fit Tree zoom values.
    function clampZoomScale(scale) {
       const extent = getCurrentZoomExtent();
       return Math.max(extent[0], Math.min(extent[1], scale));
@@ -342,7 +342,7 @@ window.ICTV.d3TaxonomyVisualization = function (
       ];
    }
 
-   // Use the same viewport padding for initial tree alignment and expand-to-fit.
+   // Use the same viewport padding for initial tree alignment and Fit Tree.
    function getInitialTreePadding() {
       return {
          left: 5,
@@ -354,7 +354,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
    // Calculate the largest zoom scale that fits a bounds rectangle in the SVG viewport.
-   // Used by initial alignment, Expand to Fit, and search-driven viewport checks.
+   // Used by initial alignment, Fit Tree, and search-driven viewport checks.
    function fitScaleForBounds(bounds, padding) {
       if (!bounds || bounds.width === 0 || bounds.height === 0) { return null; }
 
@@ -389,7 +389,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
    // Build the toolbar buttons and export format selector in the font-size panel.
-   // Used during startup to support PNG/SVG/PDF export plus Expand to Fit and Reset View controls.
+   // Used during startup to support PNG/SVG/PDF export plus Fit Tree and Reset View controls.
    function initializeButton() {
 
       // Get a reference to the panel Element.
@@ -401,12 +401,12 @@ window.ICTV.d3TaxonomyVisualization = function (
          .append("div")
          .attr("class", "button-group view-buttons");
 
-      // "Expand to Fit" button
+      // "Fit Tree" button
       let expandToFitBtn = d3
          .select(buttonGroup.node())
          .append("button")
          .attr("class", "screenshot-button expand-to-fit-btn")
-         .html(`<i class="fa fa-expand"></i> Expand to Fit`)
+         .html(`<i class="fa fa-expand"></i> Fit Tree`)
 
       // "Reset View" button
       let resetViewBtn = d3
@@ -749,10 +749,10 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       });
 
-      // Click handler for Expand to Fit
+      // Click handler for Fit Tree
       expandToFitBtn.on("click", async function () {
          if (currentTreeExpandToFit) {
-            await currentTreeExpandToFit();
+            await currentTreeExpandToFit(true);
          }
       });
 
@@ -1823,7 +1823,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             // Build canonical data-space bounds for the visible tree before the zoom transform is applied.
             // Text and circle boxes come from rendered SVG elements, while the hidden root point is added
             // explicitly so the root group and first visible circle stay inside the parent SVG.
-            // Used by initial alignment, Expand to Fit, and search-time viewport fitting.
+            // Used by initial alignment, Fit Tree, and search-time viewport fitting.
             function getTreeBounds() {
                const boxes = getVisibleNodeBoxes();
 
@@ -1884,7 +1884,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             }
 
             // Convert data-space tree bounds into the current SVG viewport coordinate space.
-            // Used to decide whether Expand to Fit actually needs to zoom or pan.
+            // Used to decide whether clipped-only fitting actually needs to zoom or pan.
             function getViewportTreeBounds(bounds) {
                if (!bounds || !currentSvgZoom) { return null; }
 
@@ -1903,7 +1903,7 @@ window.ICTV.d3TaxonomyVisualization = function (
             }
 
             // Check whether the canonical tree bounds are already inside the padded SVG viewport.
-            // Expand to Fit should not keep zooming out when nothing is clipped.
+            // Clipped-only fitting should not keep zooming out when nothing is clipped.
             function isTreeInsideViewport(bounds, padding) {
                const viewportBounds = getViewportTreeBounds(bounds);
                if (!viewportBounds) { return false; }
@@ -1969,18 +1969,26 @@ window.ICTV.d3TaxonomyVisualization = function (
             }
 
             // Animate the current SVG zoom transform so the supplied tree bounds fit inside the viewport padding.
-            // Used by the Expand to Fit button and search-result auto-fit after a target node is reached.
-            function fitTreeBounds(bounds, duration) {
+            // Used by Fit Tree and search-result auto-fit after a target node is reached.
+            function fitTreeBounds(bounds, duration, allowZoomIn) {
                const initialPadding = getInitialTreePadding();
-               if (isTreeInsideViewport(bounds, initialPadding)) { return false; }
+               if (!allowZoomIn && isTreeInsideViewport(bounds, initialPadding)) { return false; }
 
                const newScale = fitScaleForBounds(bounds, initialPadding);
                if (newScale === null) { return false; }
 
-               const currentScale = d3.zoomTransform(svgZoom.node()).k;
-               const targetScale = Math.min(currentScale, newScale);
+               const currentTransform = d3.zoomTransform(svgZoom.node());
+               const targetScale = allowZoomIn ? newScale : Math.min(currentTransform.k, newScale);
                const calculatedX = initialPadding.left - (bounds.x * targetScale);
                const calculatedY = initialPadding.top - (bounds.y * targetScale);
+
+               if (
+                  Math.abs(currentTransform.k - targetScale) < 0.001 &&
+                  Math.abs(currentTransform.x - calculatedX) < 1 &&
+                  Math.abs(currentTransform.y - calculatedY) < 1
+               ) {
+                  return false;
+               }
 
                svgZoom.transition()
                   .duration(duration)
@@ -1992,7 +2000,7 @@ window.ICTV.d3TaxonomyVisualization = function (
                return true;
             }
 
-            // Keep search-result expansion visible without applying the final expand-to-fit spread.
+            // Keep search-result expansion visible without applying the final Fit Tree spread.
             // Assigned to currentTreeFitSearchExpansionIfClipped for each lineage expansion step.
             async function fitSearchExpansionIfClipped(duration) {
                if (!currentZoom || !currentSvgZoom || !currentTreeRoot) { return false; }
@@ -2011,14 +2019,14 @@ window.ICTV.d3TaxonomyVisualization = function (
 
             // Fit the visible tree when clipped, then spread rank columns into spare width.
             // Assigned to currentTreeExpandToFit for the toolbar button and for search-result auto-fit.
-            async function expandCurrentTreeToFit() {
+            async function expandCurrentTreeToFit(allowZoomIn) {
                if (!currentZoom || !currentSvgZoom || !currentTreeRoot) { return; }
 
                await waitForAutoSpacing();
 
                let bounds = getTreeBounds();
 
-               if (fitTreeBounds(bounds, settings.animationDuration)) {
+               if (fitTreeBounds(bounds, settings.animationDuration, allowZoomIn)) {
                   await wait(settings.animationDuration);
                   await waitForAutoSpacing();
                   bounds = getTreeBounds();
@@ -2026,7 +2034,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                if (await spreadRankColumnsToFitWidth(bounds)) {
                   bounds = getTreeBounds();
-                  if (fitTreeBounds(bounds, settings.animationDuration)) {
+                  if (fitTreeBounds(bounds, settings.animationDuration, allowZoomIn)) {
                      await wait(settings.animationDuration);
                   }
                }
@@ -2744,7 +2752,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
       // console.log(`in selectSearchResult: taxNodeId_ = ${taxNodeId_}, taxNodeIdLineage_ = ${taxNodeIdLineage_}, displayOrder_ = ${displayOrder_}`);
 
-      // Start each search from the normal fitted tree spacing, not a previous Expand to Fit spread.
+      // Start each search from the normal fitted tree spacing, not a previous Fit Tree spread.
       rememberedAutoSpacing.horizontalScale = 1;
       rememberedAutoSpacing.verticalScale = 1;
       currentTreeIsExpandedToFit = false;
