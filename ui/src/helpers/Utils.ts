@@ -1,6 +1,6 @@
 
 import { AppSettings } from "../global/AppSettings";
-import { AllNonNtProteinCodes, NucleotideCodes, NucleotideAmbiguityCodes, ProteinCodes, 
+import { AllNonNtProteinCodes, NucleotideCodes, NucleotideAmbiguityCodes, OperatingSystem, ProteinCodes, 
    ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType } from "../global/Types";
 import { Identifiers } from "../models/Identifiers";
 import { IIdentifierData } from "../models/IIdentifierData";
@@ -172,6 +172,20 @@ export class Utils {
    // Create a link to the taxon details page using an id (with a text prefix that indicates what type of identifier it is) and a display label.
    static createTaxonDetailsLink(id_: string, label_: string): string {
       return `<a href="${AppSettings.taxonHistoryPage}?id=${id_}" target="_blank">${label_}</a>`;
+   }
+
+   // What operating system is the user on?
+   static determineOS() {
+
+      const userAgent = navigator.userAgent;
+  
+      if (userAgent.indexOf('Win') > -1) return OperatingSystem.Windows;
+      if (userAgent.indexOf('Mac') > -1) return OperatingSystem.MacOS;
+      if (userAgent.indexOf('Linux') > -1) return OperatingSystem.Linux;
+      if (userAgent.indexOf('Android') > -1) return OperatingSystem.Android;
+      if (userAgent.indexOf('iPhone') > -1 || userAgent.indexOf('iPad') > -1) return OperatingSystem.iOS;
+
+      return OperatingSystem.Unknown;
    }
 
    // Format a number of bytes as Bytes, KB, MB, etc.

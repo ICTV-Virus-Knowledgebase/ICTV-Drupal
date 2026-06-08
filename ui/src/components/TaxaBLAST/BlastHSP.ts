@@ -13,6 +13,7 @@ export class BlastHSP {
    length: number;
    note: string;
    pident: number;
+   ppos: number;
    proteinID: string;
    productName: string;
 
@@ -42,6 +43,7 @@ export class BlastHSP {
       this.length = hit_.length;
       this.note = Utils.safeTrim(hit_.sseq_ictv.cds_note);
       this.pident = hit_.pident;
+      this.ppos = hit_.ppos;
       this.proteinID = Utils.safeTrim(hit_.sseq_ictv.cds_protein_id);
       this.productName = Utils.safeTrim(hit_.sseq_ictv.cds_product_name);
       this.queryEnd = hit_.qend;
