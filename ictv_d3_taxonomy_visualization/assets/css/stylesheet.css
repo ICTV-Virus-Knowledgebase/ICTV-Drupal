@@ -1,24 +1,47 @@
 
-/* Drupal module div container */
-/* dmd 04/26/24 Replaced class "_none" here to avoid side effects outside the module. */
-body .block-ictv-d3-taxonomy-visualization { 
-   border-style: solid;
-   border-color: white;
-   border-width: 0px !important;
+/* Drupal Layout Builder wrapper around the taxonomy visualization block.
+   Scope this to the wrapper that contains this block so other _none layouts are unaffected. */
+body ._none:has(.block-ictv-d3-taxonomy-visualization) {
+   /* Center the widened wrapper relative to the viewport instead of the narrower parent column. */
+   margin-left: 50%;
+   transform: translateX(-50%);
+
+   /* Make the wrapper wider than its parent, but keep it inside the browser viewport. */
+   box-sizing: border-box;
+   max-width: 96vw;
+   width: calc(100% + 12rem);
+
+   /* Put the visible border on this outer wrapper. */
+   border: 2px solid black !important;
+   border-left: 2px solid black !important;
+   border-radius: 10px !important;
+   box-shadow: none !important;
+   padding: 0.0rem 1rem 0.75rem 1rem !important;
 }
 
-/* The module's top-level container Element */
+/* Let each Drupal/Layout Builder wrapper inside the widened parent fill the available width. */
+body ._none:has(.block-ictv-d3-taxonomy-visualization) > .w-100,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .layout-builder__layout,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .col-12,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-visualization,
+body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-visualization > .content {
+   max-width: none;
+   width: 100%;
+}
+
+/* The module container fills the bordered Drupal wrapper; the border is intentionally not here. */
 #d3_taxonomy_vis_container {
-   /*border-style: solid;
-   border-radius: 10px;
-   border-width: 1px;
-   border-color: #d3d3d3;*/
    height: 100%;
    overflow: hidden;
    width: 100%;
 }
 
-/* dmd 04/26/24 Experimenting with CSS variables */
+/* Allow the module container to grow vertically when script.js expands tall initial trees. */
+#d3_taxonomy_vis_container.taxonomy-panel-auto-height {
+   height: auto;
+   overflow: visible;
+}
+
 #d3_taxonomy_vis_container {
 
    /* Colors */
@@ -37,17 +60,19 @@ body .block-ictv-d3-taxonomy-visualization {
   The header panel 
 ----------------------------------------------------------------------------------------------------------------*/
 #d3_taxonomy_vis_container .header-panel {
-   padding: 5px;
    align-items: center;
+   box-sizing: border-box;
    display: flex;
-   flex-flow: row nowrap;
+   flex-flow: row wrap;
+   gap: 0.5rem 0.9rem;
    justify-content: flex-start;
-   margin-left: 0.5rem;
+   margin-left: 0;
    width: 100%;
 }
 
 #d3_taxonomy_vis_container .header-panel .label {
    margin-right: 0.25rem;
+   white-space: nowrap;
 }
 
 /* The MSL release control */
@@ -68,15 +93,47 @@ body .block-ictv-d3-taxonomy-visualization {
 #d3_taxonomy_vis_container .header-panel .font-size-panel {
    align-items: center;
    display: flex;
-   flex-flow: row nowrap;
+   flex: 1 1 36rem;
+   flex-flow: row wrap;
+   gap: 0.4rem 0.75rem;
    justify-content: flex-start;
-   margin-left: 1.3rem;
+   margin-left: 0;
+   min-width: 0;
 }
 #d3_taxonomy_vis_container .font-size-panel.hide {
    display: none;
 }
 #d3_taxonomy_vis_container .font-size-panel.show {
+   display: contents;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .control-group,
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group {
+   align-items: center;
    display: flex;
+   min-width: 0;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .control-group {
+   flex: 0 1 12rem;
+   flex-flow: row nowrap;
+   gap: 0.25rem;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group {
+   flex: 0 1 auto;
+   flex-flow: row wrap;
+   gap: 0.3rem;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .screenshot-button,
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .selectFormat {
+   border-radius: 4px;
+}
+
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .expand-to-fit-btn,
+#d3_taxonomy_vis_container .header-panel .font-size-panel .button-group .reset-view-btn {
+   margin-right: 0;
 }
 
 #d3_taxonomy_vis_container .header-panel .paginate-toggle {
@@ -97,9 +154,9 @@ body .block-ictv-d3-taxonomy-visualization {
   Sliders
 ----------------------------------------------------------------------------------------------------------------*/
 #d3_taxonomy_vis_container .slider {
-   margin: 0 1.3rem 0 0;
-   max-width: 130px;
-   width: 130px;
+   margin: 0;
+   max-width: 110px;
+   width: 110px;
 }
 
 /*  slider track */
@@ -225,8 +282,9 @@ body .block-ictv-d3-taxonomy-visualization {
   The search panel (searchPanel.js)
 ----------------------------------------------------------------------------------------------------------------*/
 #d3_taxonomy_vis_container .header-panel .search-panel {
-   justify-self: flex-end;
-   margin-left: 1.3rem;
+   flex: 0 1 22rem;
+   margin-left: 0;
+   min-width: 0;
    position: relative;
    top: 16px;
 }
@@ -239,6 +297,7 @@ body .block-ictv-d3-taxonomy-visualization {
    flex-flow: row nowrap;
    justify-content: flex-start;
    margin: 0;
+   min-width: 0;
 }
 
 #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
@@ -251,6 +310,8 @@ body .block-ictv-d3-taxonomy-visualization {
    font-size: var(--default-font-size);
    margin: 0;
    padding: var(--text-control-padding);
+   flex: 1 1 12rem;
+   min-width: 9rem;
    vertical-align: middle;
    width: 200px;
 }
@@ -429,6 +490,68 @@ body .block-ictv-d3-taxonomy-visualization {
 }
 
 
+@media (max-width: 1150px) {
+   #d3_taxonomy_vis_container .header-panel {
+      align-items: flex-start;
+   }
+
+   #d3_taxonomy_vis_container .font-size-panel.show {
+      display: flex;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .font-size-panel {
+      flex-basis: 100%;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .search-panel {
+      margin-left: 0;
+      top: 0;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .paginate-toggle {
+      margin-left: 0;
+   }
+}
+
+@media (max-width: 720px) {
+   #d3_taxonomy_vis_container .header-panel .release-ctrl,
+   #d3_taxonomy_vis_container .header-panel .search-panel,
+   #d3_taxonomy_vis_container .header-panel .font-size-panel,
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .control-group,
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .button-group {
+      flex-basis: 100%;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .control-group {
+      justify-content: space-between;
+   }
+
+   #d3_taxonomy_vis_container .header-panel .font-size-panel .control-group .slider {
+      flex: 1 1 8rem;
+      max-width: none;
+      min-width: 8rem;
+      width: auto;
+   }
+
+   #d3_taxonomy_vis_container .search-panel .search-controls {
+      flex-flow: row wrap;
+      gap: 0.3rem;
+   }
+
+   #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
+      border-radius: 4px;
+      flex-basis: 100%;
+      min-width: 0;
+      width: 100%;
+   }
+
+   #d3_taxonomy_vis_container .search-panel .search-button,
+   #d3_taxonomy_vis_container .search-panel .clear-button,
+   #d3_taxonomy_vis_container .selectFormat {
+      border-radius: 4px;
+   }
+}
+
 /*---------------------------------------------------------------------------------------------------------------- 
   The body panel 
 ----------------------------------------------------------------------------------------------------------------*/
@@ -437,7 +560,7 @@ body .block-ictv-d3-taxonomy-visualization {
    display: flex;
    flex: 1 0 auto;
    flex-flow: row nowrap;
-   height: 83vh;
+   height: 78vh;
    justify-content: flex-start;
    margin-top: 1.2rem;
    width: 100%;
