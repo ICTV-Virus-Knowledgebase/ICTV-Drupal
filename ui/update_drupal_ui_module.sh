@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# sftp_ssh_session.sh
+# update_drupal_ui_module.sh
 # Opens an SFTP session to upload a file, then opens an SSH session to run
 # a command on the same remote server.
 # =============================================================================

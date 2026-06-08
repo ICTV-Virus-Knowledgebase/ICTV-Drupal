@@ -33,8 +33,6 @@ export class SelectedFiles {
    // Add a new FASTA file.
    addFile(fastaFile_: FastaFile) {
 
-      console.log("adding a file to selected files ", fastaFile_)
-      
       // Has a file with this name already been added?
       if (this.nameLookup.has(fastaFile_.filename)) { throw new Error(`File ${fastaFile_.filename} has already been added`); }
             
@@ -69,6 +67,7 @@ export class SelectedFiles {
       this.nameLookup.set(fastaFile_.filename, this.files.length - 1);
    }
 
+   /* Not currently used
    getErrorCount(): number {
 
       let errorCount = 0;
@@ -78,7 +77,7 @@ export class SelectedFiles {
       })
 
       return errorCount;
-   }
+   }*/
 
    getErrors(): Array<string> {
 
@@ -134,6 +133,19 @@ export class SelectedFiles {
 
       return this.files[index];
    }
+
+   // Get the length of the longest sequence in the selected files.
+   getLongestSequence(): number {
+
+      let longest = 0;
+
+      this.files.forEach(file_ => {
+         if (file_.longestSequence > longest) { longest = file_.longestSequence; }
+      })
+
+      return longest;
+   }
+
 
    // Get the overall sequence type of the selected files. If there are multiple sequence types, return "mixed". If there are no valid sequence types, return "unknown".
    getSequenceType(): SequenceType {

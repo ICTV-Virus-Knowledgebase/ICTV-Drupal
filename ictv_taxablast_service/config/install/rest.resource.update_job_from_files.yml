@@ -1,0 +1,18 @@
+id: 'update_job_from_files'
+plugin_id: 'update_job_from_files'
+langcode: en
+status: true
+dependencies:
+  module:
+    - ictv_taxablast_service
+    - serialization
+    - user
+granularity: resource
+configuration:
+  methods:
+    - GET
+    - POST
+  formats:
+    - json
+  authentication:
+    - cookie

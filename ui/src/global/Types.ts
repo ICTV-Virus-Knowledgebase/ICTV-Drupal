@@ -114,6 +114,15 @@ export enum NumericTaxonomyRank {
    species = 15
 }
 
+export enum OperatingSystem {
+   Android = "Android",
+   iOS = "iOS",
+   Linux = "Linux",
+   MacOS = "MacOS",
+   Unknown = "Unknown",
+   Windows = "Windows"
+}
+
 export enum ReleaseAction {
    abolished = "abolished",
    current = "current",

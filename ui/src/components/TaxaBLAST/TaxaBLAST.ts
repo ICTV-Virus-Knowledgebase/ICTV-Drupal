@@ -227,6 +227,17 @@ export class TaxaBLAST {
             break;
       }
 
+      /*return `<div class="link-panel">
+         <div class="instructions">${Icon.info} ${instructions}</div>
+         <div class="link-controls">
+            <a href="${url}" target="_blank">${url}</a>
+            <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
+               data-tippy-content="Copy the URL to your clipboard"
+               data-url="${url}"
+            >${Icon.copy}<span class="btn-label">Copy URL to clipboard</span></button>
+         </div>
+      </div>`;*/
+
       return `<div class="link-panel">
          ${Icon.info} ${instructions}
          <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"

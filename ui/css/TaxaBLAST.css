@@ -229,6 +229,17 @@ The panel title
    margin: 0 0 0.5rem 0;
    width: 100%;
 }
+#ictv_taxablast_container .blast-hits-url {
+   font-size: 0.9rem;
+   margin-bottom: 0.5rem;
+}
+#ictv_taxablast_container .blast-hits-url a {
+   color: var(--ictv-link-color);
+}
+#ictv_taxablast_container .blast-hits-url a:hover {
+   color: var(--ictv-link-hover-color);
+}
+
 #ictv_taxablast_container .blast-hits-panel-controls {
    align-items: center;
    display: flex;
@@ -420,6 +431,9 @@ The panel title
    padding: 1.0rem;
    width: 100%;
 }
+#ictv_taxablast_container .blast-hits .ictv-accordion-item .ictv-accordion-content {
+   padding: 0 1.0rem 1.0rem 1.0rem;
+}
 #ictv_taxablast_container .blast-hits .species-accordion-label {
    /*align-items: top;*/
    display: flex;
@@ -499,6 +513,9 @@ The panel title
    font-size: 1.0rem !important;
    /*margin: 0.75rem 1.0rem 1.0rem 1.0rem;*/
 }
+#ictv_taxablast_container .ictv-accordion-item.active .isolate-group {
+   margin-top: 1.0rem;
+}
 #ictv_taxablast_container .isolate-group a {
    color: var(--ictv-link-color);
    text-decoration: underline;
@@ -530,7 +547,7 @@ The panel title
 
 #ictv_taxablast_container .isolate-group .hit-other-names {
    font-size: 1.0rem;
-   margin-bottom: 1.0rem;
+   margin-bottom: 0.5rem;
 }
 #ictv_taxablast_container .isolate-group .accession-label {
    font-weight: normal; /* placeholder */
@@ -555,7 +572,7 @@ The panel title
 	vertical-align: middle;
 }
 /* Some separation between the entries-per-page select list and the label */
-#ictv_taxablast_container .isolate-group  .dt-container .dt-layout-row .dt-layout-start select.dt-input {
+#ictv_taxablast_container .isolate-group .dt-container .dt-layout-row .dt-layout-start select.dt-input {
 	margin-right: 0.25rem;
 }
 
@@ -568,7 +585,6 @@ The panel title
    /*vertical-align: top;*/
 }
 #ictv_taxablast_container .isolate-group table.hsp-table {
-   margin: 0;
    width: 100%;
 }
 #ictv_taxablast_container .isolate-group table.hsp-table tr.header-row {
@@ -614,17 +630,19 @@ The panel title
 }*/
 
 #ictv_taxablast_container .isolate-group .hsp-table th.length {
-   width: 100px !important;
+   width: 80px !important;
 }
 #ictv_taxablast_container .isolate-group .hsp-table td.length {
    text-align: right;
+   width: 80px !important;
 }
 
 #ictv_taxablast_container .isolate-group .hsp-table th.pident {
-   width: 100px !important;
+   width: 80px !important;
 }
 #ictv_taxablast_container .isolate-group .hsp-table td.pident {
    text-align: right;
+   width: 80px !important;
 }
 
 #ictv_taxablast_container .isolate-group .hsp-table th.protein-id,
@@ -634,6 +652,10 @@ The panel title
 #ictv_taxablast_container .isolate-group .hsp-table th.product,
 #ictv_taxablast_container .isolate-group .hsp-table td.product {
 	width: 260px !important;
+}
+#ictv_taxablast_container .isolate-group .hsp-table th.ppos,
+#ictv_taxablast_container .isolate-group .hsp-table td.ppos {
+	width: 80px !important;
 }
 /*#ictv_taxablast_container .isolate-group .hsp-table td.note {
 	width: auto;
@@ -666,22 +688,29 @@ The panel title
    border-color: transparent;
    border-style: none;
    border-width: 0;
+   margin-bottom: 0;
    width: 100%;
 }
 #ictv_taxablast_container table.details-table.has-borders {
    border-color: rgba(0, 0, 0, 0.3);
    border-style: solid;
    border-width: 1px;
+   margin-bottom: 40px;
+}
+#ictv_taxablast_container table.details-table.no-borders {
+   background-color: transparent;
+   margin-bottom: 0;
 }
 
-#ictv_taxablast_container table.details-table tr {
+#ictv_taxablast_container table.details-table tr:not(:last-of-type) {
    border-color: #ddd;
    border-style: solid;
    border-width: 0 0 1px 0 !important;
 }
 #ictv_taxablast_container table.details-table tr:last-of-type {
-   border-style: none !important;
-   border-width: 0 !important;
+   border-color: transparent !important;
+   /*border-style: none !important; */
+   border-width: 0 0 0 0 !important;
 }
 
 #ictv_taxablast_container table.details-table th {

@@ -17,6 +17,17 @@ import { ISequenceFile } from "../ISequenceFile";
 import { ISequence } from "../ISequence";
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 
+enum TipKey {
+   bitscore = "The log-scaled alignment score that normalizes the raw alignment score. Higher bitscores indicate more significant alignments",
+   hitIndex = "The hit number of the match ordered by bitscore",
+   hitRange = "The start and end locations of the hit (subject) sequence",
+   length = "The length of the matching region of the query and hit (subject) sequences",
+   pident = "Percentage of aligned residues that are exactly the same between query and hit (subject) over the alignment length (matches / alignment_length × 100)",
+   ppos = "Percentage of aligned residues that are either identical or score as positives under the substitution matrix (positives / alignment_length × 100)", //"The percentage of positive-scoring matches between the query and hit (subject) sequences",
+   product = "The amino-acid sequence produced from a gene (or predicted open reading frame) that corresponds to a functional or putative protein",
+   proteinID = "An identifier/accession for the hit (subject) protein sequence used to reference the matched sequence",
+   queryRange = "The start and end locations of the query sequence"
+}
 
 export class BlastHitsPanel implements ITaxaBlastPanel {
 
@@ -49,6 +60,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Use this delimiter in a range like query start/end and hit start/end.
       rangeDelimiter: "&mdash;" 
    }
+
+   tooltips: Map<string, string>;
+
 
    // C-tor
    constructor(containerEl_: HTMLElement, parent_: TaxaBLAST) {
@@ -127,8 +141,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    // Create table rows for HSPs.
    createHspRowsHTML(hsps_: BlastHSP[]): string {
 
-      let numColumns = 6;
-      if (this.includeProteinResults) { numColumns = 6; }
+      // Protein results will have 3 additional columns.
+      let numColumns = this.includeProteinResults ? 9 : 6;
 
       if (!Array.isArray(hsps_) || hsps_.length < 1) { return `<tr><td colspan="${numColumns}">No data available</td></tr>`; }
       
@@ -141,7 +155,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          let bitscore = isNaN(hsp_.bitscore) ? "0" : hsp_.bitscore.toLocaleString("en-US");
          if (bitscore.indexOf(".") < 0) { bitscore += ".0"; }
 
-         /*
+         /* The following code can be used to include e-value:
+
          if (hsp_.evalue > 0) {
             // Format to exponential with 3 decimals
             const exponential = hsp_.evalue.toExponential(3); // ex. "7.050e-140"
@@ -160,9 +175,11 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          if (this.includeProteinResults) {
 
             let note = hsp_.note;
+            let ppos = !hsp_.ppos ? "" : hsp_.ppos.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
             let productName = hsp_.productName;
             let proteinID = hsp_.proteinID;
             
+            // Use the protein ID (accession) to create a GenBank link.
             let linkedName = Utils.createGenBankAccessionLink(proteinID, proteinID);
 
             let productExcerpt = productName;
@@ -177,7 +194,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
             proteinColumns = 
                `<td class="protein-id">${linkedName}</td>
-               <td class="product has-tooltip" data-tippy-content="${productName}">${productExcerpt}</td>`;
+               <td class="product has-tooltip" data-tippy-content="${productName}">${productExcerpt}</td>
+               <td class="ppos">${ppos}</td>`;
          }
 
          let queryRange = "";
@@ -236,8 +254,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
       // Include additional columns for BLAST tasks that return protein data.
       let proteinHeaders = this.includeProteinResults 
-         ? `<th class="protein-id">Protein ID</th>
-            <th class="product">Product</th>`
+         ? `<th class="protein-id has-tooltip" data-tippy-content="${TipKey.proteinID}">Protein ID</th>
+            <th class="product has-tooltip" data-tippy-content="${TipKey.product}">Product</th>
+            <th class="ppos has-tooltip" data-tippy-content="${TipKey.ppos}">% Positive</th>`   // The percentage of positive-scoring matches between the query and subject sequences
          : "";
       
       let html = `<div class="isolate-group">
@@ -251,13 +270,13 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          <table class="hsp-table" data-isolate-id="${isolate_.isolateID}" data-hsp-count="${isolate_.hsps.length}">
             <thead>
                <tr class="header-row">
-                  <th class="hit-index">#</th>
-                  <th class="bitscore">Bitscore</th>
-                  <th class="length">Length</th>
-                  <th class="pident">% Identity</th>
+                  <th class="hit-index has-tooltip" data-tippy-content="${TipKey.hitIndex}">#</th>
+                  <th class="bitscore has-tooltip" data-tippy-content="${TipKey.bitscore}">Bitscore</th>
+                  <th class="length has-tooltip" data-tippy-content="${TipKey.length}">Length</th>
+                  <th class="pident has-tooltip" data-tippy-content="${TipKey.pident}">% Identity</th>
                   ${proteinHeaders}
-                  <th class="start-or-end">Query start${this.settings.rangeDelimiter}end</th>
-                  <th class="start-or-end">Hit start${this.settings.rangeDelimiter}end</th>
+                  <th class="start-or-end has-tooltip" data-tippy-content="${TipKey.queryRange}">Query start${this.settings.rangeDelimiter}end</th>
+                  <th class="start-or-end has-tooltip" data-tippy-content="${TipKey.hitRange}">Hit start${this.settings.rangeDelimiter}end</th>
                </tr>
             </thead>
             <tbody>
@@ -451,8 +470,6 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          const hspCount = parseInt(strHspCount);
          if (isNaN(hspCount)) { return; }
 
-         
-         
          let displayInfo = true;
          let useOrdering = true;
          let usePaging = true;
@@ -582,6 +599,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          // A key for the job details accordion item.
          const detailsKey = "job_details";
 
+         // Create a link URL to this panel/page.
+         const pageURL = this.parent.createPanelURL(PanelKey.blastHits);
+
          // Create the panel's HTML.
          this.elements.container.innerHTML = 
             `${queryDetailsHTML}
@@ -621,8 +641,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                   >${Icon.search}<span class="btn-label">New search</span></button>
                </div>
             </div>
+            <div class="blast-hits-url"><a href="${pageURL}" target="_blank">${pageURL}</a></div>
             <div class="blast-hits">${speciesTilesHTML}</div>`;
 
+         // 
 
          // Initialize tippy tooltips for buttons.
          tippy(".has-tooltip");

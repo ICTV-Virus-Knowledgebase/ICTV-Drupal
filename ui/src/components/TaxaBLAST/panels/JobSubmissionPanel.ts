@@ -299,6 +299,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       let sequenceText = this.selectedFiles.recordCount === 1 ? "1 sequence" : `${this.selectedFiles.recordCount.toLocaleString("en-US")} sequences`;
       let sizeText = Utils.formatBytes(this.selectedFiles.totalSize, 2);
 
+      // Add the basic HTML structure.
       this.elements.selectedFilesTitle.innerHTML = 
          `<div class="title-row">
             <div class="left-side">
@@ -432,15 +433,15 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          case BlastTask.blastp:
          case BlastTask.dcMegablast:
          case BlastTask.megablast:
-            // if (this.elements.)
+            // TODO?
             break;
 
          case BlastTask.blastx:
-
+            // Update the BLAST parameters with the length of the longest sequence in the selected files.
+            let longest = this.selectedFiles.getLongestSequence();
+            this.updateBlastParameters(longest);
             break;
       }
-
-      console.log("radioButton_ value = ", radioButton_.value)
       return;
    }
 
