@@ -17,6 +17,12 @@ services:
     tags:
       - { name: 'rest.resource' }
 
+  ictv_taxablast_service.SearchTaxaBlastJobs:
+    class: '\Drupal\ictv_taxablast_service\Plugin\rest\resource\SearchTaxaBlastJobs'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }
+
   ictv_taxablast_service.UpdateJobFromFiles:
     class: '\Drupal\ictv_taxablast_service\Plugin\rest\resource\UpdateJobFromFiles'
     arguments: ['@current_user']

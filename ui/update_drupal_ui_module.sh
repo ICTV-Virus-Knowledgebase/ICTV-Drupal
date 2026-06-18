@@ -61,6 +61,8 @@ REMOTE_COMMAND="echo 'SSH session open. Clearing the Drush cache...'; drush cr"
 
 # -----------------------------------------------------------------------------
 
+echo -e "\nStarted on $(date +"%m/%d/%Y") at $(date +"%H:%M:%S")\n"
+
 echo "========================================"
 echo " Step 1: Building the module"
 echo "========================================"
@@ -133,3 +135,5 @@ fi
 
 echo ""
 echo "SSH session closed. All done."
+
+echo -e "\nEnded on $(date +"%m/%d/%Y") at $(date +"%H:%M:%S")\n"

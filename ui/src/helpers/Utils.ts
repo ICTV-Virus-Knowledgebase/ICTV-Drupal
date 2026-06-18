@@ -2,8 +2,6 @@
 import { AppSettings } from "../global/AppSettings";
 import { AllNonNtProteinCodes, NucleotideCodes, NucleotideAmbiguityCodes, OperatingSystem, ProteinCodes, 
    ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType } from "../global/Types";
-import { Identifiers } from "../models/Identifiers";
-import { IIdentifierData } from "../models/IIdentifierData";
 import { SequenceMetadata } from "../models/SequenceMetadata";
 
 

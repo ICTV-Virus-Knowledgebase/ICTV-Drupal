@@ -42,6 +42,10 @@ BEGIN
    -- Search jobs created by this user.
    SELECT
       created_on,
+      CASE 
+         WHEN ended_on IS NULL THEN TIMESTAMPDIFF(SECOND, created_on, NOW())
+         ELSE TIMESTAMPDIFF(SECOND, created_on, ended_on)
+      END AS duration_in_seconds,
       ended_on,
       j.json,
       j.message,

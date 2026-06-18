@@ -1,14 +1,14 @@
 
-import { ButtonClass, Constants, CreateKeyFromName, CreateNewSearchURL, FormatDate, FormatDuration, Icon,
-   PanelKey, ToggleAccordion } from "../Common";
+import { ButtonClass, Constants, CreateNewSearchURL, Icon,
+   PanelKey } from "../Common";
 import { ISequence } from "../ISequence";
 import { ISequenceFile } from "../ISequenceFile";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
-import { DateTime } from "luxon";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
 import { JobStatus } from "../../CuratedNameManager";
+import { AlertBuilder } from "../../../helpers/AlertBuilder";
 
 
 export class JobDetailsPanel implements ITaxaBlastPanel {
@@ -22,17 +22,16 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
       // The job details view and its children.
       detailsView: HTMLElement,
-      jobName: HTMLInputElement,
-      jobNameLabel: HTMLElement,
       detailsPanelControls: HTMLElement,
-      jobFiles: HTMLElement,
-      sequenceResults: HTMLElement,
+      linkPanel: HTMLElement,
+      resultsPanel: HTMLElement,
 
       // The pending job view and its children.
       pendingView: HTMLElement,
       pendingElapsed: HTMLElement,
       pendingJobName: HTMLElement,
-      pendingPanelControls: HTMLElement
+      pendingPanelControls: HTMLElement,
+      pendingLowerControls: HTMLElement
    }
 
    // Is the panel currently active/displayed?
@@ -72,15 +71,14 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          container: containerEl_,
          errorView: null,
          detailsView: null,
-         jobFiles: null,
-         jobName: null,
-         jobNameLabel: null,
+         linkPanel: null,
+         resultsPanel: null,
          detailsPanelControls: null,
          pendingJobName: null,
          pendingElapsed: null,
          pendingPanelControls: null,
-         pendingView: null,
-         sequenceResults: null
+         pendingLowerControls: null,
+         pendingView: null
       }
 
       // Initialize the data that keeps track of pending jobs.
@@ -117,108 +115,69 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
             this.pendingData.timespan.remainingSeconds = 0;
 
             this.displayJobView();
+
+         } else if ([JobStatus.crashed, JobStatus.error, JobStatus.invalid].includes(this.parent.job.status)) {
+
+            // Turn off the polling and elapsed time update.
+            if (typeof this.pendingData.pollIntervalID === "number") {
+               window.clearInterval(this.pendingData.pollIntervalID);
+               this.pendingData.pollIntervalID = NaN;
+            }
+
+            if (typeof this.pendingData.timespan.intervalID === "number") {
+               window.clearInterval(this.pendingData.timespan.intervalID);
+               this.pendingData.timespan.intervalID = NaN;
+            }
+
+            this.pendingData.timespan.remainingSeconds = 0;
+
+            let message = Utils.safeTrim(this.parent.job.message);
+            if (!message) { message = `An unknown error occurred and the job exited with status "${this.parent.job.status}"`; }
+
+            this.displayErrorView(message);
          }
       }
       
       return;
    }
 
-   /*
-   // Create HTML for a sequence file panel.
-   createFileHTML(file_: ISequenceFile, fileIndex_: number): string {
-
-      // Use the filename as the file ID (lowercase with no whitespace).
-      const fileKey = CreateKeyFromName(file_.name);
-
-      // The number of sequences associated with this file.
-      const sequenceCount = Array.isArray(file_.sequences) ? file_.sequences.length : 0;
-
-      let sequencesHTML = "";
-
-      if (Array.isArray(file_.sequences) && file_.sequences.length > 0) {
-
-         let sequenceRows = "";
-
-         // Create a TR for every sequence.
-         file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
-            sequenceRows += this.createSequenceRow(fileIndex_, sequence_, sequenceIndex_);
-         })
-
-         sequencesHTML = 
-            `<table class="${fileKey}_table sequences-table" data-count="${sequenceCount}">
-               <thead>
-                  <tr class="header-row">
-                     <th class="index">#</th>
-                     <th class="qseqid">Query ID</th>
-                     <th class="hits">Hits</th>
-                     <th class="controls"></th>
-                  </tr>
-               </thead>
-               <tbody>${sequenceRows}</tbody>
-            </table>`;
-      } else {
-         sequencesHTML = `<div class="no-sequences">No sequences were found in this file.</div>`;
-      }
-
-      const title = file_.sequences.length === 1 ? "Sequence" : "Sequences";
-      
-      let html =
-         `<div class="ictv-accordion-item" data-id="${fileKey}">
-            <div class="ictv-accordion-header sequence-file-header" data-id="${fileKey}">
-               <div class="ictv-accordion-control" data-id="${fileKey}">${Icon.chevronDown}</div>
-               <div class="ictv-accordion-label">
-                  <div class="filename">Sequences in ${file_.name}</div>
-                  <div class="sequence-count">(${sequenceCount})</div>
-               </div>
-            </div>
-            <div class="ictv-accordion-body" data-id="${fileKey}">
-               <div class="ictv-accordion-content">${sequencesHTML}</div>
-            </div>
-         </div>`;
-
-      // TODO: Where to display errors?
-      return html;
-   }*/
-
    createResultsTableHTML() {
 
       let sequenceRows = "";
 
-      let resultCount = 1;
+      let resultIndex = 0;
 
       this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
 
-         console.log(`file ${fileIndex_}`, file_)
-
          file_.sequences.forEach((sequence_: ISequence, sequenceIndex_: number) => {
-
-            console.log(`sequence ${sequenceIndex_}`)
 
             const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
 
             const hits = sequence_.hits !== null ? sequence_.hits.length : 0;
 
-            const rowClass = resultCount % 2 === 0 ? "even-row" : "odd-row";
+            const enabled = hits < 1 ? "disabled" : "";
+
+            const rowClass = resultIndex % 2 === 0 ? "even-row" : "odd-row";
 
             let row = `<tr class="${rowClass}">
-               <td class="query-index">${resultCount}</td>
+               <td class="query-index">${resultIndex + 1}</td>
                <td class="filename">${file_.filename}</td>
                <td class="query-id">${sequence_.qseqid}</td>
                <td class="hits">${hits}</td>
                <td class="controls">
-                  <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip"
+                  <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip" ${enabled}
                      data-file-index="${fileIndex_}"
                      data-seq-index="${sequenceIndex_}" 
                      data-tippy-content="View the BLAST hits in a new tab"
                   >${Icon.dna}<span class="btn-label">View BLAST hits</span></button>
 
-                  <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip" 
+                  <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip" ${enabled}
                      data-filename="${sequence_.blast_html}"
                      data-tippy-content="View the alignments in a new tab"
                      data-title="${sequence_.qseqid}"
                   >${Icon.html}<span class="btn-label">View alignments</span></button>
                   
-                  <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip" 
+                  <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip" ${enabled}
                      data-filename="${sequence_.blast_csv}"
                      data-tippy-content="Download the BLAST hits as a CSV file"
                      data-title="${csvTitle}"
@@ -228,11 +187,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
 
             sequenceRows += row;
 
-            resultCount += 1;
+            resultIndex += 1;
          })
       })
 
-      let html = `<table class="query-results-table">
+      let html = `<table class="job-results">
          <thead>
             <tr class="header-row">
                <th class="query-index">#</th>
@@ -250,50 +209,6 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       return html;
    }
 
-   /*
-   createSequenceRow(fileIndex_: number, sequence_: ISequence, seqIndex_: number): string {
-
-      if (!Array.isArray(sequence_.hits) || sequence_.hits.length < 1) {
-         return `<tr class="no-hits-row">
-            <td class="index">${seqIndex_ + 1}</td>
-            <td class="qseqid">No BLAST hits for sequence ${seqIndex_ + 1}</td>
-            <td class="hits">0</td>
-            <td class="controls"></td>
-         </tr>`
-      }
-
-      const csvTitle = `${sequence_.qseqid.replace(" ", "_")}.csv`;
-
-      const rowClass = seqIndex_ % 2 === 0 ? "even-row" : "odd-row";
-      
-      let html = `<tr class="${rowClass}">
-         <td class="index">${seqIndex_ + 1}</td>
-         <td class="qseqid">${sequence_.qseqid}</td>
-         <td class="hits">${sequence_.hits.length.toLocaleString("en-US")}</td>
-         <td class="controls">
-            <button class="btn btn-generic ${ButtonClass.viewHits} has-tooltip"
-               data-file-index="${fileIndex_}"
-               data-seq-index="${seqIndex_}" 
-               data-tippy-content="View the BLAST hits in a new tab"
-            >${Icon.dna}<span class="btn-label">View BLAST hits</span></button>
-
-            <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip" 
-               data-filename="${sequence_.blast_html}"
-               data-tippy-content="View the alignments in a new tab"
-               data-title="${sequence_.qseqid}"
-            >${Icon.html}<span class="btn-label">View alignments</span></button>
-            
-            <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip" 
-               data-filename="${sequence_.blast_csv}"
-               data-tippy-content="Download the BLAST hits as a CSV file"
-               data-title="${csvTitle}"
-            >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
-         </td>
-      </tr>`;
-
-      return html;
-   }*/
-
    // Display a message in the error view and hide the other views.
    displayErrorView(message_?: string) {
 
@@ -307,11 +222,14 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
          }
       }
 
-      // Display the error message.
-      this.elements.errorView.innerHTML = 
-         `<div class="error-title">Error:</div>
-         <div class="message">${message}</div>`;
-
+      // Get the message element and populate it.
+      const messageEl = this.elements.errorView.querySelector(".message");
+      if (!messageEl) { 
+         AlertBuilder.displayErrorSync("The error message element is invalid"); 
+      } else {
+         messageEl.innerHTML = message;
+      }
+      
       // Display the error view and hide the others.
       this.elements.errorView.classList.add("active");
       this.elements.detailsView.classList.remove("active");
@@ -331,48 +249,68 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       let jobName = Utils.safeTrim(this.parent.job.name);
       if (jobName.length < 1) { jobName = "(No job name provided)"; }
 
-      // Emphasize the job name since it's the most important detail for users to see at a glance.
-      const emphasizeName = true; 
-
       // Create the job details table HTML.
-      const tableHTML = this.parent.createJobDetailsTable(emphasizeName);
+      const jobDetailsHTML = this.parent.createJobDetailsTable(false);
 
       // Create link panel HTML with a link to the current job's details.
       const linkPanelHTML = this.parent.createLinkRow(PanelKey.jobDetails);
 
+      // When the user clicks on the "new search" button, this URL is opened in a new tab.
       const newSearchURL = CreateNewSearchURL();
 
+      let resultsHTML = "";
+
+      if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1) {
+         resultsHTML = `<div class="no-results">No results are available for this job.</div>`;
+      } else {
+         // Create HTML for the results table.
+         resultsHTML = this.createResultsTableHTML();
+      }
+
       //----------------------------------------------------------------------------------------------------------------
-      // Generate the HTML for the job details
+      // Generate the HTML for the details view.
       //----------------------------------------------------------------------------------------------------------------
-      let html = 
-         `<div class="panel-controls">
-            ${linkPanelHTML}
+      this.elements.detailsView.innerHTML = 
+         `<div class="controls-row">
             <button class="btn ${ButtonClass.newSearch} has-tooltip"
                data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
                data-url="${newSearchURL}"
             >${Icon.search} New search</button>
          </div>
-         ${tableHTML}
-         <div class="job-files"></div>`;
+         ${linkPanelHTML}
 
-      this.elements.detailsView.innerHTML = html;
+         <div class="panel-title">Job details</div>
+         ${jobDetailsHTML}
+         <div class="panel-title">Search results</div>
+         <div class="job-results">${resultsHTML}</div>`;
 
-      // Get a reference to the "panel controls" DOM element.
-      this.elements.detailsPanelControls = this.elements.detailsView.querySelector(".panel-controls");
+      //--------------------------------------------------------------------------------------------------------------------------------------
+      // Get references to DOM elements
+      //--------------------------------------------------------------------------------------------------------------------------------------
+      this.elements.detailsPanelControls = this.elements.detailsView.querySelector(".controls-row");
       if (!this.elements.detailsPanelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
 
-      // Handle clicks in the panel controls.
+      this.elements.linkPanel = this.elements.container.querySelector(".link-panel");
+      if (!this.elements.linkPanel) { throw new Error("Invalid link panel DOM element"); }
+
+      this.elements.resultsPanel = this.elements.detailsView.querySelector(".job-results");
+      if (!this.elements.resultsPanel) { throw new Error("Invalid results panel DOM element"); }
+
+      //--------------------------------------------------------------------------------------------------------------------------------------
+      // Handle click events
+      //--------------------------------------------------------------------------------------------------------------------------------------
       this.elements.detailsPanelControls.addEventListener("click", async (event_) => {
          return await this.parent.handleClickEvent(this.elements.detailsView, event_.target as HTMLElement);
       })
 
-      // Get a reference to the job files DOM element.
-      this.elements.jobFiles = this.elements.detailsView.querySelector(".job-files");
-      if (!this.elements.jobFiles) { throw new Error("Invalid job files DOM element"); }
+      this.elements.linkPanel.addEventListener("click", async (event_: MouseEvent) => {
+         const target = event_.target as HTMLElement;
+         return await this.parent.handleClickEvent(this.elements.container, target);
+      })
 
-      // Populate the section with job file panels.
-      this.populateResultsPanel();
+      this.elements.resultsPanel.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.resultsPanel, event_.target as HTMLElement);
+      });
 
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
@@ -475,12 +413,11 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       // Make the container visible.
       this.elements.container.classList.add("active");
       
+      // The URL for a new search.
+      const newSearchURL = CreateNewSearchURL();
 
       // Create link panel HTML with a link to the current job's details.
       const linkPanelHTML = this.parent.createLinkRow(PanelKey.jobDetails);
-
-      // The URL for a new search.
-      const newSearchURL = CreateNewSearchURL();
 
       //----------------------------------------------------------------------------------------------------------------
       // Generate HTML for the job details and pending job views.
@@ -488,13 +425,7 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       const html = 
          `<div class="job-details panel-view"></div>
          <div class="pending-message panel-view">
-            <div class="panel-controls">
-               ${linkPanelHTML}
-               <button class="btn ${ButtonClass.newSearch} has-tooltip"
-                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
-                  data-url="${newSearchURL}"
-               >${Icon.search} New search</button>
-            </div>
+            ${linkPanelHTML}
             <div class="pending-job-name"></div>
             <div class="processing-message">Your job is being processed. This can take several minutes depending on the size of your input 
             FASTA file(s) and the current load on the system.</div>
@@ -502,12 +433,28 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
                <label>Elapsed time:</label>
                <span class="pending-elapsed">calculating...</span>
             </div>
+            <div class="lower-controls">
+               <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+                  data-url="${newSearchURL}"
+               >${Icon.search} New search</button>
+            </div>
          </div>
-         <div class="error-message panel-view"></div>`;
+         <div class="error-message panel-view">
+            <div class="message"></div>
+            <div class="controls-row">
+               <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+                  data-url="${newSearchURL}"
+               >${Icon.search} New search</button>
+            </div>
+         </div>`;
       
       this.elements.container.innerHTML = html;
 
-      // The job details view
+      //--------------------------------------------------------------------------------------------------------------------------------------
+      // Get references to DOM elements
+      //--------------------------------------------------------------------------------------------------------------------------------------
       this.elements.detailsView = this.elements.container.querySelector(".job-details");
       if (!this.elements.detailsView) { throw new Error("Invalid details section element"); }
 
@@ -525,75 +472,22 @@ export class JobDetailsPanel implements ITaxaBlastPanel {
       this.elements.pendingElapsed = this.elements.pendingView.querySelector(".pending-elapsed");
       if (!this.elements.pendingElapsed) { throw new Error("Invalid pending elapsed element"); }
 
-      this.elements.pendingPanelControls = this.elements.pendingView.querySelector(".panel-controls");
-      if (!this.elements.pendingPanelControls) { throw new Error("Invalid pending panel controls element"); }
-
-      // Handle clicks in the pending view's new search row.
-      this.elements.pendingPanelControls.addEventListener("click", async (event_) => {
-         return await this.parent.handleClickEvent(this.elements.pendingPanelControls, event_.target as HTMLElement);
+      //--------------------------------------------------------------------------------------------------------------------------------------
+      // Handle click events
+      //--------------------------------------------------------------------------------------------------------------------------------------
+      this.elements.errorView.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.errorView, event_.target as HTMLElement);
       })
 
-      // Get a reference to the "panel controls" DOM element.
-      //this.elements.detailsPanelControls = this.elements.detailsView.querySelector(".panel-controls");
-      //if (!this.elements.detailsPanelControls) { throw new Error(`Invalid "panel controls" DOM element`); }
-
-      // Handle clicks in the panel controls.
-      //this.elements.detailsPanelControls.addEventListener("click", async (event_) => {
-      //   return await this.parent.handleClickEvent(this.elements.detailsView, event_.target as HTMLElement);
-      //})
-
-
+      this.elements.pendingView.addEventListener("click", async (event_) => {
+         return await this.parent.handleClickEvent(this.elements.pendingView, event_.target as HTMLElement);
+      })
+      
       // Get the job associated with the job UID.
       await this.parent.getJob();
 
       // Use the job status to determine which view to display.
       return await this.displayView();
-   }
-
-   populateResultsPanel() {
-
-      if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1) {
-         this.elements.jobFiles.innerHTML = "No FASTA files are available for this job";
-         return;
-      }
-
-      let resultsHTML = this.createResultsTableHTML();
-
-      // Generate HTML for the search results.
-      //this.parent.job.data.files.forEach((file_: ISequenceFile, fileIndex_: number) => {
-      //   html += this.createFileHTML(file_, fileIndex_);
-      //})
-      
-      // Populate the container
-      this.elements.jobFiles.innerHTML = 
-         `<div class="query-results-title">Query results</div>
-         <div class="query-results">${resultsHTML}</div>`;
-
-      // Get references to DOM elements.
-      this.elements.sequenceResults = this.elements.jobFiles.querySelector(`.query-results`);
-      if (!this.elements.sequenceResults) { throw new Error("Invalid sequence results element"); }
-
-      // Add a click event handler.
-      this.elements.sequenceResults.addEventListener("click", async (event_) => {
-         return await this.parent.handleClickEvent(this.elements.jobFiles, event_.target as HTMLElement);
-      });
-      
-      /*
-      // If there's only one file, go ahead and expand its accordion.
-      if (this.parent.job.data.files.length === 1 && !!this.parent.job.data.files[0]) {
-         const file = this.parent.job.data.files[0];
-         const fileKey = CreateKeyFromName(file.name);
-
-         const itemEl = this.elements.sequenceResults.querySelector(`.ictv-accordion-item[data-id="${fileKey}"]`) as HTMLElement;
-         if (!itemEl) { throw new Error(`Invalid element for file key ${fileKey}`); }
-         
-         itemEl.classList.add("active"); // TEST
-
-         // Click to expand the accordion for the single file.
-         itemEl.click();
-      }*/
-
-      return;
    }
 
    async unload(): Promise<void> {

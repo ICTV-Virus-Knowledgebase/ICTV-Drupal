@@ -1,19 +1,18 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { BlastHitsPanel } from "./panels/BlastHitsPanel";
-import { ButtonClass, Constants, FormatDate, FormatDuration, GetSpinnerHTML, Icon, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
+import { GetBlastTaskLabel, ButtonClass, Constants, FormatDate, FormatDuration, GetSpinnerHTML, Icon, PanelKey, ParameterKey, ToggleAccordion } from "./Common";
 import { decode } from "base64-arraybuffer";
 import { InfoIcon } from "../../helpers/InfoIcon";
 import { InfoIconType, JobStatus, WebStorageKey } from "../../global/Types";
 import { ITaxaBlastJob } from "./ITaxaBlastJob";
-import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
 
-//import { JobSubmission } from "./JobSubmission";
 import * as pako from "pako";
 import { TaxaBlastService } from "../../services/TaxaBlastService";
 import { Utils } from "../../helpers/Utils";
 
 // Panels
+import { ITaxaBlastPanel } from "./panels/ITaxaBlastPanel";
 import { JobDetailsPanel } from "./panels/JobDetailsPanel";
 import { JobHistoryPanel } from "./panels/JobHistoryPanel";
 import { JobSubmissionPanel } from "./panels/JobSubmissionPanel";
@@ -116,8 +115,8 @@ export class TaxaBLAST {
       }
    }
 
-   // Create an HTML table containing the job details. If emphasizeFirstRow_ is true, the first row will be emphasized.
-   createJobDetailsTable(emphasizeFirstRow_: boolean, cssClass_?: string): string {
+   // Create an HTML table containing the job details.
+   createJobDetailsTable(isAccordionControl_: boolean): string {
 
       if (!this.job) { return ""; }
       
@@ -127,25 +126,24 @@ export class TaxaBLAST {
 
       // Format the created on and ended on date/times.
       let createdOn = FormatDate(this.job.createdOn);
+      if (createdOn.length > 1) { createdOn = createdOn + " UTC"; }
 
       // Format the duration between two date/times.
       let duration = FormatDuration(this.job.createdOn, this.job.endedOn);
 
-      // TODO: should this be overridden by "taxablast"?
       let programName = this.job.data.program_name;
 
+      // Replace any tabs or semicolons in the database title with line breaks.
+      let databaseTitle = this.job.data.database_title.replace(/[\t;]/g, "<br />");
+
+      const blastTask = GetBlastTaskLabel(this.job.data.task);
 
       //----------------------------------------------------------------------------------------------------------------
-      // Generate the HTML for the job details
+      // Generate the HTML for the job details table
       //----------------------------------------------------------------------------------------------------------------
-
-      let nameRowClass = emphasizeFirstRow_ ? `class="emphasized-row"` : "";
-
-      let cssClass = !cssClass_ ? " has-borders" : ` ${cssClass_}`;
-
-      return `<table class="details-table${cssClass}">
+      let tableHTML = `<table class="details-table">
          <tbody>
-            <tr${nameRowClass}>
+            <tr>
                <th>Job name</th>
                <td>${jobName}</td>
             </tr>
@@ -167,14 +165,14 @@ export class TaxaBLAST {
             </tr>
             <tr>
                <th>Database</th>
-               <td>${this.job.data.database_title}</td>
+               <td>${databaseTitle}</td>
             </tr>
             <tr>
                <th>BLAST parameters</th>
                <td class="blast-parameters">
                   <div class="blast-parameter-row">
                      <label>Task</label>
-                     <div class="blast-value">${this.job.data.task}</div>
+                     <div class="blast-value">${blastTask}</div>
                   </div>
                   <div class="blast-parameter-row">
                      <label>Max HSPS</label>
@@ -193,7 +191,21 @@ export class TaxaBLAST {
          </tbody>
       </table>`;
 
-      // dmd 043026 I removed (version ${this.job.data.version})
+      if (!isAccordionControl_) { return `<div class="job-details-wrapper">${tableHTML}</div>`; }
+
+      // A key for the job details accordion item.
+      const itemKey = "job_details";
+
+      // Wrap the table in an accordion control.
+      return `<div class="ictv-accordion-item" data-id="${itemKey}">
+         <div class="ictv-accordion-header" data-id="${itemKey}">
+            <div class="ictv-accordion-control" data-id="${itemKey}">${Icon.chevronDown}</div>
+            <div class="ictv-accordion-label">View job details</div>
+         </div>
+         <div class="ictv-accordion-body" data-id="${itemKey}">
+            <div class="ictv-accordion-content">${tableHTML}</div>
+         </div>
+      </div>`;
    }
 
 
@@ -203,47 +215,20 @@ export class TaxaBLAST {
       // All link panels require a valid job UID.
       if (!this.state.jobUID || this.state.jobUID.length < 1) { return ""; }
 
-      let instructions = "";
-
       // Create a link URL for the specified panel.
       const url = this.createPanelURL(panelKey_);
 
-      switch (panelKey_) {
-
-         case PanelKey.blastHits:
-
-            // Specify the instructions for the BLAST hits panel.
-            instructions = `Save this page's URL to view these results later`;
-            break;
-
-         case PanelKey.jobDetails:
-
-            // Specify the instructions for the job details panel.
-            instructions = `Save this page's URL to view these results later`;
-            break;
-
-         default:
-            AlertBuilder.displayErrorSync(`Unable to create a link panel for the unhandled panel key: ${panelKey_}`);
-            break;
-      }
-
-      /*return `<div class="link-panel">
-         <div class="instructions">${Icon.info} ${instructions}</div>
-         <div class="link-controls">
+      return `<div class="link-panel">
+         <div class="labelled-link">
+            <label>Save this page's URL to view these results later<span class="after-label">:</span></label> 
             <a href="${url}" target="_blank">${url}</a>
+         </div>
+         <div class="controls">
             <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
                data-tippy-content="Copy the URL to your clipboard"
                data-url="${url}"
             >${Icon.copy}<span class="btn-label">Copy URL to clipboard</span></button>
          </div>
-      </div>`;*/
-
-      return `<div class="link-panel">
-         ${Icon.info} ${instructions}
-         <button class="btn btn-generic ${ButtonClass.copyURL} has-tooltip"
-            data-tippy-content="Copy the URL to your clipboard"
-            data-url="${url}"
-         >${Icon.copy}<span class="btn-label">Copy URL to clipboard</span></button>
       </div>`;
    }
 
@@ -390,48 +375,6 @@ export class TaxaBLAST {
 
       return;
    }
-
-   /*
-   // dmd testing 032126
-
-   // Use the current state to generate URL search parameters.
-   getUrlParamsFromState(panelKey_?: PanelKey): URLSearchParams {
-      
-      // Get the current URL parameters
-      const params = new URLSearchParams(window.location.search);
-      
-      if (!panelKey_) { return null; }
-
-      // TODO: Remove the history parameter.
-      if (params.has(ParameterKey.history)) { params.delete(ParameterKey.history); }
-
-      // If the job UID is valid, update its URL parameter.
-      if (this.state.jobUID && this.state.jobUID.length > 0) {
-         params.set(ParameterKey.job, this.state.jobUID);
-
-         // If the sequence and file indices are valid, update their URL parameters.
-         if (!isNaN(this.state.sequenceIndex) && !isNaN(this.state.fileIndex)) {
-            params.set(ParameterKey.sequence, this.state.sequenceIndex.toString());
-            params.set(ParameterKey.file, this.state.fileIndex.toString());
-         } else {
-            params.delete(ParameterKey.sequence);
-            params.delete(ParameterKey.file);
-         }
-      } else {
-         params.delete(ParameterKey.job);
-         params.delete(ParameterKey.sequence);
-         params.delete(ParameterKey.file);
-         // TODO: filename and userUID?
-      }
-
-      // The job details page doesn't need sequence or file parameters.
-      if (panelKey_ && panelKey_ === PanelKey.jobDetails) {
-         params.delete(ParameterKey.sequence);
-         params.delete(ParameterKey.file);
-      }
-
-      return params;
-   }*/
 
    // Handle a click event on a button or accordion control.
    async handleClickEvent(containerEl_: HTMLElement, targetEl_: HTMLElement) {
@@ -676,26 +619,6 @@ export class TaxaBLAST {
 
       return;
    }
-
-   /*
-   // Update the window's location with a state-maintaining URL.
-   async updatePage() {
-
-      alert("TODO: try not to refresh the browser with the updated URL!")
-
-      const url = this.createUrlUsingState();
-      window.location.assign(url);
-      return;
-   }*/
-
-   /*
-   // Update the URL parameters without reloading the page.
-   updateUrlFromState() {
-      
-      const params = this.getUrlParamsFromState();
-
-      history.replaceState(null, "", "?" + params.toString());
-   }*/
 
    // Display the BLAST HTML data for a specific sequence.
    async viewHTML(filename_: string, title_: string) {

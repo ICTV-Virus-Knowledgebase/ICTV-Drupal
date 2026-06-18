@@ -19,6 +19,11 @@ import { Utils } from "../../../helpers/Utils";
 
 // CSS classes for input controls.
 enum ControlClass {
+
+   lookupAccession = "lookup-message",
+   lookupMessage = "lookup-message",
+   lookupSequences = "lookup-sequences",
+
    fastaFilename = "fasta-filename",
    fastaFilenameMessage = "fasta-filename-message",
    fastaMessage = "fasta-message",
@@ -93,6 +98,10 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       dialogFilenameMessage: HTMLElement,
       dialogMessage: HTMLElement,
 
+      // The accession lookup dialog
+      lookupAccButton: HTMLButtonElement,
+      lookupAccDialog: HTMLElement,
+
       startButton: HTMLButtonElement
    }
 
@@ -136,6 +145,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          fileInput: null,
          filesButton: null,
          jobName: null,
+         lookupAccButton: null,
+         lookupAccDialog: null,
          selectedFilesSection: null,
          selectedFilesTitle: null,
          selectedFilesContents: null,
@@ -156,41 +167,76 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                <th class="task-column">BLAST program</th>
                <th class="description-column">Description</th>
                <th class="input-column">Query input</th>
+               <th class="speed-column">Speed</th>
             </tr>
          </thead>
          <tbody>
-            <tr class="task-row even">
+            <tr class="even-row">
                <td><input type="radio" name="blast-task" value="${BlastTask.megablast}" checked class="blast-task-control" /></td>
                <td>${GetBlastTaskLabel(BlastTask.megablast)} ${this.parent.getInfoIconHTML(ControlKey.megablast)}</td>
                <td>${GetBlastTaskDescription(BlastTask.megablast)}</td>
                <td>nucleotide</td>
+               <td>Very fast</td>
             </tr>
-            <tr class="task-row odd">
+            <tr class="odd-row">
                <td><input type="radio" name="blast-task" value="${BlastTask.dcMegablast}" class="blast-task-control" /></td>
                <td>${GetBlastTaskLabel(BlastTask.dcMegablast)} ${this.parent.getInfoIconHTML(ControlKey.dcMegablast)}</td>
                <td>${GetBlastTaskDescription(BlastTask.dcMegablast)}</td>
                <td>nucleotide</td>
+               <td>Very fast</td>   
             </tr>
-            <tr class="task-row even">
+            <tr class="even-row">
                <td><input type="radio" name="blast-task" value="${BlastTask.blastn}" class="blast-task-control" /></td>
                <td>${GetBlastTaskLabel(BlastTask.blastn)} ${this.parent.getInfoIconHTML(ControlKey.blastn)}</td>
                <td>${GetBlastTaskDescription(BlastTask.blastn)}</td>
                <td>nucleotide</td>
+               <td>Fast</td>
             </tr>
-            <tr class="task-row odd">
+            <tr class="odd-row">
                <td><input type="radio" name="blast-task" value="${BlastTask.blastp}" class="blast-task-control" /></td>
                <td>${GetBlastTaskLabel(BlastTask.blastp)} ${this.parent.getInfoIconHTML(ControlKey.blastp)}</td>
                <td>${GetBlastTaskDescription(BlastTask.blastp)}</td>
                <td>amino acid</td>
+               <td>Moderate</td>
             </tr>
-            <tr class="task-row odd">
+            <tr class="even-row">
                <td><input type="radio" name="blast-task" value="${BlastTask.blastx}" class="blast-task-control" /></td>
                <td>${GetBlastTaskLabel(BlastTask.blastx)} ${this.parent.getInfoIconHTML(ControlKey.blastx)}</td>
                <td>${GetBlastTaskDescription(BlastTask.blastx)}</td>
                <td>nucleotide</td>
+               <td>Slow</td>
             </tr>
          </tbody>
       </table>`;
+   }
+
+   // Create HTML for the GenBank accession lookup dialog.
+   createLookupDialogHTML() {
+      
+      const id = "lookup_dialog";
+      const title = "Enter one or more GenBank accessions";
+
+      let body = 
+         `<div class="dialog-row">
+            <input class="${ControlClass.lookupAccession}" spellcheck="false" placeholder="Enter accession(s) here" />
+            <button class="entrez-button">Get sequence(s)</button>
+         </div>
+         <div class="dialog-row">
+            <textarea class="${ControlClass.lookupSequences}" rows="15" placeholder="The sequence(s) will appear here" spellcheck="false" 
+               data-file-size="0"
+               data-record-count="0"
+               data-status="${FastaStatus.empty}"
+            ></textarea>
+         </div>
+         <div class="${ControlClass.lookupMessage}" data-status="${FastaStatus.empty}"></div>`;
+
+      // Create dialog buttons    
+      let addButton = DialogBuilder.CreateButtonHTML(ButtonClass.add, "Ok", null, true);
+      let closeButton = DialogBuilder.CreateButtonHTML(ButtonClass.cancel, "Cancel");
+
+      let footer = `${addButton} ${closeButton}`;
+
+      return DialogBuilder.CreateDialogHTML(footer, body, id, title);
    }
 
    // Create HTML for the "enter a sequence" dialog.
@@ -581,12 +627,19 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             <div class="number-column">1.</div>
             <div class="content-column">
                <div class="controls-title">Select one or more FASTA files or enter a sequence.
+
                   <button class=\"btn ${ButtonClass.selectFiles} active has-tooltip\"
                      data-tippy-content="Click to select one or more FASTA files to upload. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be submitted in one or multiple files."
                   >${Icon.files} Select files</button>
+
                   <button class=\"btn ${ButtonClass.enterFASTA} active has-tooltip\"
                      data-tippy-content="Click to enter a nucleotide or amino acid sequence to be processed. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be included."
                   >${Icon.edit} Enter a sequence</button>
+
+                  <button class=\"btn ${ButtonClass.lookupAccessions} active has-tooltip\"
+                     data-tippy-content="Click to enter one or more GenBank accessions to retrieve sequence data."
+                  >${Icon.search} Lookup accession(s)</button>
+
                   <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
                   ${appleWarning}
                </div>
@@ -624,18 +677,21 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          <div class="input-section">
             <div class="number-column">4.</div>
             <div class="content-column">
-               Enter a job name <input type=\"text\" class=\"job-name\" placeholder=\"optional\" spellcheck=\"false\" />
+               Enter a job name <input type=\"text\" class=\"job-name\" maxlength="200" placeholder=\"optional\" spellcheck=\"false\" /> 
+               <span class="job-name-hint">(200 characters or less)</span>
             </div>
          </div>
 
          <div class="input-section">
             <div class="number-column">5.</div>
             <div class="content-column">
-               Upload FASTA files and run TaxaBLAST <button class=\"btn start-button has-tooltip\" 
-                  data-tippy-content=\"Click to submit the selected FASTA files and run TaxaBLAST\">Start</button>
+               <button class=\"btn run-taxablast-button has-tooltip\" 
+                  data-tippy-content=\"Click to submit the selected FASTA files and run TaxaBLAST\"
+               >Run TaxaBLAST</button>
             </div>
          </div>
-         ${this.createFastaDialogHTML()}`;
+         ${this.createFastaDialogHTML()}
+         ${this.createLookupDialogHTML()}`;
 
       this.elements.container.innerHTML = html;
 
@@ -668,7 +724,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements.dialogAddButton = this.elements.fastaDialog.querySelector(`.${ButtonClass.add}`);
       if (!this.elements.dialogAddButton) { throw new Error("Invalid add button in the dialog"); }
 
-      // Handle changes to the dialog controls.
+      // Handle changes to the FASTA dialog controls.
       this.elements.fastaDialog.addEventListener("input", async (event_) => {
 
          const target = (event_.target) as HTMLElement;
@@ -731,6 +787,12 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          return;
       })
 
+      // The accession lookup dialog
+      this.elements.lookupAccDialog = this.elements.container.querySelector("#lookup_dialog");
+      if (!this.elements.fastaDialog) { throw new Error("Invalid FASTA dialog"); }
+
+
+
       // The file input control
       this.elements.fileInput = this.elements.container.querySelector("#file_input") as HTMLInputElement;
       if (!this.elements.fileInput) { throw new Error("Invalid file input element"); }
@@ -749,6 +811,15 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       if (!this.elements.enterFastaButton) { throw new Error("Invalid \"Enter FASTA\" button element"); }
 
       this.elements.enterFastaButton.addEventListener("click", () => this.openFastaDialog());
+
+
+      // The "Lookup accessions" button
+      this.elements.lookupAccButton = this.elements.container.querySelector(`.${ButtonClass.lookupAccessions}`);
+      if (!this.elements.lookupAccButton) { throw new Error("Invalid \"Lookup accessions\" button element"); }
+
+      this.elements.lookupAccButton.addEventListener("click", () => this.openLookupDialog());
+
+
 
       // NOTE: We're only doing this to make sure they exist.
       const blastTaskRadios = this.elements.container.querySelectorAll('input[name="blast-task"]') as NodeListOf<HTMLInputElement>;
@@ -806,7 +877,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       if (!this.elements.jobName) { throw new Error("Invalid job name input element"); }
 
       // The start button
-      this.elements.startButton = this.elements.container.querySelector(`.${ButtonClass.start}`) as HTMLButtonElement;
+      this.elements.startButton = this.elements.container.querySelector(`.${ButtonClass.runTaxaBLAST}`) as HTMLButtonElement;
       if (!this.elements.startButton) { throw new Error("Invalid start button"); }
 
       this.elements.startButton.addEventListener("click", async () => await this.submitJob());
@@ -823,6 +894,12 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    // Open the FASTA entry dialog.
    openFastaDialog() {
       this.elements.fastaDialog.style.display = "block";
+      return;
+   }
+
+   // Open the accessions lookup dialog.
+   openLookupDialog() {
+      this.elements.lookupAccDialog.style.display = "block";
       return;
    }
 
@@ -871,6 +948,12 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    async submitJob(): Promise<boolean> {
 
       try {
+         // Were any FASTA files selected or entered?
+         if (this.selectedFiles.isEmpty()) { 
+            await AlertBuilder.displayError("No FASTA files have been selected");
+            return false;
+         }
+
          // Get the (optional) job name.
          let jobName = this.elements.jobName.value;
          if (!jobName) { jobName = null; }
@@ -920,7 +1003,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
             }
 
             // Provide guidance to users about selecting BLAST tasks for their files.
-            message += ", so please make sure to select the appropriate BLAST task. If your files contain nucleotide sequences, " +
+            message += " so please make sure to select the appropriate BLAST task. If your files contain nucleotide sequences, " +
                "select megablast, dc-megablast, blastn, or blastx. If your files contain protein sequences, select blastp.";
             
             await AlertBuilder.displayConfirm(message, "Proceed with job submission?", () => { cancelSubmission = true; });

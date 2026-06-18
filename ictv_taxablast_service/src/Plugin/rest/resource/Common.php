@@ -81,7 +81,7 @@ class Common {
    public static string $MODULE_NAME = "ictv_taxablast_service";
 
    // Valid BLAST task names that can be provided as a parameter to UploadSequences.
-   public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dc-megablast", "blastp", "blastx"];
+   public static array $VALID_BLAST_TASKS = ["blastn", "megablast", "dcMegablast", "blastp", "blastx"];
    
 
    /**
