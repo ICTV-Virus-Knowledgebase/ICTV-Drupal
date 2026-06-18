@@ -34,11 +34,12 @@ export enum ButtonClass {
    enterFASTA = "enter-fasta-button",
    errorLink = "error-link-button",
    link = "link-button",
+   lookupAccessions = "lookup-accessions",
    newSearch = "new-search-button",
    openDialog = "open-dialog-button",
    removeFiles = "remove-files-button",
+   runTaxaBLAST = "run-taxablast-button",
    selectFiles = "select-files-button",
-   start = "start-button",
    toggle = "toggle-button",
    upload = "upload-button",
    viewHits = "view-hits",
@@ -54,7 +55,7 @@ export enum Icon {
    chevronRight = `<i class=\"fa fa-chevron-up collapsed\"></i>`,
    clear = `<i class=\"fa-solid fa-broom\"></i>`,
    close = `<i class=\"fa fa-xmark\"></i>`,
-   copy = `<i class=\"fa-regular fa-clipboard\"></i>`,
+   copy = `<i class=\"fa-regular fa-copy\"></i>`,
    csv = `<i class=\"fa-regular fa-file-csv\"></i>`,
    delete = `<i class=\"fa-solid fa-trash\"></i>`,
    dna = `<i class=\"fa-solid fa-dna\"></i>`,
@@ -93,7 +94,7 @@ export enum PanelKey {
 export enum ParameterKey {
    file = "file",
    filename = "filename",
-   history = "history", // TESTING
+   history = "history",
    job = "job",
    sequence = "sequence",
    userUID = "userUID",
@@ -158,37 +159,6 @@ export const Constants = {
 //----------------------------------------------------------------------------------------------------------------
 // Functions
 //----------------------------------------------------------------------------------------------------------------
-
-/*
-export function CreateInfoIcon(infoHTML_: string, infoKey_: string, label_: string, title_: string): string {
-
-   infoHTML_ = Utils.safeTrim(infoHTML_);
-   if (infoHTML_.length < 1) { throw new Error("Invalid info HTML parameter"); }
-
-   const encodedHTML = Utils.htmlEncode(infoHTML_);
-   
-   infoKey_ = Utils.safeTrim(infoKey_);
-   if (infoKey_.length < 1) { throw new Error("Invalid info key parameter"); }
-
-   label_ = Utils.safeTrim(label_);
-   if (label_.length < 1) { throw new Error("Invalid label parameter"); }
-   
-   title_ = Utils.safeTrim(title_);
-   if (title_.length < 1) { title_ = label_; }
-
-   let tooltipText = `Click to view more information about ${label_}`;
-
-   let html = `<i 
-      class=\"fa-solid fa-circle-info info-icon has-tooltip\"
-      data-html=\"${encodedHTML}\"
-      data-info-key=\"${infoKey_}\"
-      data-tippy-content=\"${tooltipText}\"
-      data-title=\"${title_}\"
-   ></i>`;
-
-   return html;
-}*/
-
 
 // Return a lowercase version of the name and replace whitespace with underscores.
 export function CreateKeyFromName(name_: string): string {
@@ -353,11 +323,12 @@ export function GetBlastTaskInfo(task_: BlastTask): string {
 export function GetSequenceTypeFromBlastTask(task_: BlastTask) {
    switch(task_) {
       case BlastTask.blastn:
-      case BlastTask.blastx:
       case BlastTask.dcMegablast:
       case BlastTask.megablast:
          return SequenceType.nucleotide;
+         
       case BlastTask.blastp:
+      case BlastTask.blastx:
          return SequenceType.protein;
       default:
          return SequenceType.unknown;

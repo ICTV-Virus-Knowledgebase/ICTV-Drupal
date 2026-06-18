@@ -38,7 +38,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    elements: {
       blastHits: HTMLElement,
       container: HTMLElement,
-      jobDetails: HTMLElement,
+      controlsRow: HTMLElement,
+      jobDetailsAccordion: HTMLElement,
+      linkPanel: HTMLElement,
       panelControls: HTMLElement,
       panelTitle: HTMLElement
    }
@@ -75,7 +77,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       this.elements = {
          blastHits: null,
          container: containerEl_,
-         jobDetails: null,
+         controlsRow: null,
+         jobDetailsAccordion: null,
+         linkPanel: null,
          panelControls: null,
          panelTitle: null
       }
@@ -84,7 +88,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    }
 
    // Consolidate the BLAST hits by species and isolate.
-   consolidateBlastHits(filename_: string, hits_: IBlastHit[], sequenceType_: SequenceType): Map<string, BlastSpecies> {
+   consolidateBlastHits(filename_: string, hits_: IBlastHit[]): Map<string, BlastSpecies> {
 
       // A map containing all species referenced in the BLAST hits.
       const speciesMap = new Map<string, BlastSpecies>();
@@ -113,7 +117,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                throw new Error(`Invalid isolates in the isolates map for VMR ID ${hit_.sseq_ictv.isolate_id}`);
             }
          } else {
-            isolate = new BlastIsolate(hit_, sequenceType_);
+            isolate = new BlastIsolate(hit_);
          }
 
          // Is this the species' highest bitscore?
@@ -150,7 +154,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
 
       hsps_.forEach((hsp_: BlastHSP, index_: number) => {
 
-         let rowClass = index_ % 2 == 0 ? "even" : "odd";
+         let rowClass = index_ % 2 == 0 ? "even-row" : "odd-row";
 
          let bitscore = isNaN(hsp_.bitscore) ? "0" : hsp_.bitscore.toLocaleString("en-US");
          if (bitscore.indexOf(".") < 0) { bitscore += ".0"; }
@@ -226,15 +230,20 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
    // Create HTML for an isolate.
    createIsolateHTML(isolate_: BlastIsolate) {
 
-      // Is this an exemplar or an additional isolate?
-      let exemplarOrAdditional = isolate_.isolateExemplar.toUpperCase() === "E" ? "Exemplar" : "Additional";
+      // Label the isolate as the exemplar.
+      let exemplarLabel = "";
+      if (isolate_.isolateExemplar.toUpperCase() === "E") {
+         exemplarLabel = `<span class="e-or-a">(Exemplar virus)</span>`;
+      }
 
-      let linkedIsolateName = isolate_.accession.length > 0 
+      // Link the isolate name to the ICTV taxon details page.
+      let linkedVirusName = isolate_.accession.length > 0 
          ? Utils.createTaxonDetailsLink(isolate_.isolateID, isolate_.isolateName)
          : isolate_.isolateName;
 
-      let designation = isolate_.isolateDesignation.length > 0
-         ? `<span class="designation">(${isolate_.isolateDesignation})</span>`
+      let isolateName = isolate_.isolateDesignation.length > 0
+         ? `<span class="isolate-label">Isolate:</span>
+            <span class="isolate-name">${isolate_.isolateDesignation}</span>`
          : "";
 
       let otherNames = "";
@@ -262,9 +271,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       let html = `<div class="isolate-group">
          <div class="hit-names">
             <span class="hit-label">Hit:</span>
-            <span class="isolate-name">${linkedIsolateName}</span>
-            ${designation}
-            <span class="e-or-a">${exemplarOrAdditional} virus</span>
+            <span class="virus-name">${linkedVirusName}</span>
+            ${isolateName}
+            ${exemplarLabel}
          </div>
          <div class="hit-other-names">${otherNames}</div>
          <table class="hsp-table" data-isolate-id="${isolate_.isolateID}" data-hsp-count="${isolate_.hsps.length}">
@@ -288,7 +297,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       return html;
    }
 
-   // Create HTML for the query sequence details at the top of the panel.
+   // Create HTML for the query details panel.
    createQueryDetailsHTML(file_: ISequenceFile, sequence_: ISequence): string {
 
       // Validate the hits count and provide a default value (zero).
@@ -297,10 +306,10 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // Get the BLAST task's label.
       let blastTask = GetBlastTaskLabel(this.parent.job.data.task as BlastTask);
 
-      return `<div class="query-details-title">Query sequence</div>
-         <table class="details-table has-borders">
+      return `<div class="query-details-wrapper">
+         <table class="details-table">
             <tbody>
-               <tr class="emphasized-row">
+               <tr>
                   <th>Query ID</th>
                   <td>${sequence_.qseqid}</td>
                </tr>
@@ -321,7 +330,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                   <td>${blastTask}</td>
                </tr>  
             </tbody>
-         </table>`;
+         </table>
+      </div>`;
    }
 
    createSpeciesTile(species_: BlastSpecies, speciesIndex_: number): string {
@@ -354,7 +364,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          isolatesHTML += this.createIsolateHTML(isolate_);
       })
 
-      const itemClass = speciesIndex_ % 2 === 0 ? "even" : "odd";
+      const itemClass = speciesIndex_ % 2 === 0 ? "isolate" : "alt-isolate";
 
       let html =
          `<div class="ictv-accordion-item ${itemClass}" data-id="${species_.ictvID}">
@@ -370,7 +380,7 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
                      <div class="species-lineage">${lineage}</div>
                   </div>
                   <div class="right-side">
-                     <div class="bitscore-label">Top bitscore:</div>
+                     <div class="bitscore-label">Top bitscore</div>
                      <div class="bitscore">${species_.topBitscore.toLocaleString("en-US")}</div>
                   </div>
                </div>
@@ -388,7 +398,6 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       return;
    }
 
-   
    formatLineage(species_: BlastSpecies): string {
 
       // The lineage between taxa.
@@ -404,8 +413,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          if (!taxonName) { return; }
 
          // Get the display label for the taxonomic rank.
-         const label = GetTaxonomyRankLabel(rank_ as IctvRank);
-         let taxon = `<span class="lineage-name has-tooltip" data-tippy-content="${label}"><i>${taxonName}</i></span>`;
+         const rankName = GetTaxonomyRankLabel(rank_ as IctvRank);
+         let taxon = `<span class="lineage-name has-tooltip" data-tippy-content="${rankName}"><i>${taxonName}</i></span>`;
 
          // If we aren't displaying all ranks and this rank isn't Family or below, continue;
          if ([IctvRank.family, IctvRank.subfamily, IctvRank.genus, IctvRank.subgenus, IctvRank.species].includes(rank_ as IctvRank)) { 
@@ -420,40 +429,8 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          }
       })
 
-      //const displayButton = `<button class="display-ranks-button hide-ranks">Display all</button>`;
-      
       return `<span class="higher-ranks">${higherRanks}</span>${lowerRanks}`;
    }
-
-   /*
-   // Format the lineage of the BLAST hit.
-   formatLineage(species_: BlastSpecies) {
-
-      let html = "";
-      
-      let family = species_.family;
-      let subfamily = species_.subfamily;
-      let genus = species_.genus;
-      let subgenus = species_.subgenus;
-
-      if (family.length > 0) {
-         html += `<span class="result-lineage">Family: <i>${family}</i></span>`;
-      }
-      if (subfamily.length > 0) {
-         if (html.length > 0) { html += Icon.lineageDelimiter; }
-         html += `<span class="result-lineage">Subfamily: <i>${subfamily}</i></span>`;
-      }
-      if (genus.length > 0) {
-         if (html.length > 0) { html += Icon.lineageDelimiter; }
-         html += `<span class="result-lineage">Genus: <i>${genus}</i></span>`;
-      }
-      if (subgenus.length > 0) {
-         if (html.length > 0) { html += Icon.lineageDelimiter; }
-         html += `<span class="result-lineage">Subgenus: <i>${subgenus}</i></span>`;
-      }
-
-      return html;
-   }*/
 
    // Convert the HSP tables into DataTable instances.
    initializeHspTables() {
@@ -481,8 +458,26 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
             usePaging = false;
          }
 
+         // Create metadata for column widths taking into account extra columns for protein data.
+         let columnIndex = -1;
+         let defs = [
+            { targets: ++columnIndex, width: '40px' }, // hit-index
+            { targets: ++columnIndex, width: '80px' }, // bitscore
+            { targets: ++columnIndex, width: '80px' }, // length
+            { targets: ++columnIndex, width: '80px' }, // pident
+         ]
+         if (this.includeProteinResults) {
+            defs.push({ targets: ++columnIndex, width: '140px' }); // protein-id
+            defs.push({ targets: ++columnIndex, width: '200px' }); // product
+            defs.push({ targets: ++columnIndex, width: '60px' }); // ppos
+         }
+         defs.push({ targets: ++columnIndex, width: '100px' }); // start-or-end (query)
+         defs.push({ targets: ++columnIndex, width: '100px' }); // start-or-end (hit)
+
+         // Create a DataTable instance using the table element.
          new DataTables(`.isolate-group table.hsp-table[data-isolate-id="${isolateID}"]`, {
             autoWidth: false,
+            columnDefs: defs,
             info: displayInfo,
             language: {
                info: "Showing _START_ - _END_ of _TOTAL_ high-scoring pairs",
@@ -526,7 +521,9 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
             return this.displayErrorMessage("The specified job is invalid");
          }
 
-         if (this.parent.job.status !== JobStatus.complete) {
+         if ([JobStatus.crashed, JobStatus.error, JobStatus.invalid].includes(this.parent.job.status)) {
+            return this.displayErrorMessage(`The job ended with a status of "${this.parent.job.status}"`);
+         } else if (this.parent.job.status !== JobStatus.complete) {
             return this.displayErrorMessage("The specified job has not yet completed");
          }
 
@@ -534,12 +531,12 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          if (!Array.isArray(this.parent.job.data.files) || this.parent.job.data.files.length < 1 ||
             this.parent.job.data.files.length < this.parent.state.fileIndex + 1) {
 
-            return this.displayErrorMessage("The data files for this job are invalid");
+            return this.displayErrorMessage("No files are associated with this job");
          }
 
          // Get the specified file.
          const file = this.parent.job.data.files[this.parent.state.fileIndex];
-         if (!file) { return this.displayErrorMessage("The specified input file is invalid"); }
+         if (!file) { return this.displayErrorMessage("The specified file is invalid"); }
 
          // Validate the file's sequences and the specified sequence index.
          if (!Array.isArray(file.sequences) || file.sequences.length < 1 || file.sequences.length < this.parent.state.sequenceIndex + 1) { 
@@ -556,14 +553,11 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
             return this.displayErrorMessage(`The BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} are invalid`);
          }
 
-         // Use the BLAST task to determine the sequence type.
-         const sequenceType: SequenceType = GetSequenceTypeFromBlastTask(this.parent.job.data.task as BlastTask);
-
          // BLAST tasks blastp and blastx will have protein results in the HSPs.
-         this.includeProteinResults = [ BlastTask.blastp, BlastTask.blastx].includes(this.parent.job.data.task as BlastTask);
+         this.includeProteinResults = [BlastTask.blastp, BlastTask.blastx].includes(this.parent.job.data.task as BlastTask);
 
          // Consolidate the BLAST hits by species and isolates.
-         const speciesMap = this.consolidateBlastHits(file.filename, sequence.hits, sequenceType);
+         const speciesMap = this.consolidateBlastHits(file.filename, sequence.hits);
          if (speciesMap === null || speciesMap.size < 1) { 
             return this.displayErrorMessage(`The species information in the BLAST hits for sequence ${this.parent.state.sequenceIndex + 1} in file ${file.filename} is invalid`);
          }
@@ -589,93 +583,95 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
          // Create a link that will display a page with BLAST hits for this job, file, and sequence.
          const linkPanelHTML = this.parent.createLinkRow(PanelKey.blastHits);
 
-         // Don't emphasize the job name since this isn't the most important detail for users to see at a glance.
-         const emphasizeFirstRow = false;
-
-         // Create the job details table HTML.
-         const tableClass = "no-borders";
-         const jobDetailsHTML = this.parent.createJobDetailsTable(emphasizeFirstRow, tableClass);
+         // Create HTML for the job details table wrapped in an accordion control.
+         const jobDetailsHTML = this.parent.createJobDetailsTable(true);
          
-         // A key for the job details accordion item.
-         const detailsKey = "job_details";
-
-         // Create a link URL to this panel/page.
-         const pageURL = this.parent.createPanelURL(PanelKey.blastHits);
-
          // Create the panel's HTML.
          this.elements.container.innerHTML = 
-            `${queryDetailsHTML}
-            <div class="ictv-accordion-item job-details" data-id="${detailsKey}">
-               <div class="ictv-accordion-header blast-hits-header" data-id="${detailsKey}">
-                  <div class="ictv-accordion-control" data-id="${detailsKey}">${Icon.chevronDown}</div>
-                  <div class="ictv-accordion-label">Job details</div>
-               </div>
-               <div class="ictv-accordion-body" data-id="${detailsKey}">
-                  <div class="ictv-accordion-content">${jobDetailsHTML}</div>
-               </div>
+            `<div class="controls-row">
+               <button class="btn ${ButtonClass.newSearch} has-tooltip"
+                  data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
+                  data-url="${this.parent.createPanelURL(PanelKey.jobSubmission)}"
+               >${Icon.search}<span class="btn-label">New search</span></button>
             </div>
-            <div class="blast-hits-title">BLAST hits</div>
-            <div class="blast-hits-panel-controls">
-               ${linkPanelHTML}
-               <div class="sequence-controls">
+            ${linkPanelHTML}
+            <div class="panel-title">Query details</div>
+            ${queryDetailsHTML}
+            ${jobDetailsHTML}
+            <div class="blast-hits-title-row">
+               <div class="blast-hits-title">
+                  <div class="label">BLAST Results</div>
+                  <div class="result-count">${speciesIndex} matching species</div>
+               </div>
+               <div class="blast-hits-controls">
                   <button class="btn btn-generic ${ButtonClass.back} has-tooltip"
                      data-tippy-content="Return to the ${Constants.APPLICATION_NAME} results page"
                      data-url="${jobDetailsURL}"
-                  >${Icon.back}<span class="btn-label">Return to search results</span></button>
-
+                  >${Icon.back}<span class="btn-label">Return to search results</span></button> 
                   <button class="btn btn-generic ${ButtonClass.viewHTML} has-tooltip"
                      data-filename="${sequence.blast_html}"
                      data-tippy-content="View the alignments in a new tab"
                      data-title="${sequence.qseqid}"
                   >${Icon.html}<span class="btn-label">View alignments</span></button>
-
                   <button class="btn btn-generic ${ButtonClass.downloadCSV} has-tooltip"
                      data-filename="${sequence.blast_csv}"
                      data-tippy-content="Download the BLAST hits as a CSV file"
                      data-title="${csvName}"
-                  >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>
-
-                  <button class="btn ${ButtonClass.newSearch} has-tooltip"
-                     data-tippy-content="Use ${Constants.APPLICATION_NAME} again with different FASTA files"
-                     data-url="${this.parent.createPanelURL(PanelKey.jobSubmission)}"
-                  >${Icon.search}<span class="btn-label">New search</span></button>
+                  >${Icon.csv}<span class="btn-label">Download results as CSV</span></button>  
                </div>
             </div>
-            <div class="blast-hits-url"><a href="${pageURL}" target="_blank">${pageURL}</a></div>
             <div class="blast-hits">${speciesTilesHTML}</div>`;
-
-         // 
 
          // Initialize tippy tooltips for buttons.
          tippy(".has-tooltip");
 
-         // Get a reference to the BLAST hits element.
+         //--------------------------------------------------------------------------------------------------------------------------------------
+         // Get references to DOM elements
+         //--------------------------------------------------------------------------------------------------------------------------------------
          this.elements.blastHits = this.elements.container.querySelector(".blast-hits");
          if (!this.elements.blastHits) { throw new Error("Invalid blast hits DOM element"); }
 
-         // Get a reference to the job details accordion element.
-         this.elements.jobDetails = this.elements.container.querySelector(".job-details");
-         if (!this.elements.jobDetails) { throw new Error("Invalid job details DOM element"); }
+         // This contains the "new search" button.
+         this.elements.controlsRow = this.elements.container.querySelector(".controls-row");
+         if (!this.elements.controlsRow) { throw new Error("Invalid controls row DOM element"); }
          
-         // Get a reference to the panel controls element.
-         this.elements.panelControls = this.elements.container.querySelector(".blast-hits-panel-controls");
+         this.elements.jobDetailsAccordion = this.elements.container.querySelector(`.ictv-accordion-item[data-id="job_details"]`);
+         if (!this.elements.jobDetailsAccordion) { throw new Error("Invalid job details accordion DOM element"); }
+
+         this.elements.linkPanel = this.elements.container.querySelector(".link-panel");
+         if (!this.elements.linkPanel) { throw new Error("Invalid link panel DOM element"); }
+
+         this.elements.panelControls = this.elements.container.querySelector(".blast-hits-controls");
          if (!this.elements.panelControls) { throw new Error("Invalid panel controls DOM element"); }
 
-         // Handle clicks in the BLAST hits element. 
+         
+         //--------------------------------------------------------------------------------------------------------------------------------------
+         // Handle click events
+         //--------------------------------------------------------------------------------------------------------------------------------------
          this.elements.blastHits.addEventListener("click", async (event_) => {
             return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
          })
 
-         // Handle clicks in the job details element. 
-         this.elements.jobDetails.addEventListener("click", async (event_) => {
-            return await this.parent.handleClickEvent(this.elements.jobDetails, event_.target as HTMLElement);
+         this.elements.controlsRow.addEventListener("click", async (event_: MouseEvent) => {
+            const target = event_.target as HTMLElement;
+            return await this.parent.handleClickEvent(this.elements.container, target);
+         })
+
+         this.elements.jobDetailsAccordion.addEventListener("click", async (event_: MouseEvent) => {
+            const target = event_.target as HTMLElement;
+            return await this.parent.handleClickEvent(this.elements.container, target);
+         })
+
+         this.elements.linkPanel.addEventListener("click", async (event_: MouseEvent) => {
+            const target = event_.target as HTMLElement;
+            return await this.parent.handleClickEvent(this.elements.container, target);
          })
 
          // Handle clicks in the panel controls.
          this.elements.panelControls.addEventListener("click", async (event_) => {
             return await this.parent.handleClickEvent(this.elements.container, event_.target as HTMLElement);
          })
-
+         
          // Convert the HSP tables into DataTable instances.
          this.initializeHspTables();
          
@@ -693,6 +689,5 @@ export class BlastHitsPanel implements ITaxaBlastPanel {
       // TODO: should we remove event listeners?
       return;
    }
-
 
 }

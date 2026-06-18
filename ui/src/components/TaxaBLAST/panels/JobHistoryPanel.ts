@@ -106,7 +106,6 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
       //----------------------------------------------------------------------------------------------------------------
       let html = 
          `<div class="panel-title">Job History</div>
-         <button class="test-button">Test zip download</button>
          <div class="search-controls">
                <input class="search-text" type="text" placeholder="Enter search text (optional)" spellcheck="false" />
                <button class="search-button ictv-btn">${Icon.search} Search</button>
@@ -140,30 +139,6 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
          return await this.search();
       })
 
-
-      const testButton = this.elements.container.querySelector(".test-button");
-      if (!testButton) { throw new Error("Invalid test button"); }
-
-      testButton.addEventListener("click", async (event_) => {
-   
-         const filename = "TaxaBLAST_6329ac558aa411f0940c1273ccd16f87.zip";
-         const testResult = await TaxaBlastService.downloadFile(this.parent.authToken, filename, "6329ac558aa411f0940c1273ccd16f87");
-         //console.log("testResult = ", testResult)
-
-         let file = new Blob([testResult]);
-         console.log("file size = ", file.size)
-
-         // Associate the ArrayBuffer with a Blob, create a download link, and trigger the download.
-         const link = document.createElement('a')
-         link.href = URL.createObjectURL(new Blob(
-            [ testResult ],
-            { type: 'application/zip' }
-         ))
-         link.download = filename;
-         link.click();
-      })
-
-
       // Initialize tippy tooltips for buttons.
       tippy(".has-tooltip");
       return;
@@ -187,7 +162,8 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
             rowsHTML += this.createJobRow(job_, index_);
         })
 
-        this.elements.jobsPanel.innerHTML = `<table class="jobs">
+        this.elements.jobsPanel.innerHTML = 
+        `<table class="jobs">
             <thead>
                 <tr class="header-row">
                     <th>Job name</th>
@@ -200,16 +176,23 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
 
         new DataTables(`.jobs-panel table.jobs`, {
             autoWidth: false,
-            columnDefs: [
+            /*columnDefs: [
                { width: "160px", targets: 0},
                { width: "100px", targets: 1},
                { width: "80px", targets: 2}
-            ],
+            ],*/
             info: true,
             layout: {
-               //bottomEnd: true
+               topStart: "pageLength",
+               topEnd: null,
+               bottomStart: "info",
+               bottomEnd: {
+                  paging: {
+                     buttons: 4
+                  }
+               }
             },
-            ordering: true,
+            ordering: false,
             paging: true,
             searching: false
          });

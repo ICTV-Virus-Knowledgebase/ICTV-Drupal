@@ -1,7 +1,6 @@
 
 import { IBlastHit } from "./IBlastHit";
 import { BlastHSP } from "./BlastHSP";
-import { SequenceType } from "../../global/Types";
 import { Utils } from "../../helpers/Utils"; 
 
 
@@ -15,16 +14,15 @@ export class BlastIsolate {
    isolateExemplar: string;
    isolateID: string;
    isolateName: string; 
-   sequenceLength: number; // TODO: I don't think this is the correct name!
-   sequenceType: SequenceType;
+   sequenceLength: number; // TODO: Which sequence is it referring to?
    
 
    // C-tor
-   constructor(hit_: IBlastHit, sequenceType_: SequenceType) {
+   constructor(hit_: IBlastHit) {
 
       if (hit_ === null) { throw new Error("Invalid BLAST hit in BlastIsolate"); }
 
-      this.accession = null; // This should be populated below.
+      this.accession = Utils.safeTrim(hit_.sseq_ictv.segment_accession);
       this.isolateAbbrev = Utils.safeTrim(hit_.sseq_ictv.isolate_abbrev);
       this.isolateDesignation = Utils.safeTrim(hit_.sseq_ictv.isolate_designation);
       this.isolateExemplar = Utils.safeTrim(hit_.sseq_ictv.isolate_exemplar);
@@ -33,27 +31,16 @@ export class BlastIsolate {
       if (!this.isolateName) { this.isolateName = "unknown"; }
 
       this.sequenceLength = hit_.length;
-      this.sequenceType = sequenceType_;
       
       this.hsps = [];
 
-      // Parse the sseqid for the isolate's accession.
-      let parts = hit_.sseqid.split("-");
-      if (Array.isArray(parts) && parts.length > 1) { 
-
-         if (sequenceType_ === SequenceType.nucleotide) {
-
-            // A nucleotide accession should be the last part of the sseqid.
-            this.accession = parts[parts.length - 1];
-
-         } else if (sequenceType_ === SequenceType.protein) {
-
-            // A protein accession should be the 2nd to last part of the sseqid.
-            this.accession = parts[parts.length - 2];
-         }
-         
-      } else {
-         console.error("The sseqid appears to be formatted incorrectly");
-      }
+      /*
+      // Parse the sseqid for the isolate's accession. In the example sseqid "Whispovirus_xiabaidian--KT995472.1-ALN66444.1" 
+      // the isolate accession is "KT995472.1".
+      const regex = /--([^-]+)(?:-.*)?$/;
+      const match = hit_.sseqid.match(regex);
+      if (match !== null) { 
+         this.accession = match?.[1]; 
+      }*/
    }
 }

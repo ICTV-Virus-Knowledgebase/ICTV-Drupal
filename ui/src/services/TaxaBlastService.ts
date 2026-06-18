@@ -1,31 +1,55 @@
 
+import axios, { AxiosResponse } from "axios";
 import { BlastParams } from "../components/TaxaBLAST/BlastParams";
 import { IFileData } from "../models/IFileData";
 import { IOutputFile } from "../components/TaxaBLAST/IOutputFile";
 import { ITaxaBlastJob } from "../components/TaxaBLAST/ITaxaBlastJob";
 import { ISubmissionResult } from "../components/TaxaBLAST/ISubmissionResult";
+import { Utils } from "../helpers/Utils";
 import { WebService } from "./WebService";
-import { WebServiceKey } from "../global/Types";
+import { SequenceType, WebServiceKey } from "../global/Types";
 
 
 export class _TaxaBlastService {
 
    
    // Download a binary (zip) file from a TaxaBLAST job.
-   async downloadFile(authToken_: string, filename_: string, jobUID_: string): Promise<any> {
+   async downloadFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<any> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }
       if (!jobUID_) { throw new Error("Invalid job UID"); }
 
       const data = {
          filename: filename_,
-         jobUID: jobUID_
+         jobUID: jobUID_,
+         userUID: userUID_
       };
 
       // Get and return the result files.
       return await WebService.drupalPost<any>(WebServiceKey.downloadTaxaBlastFile, authToken_, data);
    }
 
+
+   // Call the NCBI Entrez EFetch web service to retrive FASTA for one or more accessions.
+   async eFetch(accessions_: string, sequenceType_: SequenceType): Promise<string> {
+
+      accessions_ = Utils.safeTrim(accessions_);
+      if (accessions_.length < 1) { throw new Error("Please provide one or more accession"); }
+
+      let db = sequenceType_ === SequenceType.nucleotide ? "nuccore" : "protein";
+      const email = "info@ictv.global";
+      const tool = "TaxaBLAST";
+
+      let uri = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=${db}&id=${accessions_}&rettype=fasta&retmode=text&tool=${tool}&email=${email}`;
+
+      // Call the web service and wait for a response.
+      let response: AxiosResponse = await axios.get(uri);
+
+      // Validate the Axios response.
+      if (!response || !response.data) { throw new Error("Invalid HTTP Response from Entrez EFetch"); }
+
+      return response.data as string;
+   }
 
    // Get the specified job and result metadata.
    async getJob(authToken_: string, jobUID_: string): Promise<ITaxaBlastJob> {
