@@ -51,6 +51,7 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
       self.elements.includeAllReleases.checked = false;
       self.elements.resultsPanel.innerHTML = "";
       self.elements.searchText.value = "";
+      self.elements.searchText.placeholder = "Search current release...";
    }
 
    // Create, display, and throw an error with the message provided.
@@ -77,9 +78,13 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
       // The HTML to add to the search panel.
       const html =
          `<div class="input-group search-controls">
-            <input type="text" class="form-control search-text" placeholder="Search current release..." spellcheck="false" />
+            <div class="search-input-wrapper">
+               <input type="text" class="form-control search-text" placeholder="Search current release..." spellcheck="false" />
+               <button type="button" class="clear-button" aria-label="Clear search" title="Clear search">
+                  <i class="fa fa-times" aria-hidden="true"></i>
+               </button>
+            </div>
             <button class="btn search-button"><i class="fa fa-search"></i> Search</button>
-            <button class="btn clear-button"><i class="fa fa-times"></i> Clear</button>
          </div>
          <div class="all-releases-row">
             <input type="checkbox" class="include-all-releases" />

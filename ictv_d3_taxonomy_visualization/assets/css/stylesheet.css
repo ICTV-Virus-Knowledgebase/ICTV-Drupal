@@ -254,8 +254,21 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    -ms-user-select: none;
 }
 #d3_taxonomy_vis_container .reset-view-btn {
-   margin-right: 5px;
-   border-radius: 5px;
+   border-radius: 4px;
+}
+
+#d3_taxonomy_vis_container .header-panel > .reset-view-btn {
+   align-self: flex-start;
+   background-color: #b42318;
+   border-color: #991b1b;
+   margin: 16px 0 0 auto;
+}
+
+#d3_taxonomy_vis_container .header-panel > .reset-view-btn:hover,
+#d3_taxonomy_vis_container .header-panel > .reset-view-btn:focus {
+   background-color: #991b1b;
+   border-color: #7f1d1d;
+   outline: 0;
 }
 #d3_taxonomy_vis_container .expand-to-fit-btn {
    margin-right: 5px;
@@ -300,6 +313,13 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    min-width: 0;
 }
 
+#d3_taxonomy_vis_container .search-panel .search-input-wrapper {
+   display: flex;
+   flex: 1 1 12rem;
+   min-width: 9rem;
+   position: relative;
+}
+
 #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
    background-color: #fff;
    background-image: none;
@@ -307,13 +327,13 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    border-radius: 4px 0 0 4px;
    /*box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);*/
    color: #555;
+   flex: 1 1 auto;
    font-size: var(--default-font-size);
    margin: 0;
-   padding: var(--text-control-padding);
-   flex: 1 1 12rem;
-   min-width: 9rem;
+   min-width: 0;
+   padding: 4px 2rem 4px 6px;
    vertical-align: middle;
-   width: 200px;
+   width: 100%;
 }
 #d3_taxonomy_vis_container .search-panel .search-text:focus {
    color: #495057;
@@ -345,23 +365,46 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    background-color: #0062cc;
    border-collapse: separate;
    border-color: #005cbf;
-   border-radius: 0;
+   border-radius: 0 4px 4px 0;
    color: #fff;
 }
 
+#d3_taxonomy_vis_container .search-panel .search-button i {
+   margin-right: 5px;
+}
+
 #d3_taxonomy_vis_container .search-panel .clear-button {
-   background-color: rgb(153, 153, 153);
-   border-color: rgba(0, 0, 0, 0);
-   border-bottom-left-radius: 0px;
-   border-bottom-right-radius: 4px;
-   border-top-left-radius: 0px;
-   border-top-right-radius: 4px;
-   box-sizing: border-box;
-   color: rgb(255, 255, 255);
-   margin-bottom: 0px;
-   margin-left: -1px;
-   margin-right: 0px;
-   margin-top: 0px;
+   align-items: center;
+   background-color: transparent;
+   border: 0;
+   border-radius: 50%;
+   color: #555;
+   display: inline-flex;
+   height: 1.5rem;
+   justify-content: center;
+   line-height: 1;
+   padding: 0;
+   position: absolute;
+   right: 0.3rem;
+   top: 50%;
+   transform: translateY(-50%);
+   width: 1.5rem;
+}
+
+#d3_taxonomy_vis_container .search-panel .clear-button:hover,
+#d3_taxonomy_vis_container .search-panel .clear-button:focus {
+   background-color: #e9ecef;
+   color: #222;
+   outline: 0;
+}
+
+#d3_taxonomy_vis_container .search-panel .clear-button i {
+   margin-right: 0;
+}
+
+#d3_taxonomy_vis_container .search-panel .clear-button:disabled {
+   cursor: default;
+   opacity: 0.45;
 }
 
 #d3_taxonomy_vis_container .search-panel .all-releases-row {
@@ -511,6 +554,10 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    #d3_taxonomy_vis_container .header-panel .paginate-toggle {
       margin-left: 0;
    }
+
+   #d3_taxonomy_vis_container .header-panel > .reset-view-btn {
+      margin-top: 0;
+   }
 }
 
 @media (max-width: 720px) {
@@ -538,15 +585,17 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
       gap: 0.3rem;
    }
 
-   #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
-      border-radius: 4px;
+   #d3_taxonomy_vis_container .search-panel .search-input-wrapper {
       flex-basis: 100%;
       min-width: 0;
       width: 100%;
    }
 
+   #d3_taxonomy_vis_container .search-panel .search-controls .search-text {
+      border-radius: 4px;
+   }
+
    #d3_taxonomy_vis_container .search-panel .search-button,
-   #d3_taxonomy_vis_container .search-panel .clear-button,
    #d3_taxonomy_vis_container .selectFormat {
       border-radius: 4px;
    }

@@ -389,7 +389,7 @@ window.ICTV.d3TaxonomyVisualization = function (
    }
 
    // Build the toolbar buttons and export format selector in the font-size panel.
-   // Used during startup to support PNG/SVG/PDF export plus Fit Tree and Reset View controls.
+   // Used during startup to support PNG/SVG/PDF export plus Fit Tree and Reset controls.
    function initializeButton() {
 
       // Get a reference to the panel Element.
@@ -401,19 +401,20 @@ window.ICTV.d3TaxonomyVisualization = function (
          .append("div")
          .attr("class", "button-group view-buttons");
 
+      let resetViewBtn = d3
+         .select(`${containerSelector} .header-panel`)
+         .append("button")
+         .attr("type", "button")
+         .attr("class", "screenshot-button reset-view-btn")
+         .attr("title", "Reset tree to the selected release's initial view")
+         .html("Reset");
+
       // "Fit Tree" button
       let expandToFitBtn = d3
          .select(buttonGroup.node())
          .append("button")
          .attr("class", "screenshot-button expand-to-fit-btn")
          .html(`<i class="fa fa-expand"></i> Fit Tree`)
-
-      // "Reset View" button
-      let resetViewBtn = d3
-         .select(buttonGroup.node())
-         .append("button")
-         .attr("class", "screenshot-button reset-view-btn")
-         .html(`<i class="fa fa-home"></i> Reset View`);
 
       // Create a button.
       let buttonClickE1 = d3
@@ -756,7 +757,7 @@ window.ICTV.d3TaxonomyVisualization = function (
          }
       });
 
-      // Click handler for Reset View
+      // Click handler for Reset
       resetViewBtn.on("click", async function () {
          if (!releaseControlEl || !releaseControlEl.value) return;
 
