@@ -1,12 +1,9 @@
 #!/bin/bash
 #
-# Create and initialize NCBI Taxonomy tables in the ictv_apps_temp database using the 
-# latest NCBI Taxonomy dump files.
+# Create and initialize NCBI Taxonomy tables in the ictv_apps_temp database using the latest 
+# NCBI Taxonomy dump files. When this script completes, the NCBI Taxonomy tables will have 
+# been updated with the latest data and the custom term ID columns will have been initialized.
 #
-
-# Here's how to remove the carriage return characters from this script:
-# sed -i 's/\r$//' ./automation/update_ncbi_taxonomy_in_temp.sh
-
 
 # Make sure the script is run from the FindTheSpecies directory.
 CURRENT_DIR_NAME=$(basename "$(pwd)")
@@ -46,28 +43,21 @@ fi
 # Uncomment to print the environment variables and their values to stdout.
 #display_env_vars
 
-# Make sure the vocabulary and term tables are populated before we start populating 
-# the NCBI Taxonomy tables, since the NCBI Taxonomy tables have foreign key relationships to the vocabulary and term tables.
-#count=$(mysql -u root mydb \
-#  --batch --skip-column-names \
-#  -e "CALL get_taxon_count();")
-#echo "Taxon count: $count"
-
 # TODO: What vocabularies and terms do we need to have in place before we can populate the NCBI Taxonomy tables? 
+# Might be a good idea to verify their existence.
 
-# Disable foreign key checks for this session, drop the NCBI tables, and re-enable the foreign key checks.
-echo -e "\nDropping the NCBI tables so they can be recreated\n"
-echo "SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS ncbi_division; DROP TABLE IF EXISTS ncbi_name; DROP TABLE IF EXISTS ncbi_node; SET FOREIGN_KEY_CHECKS = 1;" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-   echo "An error occurred dropping the NCBI tables\n"
-   exit 1
-fi
+# Keep track of the script's start time so we can display the total elapsed time when the script completes.
+SCRIPT_START_TIME=$(date +%s)
 
-# Recreate the NCBI Taxonomy tables.
-echo -e "\nCreating the NCBI Taxonomy tables\n"
-mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/CreateNcbiTaxonomyTables.sql"
+# Disable foreign key checks for this session, remove all data from the NCBI tables, and re-enable the foreign key checks.
+echo -e "Truncating the NCBI tables so they can be repopulated\n"
+echo "SET FOREIGN_KEY_CHECKS = 0; 
+      TRUNCATE TABLE ncbi_division; 
+      TRUNCATE TABLE ncbi_name; 
+      TRUNCATE TABLE ncbi_node; 
+      SET FOREIGN_KEY_CHECKS = 1;" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-   echo "An error occurred creating the temp NCBI Taxonomy tables\n"
+   echo "An error occurred truncating the NCBI tables\n"
    exit 1
 fi
 
@@ -78,7 +68,7 @@ if [ ! -f "$SCRIPT_DIR/downloadNcbiTaxonomy.py" ]; then
 fi
 
 # Download the latest NCBI Taxonomy dump files.
-echo -e "\nDownloading the latest NCBI Taxonomy dump files\n"
+echo -e "Downloading the latest NCBI Taxonomy dump files\n"
 python3 "$SCRIPT_DIR/downloadNcbiTaxonomy.py"
 if [ $? -ne 0 ]; then
    echo "An error occurred downloading the NCBI Taxonomy tables\n"
@@ -87,7 +77,7 @@ fi
 
 # Populate the temp NCBI Taxonomy tables using the downloaded dump files.
 START_TIME=$(date +%s)
-echo -e "\nPopulating the temp NCBI Taxonomy tables using dump files.\n"
+echo -e "Populating the temp NCBI Taxonomy tables using dump files.\n"
 mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/PopulateNcbiFromFiles.sql"
 if [ $? -ne 0 ]; then
    echo "An error occurred populating the temp NCBI Taxonomy tables\n"
@@ -98,7 +88,7 @@ display_elapsed_time "$START_TIME"
 
 # Initialize the NCBI term ID columns.
 START_TIME=$(date +%s)
-echo -e "\nInitializing NCBI term ID columns\n"
+echo -e "Initializing NCBI term ID columns\n"
 mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/InitializeNcbiTermIdColumns.sql"
 echo "CALL InitializeNcbiTermIdColumns();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
@@ -109,6 +99,28 @@ fi
 display_elapsed_time "$START_TIME"
 
 
+# For all NCBI subspecies nodes, try to update ncbi_node.subspecies_parent_tax_id (a custom column)  
+# with the lowest level parent taxon that has a rank of species or above. 
+START_TIME=$(date +%s)
+echo -e "Initializing NCBI subspecies records\n"
+mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/InitializeNcbiSubspecies.sql"
+echo "CALL InitializeNcbiSubspecies();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
+if [ $? -ne 0 ]; then
+   echo "An error occurred initializing the NCBI subspecies records\n"
+   exit 1
+fi
+
+display_elapsed_time "$START_TIME"
+
+
+# Calculate and display the total elapsed time for this script.
+SCRIPT_END_TIME=$(date +%s)
+SCRIPT_ELAPSED_TIME=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
+
+SCRIPT_MINUTES=$((SCRIPT_ELAPSED_TIME / 60))
+SCRIPT_SECONDS=$((SCRIPT_ELAPSED_TIME % 60))
+
+echo -e "update_ncbi_taxonomy_in_temp.sh completed after ${SCRIPT_MINUTES} minute(s), ${SCRIPT_SECONDS} second(s)"
 
 
 

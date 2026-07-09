@@ -1,4 +1,5 @@
 
+from datetime import datetime
 import os
 from pathlib import Path
 import requests
@@ -32,6 +33,9 @@ try:
 
    print(f"Downloaded file saved as {ncbi_zip_file}")
 
+   mtime = Path(ncbi_zip_file).stat().st_mtime
+   print("Local zip timestamp:", datetime.fromtimestamp(mtime).isoformat())
+
 except requests.exceptions.RequestException as re:
    print(f"Error downloading file: {re}")
    exit(1)
@@ -50,7 +54,7 @@ if not zipfile.is_zipfile(ncbi_zip_file):
 try:
    with zipfile.ZipFile(ncbi_zip_file, "r") as zip_ref:
 
-      # Check for existing files and rename if necessary
+      # Delete existing versions of the files.
       for file_name in zip_ref.namelist():
 
          file_path = os.path.join(data_path, file_name)

@@ -3,10 +3,6 @@
 # Import the NCBI Taxonomy tables in the ictv_apps_temp database into
 # the searchable_taxon table.
 
-# Here's how to remove the carriage return characters from this script:
-# sed -i 's/\r$//' ./automation/import_ncbi_taxonomy_into_searchable_taxon.sh
-
-
 # Make sure the script is run from the FindTheSpecies directory.
 CURRENT_DIR_NAME=$(basename "$(pwd)")
 if [ "$CURRENT_DIR_NAME" != "FindTheSpecies" ]; then
@@ -44,45 +40,31 @@ fi
 
 
 # Delete any existing NCBI Taxonomy records from searchable_taxon.
-echo "DELETE FROM searchable_taxon WHERE taxonomy_db_tid = (SELECT id FROM term WHERE full_key = 'taxonomy_db.ncbi');" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
+echo "DELETE FROM searchable_taxon WHERE taxonomy_db_tid = (SELECT id FROM term WHERE full_key = 'taxonomy_db.ncbi_taxonomy');" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 
-# Import scientific names from NCBI Taxonomy.
-echo -e "\nImporting NCBI scientific names into searchable_taxon\n"
+#----------------------------------------------------------------------------------------------------------------------
+# Import records from NCBI Taxonomy.
+#----------------------------------------------------------------------------------------------------------------------
+echo -e "\nImporting NCBI Taxonomy records into searchable_taxon\n"
 START_TIME=$(date +%s)
 
-mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/ImportNcbiScientificNames.sql"
+mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/ImportNcbiTaxonomy.sql"
 if [ $? -ne 0 ]; then
-   echo "An error occurred creating the ImportNcbiScientificNames stored procedure\n"
+   echo "An error occurred creating the ImportNcbiTaxonomy stored procedure\n"
    exit 1
 fi
 
-echo "CALL ImportNcbiScientificNames();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
+echo "CALL ImportNcbiTaxonomy();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
 if [ $? -ne 0 ]; then
-   echo "An error occurred importing the NCBI scientific names into searchable_taxon\n"
+   echo "An error occurred importing the NCBI Taxonomy records into searchable_taxon\n"
    exit 1
 fi
 
 display_elapsed_time "$START_TIME"
 
-# Initialize NCBI Taxonomy subspecies records before importing them.
-echo -e "\nInitializing NCBI subspecies\n"
-START_TIME=$(date +%s)
-
-mariadb -D $APPS_TEMP_DB -s -b --show-warnings < "$SQL_DIR/InitializeNcbiSubspecies.sql"
-if [ $? -ne 0 ]; then
-   echo "An error occurred creating the InitializeNcbiSubspecies stored procedure\n"
-   exit 1
-fi
-
-echo "CALL InitializeNcbiSubspecies();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-   echo "An error occurred initializing the NCBI subspecies records\n"
-   exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
+#----------------------------------------------------------------------------------------------------------------------
 # Import subspecies nodes from NCBI Taxonomy.
+#----------------------------------------------------------------------------------------------------------------------
 echo -e "\nImporting NCBI subspecies nodes\n"
 START_TIME=$(date +%s)
 
@@ -100,9 +82,10 @@ fi
 
 display_elapsed_time "$START_TIME"
 
-
+#----------------------------------------------------------------------------------------------------------------------
 # Update NCBI Taxonomy non-scientific names that are associated with NCBI Taxonomy scientific names
 # that have an ICTV taxnode ID assigned.
+#----------------------------------------------------------------------------------------------------------------------
 echo -e "\nUpdating NCBI non-scientific names\n"
 START_TIME=$(date +%s)
 

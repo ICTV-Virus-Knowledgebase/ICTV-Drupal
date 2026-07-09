@@ -1,5 +1,5 @@
 databaseName: 'ictv_apps'
-dockerContainer: 'curtish/ictv_seqsearch:VMR_MSL41.v1.20260320.32f19af'
+dockerContainer: 'curtish/ictv_taxablast:VMR_MSL41.v1.20260320.exemplar_only2.c8f06da'
 drupalRoot: '/var/www/dapp/web'
 inputDirectory: 'seq_in'
 jobsPath: '/var/www/dapp/files/jobs'

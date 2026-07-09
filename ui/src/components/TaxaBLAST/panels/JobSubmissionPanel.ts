@@ -20,9 +20,9 @@ import { Utils } from "../../../helpers/Utils";
 // CSS classes for input controls.
 enum ControlClass {
 
-   lookupAccession = "lookup-message",
+   /*lookupAccession = "lookup-message",
    lookupMessage = "lookup-message",
-   lookupSequences = "lookup-sequences",
+   lookupSequences = "lookup-sequences",*/
 
    fastaFilename = "fasta-filename",
    fastaFilenameMessage = "fasta-filename-message",
@@ -76,6 +76,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       // BLAST parameters
       blastMaxHSPS: HTMLInputElement,
+      blastMaxHspsComment: HTMLElement,
       blastMaxTargetSeqs: HTMLInputElement,
       blastMaxTargetSeqsComment: HTMLElement,
       blastTaskTable: HTMLTableElement,
@@ -99,8 +100,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       dialogMessage: HTMLElement,
 
       // The accession lookup dialog
-      lookupAccButton: HTMLButtonElement,
-      lookupAccDialog: HTMLElement,
+      //lookupAccButton: HTMLButtonElement,
+      //lookupAccDialog: HTMLElement,
 
       startButton: HTMLButtonElement
    }
@@ -131,6 +132,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       this.elements = {
          blastMaxHSPS: null,
+         blastMaxHspsComment: null,
          blastMaxTargetSeqs: null,
          blastMaxTargetSeqsComment: null,
          blastTaskTable: null,
@@ -145,8 +147,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          fileInput: null,
          filesButton: null,
          jobName: null,
-         lookupAccButton: null,
-         lookupAccDialog: null,
+         //lookupAccButton: null,
+         //lookupAccDialog: null,
          selectedFilesSection: null,
          selectedFilesTitle: null,
          selectedFilesContents: null,
@@ -210,6 +212,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       </table>`;
    }
 
+   /*
    // Create HTML for the GenBank accession lookup dialog.
    createLookupDialogHTML() {
       
@@ -237,7 +240,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       let footer = `${addButton} ${closeButton}`;
 
       return DialogBuilder.CreateDialogHTML(footer, body, id, title);
-   }
+   }*/
 
    // Create HTML for the "enter a sequence" dialog.
    createFastaDialogHTML() {
@@ -332,9 +335,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          this.elements.selectedFilesContents.innerHTML = "";
          this.elements.selectedFilesSection.classList.remove("active");
 
-         // Restore the default to the max target seqs control and clear/hide its comment.
-         this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
-         this.elements.blastMaxTargetSeqsComment.innerHTML = "";
+         // Populate the BLAST parameters with default values and clear the comments.
+         this.setDefaultBlastParameters();
 
          // Make the start button inactive.
          this.elements.startButton.classList.remove("active");
@@ -479,7 +481,9 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          case BlastTask.blastp:
          case BlastTask.dcMegablast:
          case BlastTask.megablast:
-            // TODO?
+            
+            // Populate the BLAST parameters with default values and clear the comments.
+            this.setDefaultBlastParameters();
             break;
 
          case BlastTask.blastx:
@@ -621,6 +625,13 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       // Get the HTML for the BLAST task selection table.
       const blastTaskHTML = this.createBlastTaskHTML();
       
+      /*
+      <button class=\"btn ${ButtonClass.lookupAccessions} active has-tooltip\"
+                     data-tippy-content="Click to enter one or more GenBank accessions to retrieve sequence data."
+                  >${Icon.search} Lookup accession(s)</button>
+
+      */
+     
       // Create HTML for the container Element.
       const html = 
          `<div class="input-section">
@@ -635,10 +646,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                   <button class=\"btn ${ButtonClass.enterFASTA} active has-tooltip\"
                      data-tippy-content="Click to enter a nucleotide or amino acid sequence to be processed. Up to ${Constants.MAX_SEQUENCE_COUNT} sequences can be included."
                   >${Icon.edit} Enter a sequence</button>
-
-                  <button class=\"btn ${ButtonClass.lookupAccessions} active has-tooltip\"
-                     data-tippy-content="Click to enter one or more GenBank accessions to retrieve sequence data."
-                  >${Icon.search} Lookup accession(s)</button>
 
                   <input type=\"file\" id=\"file_input\" multiple accept="${fileFormats}" />
                   ${appleWarning}
@@ -670,7 +677,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                <div class="max-hsps-row">
                   <label>Max HSPs per target sequence</label>
                   <input type="number" class="max-hsps" value="${Constants.DEFAULT_MAX_HSPS}" />
-               </div> 
+               </div>
+               <div class="max-hsps-comment"></div>
             </div>
          </div>
 
@@ -690,9 +698,9 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
                >Run TaxaBLAST</button>
             </div>
          </div>
-         ${this.createFastaDialogHTML()}
-         ${this.createLookupDialogHTML()}`;
-
+         ${this.createFastaDialogHTML()}`;
+      // ${this.createLookupDialogHTML()}
+      
       this.elements.container.innerHTML = html;
 
       //------------------------------------------------------------------------------------------------------------------------
@@ -788,8 +796,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       })
 
       // The accession lookup dialog
-      this.elements.lookupAccDialog = this.elements.container.querySelector("#lookup_dialog");
-      if (!this.elements.fastaDialog) { throw new Error("Invalid FASTA dialog"); }
+      //this.elements.lookupAccDialog = this.elements.container.querySelector("#lookup_dialog");
+      //if (!this.elements.fastaDialog) { throw new Error("Invalid FASTA dialog"); }
 
 
 
@@ -814,10 +822,10 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
 
       // The "Lookup accessions" button
-      this.elements.lookupAccButton = this.elements.container.querySelector(`.${ButtonClass.lookupAccessions}`);
-      if (!this.elements.lookupAccButton) { throw new Error("Invalid \"Lookup accessions\" button element"); }
+      //this.elements.lookupAccButton = this.elements.container.querySelector(`.${ButtonClass.lookupAccessions}`);
+      //if (!this.elements.lookupAccButton) { throw new Error("Invalid \"Lookup accessions\" button element"); }
 
-      this.elements.lookupAccButton.addEventListener("click", () => this.openLookupDialog());
+      //this.elements.lookupAccButton.addEventListener("click", () => this.openLookupDialog());
 
 
 
@@ -844,33 +852,37 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       this.elements.blastMaxHSPS = this.elements.container.querySelector(".max-hsps") as HTMLInputElement;
       if (!this.elements.blastMaxHSPS) { throw new Error("Invalid max HSPs input element"); }
 
+      // The max HSPS comment.
+      this.elements.blastMaxHspsComment = this.elements.container.querySelector(".max-hsps-comment");
+      if (!this.elements.blastMaxHspsComment) { throw new Error("Invalid max HSPS comment element"); }
+
       // Replace an empty value with the default.
       this.elements.blastMaxHSPS.addEventListener("change", () => {
          if (isNaN(parseInt(this.elements.blastMaxHSPS.value))) {
             this.elements.blastMaxHSPS.value = Constants.DEFAULT_MAX_HSPS.toString();
          }
+
+         // Clear the control's "auto-calculated" comment.
+         this.elements.blastMaxHspsComment.innerHTML = "";
       })
 
       // The max target seqs input box
       this.elements.blastMaxTargetSeqs = this.elements.container.querySelector(".max-target-seqs") as HTMLInputElement;
       if (!this.elements.blastMaxTargetSeqs) { throw new Error("Invalid max target seqs input element"); }
 
+      // The max target seqs comment.
+      this.elements.blastMaxTargetSeqsComment = this.elements.container.querySelector(".max-target-seqs-comment");
+      if (!this.elements.blastMaxTargetSeqsComment) { throw new Error("Invalid max target seqs comment element"); }
+
       // Handle a change to the max target seqs control.
       this.elements.blastMaxTargetSeqs.addEventListener("change", () => {
-
          if (isNaN(parseInt(this.elements.blastMaxTargetSeqs.value))) {
             this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
          }
 
-         console.log("this.elements.blastMaxTargetSeqs.value = ", this.elements.blastMaxTargetSeqs.value)
-
-         // Clear the control's comment message.
+         // Clear the control's "auto-calculated" comment.
          this.elements.blastMaxTargetSeqsComment.innerHTML = "";
       })
-
-      // The max target seqs comment.
-      this.elements.blastMaxTargetSeqsComment = this.elements.container.querySelector(".max-target-seqs-comment");
-      if (!this.elements.blastMaxTargetSeqsComment) { throw new Error("Invalid max target seqs comment element"); }
 
       // The job name input box
       this.elements.jobName = this.elements.container.querySelector(".job-name") as HTMLInputElement;
@@ -898,10 +910,10 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    }
 
    // Open the accessions lookup dialog.
-   openLookupDialog() {
+   /*openLookupDialog() {
       this.elements.lookupAccDialog.style.display = "block";
       return;
-   }
+   }*/
 
    removeFileSelections() {
 
@@ -942,6 +954,18 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       // Update the FASTA text control's status.
       this.updateFastaControlStatus(FastaStatus.empty, 0, 0);
+   }
+
+   // Populate the BLAST parameters with default values and clear the comments.
+   setDefaultBlastParameters() {
+
+      // Use the default value of max HSPs and clear the message.
+      this.elements.blastMaxHSPS.value = Constants.DEFAULT_MAX_HSPS.toString();
+      this.elements.blastMaxHspsComment.innerHTML = "";
+
+      // Use the default value of max target seqs and clear the message.
+      this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
+      this.elements.blastMaxTargetSeqsComment.innerHTML = "";
    }
 
    // Upload the FASTA file(s) to create a new job.
@@ -1092,7 +1116,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       return;
    }
-
+   
    // TODO: do we care what blast task is selected?
    updateBlastParameters(longestSequence_: number) {
 
@@ -1100,28 +1124,58 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       const radioButtonEl = this.elements.blastTaskTable.querySelector(`input[name="blast-task"]:checked`) as HTMLInputElement;
       if (!radioButtonEl) { throw new Error("No BLAST task has been selected"); }
 
-      // Get the selected value
+      // Get the selected task
       let selectedTask = radioButtonEl.value as BlastTask;
-      if (selectedTask !== BlastTask.blastx) { return; }
+      if (selectedTask !== BlastTask.blastx) {
+
+         // Populate the BLAST parameters with default values and clear the comments.
+         this.setDefaultBlastParameters();
+         return; 
+      }
 
       // For blastx, calculate a default value based on the longest sequence length.
       if (longestSequence_ > 0) {
 
-         // The new default value is the length of the longest sequence divided by 1000.
-         const defaultValue = Math.max(Math.floor(longestSequence_/1000), Constants.DEFAULT_MAX_TARGET_SEQS);
-
-         this.elements.blastMaxTargetSeqs.value = defaultValue.toString();
+         // The length of the longest sequence divided by 1000.
+         const calculatedValue = Math.floor(longestSequence_/1000);
 
          const longest = this.selectedFiles.recordCount === 1 ? "" : "longest ";
          const message = `${Icon.magicWand} Auto-calculated from your ${longest}sequence length (${longestSequence_.toLocaleString()} bp). You can change this.`;
 
-         // Update the field's comment.
-         this.elements.blastMaxTargetSeqsComment.innerHTML = message;
+         // Populate the max HSPs control and update its message.
+         if (calculatedValue < Constants.DEFAULT_MAX_HSPS) {
+
+            // Use the default value of max HSPs and clear the message.
+            this.elements.blastMaxHSPS.value = Constants.DEFAULT_MAX_HSPS.toString();
+            this.elements.blastMaxHspsComment.innerHTML = "";
+
+         } else {
+
+            // Override the default with the calculated value and display the message.
+            this.elements.blastMaxHSPS.value = calculatedValue.toString();
+            this.elements.blastMaxHspsComment.innerHTML = message;
+         }
+
+         // Populate the max target seqs control and update its message.
+         if (calculatedValue < Constants.DEFAULT_MAX_TARGET_SEQS) {
+
+            // Use the default value of max target seqs and clear the message.
+            this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
+            this.elements.blastMaxTargetSeqsComment.innerHTML = "";
+
+         } else {
+
+            // Override the default with the calculated value and display the message.
+            this.elements.blastMaxTargetSeqs.value = calculatedValue.toString();
+            this.elements.blastMaxTargetSeqsComment.innerHTML = message;
+         }
+
       } else {
          
-         // Use the default max target seqs value and clear/hide the "auto-calculated" comment.
-         this.elements.blastMaxTargetSeqs.value = Constants.DEFAULT_MAX_TARGET_SEQS.toString();
-         this.elements.blastMaxTargetSeqsComment.innerHTML = "";
+         // TODO: What if the user has already provided non-default values?
+
+         // Populate the BLAST parameters with default values and clear the comments.
+         this.setDefaultBlastParameters();
       }
    }
 

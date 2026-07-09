@@ -37,8 +37,7 @@ fi
 
 # --- Configuration -----------------------------------------------------------
 REMOTE_USER="ubuntu"
-#REMOTE_HOST="test.ictv.global"
-REMOTE_PORT=22                         # Change if your server uses a non-standard port
+REMOTE_PORT=22 # Change if your server uses a non-standard port
 
 # Path to your private key (or remove -i flag to use password)
 SSH_KEY="~/.ssh/ICTV-ddempsey.pem"

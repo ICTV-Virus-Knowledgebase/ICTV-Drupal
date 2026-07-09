@@ -1167,6 +1167,12 @@ to provide more contrast in the HSP table. */
   /*margin: 0;*/
 }
 
+/* The "magic" icon in the max HSPS and max target seqs comments */
+#ictv_taxablast_container .job-submission-panel .max-hsps-comment i,
+#ictv_taxablast_container .job-submission-panel .max-target-seqs-comment i {
+   color: var(--ictv-warning-color)
+}
+
 /*#ictv_taxablast_container .job-submission-panel .control-row .horizontal-control {
    align-items: center;
    display: flex;
