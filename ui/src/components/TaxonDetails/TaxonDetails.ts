@@ -140,7 +140,7 @@ export class TaxonDetails {
          `<div class="container-panel">
             <div class="tab-buttons">
                <div class="tab-button active" data-id="${ComponentKey.history}">Taxon History</div>
-               <div class="tab-button" data-id="${ComponentKey.isolates}">Virus Isolates</div>
+               <div class="tab-button" data-id="${ComponentKey.isolates}">Exemplar Isolates of Virus Species</div>
             </div>
             <div class="tab-panels">
                <div class="tab-panel active" data-id="${ComponentKey.history}">

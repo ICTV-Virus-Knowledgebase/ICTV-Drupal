@@ -3,9 +3,6 @@
 # Update tables in the ictv_apps_temp database.
 #
 
-# Here's how to remove the carriage return characters from this script:
-# sed -i 's/\r$//' update_ictv_apps_temp.sh
-
 # Make sure the script is run from the FindTheSpecies directory.
 CURRENT_DIR_NAME=$(basename "$(pwd)")
 if [ "$CURRENT_DIR_NAME" != "FindTheSpecies" ]; then
@@ -63,21 +60,19 @@ fi
 # This script's start time.
 INITIAL_START_TIME=$(date +%s)
 
-#------------------------------------------------------------------------------------------------------------------
-# Create tables and update views, stored procedures, and functions.
-#------------------------------------------------------------------------------------------------------------------
 
 # Add SQL views
 echo -e "\nAdding SQL views\n"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_ncbi_ranks_above_subspecies.sql"
 mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_searchable_taxon.sql"
 mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_species_isolates.sql"
+mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_subspecies_name_classes.sql"
 mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_taxonomy_node_merge_split.sql"
 mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_taxonomy_node_names.sql"
 mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/v_taxonomy_node.sql"
 
-#------------------------------------------------------------------------------------------------------------------
+
 # Update the vocabulary and term tables with new data.
-#------------------------------------------------------------------------------------------------------------------
 START_TIME=$(date +%s)
 echo -e "\nUpdating vocabulary and term tables\n"
 mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/UpdateVocabularyAndTerms.sql"
@@ -89,24 +84,8 @@ fi
 
 display_elapsed_time "$START_TIME"
 
-#------------------------------------------------------------------------------------------------------------------
-# Update the searchable_taxon table.
-#------------------------------------------------------------------------------------------------------------------
-
 # Delete records from the searchable_taxon table.
 echo "DELETE FROM searchable_taxon;" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
-
-# Add a new column to the searchable_taxon table.
-START_TIME=$(date +%s)
-echo -e "\nAdding a new column to the searchable_taxon table\n"
-echo "ALTER TABLE searchable_taxon ADD COLUMN IF NOT EXISTS alternate_id VARCHAR(100) NULL;" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred adding a new column to the searchable_taxon table\n"
-  exit 1
-fi
-
-display_elapsed_time "$START_TIME"
-
 
 #------------------------------------------------------------------------------------------------------------------
 # Update stored procedures and user-defined functions.
@@ -159,17 +138,18 @@ fi
 
 display_elapsed_time "$START_TIME"
 
-# Import ICTV species with binomial nomenclature and remove the genus name from the species name.
-echo -e "\nImporting ICTV species epithets\n"
-START_TIME=$(date +%s)
-mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/ImportIctvSpeciesEpithets.sql"
-echo "CALL ImportIctvSpeciesEpithets();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
-if [ $? -ne 0 ]; then
-  echo "An error occurred importing ICTV species epithets\n"
-  exit 1
-fi
 
-display_elapsed_time "$START_TIME"
+# TODO: Do we still need to import species epithets?
+# Import ICTV species with binomial nomenclature and remove the genus name from the species name.
+#echo -e "\nImporting ICTV species epithets\n"
+#START_TIME=$(date +%s)
+#mariadb -D "$APPS_TEMP_DB" -s -b --show-warnings < "$SQL_DIR/ImportIctvSpeciesEpithets.sql"
+#echo "CALL ImportIctvSpeciesEpithets();" | mariadb -D $APPS_TEMP_DB -s -b --show-warnings
+#if [ $? -ne 0 ]; then
+#  echo "An error occurred importing ICTV species epithets\n"
+#  exit 1
+#fi
+#display_elapsed_time "$START_TIME"
 
 
 #------------------------------------------------------------------------------------------------------------------

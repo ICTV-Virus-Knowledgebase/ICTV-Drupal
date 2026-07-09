@@ -33,7 +33,9 @@ BEGIN
 	DECLARE taxonomyDbTID INT;
 	DECLARE virusDivisionTID INT;
 	
+   -- ===========================================================================================================
 	-- Validate the input variables
+   -- ===========================================================================================================
 	SET _name = TRIM(_name);
    IF _name IS NULL OR LENGTH(_name) < 1 THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid name parameter';
@@ -65,8 +67,9 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid taxonomy ID parameter';
    END IF;
 	
-	
-	-- Lookup term IDs (TODO: validate the term IDs)
+	-- ===========================================================================================================
+	-- Lookup term IDs
+   -- ===========================================================================================================
 	SET nameClassTID = (SELECT id FROM term WHERE full_key = CONCAT('name_class.', nameClass) LIMIT 1);
    IF nameClassTID IS NULL THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid name class term ID';
@@ -152,10 +155,10 @@ BEGIN
             , ',,', ',')
          , '/', ' ')
       , '\\', ' ');
-      -- SET filteredName = getFilteredName(_name);
 	
-	
+   -- ===========================================================================================================
 	-- Create the new searchable_taxon record.
+   -- ===========================================================================================================
 	INSERT INTO searchable_taxon (
 		division_tid,
 		filtered_name,

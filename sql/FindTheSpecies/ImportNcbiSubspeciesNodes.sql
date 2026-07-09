@@ -9,21 +9,19 @@ DELIMITER //
 CREATE PROCEDURE ImportNcbiSubspeciesNodes()
 BEGIN
 
+   DECLARE ncbiTaxDbTID INT;
+   DECLARE sciNameClassTID INT;
+   DECLARE superkingdomTID INT;
+
+   /*
    DECLARE genotypeTID INT;
    DECLARE ictvID INT;
    DECLARE isolateTID INT;
-   DECLARE ncbiTaxDbTID INT;
    DECLARE noRankTID INT;
-   DECLARE phagesDivisionID INT;
-   DECLARE sciNameClassTID INT;
+   
    DECLARE serogroupTID INT;
    DECLARE serotypeTID INT;
-   DECLARE subspeciesTID INT;
-   DECLARE superkingdomTID INT;
-   DECLARE virusesDivisionID INT;
-
-   SET phagesDivisionID = 3;
-   SET virusesDivisionID = 9;
+   DECLARE subspeciesTID INT;*/
 
    -- Lookup the term ID for the "scientific name" name class.
    SET sciNameClassTID = (SELECT id FROM term WHERE full_key = 'name_class.scientific_name' LIMIT 1);
@@ -37,6 +35,14 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for taxonomy_db.ncbi_taxonomy';
    END IF;
 
+   -- Lookup the term ID for taxonomic rank "superkingdom".
+   SET superkingdomTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.superkingdom' LIMIT 1);
+   IF superkingdomTID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for superkingdom taxonomy rank';
+   END IF; 
+
+
+   /*
    -- Lookup term IDs for subspecies rank names.
    SET genotypeTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.genotype' LIMIT 1);
    IF genotypeTID IS NULL THEN
@@ -68,12 +74,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for subspecies taxonomy rank';
    END IF; 
 
-   -- Lookup the term ID for taxonomic rank "superkingdom".
-   SET superkingdomTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.superkingdom' LIMIT 1);
-   IF superkingdomTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for superkingdom taxonomy rank';
-   END IF; 
-
+   */
 
    -- Create the new searchable_taxon records.
 	INSERT INTO searchable_taxon (
@@ -95,8 +96,7 @@ BEGIN
 
    -- Return the parent taxa for NCBI subspecies nodes along with a possible match in ICTV taxonomy.
    SELECT
-      ndiv.tid AS division_tid,
-      -- getFilteredName(subspeciesName.name_txt) AS filtered_name,
+      division.tid AS division_tid,
       REPLACE(
          REPLACE(
             REPLACE(
@@ -143,7 +143,7 @@ BEGIN
    JOIN ncbi_name subspeciesName ON subspeciesName.tax_id = subspeciesNode.tax_id
    JOIN ncbi_node parentNode ON parentNode.tax_id = subspeciesNode.subspecies_parent_tax_id
    JOIN ncbi_name parentName ON parentName.tax_id = parentNode.tax_id
-   JOIN ncbi_division ndiv ON ndiv.id = subspeciesNode.division_id
+   JOIN ncbi_division division ON division.id = subspeciesNode.division_id
    LEFT JOIN (
       SELECT 
          DISTINCT tn.name,
@@ -165,14 +165,19 @@ BEGIN
    ) latestTN ON latestTN.name = parentName.name_txt
 
    -- Only include subspecies ranks
-   WHERE subspeciesNode.rank_name_tid IN (genotypeTID, isolateTID, noRankTID, serogroupTID, serotypeTID, subspeciesTID)
+   WHERE subspeciesNode.rank_name_tid IN (
+      SELECT t.id
+      FROM v_subspecies_name_classes snc
+      JOIN term t ON t.label = snc.name_class
+   )
    AND subspeciesNode.subspecies_parent_tax_id IS NOT NULL
 
    -- Parent names should only be scientific names.
    AND parentName.name_class_tid = sciNameClassTID
 
-   -- Only include phages and viruses.
-   AND subspeciesNode.division_id IN (phagesDivisionID, virusesDivisionID)
+   -- For now, let's import everything from the local NCBI Taxonomy, but we may want to limit this to 
+   -- just phages and viruses in the future.
+   -- AND subspeciesNode.division_id IN (phagesDivisionID, virusesDivisionID)
    
    -- Exclude results immediately below superkingdom.
    AND parentNode.rank_name_tid <> superkingdomTID;

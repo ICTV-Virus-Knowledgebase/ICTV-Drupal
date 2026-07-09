@@ -1,62 +1,30 @@
 
-DROP PROCEDURE IF EXISTS `ImportNcbiScientificNames`;
+DROP PROCEDURE IF EXISTS `ImportNcbiTaxonomy`;
 
 DELIMITER //
 
--- Updates
--- 01/09/25: Now excluding hidden and deleted taxonomy_node records.
-
-CREATE PROCEDURE ImportNcbiScientificNames()
+-- Import NCBI Taxonomy records into the searchable_taxon table. Note that this excludes subspecies ranks, which are 
+-- imported separately in the ImportNcbiSubspeciesNodes.sql script.
+CREATE PROCEDURE ImportNcbiTaxonomy()
 BEGIN
 
-   DECLARE genotypeTID INT;
-   DECLARE isolateTID INT;
    DECLARE ncbiTaxDbTID INT;
-   DECLARE noRankTID INT;
-   DECLARE serogroupTID INT;
-   DECLARE serotypeTID INT;
-   DECLARE subspeciesTID INT;
-   
 
+   -- ===========================================================================================================
    -- Lookup the term ID for the NCBI taxonomy database.
+   -- ===========================================================================================================
    SET ncbiTaxDbTID = (SELECT id FROM term WHERE full_key = 'taxonomy_db.ncbi_taxonomy' LIMIT 1);
    IF ncbiTaxDbTID IS NULL THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for taxonomy_db.ncbi_taxonomy';
    END IF;
 
-   -- Lookup term IDs for subspecies rank names.
-   SET genotypeTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.genotype' LIMIT 1);
-   IF genotypeTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for genotype taxonomy rank';
-   END IF;
-
-   SET isolateTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.isolate' LIMIT 1);
-   IF isolateTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for isolate taxonomy rank';
-   END IF;
-
-   SET noRankTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.no_rank' LIMIT 1);
-   IF noRankTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for "no rank" taxonomy rank';
-   END IF;
-
-   SET serogroupTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.serogroup' LIMIT 1);
-   IF serogroupTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for serogroup taxonomy rank';
-   END IF;
-
-   SET serotypeTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.serotype' LIMIT 1);
-   IF serotypeTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for serotype taxonomy rank';
-   END IF;
-
-   SET subspeciesTID = (SELECT id FROM term WHERE full_key = 'taxonomy_rank.subspecies' LIMIT 1);
-   IF subspeciesTID IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid term ID for subspecies taxonomy rank';
-   END IF; 
-
-
+   -- Delete any existing NCBI Taxonomy records from the searchable_taxon table.
+   DELETE FROM searchable_taxon WHERE taxonomy_db_tid = ncbiTaxDbTID;
+   
+   
+   -- ===========================================================================================================
    -- Create the new searchable_taxon records.
+   -- ===========================================================================================================
 	INSERT INTO searchable_taxon (
 		division_tid,
 		filtered_name,
@@ -73,8 +41,7 @@ BEGIN
 	) 
    -- Return NCBI taxa that are species or higher along with a possible match in ICTV taxonomy.
    SELECT
-      division.id AS division_tid,
-      -- getFilteredName(nname.name_txt) AS filtered_name,
+      d.tid,
       REPLACE(
          REPLACE(
             REPLACE(
@@ -113,12 +80,13 @@ BEGIN
       nnode.rank_name_tid,
       ncbiTaxDbTID AS taxonomy_db_tid,
       nnode.tax_id AS taxonomy_id,
+
+      -- TODO: Does NCBI Taxonomy have a version number? If so, we should use it here instead of hardcoding 1.
       1 AS version_id
 
    FROM ncbi_node nnode
    JOIN ncbi_name nname ON nname.tax_id = nnode.tax_id
    JOIN ncbi_division d ON d.id = nnode.division_id
-   JOIN term division ON division.label = d.name
    LEFT JOIN (
       SELECT 
          DISTINCT tn.name,
@@ -139,11 +107,17 @@ BEGIN
    ) latestTN ON latestTN.name = nname.name_txt
 
    -- Exclude subspecies ranks
-   WHERE nnode.rank_name_tid NOT IN (genotypeTID, isolateTID, noRankTID, serogroupTID, serotypeTID, subspeciesTID)
+   WHERE nnode.rank_name_tid NOT IN (
+      SELECT t.id
+      FROM v_subspecies_name_classes snc
+      JOIN term t ON t.label = snc.name_class
+   );
+   
+   -- (genotypeTID, isolateTID, noRankTID, serogroupTID, serotypeTID, subspeciesTID)
 
-   -- Only include phages and viruses.
-   AND division.full_key IN ('ncbi_division.phages', 'ncbi_division.viruses');
-
+   -- For now, let's import everything from NCBI Taxonomy, but we may want to limit this to just phages and viruses in the future.
+   -- AND division.id IN (phagesDivisionTID, virusesDivisionTID);
+   
 END //
 
 DELIMITER ;

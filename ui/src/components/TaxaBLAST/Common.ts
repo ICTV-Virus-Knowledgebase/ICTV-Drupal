@@ -137,13 +137,13 @@ export const Constants = {
    // The default BLAST program to use.
    DEFAULT_BLAST_TASK: BlastTask.blastn,
 
-   // The maximum number of HSPS (high-scoring segment pairs) to return per target sequence.
-   DEFAULT_MAX_HSPS: 5,
+   // The default maximum number of HSPS (high-scoring segment pairs) to return per target sequence.
+   DEFAULT_MAX_HSPS: 5, // Formerly 25
 
    // The default maximum number of target sequences to return.
-   DEFAULT_MAX_TARGET_SEQS: 25,
+   DEFAULT_MAX_TARGET_SEQS: 5,
 
-   // How long should the upload panel wait to try to load job data?
+   // The number of milliseconds that the job details page waits until retrieving the job to see if it has completed.
    JOB_POLLING_INTERVAL: 5000,
 
    // The maximum total file size that can be uploaded.

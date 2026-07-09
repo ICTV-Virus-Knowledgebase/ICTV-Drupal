@@ -1,4 +1,14 @@
 
+/* 
+   Populate the NCBI taxonomy tables from local NCBI taxonomy files.
+
+   1. Load the NCBI data files into the ncbi_division, ncbi_node, and ncbi_name tables.
+   2. Trim the division names (just in case).
+   3. Delete non-viral taxa from the ncbi_name and ncbi_node tables.
+   4. Trim the names, name classes, and rank names of the remaining NCBI taxa.
+
+*/
+
 -- Disable foreign key checks for this session.
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -28,20 +38,23 @@ UPDATE ncbi_division SET name = TRIM(name);
 -- Delete non-viral names from NCBI name.
 DELETE FROM ncbi_name WHERE tax_id IN (
 
-   -- Get the taxonomy IDs of nodes that aren't in a viral division.
-	SELECT tax_id FROM ncbi_node WHERE division_id NOT IN (
-      -- Get the IDs of viral divisions.
-		SELECT id FROM ncbi_division WHERE name IN ('Phages', 'Synthetic and Chimeric', 'Unassigned', 'Viruses', 'Environmental samples')
-	)
+   -- Get the taxonomy IDs of nodes that are NOT in a viral division.
+	SELECT nn.tax_id
+   FROM ncbi_node nn
+   JOIN ncbi_division nd ON nd.id = nn.division_id
+   WHERE nd.name NOT IN ('Phages', 'Synthetic and Chimeric', 'Unassigned', 'Viruses', 'Environmental samples')
 );
 
 -- Delete non-viral names from NCBI node.
-DELETE FROM ncbi_node WHERE division_id NOT IN (
+DELETE FROM ncbi_node WHERE division_id IN (
+
    -- Get the IDs of viral divisions.
-	SELECT id FROM ncbi_division WHERE name IN ('Phages', 'Synthetic and Chimeric', 'Unassigned', 'Viruses', 'Environmental samples')
+	SELECT id 
+   FROM ncbi_division 
+   WHERE name NOT IN ('Phages', 'Synthetic and Chimeric', 'Unassigned', 'Viruses', 'Environmental samples')
 );
 
--- Trim the names and rank names.
+-- Trim the names and rank names (just in case).
 UPDATE ncbi_name SET name_txt = TRIM(name_txt), name_class = TRIM(name_class);
 UPDATE ncbi_node SET rank_name = TRIM(rank_name);
 

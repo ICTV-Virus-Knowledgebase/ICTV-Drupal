@@ -3,6 +3,8 @@ DROP PROCEDURE IF EXISTS `UpdateNcbiNonScientificNames`;
 
 DELIMITER //
 
+-- For any NCBI Taxonomy scientific names that have an ICTV ID and taxnode ID, update the corresponding 
+-- NCBI non-scientific names with the same ICTV ID and taxnode ID.
 CREATE PROCEDURE UpdateNcbiNonScientificNames()
 BEGIN
 
@@ -28,14 +30,18 @@ BEGIN
    JOIN searchable_taxon sci ON sci.taxonomy_id = nonSci.taxonomy_id
    SET nonSci.ictv_id = sci.ictv_id,
       nonSci.ictv_taxnode_id = sci.ictv_taxnode_id
+
+   -- Limit to records from NCBI taxonomy.
    WHERE sci.taxonomy_db_tid = ncbiTaxDbTID
    AND nonSci.taxonomy_db_tid = ncbiTaxDbTID
+
+   -- "sci" needs to be a scientific name, and "nonSci" needs to be a non-scientific name.
    AND sci.name_class_tid = sciNameTID
    AND nonSci.name_class_tid <> sciNameTID
+
+   -- Only update records where the scientific name has an ICTV ID and taxnode ID.
    AND sci.ictv_id IS NOT NULL
    AND sci.ictv_taxnode_id IS NOT NULL;
-   -- AND nonSci.ictv_id IS NULL
-   -- AND nonSci.ictv_taxnode_id IS NULL;
 
 END //
 
