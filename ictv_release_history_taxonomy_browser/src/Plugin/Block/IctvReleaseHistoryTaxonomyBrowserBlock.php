@@ -66,9 +66,7 @@ class IctvReleaseHistoryTaxonomyBrowserBlock extends BlockBase {
         '#attached' => [
             'library' => [
                'ictv_release_history_taxonomy_browser/ICTV_TaxonomyBrowser',
-            ],
-            'library' => [
-              'ictv_release_history_taxonomy_browser/releaseHistoryTaxonomyBrowser',
+               'ictv_release_history_taxonomy_browser/releaseHistoryTaxonomyBrowser'
             ],
         ],
     ];

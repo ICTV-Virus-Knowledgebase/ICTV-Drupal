@@ -1,5 +1,5 @@
 
 export { AppSettings } from "../../global/AppSettings";
-export { VirusNameLookup } from "./VirusNameLookup";
+export { FindTheSpecies } from "./FindTheSpecies";
 
 export * from "../../global/Types";

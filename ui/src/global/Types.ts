@@ -307,8 +307,8 @@ export enum WebServiceKey {
    // Member species table
    virusIsolate = "virusIsolate",
 
-   // Virus name lookup
-   virusNameLookup = "virusNameLookup"
+   // Find the species (formerly "Virus name lookup")
+   findTheSpecies = "findTheSpecies"
 }
 
 // Keys used to set and retrieve data in local (web) storage.

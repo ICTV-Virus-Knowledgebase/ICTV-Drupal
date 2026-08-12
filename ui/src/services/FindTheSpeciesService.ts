@@ -1,9 +1,9 @@
 
-import { IIctvResult } from "../components/VirusNameLookup/IIctvResult";
-import { WebService } from "../services/WebService";
+import { IIctvResult } from "../components/FindTheSpecies/IIctvResult";
+import { WebService } from "./WebService";
 import { SearchModifier, WebServiceKey } from "../global/Types";
 
-export class _VirusNameLookupService {
+export class _FindTheSpeciesService {
 
    // Search the database to find taxon name matches.
    async lookupName(currentMslRelease_: number, searchModifier_: SearchModifier, searchText_: string): Promise<IIctvResult[]> {
@@ -14,10 +14,10 @@ export class _VirusNameLookupService {
          searchText: searchText_
       }
       
-      return await WebService.drupalGet<IIctvResult[]>(WebServiceKey.virusNameLookup, null, data);
+      return await WebService.drupalGet<IIctvResult[]>(WebServiceKey.findTheSpecies, null, data);
    }
 
 }
 
-// Create a singleton instance of _VirusNameLookupService.
-export const VirusNameLookupService = new _VirusNameLookupService();
+// Create a singleton instance of _FindTheSpeciesService.
+export const FindTheSpeciesService = new _FindTheSpeciesService();

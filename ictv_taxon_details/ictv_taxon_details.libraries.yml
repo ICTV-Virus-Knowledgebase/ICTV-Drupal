@@ -1,5 +1,5 @@
 taxonDetails:
-  version: 20260126
+  version: 20260812_1515
   css:
     theme:
       assets/css/MemberSpeciesTable.css: {}

@@ -105,7 +105,7 @@ pwd
 lpwd
 
 # Upload the CSS file to the remote directory
-put $LOCAL_CSS_FILE
+put *.css
 
 # Exit the SFTP session
 bye

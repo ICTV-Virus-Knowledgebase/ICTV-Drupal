@@ -102,7 +102,22 @@ export class Utils {
 
 
    // Create a link to GenBank using one or more accessions. If a text parameter was provided, use it as the link text instead of the accession(s).
-   static createGenBankAccessionLink(accessions_: string, text_?: string) {
+   static createGenBankAccessionLink(accessions_: string, label_?: string) {
+
+      let displayText = Utils.safeTrim(label_);
+
+      if (!accessions_) { return displayText; }
+
+      const URL = Utils.createGenBankAccessionURL(accessions_);
+      if (!URL) { return displayText; }
+      
+      if (displayText.length < 1) { displayText = URL; }
+
+      return `<a href=\"${URL}\" target=\"_blank\">${displayText}</a>`;
+   }
+
+   // Create GenBank URL using one or more accessions.
+   static createGenBankAccessionURL(accessions_: string) {
 
       if (!accessions_) { return ""; }
 
@@ -161,15 +176,35 @@ export class Utils {
 
       if (accessionList.length < 1 || linkText.length < 1) { return ""; }
 
-      let displayText = Utils.safeTrim(text_);
-      if (displayText.length < 1) { displayText = linkText; }
+      return `https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}`;
+   }
 
-      return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${displayText}</a>`;
+   // Create a URL for the NCBI Taxonomy page using a taxid.
+   static createNcbiTaxonomyURL(taxonomyID_: number) {
+      return `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=${taxonomyID_}`;
    }
 
    // Create a link to the taxon details page using an id (with a text prefix that indicates what type of identifier it is) and a display label.
-   static createTaxonDetailsLink(id_: string, label_: string): string {
-      return `<a href="${AppSettings.taxonHistoryPage}?id=${id_}" target="_blank">${label_}</a>`;
+   static createTaxonDetailsLink(id_: string, name_: string): string {
+      
+      if (!id_) { throw new Error("Unable to create a taxon details link: Invalid ID parameter"); }
+
+      const URL = Utils.createTaxonDetailsURL(id_, name_);
+
+      // Default the label to the URL.
+      let displayText = Utils.safeTrim(name_);
+      if (displayText.length < 1) { displayText = URL; }
+
+      return !URL ? displayText : `<a href=\"${URL}\" target=\"_blank\">${displayText}</a>`;
+   }
+
+   // Create a URL to the taxon details page using an id (with a text prefix that indicates what type of identifier it is).
+   static createTaxonDetailsURL(id_: string, name_: string): string {
+
+      name_ = Utils.safeTrim(name_);
+      let URL = `${AppSettings.taxonHistoryPage}?id=${id_}`;
+      if (name_.length > 0) { URL += `&taxon_name=${name_}`}
+      return URL;
    }
 
    // What operating system is the user on?

@@ -6,7 +6,7 @@ module.exports = {
    mode: "production",
    target: "web",
    entry: {
-      "ICTV_VirusNameLookup": [
+      "ICTV_FindTheSpecies": [
          path.resolve(__dirname, "./") + "/index.ts"
       ]
    },

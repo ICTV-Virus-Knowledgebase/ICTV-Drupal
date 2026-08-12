@@ -278,6 +278,9 @@ class UploadSequences extends ResourceBase {
     */
    private function processUploadedJSONFiles(array $files) {
 
+      // A file's index in the total number of uploaded files.
+      $fileIndex = 0;
+
       // An array of FastaFile objects.
       $inputFiles = [];
 
@@ -291,13 +294,15 @@ class UploadSequences extends ResourceBase {
       // Iterate over all uploaded files, validate them, and maintain their contents in an array.
       foreach ($files as $file) {
 
+         $fileIndex = $fileIndex + 1;
+
          // Get and validate the filename.
          $filename = $file["name"];
-         if (Utils::isNullOrEmpty($filename)) { throw new \Exception("Invalid filename for file #{$fileRecordCount}"); }
+         if (Utils::isNullOrEmpty($filename)) { throw new \Exception("Invalid filename for file #{$fileIndex}"); }
 
          // Get and validate the FASTA file contents.
          $contents = $file["contents"];
-         if (Utils::isNullOrEmpty($contents)) { throw new \Exception("File #{$fileRecordCount} is empty"); }
+         if (Utils::isNullOrEmpty($contents)) { throw new \Exception("File #{$fileIndex} is empty"); }
 
          // Update the total size of all uploaded files.
          $totalFileSize += mb_strlen($contents);

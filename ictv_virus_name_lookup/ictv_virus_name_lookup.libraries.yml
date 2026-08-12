@@ -1,28 +1,13 @@
-virusNameLookup:
-  version: 20250911
+findTheSpecies:
+  version: 20260812_1611
   css:
     theme:
-      assets/css/fa-regular.css: {attributes:{type: "text/html"}}
-      assets/css/fa-solid.css: {attributes:{type: "text/html"}}
-      assets/css/fontawesome.css: {attributes:{type: "text/html"}}
       assets/css/dataTables.dataTables.min.css: {}
-      assets/css/VirusNameLookup.css: {}
+      assets/css/FindTheSpecies.css: {}
       assets/css/tippy.css: {attributes:{type: "text/html"}}
-      assets/css/light-border.css: {}
-  fonts:
-    assets/css/fonts/fa-regular-400.eot: {}
-    assets/css/fonts/fa-regular-400.svg: {}
-    assets/css/fonts/fa-regular-400.ttf: {}
-    assets/css/fonts/fa-regular-400.woff: {}
-    assets/css/fonts/fa-regular-400.woff2: {}
-    assets/css/fonts/fa-solid-900.eot: {}
-    assets/css/fonts/fa-solid-900.svg: {}
-    assets/css/fonts/fa-solid-900.ttf: {}
-    assets/css/fonts/fa-solid-900.woff: {}
-    assets/css/fonts/fa-solid-900.woff2: {}
   js:
-    assets/js/ICTV_VirusNameLookup.js: { preprocess: false }
-    assets/js/virusNameLookup.js: { preprocess: false }
+    assets/js/ICTV_FindTheSpecies.js: { preprocess: false }
+    assets/js/findTheSpecies.js: { preprocess: false }
   dependencies:
     - core/jquery
     - core/drupal

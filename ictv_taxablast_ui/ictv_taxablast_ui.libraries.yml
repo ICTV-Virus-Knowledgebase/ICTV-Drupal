@@ -1,12 +1,11 @@
 taxaBLAST:
-  version: 20260423
+  version: 20260812_1600
   css:
     theme:
       assets/css/ictv_common.css: {}
       assets/css/jquery.dataTables.min.css: {}
       assets/css/TaxaBLAST.css: {}
       assets/css/tippy.css: {}
-      assets/css/light-border.css: {}
   js:
     assets/js/jquery.dataTables.min.js: { preprocess: false }
     assets/js/ICTV_TaxaBLAST.js: { preprocess: false }

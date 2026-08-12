@@ -71,7 +71,7 @@ class IctvCuratedNameManagerBlock extends BlockBase {
          ],
       ];
 
-      // Populate drupalSettings with variables needed by the VirusNameLookup object.
+      // Populate drupalSettings with variables from the database.
       $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
       $build['#attached']['drupalSettings']['baseWebServiceURL'] = $this->baseWebServiceURL;
       $build['#attached']['drupalSettings']['currentMslRelease'] = $this->currentMslRelease;

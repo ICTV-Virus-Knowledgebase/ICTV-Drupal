@@ -4,6 +4,7 @@ namespace Drupal\ictv_taxablast_ui\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Yaml\Yaml;
 
 
@@ -37,7 +38,7 @@ class IctvTaxaBlastBlock extends BlockBase {
       $currentUser = \Drupal::currentUser();
       if (!$currentUser) { 
          \Drupal::logger('ictv_taxablast_ui')->error("Current user is invalid"); 
-         throw new HttpException("Current user is invalid");
+         throw new AccessDeniedHttpException("Current user is invalid");
       }
 
       // Retrieve additional user details.
@@ -59,9 +60,7 @@ class IctvTaxaBlastBlock extends BlockBase {
          '#attached' => [
                'library' => [
                   'ictv_taxablast_ui/ICTV_TaxaBLAST',
-               ],
-               'library' => [
-                  'ictv_taxablast_ui/taxaBLAST',
+                  'ictv_taxablast_ui/taxaBLAST'
                ],
          ],
       ];

@@ -6,7 +6,7 @@ import { IIctvResult } from "./IIctvResult";
 import { ISearchResult } from "./ISearchResult";
 import { LookupNameClass, LookupNameClassDefinition, GetTaxonomyRankLabel, NameClass, SearchModifier, TaxonomyDB } from "../../global/Types";
 import { Utils } from "../../helpers/Utils";
-import { VirusNameLookupService } from "../../services/VirusNameLookupService";
+import { FindTheSpeciesService } from "../../services/FindTheSpeciesService";
 
 
 // The possible types of an ICTV result.
@@ -18,7 +18,7 @@ enum ResultType {
 
 
 // A class used by the "Find the Species" page to search for taxon name matches.
-export class VirusNameLookup {
+export class FindTheSpecies {
 
    // The DOM selector of the module's container Element.
    containerSelector: string = null;
@@ -70,17 +70,17 @@ export class VirusNameLookup {
    // The search text entered by the user.
    searchText: string;
 
-   // Configuration settings
+   // Configuration settings with default values.
    settings = {
       currentMslRelease: NaN,
-      currentVMR: null,
+      currentVMR: "",
       pageSize: 10
    }
 
    // C-tor
    constructor(containerSelector_: string) {
 
-      if (!containerSelector_) { throw new Error("Invalid container selector in VirusNameLookup"); }
+      if (!containerSelector_) { throw new Error("Invalid container selector in FindTheSpecies"); }
       this.containerSelector = containerSelector_;
 
       // Get the current MSL release from the AppSettings.
@@ -91,8 +91,8 @@ export class VirusNameLookup {
       if (!this.settings.currentVMR) { this.settings.currentVMR = `${this.settings.currentMslRelease} v1`; } 
 
       // Make sure the current VMR version doesn't include the "VMR" or "MSL" prefix.
-      Utils.safeTrim(this.settings.currentVMR.replace("VMR ", ""));
-      Utils.safeTrim(this.settings.currentVMR.replace("MSL ", ""));
+      //Utils.safeTrim(this.settings.currentVMR.replace("VMR ", ""));
+      //Utils.safeTrim(this.settings.currentVMR.replace("MSL ", ""));
 
       this.elements = {
          abolishedTabButton: null,
@@ -147,73 +147,8 @@ export class VirusNameLookup {
       return;
    }
 
-
-   // Create a link to GenBank using one or more accessions.
-   createAccessionLink(accessions_: string) {
-
-      if (!accessions_) { return ""; }
-
-      accessions_ = accessions_.trim();
-      if (accessions_.length < 1) { return ""; }
-
-      // If commas were used as a delimiter, replace them with semicolons.
-      accessions_ = accessions_.replace(",", ";");
-
-      let accessionCount = 0;
-      let accessionList = "";
-      let linkText = "";
-
-      // Tokenize using a semicolon as the delimiter. If there aren't any semicolons, the input text will be the only token.
-      const tokens = accessions_.split(";");
-      if (Array.isArray(tokens) && tokens.length > 0) {
-
-         tokens.forEach((token_: string) => {
-
-            if (!token_) { return; }
-
-            let trimmedToken = token_.trim();
-            if (trimmedToken.length < 1) { return; }
-
-            let accession = null;
-
-            // Get the accession from the token.
-            let colonIndex = trimmedToken.indexOf(":");
-            if (colonIndex > 0) {
-               accession = trimmedToken.substring(colonIndex + 1);
-               accession = accession.trim();
-               if (accession.length < 1) { return; }
-            } else {
-               accession = trimmedToken;
-            }
-
-            if (accessionCount > 0) {
-
-               // Add a semicolon and line break before all but the first link.
-               linkText += "; ";
-
-               // Add a comma before all but the first accession number.
-               accessionList += ","
-            }
-
-            // Add the token to the link text.
-            linkText += trimmedToken;
-
-            // Add the accession number to the comma-delimited list.
-            accessionList += accession;
-
-            // Increment the accession count.
-            accessionCount += 1;
-         })
-      }
-
-      if (accessionList.length < 1 || linkText.length < 1) { return ""; }
-
-      return `<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/${accessionList}\" target=\"_blank\">${linkText}</a>`;
-   }
-
-
    // Create a link to the Disease Ontology page.
-   createDiseaseOntologyLink(doid_: string) {
+   createDiseaseOntologyURL(doid_: string) {
 
       if (!doid_) { return ""; }
       doid_ = doid_.trim();
@@ -242,12 +177,17 @@ export class VirusNameLookup {
          // Format the source and determine the URL of a linked match name.
          switch (match_.taxonomyDB) {
             case TaxonomyDB.ictv_taxonomy:
-               matchURL = this.createTaxonDetailsURL(match_.name, match_.taxonomyID);
+               matchURL = Utils.createTaxonDetailsURL(`TN${match_.taxonomyID}`, match_.name);
                source = `ICTV: MSL ${match_.versionID}`;
                break;
 
+            case TaxonomyDB.ictv_vmr:
+               matchURL = Utils.createTaxonDetailsURL(`VMR${match_.taxonomyID}`, match_.name);
+               source = `ICTV VMR ${AppSettings.currentVMR}`;
+               break;
+
             case TaxonomyDB.ncbi_taxonomy:
-               matchURL = this.createNcbiTaxonomyURL(match_.taxonomyID);
+               matchURL = Utils.createNcbiTaxonomyURL(match_.taxonomyID);
                source = "NCBI";
                break;
 
@@ -317,7 +257,7 @@ export class VirusNameLookup {
                source = `ICTV: MSL ${result_.versionID}`;
                break;
             case TaxonomyDB.ictv_vmr:
-               source = `ICTV: VMR MSL ${this.settings.currentVMR}`;
+               source = `ICTV: VMR ${this.settings.currentVMR}`;
                break;
             case TaxonomyDB.ncbi_taxonomy:
                source = "NCBI";
@@ -331,13 +271,19 @@ export class VirusNameLookup {
          let matchURL = null;
          switch (result_.taxonomyDB) {
             case TaxonomyDB.disease_ontology:
-               matchURL = this.createDiseaseOntologyLink(result_.alternateID);
+               matchURL = this.createDiseaseOntologyURL(result_.alternateID);
                break;
+
             case TaxonomyDB.ictv_taxonomy:
-               matchURL = this.createTaxonDetailsURL(result_.name, result_.taxonomyID);
+               matchURL = Utils.createTaxonDetailsURL(`TN${result_.taxonomyID}`, result_.name);
                break;
+
+            case TaxonomyDB.ictv_vmr:
+               matchURL = Utils.createTaxonDetailsURL(`VMR${result_.taxonomyID}`, result_.name);
+               break;
+
             case TaxonomyDB.ncbi_taxonomy:
-               matchURL = this.createNcbiTaxonomyURL(result_.taxonomyID);
+               matchURL = Utils.createNcbiTaxonomyURL(result_.taxonomyID);
                break;
          }
 
@@ -384,20 +330,13 @@ export class VirusNameLookup {
       return html;
    }
 
-
-   // Create a URL for the NCBI Taxonomy page.
-   createNcbiTaxonomyURL(taxonomyID_: number) {
-      return `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=${taxonomyID_}`;
-   }
-
-   
    createResultItem(ictvResult_: IIctvResult, index_: number, itemID_: string, parentID_: string): string {
 
       // Format the ICTV result's lineage.
       const lineage = this.formatLineage(ictvResult_);
 
       // The result name will be hyperlinked.
-      const url = this.createTaxonDetailsURL(ictvResult_.name, ictvResult_.taxnodeID);
+      const url = Utils.createTaxonDetailsURL(`TN${ictvResult_.taxnodeID}`, ictvResult_.name);
 
       let linkedResultName = `<a class="result-link .ms-auto" href="${url}" target="_blank">${ictvResult_.name}</a>`;
       
@@ -424,7 +363,7 @@ export class VirusNameLookup {
 
       } else if (!!exemplar && exemplar.length > 0 && !!genbankAccession && genbankAccession.length > 0) { 
          
-         const genbankLink = this.createAccessionLink(genbankAccession);
+         const genbankLink = Utils.createGenBankAccessionLink(genbankAccession, genbankAccession);
 
          // Display the exemplar virus and its GenBank accession(s).
          examplarInfo = `Exemplar virus: ${exemplar} (${genbankLink})`;
@@ -467,13 +406,6 @@ export class VirusNameLookup {
       return html;
    }
 
-
-   // Create a URL for the ICTV taxon details page.
-   createTaxonDetailsURL(name_: string, taxonomyID_: number) {
-      return `https://ictv.global/taxonomy/taxondetails?taxnode_id=${taxonomyID_}&taxon_name=${name_}`;
-   }
-
-
    async displayResults() {
       
       // Make the results panel visible.
@@ -499,10 +431,10 @@ export class VirusNameLookup {
       let invalidHTML = "";
 
       // Matches without an ICTV result.
-      let invalidMatches = [];
+      let invalidMatches: ISearchResult[] = [];
 
       // A collection of item IDs (which correspond to an ICTV result).
-      let itemIDs = [];
+      let itemIDs: string[] = [];
 
       let currentReleaseText = !AppSettings.currentMslRelease ? "" : ` (MSL ${AppSettings.currentMslRelease})`;
 
@@ -550,17 +482,22 @@ export class VirusNameLookup {
       if (currentCount > 0) {
 
          this.elements.currentTabButton.classList.remove("disabled");
-         this.elements.currentTabCount.innerHTML = `(${currentCount})`;
+         this.elements.currentTabCount.innerHTML = `${currentCount}`;
+         this.elements.currentTabCount.classList.remove("zero");
+         this.elements.currentTabCount.classList.add("non-zero");
+         
          this.elements.currentTabPanel.innerHTML = 
-            `<div class="section-count"><b>Hits to current ICTV taxa${currentReleaseText}:</b> ${currentCount}</div>
+            `<div class="section-count">Matches to taxa that are currently recognized by the ICTV${currentReleaseText}.</div>
             <div class="accordion" id="${currentResultsID}">${currentHTML}</div>`;
 
          tabCount += 1;
 
       } else {
          this.elements.currentTabButton.classList.add("disabled");
-         this.elements.currentTabCount.innerHTML = "(0)";
-         this.elements.currentTabPanel.innerHTML = `No hits <br/><br/><br/>`;
+         this.elements.currentTabCount.innerHTML = "0";
+         this.elements.currentTabCount.classList.remove("non-zero");
+         this.elements.currentTabCount.classList.add("zero");
+         this.elements.currentTabPanel.innerHTML = `<div class="section-count">No matches to taxa that are currently recognized by the ICTV${currentReleaseText}.</div>`;
       }
 
       //-----------------------------------------------------------------------------------------------------------------------------
@@ -571,17 +508,21 @@ export class VirusNameLookup {
          const abolishedLinkID = "abolished-section";
 
          this.elements.abolishedTabButton.classList.remove("disabled");
-         this.elements.abolishedTabCount.innerHTML = `(${abolishedCount})`;
+         this.elements.abolishedTabCount.innerHTML = `${abolishedCount}`;
+         this.elements.abolishedTabCount.classList.remove("zero");
+         this.elements.abolishedTabCount.classList.add("non-zero");
          this.elements.abolishedTabPanel.innerHTML = 
-            `<div class="section-count" id="${abolishedLinkID}"><b>Hits to abolished ICTV taxa:</b> ${abolishedCount}</div>
+            `<div class="section-count" id="${abolishedLinkID}">Matches to ICTV taxa that have been abolished.</div>
             <div class="accordion" id="${abolishedResultsID}">${abolishedHTML}</div>`;
 
          tabCount += 1;
 
       } else {
          this.elements.abolishedTabButton.classList.add("disabled");
-         this.elements.abolishedTabCount.innerHTML = "(0)";
-         this.elements.abolishedTabPanel.innerHTML = "No hits <br/><br/><br/>";
+         this.elements.abolishedTabCount.innerHTML = "0";
+         this.elements.abolishedTabCount.classList.remove("non-zero");
+         this.elements.abolishedTabCount.classList.add("zero");
+         this.elements.abolishedTabPanel.innerHTML = `<div class="section-count">No matches to ICTV taxa that have been abolished.</div>`;
       }
 
       //-----------------------------------------------------------------------------------------------------------------------------
@@ -592,10 +533,11 @@ export class VirusNameLookup {
          const invalidLinkID = "invalid-matches-section";
 
          this.elements.invalidTabButton.classList.remove("disabled");
-         this.elements.invalidTabCount.innerHTML = `(${invalidMatches.length})`;
+         this.elements.invalidTabCount.innerHTML = `${invalidMatches.length}`;
+         this.elements.invalidTabCount.classList.remove("zero");
+         this.elements.invalidTabCount.classList.add("non-zero");
 
-         const invalidS = invalidMatches.length === 1 ? "" : "s";
-         const invalidMessage = `<b>Name${invalidS} without a valid taxon match:</b> ${invalidMatches.length}`;
+         const invalidMessage = `Matches to taxa in non-ICTV data sources.`;
 
          this.elements.invalidTabPanel.innerHTML = `<div class="section-count" id="${invalidLinkID}">${invalidMessage}</div>${invalidHTML}`;
 
@@ -603,8 +545,10 @@ export class VirusNameLookup {
 
       } else {
          this.elements.invalidTabButton.classList.add("disabled");
-         this.elements.invalidTabCount.innerHTML = "(0)";
-         this.elements.invalidTabPanel.innerHTML = "No hits <br/><br/><br/>";
+         this.elements.invalidTabCount.innerHTML = "0";
+         this.elements.invalidTabCount.classList.remove("non-zero");
+         this.elements.invalidTabCount.classList.add("zero");
+         this.elements.invalidTabPanel.innerHTML = `<div class="section-count">No matches to taxa in non-ICTV data sources.</div>`;
       }
 
       if (invalidMatches.length > 0) {
@@ -826,9 +770,9 @@ export class VirusNameLookup {
          <div class="results-count"></div>
          <div class="results-panel">
             <div class="tab-buttons">
-               <div class="tab-button active" data-id="${ResultType.current}">Hits to current ICTV taxa <span class="count"></span></div>
-               <div class="tab-button" data-id="${ResultType.abolished}">Hits to abolished ICTV taxa <span class="count"></span></div>
-               <div class="tab-button" data-id="${ResultType.invalid}">Hits with no ICTV results <span class="count"></span></div>
+               <div class="tab-button active" data-id="${ResultType.current}">Current taxonomy <span class="count"></span></div>
+               <div class="tab-button" data-id="${ResultType.abolished}">Abolished taxa <span class="count"></span></div>
+               <div class="tab-button" data-id="${ResultType.invalid}">External results <span class="count"></span></div>
             </div>
             <div class="tab-panels">
                <div class="tab-panel active" data-id="${ResultType.current}"></div>
@@ -1148,9 +1092,9 @@ export class VirusNameLookup {
       this.handleTabClick(ResultType.current);
 
       try {
-         this.results = await VirusNameLookupService.lookupName(this.settings.currentMslRelease, searchModifier, this.searchText);
+         this.results = await FindTheSpeciesService.lookupName(this.settings.currentMslRelease, searchModifier, this.searchText);
       }
-      catch (error_) {
+      catch (error_: any) {
          this.elements.searchButton.disabled = false;
          this.elements.spinnerPanel.classList.remove("active");
          return await AlertBuilder.displayError(error_);

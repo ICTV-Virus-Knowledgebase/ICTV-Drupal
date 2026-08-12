@@ -354,7 +354,12 @@ export class TaxonomySearchPanel {
       });
 
       // Initialize tippy tooltips
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         allowHTML: true,
+         content(reference) {
+            return reference.getAttribute('data-tippy-content');
+         }
+      });
    }
 
 }

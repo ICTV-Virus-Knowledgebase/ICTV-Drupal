@@ -236,7 +236,7 @@ class UploadProposals extends ResourceBase {
             "command" => null,
             "commandResult" => null,
             "jobName" => $jobName,
-            "jobUID" => $jobUID,
+            "jobUID" => null,
             "message" => $this->errorMessages,
             "status" => JobStatus::crashed->value,
             "success" => false

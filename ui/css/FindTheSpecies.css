@@ -1,4 +1,59 @@
 
+/* CSS variables */
+:root {
+   /* Borders */
+   --ictv-border-color: #aaa;
+   --ictv-border-focus-color: #80bdff;
+   --ictv-border-radius: 5px;
+
+   --ictv-button-active-bg: #bddaff;
+   --ictv-button-active-border-color: #4aa3df;
+   --ictv-button-bg: #efefef;
+   --ictv-default-bg: #f3f3f3;
+   --ictv-disabled-color: #999;
+   --ictv-icon-color: #999;
+   --ictv-info-icon-color: #155daa;
+
+   /* Links */
+   --ictv-link-color: #0066cc;
+   --ictv-link-color-alt: #cfefff;
+   --ictv-link-hover-color: #004999;
+
+   /* The panel that tells the user to save the URL to return and view the data. */
+   --ictv-link-panel-background: #f0f7ff;
+   
+   /* Tags */
+   --ictv-tag-bg-color: #f0f7ff;
+   --ictv-tag-border-color: #d9ebff;
+
+   /* Colors */
+   --ictv-lightest-grey-color: #f7f7f7;
+   --ictv-lightest-grey-color-alt: #e5e5e5;
+   --ictv-lighter-grey-color: #ccc;
+   --ictv-light-grey-color: #888;
+   --ictv-grey-color: #777;
+   --ictv-dark-grey-color: #555;
+
+   /* Status colors */
+   --ictv-danger-color: #dc3545;
+   --ictv-primary-color: #007bff;
+   --ictv-secondary-color: #6c757d;
+   --ictv-success-color: #198754;
+   --ictv-warning-color: #ffc107;
+
+   /* Tables */
+   --ictv-active-header-bg: #4aa3df;
+   --ictv-header-bg: #777;
+   --ictv-table-row-bg-even: #fefefe;
+   --ictv-table-row-bg-odd: #f3f3f3;
+   --ictv-table-row-bg-even-alt: #fff;
+   --ictv-table-row-bg-odd-alt: #eaf7ff;
+
+   /* Tabs */
+   --ictv-unselected-tab-bg: #fafafa;
+}
+
+
 #ictv_virus_name_lookup_container .lookup-container {
    align-items: flex-start;
    display: flex;
@@ -124,13 +179,13 @@
 
 /* The results count over individual sections */
 #ictv_virus_name_lookup_container .results-count {
-   font-size: 1.8rem;
-   margin-top: 2.0rem;
+   font-size: 1.1rem;
+   margin-bottom: 1.0rem;
 }
 
 #ictv_virus_name_lookup_container .section-count {
-   font-size: 1.8rem;
-   margin-top: 2.0rem;
+   font-size: 1.1rem;
+   margin: 1.0rem 0;
 }
 
 #ictv_virus_name_lookup_container .results-panel {
@@ -258,31 +313,57 @@
    align-items: center;
    display: flex;
    flex-flow: row nowrap;
-   justify-content: space-between;
+   justify-content: flex-start;
+   border-bottom: 1px solid #d9d9d9;
 }
 #ictv_virus_name_lookup_container .tab-button {
-   border-color: #ddd;
-   border-style: solid;
-   border-width: 0 0 3px 0;
+   align-items: center;
+   background: var(--ictv-unselected-tab-bg);
+   border: 1px solid #d9d9d9;
+   border-bottom: none;
+   border-radius: 10px 10px 0 0;
+   color: #555;
    cursor: pointer;
-   display: block;
-   padding-bottom: 0.25rem;
-   text-align: center;
-   visibility: visible;
-   width: 33.33%;
+   display: flex;
+   gap: 0.5rem;
+   margin-right: 0.5rem;
+   padding: 1.0rem 1.0rem 0.75rem 1.0rem;
+   transition: background .15s, color .15s, box-shadow .15s;
 }
 #ictv_virus_name_lookup_container .tab-button.active {
-   border-color: rgb(13, 110, 253);
+   background: white;
+   border-color: var(--ictv-primary-color); 
+   border-width: 1px 1px 0 1px;
+   color: var(--ictv-primary-color);
+   font-weight: 600;
+   margin-bottom: -0.1rem;
+   padding-bottom: 0.76rem;
+   /*box-shadow: 0 -1px 0 white, 0 2px 8px rgba(0, 0, 0, .04);*/
 }
 #ictv_virus_name_lookup_container .tab-button.disabled {
    color: #999;
-   /*display: none;
-   visibility: hidden;*/
 }
 #ictv_virus_name_lookup_container .tab-button.disabled.active {
    border-color: #999;
-   /*display: none;
-   visibility: hidden;*/
+}
+
+#ictv_virus_name_lookup_container .tab-button .count {
+   align-items: center;
+   border-radius: 15px;
+   display: flex;
+   flex-flow: row;
+   font-size: 1.0rem;
+   font-weight: normal;
+   justify-content: center;
+   padding: 0 0.5rem;
+}
+#ictv_virus_name_lookup_container .tab-button .count.non-zero {
+   background-color: var(--ictv-primary-color);
+   color: #fff;
+}
+#ictv_virus_name_lookup_container .tab-button .count.zero {
+   background-color: var(--ictv-lighter-grey-color);
+   color: #fff;
 }
 
 #ictv_virus_name_lookup_container .tab-panel {

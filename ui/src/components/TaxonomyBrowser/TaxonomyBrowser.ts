@@ -50,12 +50,6 @@ export class TaxonomyBrowser {
       releaseTaxaStats: "release-taxa-stats",
       releaseTitle: "release-title",
       searchPanelContainer: "search-panel-container",
-      /*searchPanel: "search-panel",
-      searchControl: "search-ctrl",
-      searchControls: "search-controls",
-      searchResults: "search-results",
-      searchResultsTable: "search-results-table",
-      searchText: "search-text",*/
       taxonomyBrowser: "taxonomy-browser",
       toolTip: "taxonomy-tool-tip",
       toolTipText: "text",
@@ -150,11 +144,6 @@ export class TaxonomyBrowser {
 
    // An instance of the taxonomy search panel object.
    searchPanel: TaxonomySearchPanel;
-
-   // A singleton Tippy instance
-   //tooltipInstance = null;
-
-   toolTipTopOffset: number = 0;
 
    // URLs used by this control.
    urls: { [key: string]: string } = null;
@@ -336,7 +325,6 @@ export class TaxonomyBrowser {
          return false;
       }
 
-      // As a (probably)) temporary solution, we are overloading the method that's used when selecting a search result.
       await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), null, taxon.levelName, taxon.mslReleaseNum.toString());
       return true;
    }
@@ -862,8 +850,6 @@ export class TaxonomyBrowser {
 
    async getTreeExpandedToNode(rank_: IctvRank|string, releaseNumber_: string, taxNodeID_: string) {
 
-      console.log("in getTreeExpandedToNode")
-
       if (!rank_) { throw new Error("Invalid rank in getTreeExpandedToNode"); }
       if (!releaseNumber_) { throw new Error("Invalid releaseNumber in getTreeExpandedToNode"); }
       if (!taxNodeID_) { throw new Error("Invalid taxNodeID in getTreeExpandedToNode"); }
@@ -1046,8 +1032,7 @@ export class TaxonomyBrowser {
          this.identifiers = Identifiers.getIdentifiersFromURL();
 
       } catch (error_: any) {
-         console.log("set identity error is ", error_)
-
+         
          await AlertBuilder.displayError(error_);
 
          // Reset the identifiers so they aren't used later on.
@@ -1228,8 +1213,6 @@ export class TaxonomyBrowser {
             await this.getByReleasePreExpanded();
          });
       }
-
-      console.log("this.identifiers = ", this.identifiers)
 
       try {
          // Determine how to display the release, taxonomy, and possibly the release history.

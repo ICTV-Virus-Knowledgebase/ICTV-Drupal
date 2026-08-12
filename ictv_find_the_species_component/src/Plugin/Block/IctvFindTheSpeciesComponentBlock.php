@@ -32,15 +32,13 @@ class IctvFindTheSpeciesComponentBlock extends BlockBase {
          '#markup' => $this->t("<div id=\"ictv_virus_name_lookup_container\" class=\"ictv-custom\"></div>"),
          '#attached' => [
                'library' => [
-                  'ictv_find_the_species_component/ICTV_VirusNameLookup',
-               ],
-               'library' => [
-                  'ictv_find_the_species_component/findTheSpeciesComponent',
+                  'ictv_find_the_species_component/ICTV_FindTheSpecies',
+                  'ictv_find_the_species_component/findTheSpeciesComponent'
                ],
          ],
       ];
 
-      // Populate drupalSettings with variables needed by the VirusNameLookup object to create this component.
+      // Populate drupalSettings with variables needed by the Find the Species object to create this component.
       $build['#attached']['drupalSettings']['applicationURL'] = $this->applicationURL;
       
       return $build;

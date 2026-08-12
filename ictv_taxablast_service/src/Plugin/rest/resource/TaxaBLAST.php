@@ -26,7 +26,6 @@ class TaxaBLAST {
       // Declare variables used below.
       $exitCode = 0;
       $jobStatus = null;
-      $jsonText;
       $stdError = null;
       $stdOut = null;
 

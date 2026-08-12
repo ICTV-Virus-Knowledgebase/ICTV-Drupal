@@ -67,9 +67,7 @@ class IctvTaxonHistoryBlock extends BlockBase {
          '#attached' => [
             'library' => [
                'ictv_taxon_history/ICTV_TaxonHistory',
-            ],
-            'library' => [
-               'ictv_taxon_history/taxonHistory',
+               'ictv_taxon_history/taxonHistory'
             ],
          ],
       ];

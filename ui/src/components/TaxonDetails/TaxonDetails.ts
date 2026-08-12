@@ -6,7 +6,6 @@ import { ITaxon } from "../../models/TaxonHistory/ITaxon";
 import { MemberSpeciesTable } from "../MemberSpeciesTable/MemberSpeciesTable";
 import { TaxonHistory } from "../TaxonHistory/TaxonHistory";
 import { Utils } from "../../helpers/Utils";
-import { target } from "./webpack.config";
 
 export enum ComponentKey {
    history = "history",
@@ -43,11 +42,11 @@ export class TaxonDetails {
       isolatesTabPanel: HTMLElement,
 
       tabButtons: HTMLElement,
-      tabPanels: HTMLElement
+      tabPanels: HTMLElement,
 
       // The etymology module at the top of the page.
-      //etymologyPanel: HTMLElement,
-      //taxonTitle: HTMLElement
+      etymologyPanel: HTMLElement,
+      taxonTitle: HTMLElement
    }
 
    identifiers: Identifiers | null = null;
@@ -74,9 +73,9 @@ export class TaxonDetails {
          isolatesTabButton: null,
          isolatesTabPanel: null,
          tabButtons: null,
-         tabPanels: null
-         //etymologyPanel: null,
-         //taxonTitle: null
+         tabPanels: null,
+         etymologyPanel: null,
+         taxonTitle: null
       }
    }
 
@@ -194,7 +193,7 @@ export class TaxonDetails {
          return;
       })
 
-      /*
+
       // Look for the taxon name element, but it might not have been added to the page.
       this.elements.etymologyPanel = document.querySelector(".view-etymology-taxon-names");
       if (this.elements.etymologyPanel) {
@@ -202,14 +201,14 @@ export class TaxonDetails {
          this.elements.taxonTitle.className = "modified-taxon-title";
          this.elements.taxonTitle.textContent = "TODO";
          this.elements.etymologyPanel.parentNode.insertBefore(this.elements.taxonTitle, this.elements.etymologyPanel);
-      }*/
+      }
       
-      /*if (!this.elements.taxonName) {
+      if (!this.elements.taxonTitle) {
 
          // Get a reference to the "backup" taxon title element.
-         this.elements.taxonName = this.elements.container.querySelector(".taxon-title");
-         if (this.elements.taxonName) { 
-            this.elements.taxonName.classList.add("active");
+         this.elements.taxonTitle = this.elements.container.querySelector(".taxon-title");
+         if (this.elements.taxonTitle) { 
+            this.elements.taxonTitle.classList.add("active");
          }
 
       } else {
@@ -218,10 +217,10 @@ export class TaxonDetails {
          // NOTE: We won't need to do this if we can 1) figure out a way to display the taxon name block 
          // even if the taxon_name parameter is missing, or 2) if we populate the etymology using a web service
          // and can get rid of the block that currently handles this.
-         this.elements.taxonName.innerHTML = `<div class="modified-taxon-title"></div>`;
-         this.elements.taxonName = this.elements.taxonName.querySelector(".modified-taxon-title");
-         if (!this.elements.taxonName) { console.error("An error occurred replacing the h4 element with the taxon title element"); }
-      }*/
+         this.elements.taxonTitle.innerHTML = `<div class="modified-taxon-title"></div>`;
+         this.elements.taxonTitle = this.elements.taxonTitle.querySelector(".modified-taxon-title");
+         if (!this.elements.taxonTitle) { console.error("An error occurred replacing the h4 element with the taxon title element"); }
+      }
 
       // Get the URL parameters
       const urlParams = new URLSearchParams(window.location.search);
@@ -253,7 +252,6 @@ export class TaxonDetails {
       this.components.set(ComponentKey.isolates, isolatesTable); 
    }
 
-   /*
    // Populate the taxon name, rank, and release details at the top of the page.
    populateTaxonPageTitle(title_: string) {
 
@@ -263,7 +261,7 @@ export class TaxonDetails {
       if (!title_) { return; }
 
       this.elements.taxonTitle.innerHTML = title_;
-   }*/
+   }
 
    // Reload the virus isolates table.
    async reloadIsolatesTable(taxNodeID_: number) {
