@@ -38,6 +38,9 @@ export class _AppSettings {
       // The Drupal CSRF token
       csrfToken: "session/token",
       
+      // Find the species
+      findTheSpecies: "virus-name-lookup",
+
       // Proposal service
       getProposalJobs: "get-proposal-jobs",
       getProposalValidationSummary: "get-proposal-validation-summary",
@@ -66,10 +69,7 @@ export class _AppSettings {
       taxonomyHistory: "get-taxon-history",
       
       // Member species table
-      virusIsolate: "get-virus-isolates",
-
-      // Virus name lookup
-      virusNameLookup: "virus-name-lookup"
+      virusIsolate: "get-virus-isolates"
    }
 }
 

@@ -3,6 +3,7 @@
 namespace Drupal\ictv_proposal_service\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
+use Drupal\Core\File\FileExists;
 use Drupal\Core\File\FileSystemInterface;
 use Psr\Log\LoggerInterface;
 use Drupal\ictv_common\Types\JobStatus;
@@ -31,7 +32,7 @@ class Common {
 
       try {
          // Create the file
-         $fileID = $fileSystem->saveData($data, $filePath, FileSystemInterface::EXISTS_REPLACE);
+         $fileID = $fileSystem->saveData($data, $filePath, FileExists::Replace);
 
          // Update the permissions
          if (!$fileSystem->chmod($filePath, 0644)) {

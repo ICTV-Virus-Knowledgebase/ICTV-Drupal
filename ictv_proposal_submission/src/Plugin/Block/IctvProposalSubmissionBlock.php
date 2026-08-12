@@ -3,6 +3,7 @@
 namespace Drupal\ictv_proposal_submission\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 
 /**
@@ -31,7 +32,7 @@ class IctvProposalSubmissionBlock extends BlockBase {
       $currentUser = \Drupal::currentUser();
       if (!$currentUser) { 
          \Drupal::logger('ictv_proposal_submission')->error("Current user is invalid"); 
-         throw new HttpException("Current user is invalid");
+         throw new \HttpException("Current user is invalid");
       }
 
       // Retrieve additional user details.
@@ -54,9 +55,7 @@ class IctvProposalSubmissionBlock extends BlockBase {
          '#attached' => [
                'library' => [
                   'ictv_proposal_submission/ICTV',
-               ],
-               'library' => [
-                  'ictv_proposal_submission/proposalSubmission',
+                  'ictv_proposal_submission/proposalSubmission'
                ],
          ],
       ];

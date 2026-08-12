@@ -27,9 +27,7 @@ class IctvTaxonDetailsBlock extends BlockBase {
          '#attached' => [
             'library' => [
                'ictv_taxon_details/ICTV_TaxonDetails',
-            ],
-            'library' => [
-               'ictv_taxon_details/taxonDetails',
+               'ictv_taxon_details/taxonDetails'
             ],
          ],
       ];

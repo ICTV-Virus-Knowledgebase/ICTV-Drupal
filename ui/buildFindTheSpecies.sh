@@ -3,7 +3,7 @@
 # https://devhints.io/bash
 
 #------------------------------------------------------------------------------
-# Run webpack for the Virus Name Lookup component.
+# Run webpack for the Find the species component.
 #------------------------------------------------------------------------------
 
 # The subdirectory for ICTV components.
@@ -17,41 +17,41 @@ printf "\n"
 #------------------------------------------------------------------------------
 # Build the TypeScript component.
 #------------------------------------------------------------------------------
-printf "Building the virus name lookup component \n\n"
-"${webpack}" --config "$componentPath/VirusNameLookup/webpack.config.js"
+printf "Building the Find the species component \n\n"
+"${webpack}" --config "$componentPath/FindTheSpecies/webpack.config.js"
 
 printf "\n\n"
 
 #------------------------------------------------------------------------------
 # Copy the generated JavaScript file to the module's asset directory.
 #------------------------------------------------------------------------------
-printf "Copying ICTV_VirusNameLookup.js to ictv_virus_name_lookup/assets/js\n\n"
+printf "Copying ICTV_FindTheSpecies.js to ictv_virus_name_lookup/assets/js\n\n"
 
-cp ./dist/ICTV_VirusNameLookup.js ../ictv_virus_name_lookup/assets/js/
+cp ./dist/ICTV_FindTheSpecies.js ../ictv_virus_name_lookup/assets/js/
 
 #------------------------------------------------------------------------------
-# Copy the virus name lookup's CSS file to the module's asset directory.
+# Copy the CSS files to the module's asset directory.
 #------------------------------------------------------------------------------
 printf "Copying CSS files to ictv_virus_name_lookup/assets/css\n\n"
 
-cp ./css/VirusNameLookup.css ../ictv_virus_name_lookup/assets/css/
+cp ./css/FindTheSpecies.css ../ictv_virus_name_lookup/assets/css/
 cp ./css/dataTables.dataTables.min.css ../ictv_virus_name_lookup/assets/css/
 
 
-# Copy JavaScript and CSS files to the "ICTV Find the Species component" module.
+# Copy JavaScript and CSS files to the "ICTV Find the Species component" module (used on the home page).
 
 #------------------------------------------------------------------------------
 # Copy the generated JavaScript file to the module's asset directory.
 #------------------------------------------------------------------------------
-printf "Copying ICTV_VirusNameLookup.js to ictv_find_the_species_component/assets/js\n\n"
+printf "Copying ICTV_FindTheSpecies.js to ictv_find_the_species_component/assets/js\n\n"
 
-cp ./dist/ICTV_VirusNameLookup.js ../ictv_find_the_species_component/assets/js/
+cp ./dist/ICTV_FindTheSpecies.js ../ictv_find_the_species_component/assets/js/
 
 #------------------------------------------------------------------------------
-# Copy the virus name lookup's CSS file to the module's asset directory.
+# Copy the find the species CSS file to the module's asset directory.
 #------------------------------------------------------------------------------
 printf "Copying CSS files to ictv_find_the_species_component/assets/css\n"
 
-cp ./css/VirusNameLookup.css ../ictv_find_the_species_component/assets/css/
+cp ./css/FindTheSpecies.css ../ictv_find_the_species_component/assets/css/
 
 

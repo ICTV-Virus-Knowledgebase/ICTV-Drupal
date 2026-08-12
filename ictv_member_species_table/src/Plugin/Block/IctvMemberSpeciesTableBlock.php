@@ -65,10 +65,8 @@ class IctvMemberSpeciesTableBlock extends BlockBase {
         '#markup' => $this->t("<div id='member_species_table_container' class='ictv-custom'></div>"),
         '#attached' => [
             'library' => [
-                'ictv_member_species_table/ICTV',
-            ],
-            'library' => [
-              'ictv_member_species_table/memberSpeciesTable',
+               'ictv_member_species_table/ICTV',
+               'ictv_member_species_table/memberSpeciesTable'
             ],
         ],
     ];

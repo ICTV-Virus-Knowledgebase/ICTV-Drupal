@@ -3,6 +3,7 @@
 namespace Drupal\ictv_taxablast_service\Plugin\rest\resource;
 
 use Drupal\ictv_taxablast_service\Plugin\rest\resource\Common;
+use Drupal\Core\File\FileExists;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Utils;
 
@@ -68,7 +69,7 @@ class FastaFile {
          $fileSystem = \Drupal::service("file_system");
 
          // Create the file
-         $fileID = $fileSystem->saveData($file->fasta, $filePath, FileSystemInterface::EXISTS_REPLACE);
+         $fileID = $fileSystem->saveData($file->fasta, $filePath, FileExists::Replace);
 
          // Update the file permissions.
          if (!$fileSystem->chmod($filePath, 0644)) {

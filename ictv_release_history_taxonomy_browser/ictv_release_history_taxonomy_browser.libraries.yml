@@ -1,10 +1,7 @@
 releaseHistoryTaxonomyBrowser:
-  version: 20251031
+  version: 20260812
   css:
     theme:
-      assets/css/fa-regular.css: {attributes:{type: "text/html"}}
-      assets/css/fa-solid.css: {attributes:{type: "text/html"}}
-      assets/css/fontawesome.css: {attributes:{type: "text/html"}}
       assets/css/jquery.dataTables.min.css: {}
       assets/css/ICTV.css: {} 
       assets/css/tippy.css: {attributes:{type: "text/html"}}

@@ -58,7 +58,7 @@ printf "\n\n"
 # Virus name lookup
 #------------------------------------------------------------------------------
 printf "Building the virus name lookup component \n\n"
-"${webpack}" --config "$componentPath/VirusNameLookup/webpack.config.js"
+"${webpack}" --config "$componentPath/FindTheSpecies/webpack.config.js"
 
 printf "\n\n"
 

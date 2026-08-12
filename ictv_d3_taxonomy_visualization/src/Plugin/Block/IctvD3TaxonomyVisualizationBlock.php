@@ -86,30 +86,14 @@ class IctvD3TaxonomyVisualizationBlock extends BlockBase {
         '#attached' => [
             'library' => [
                'ictv_d3_taxonomy_visualization/d3',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/jquery.dataTables',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/popper',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/select2',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/tippy',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/html2canvas',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/searchPanel',
-            ],
-            'library' => [
                'ictv_d3_taxonomy_visualization/script',
-            ],
-            'library' => [
-               'ictv_d3_taxonomy_visualization/d3TaxonomyVisualization',
+               'ictv_d3_taxonomy_visualization/d3TaxonomyVisualization'
             ],
         ],
     ];

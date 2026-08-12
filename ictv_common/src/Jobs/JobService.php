@@ -3,6 +3,7 @@
 namespace Drupal\ictv_common\Jobs;
 
 use Drupal\Core\Database\Connection;
+use Drupal\Core\File\FileExists;
 use Drupal\Core\File\FileSystemInterface;
 use Psr\Log\LoggerInterface;
 use Drupal\ictv_common\Types\JobStatus;
@@ -52,12 +53,12 @@ class JobService {
     */
    public function __construct(string $jobsPath, LoggerInterface $logger, string $parentModule, string $inputDirName = null, string $outputDirName = null) {
 
-      if (Utils::isEmptyElseTrim($jobsPath)) { throw new Exception("Invalid job path parameter"); }
+      if (Utils::isEmptyElseTrim($jobsPath)) { throw new \Exception("Invalid job path parameter"); }
       $this->jobsPath = $jobsPath;
 
       $this->logger = $logger;
 
-      if (Utils::isEmptyElseTrim($parentModule)) { throw new Exception("Invalid parent module parameter"); }
+      if (Utils::isEmptyElseTrim($parentModule)) { throw new \Exception("Invalid parent module parameter"); }
       $this->parentModule = $parentModule;
 
       if (!Utils::isEmptyElseTrim($inputDirName)) { $this->inputDirName = $inputDirName; };
@@ -115,7 +116,7 @@ class JobService {
 
         try {
             // Create the file
-            $fileID = $this->fileSystem->saveData($data, $fileNameAndPath, FileSystemInterface::EXISTS_REPLACE);
+            $fileID = $this->fileSystem->saveData($data, $fileNameAndPath, FileExists::Replace);
 
             // Update the permissions
             if (!$this->fileSystem->chmod($fileNameAndPath, 0644)) {

@@ -450,7 +450,7 @@ class Common {
 
       // TODO: validate the connection parameter.
 
-      if (Utils::isEmptyElseTrim($jobUID)) { throw new Exception("Invalid job UID parameter"); }
+      if (Utils::isEmptyElseTrim($jobUID)) { throw new \Exception("Invalid job UID parameter"); }
 
       // Generate SQL to lookup the job's user UID.
       $sql = "SELECT user_uid FROM job WHERE `uid` = '{$jobUID}' LIMIT 1;";

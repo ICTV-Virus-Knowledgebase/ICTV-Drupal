@@ -25,6 +25,10 @@ class IctvVirusNameLookupBlock extends BlockBase {
    // The URL of the Drupal web service.
    public $drupalWebServiceURL;
 
+   // The URL of the taxon details/history page.
+   public $taxonHistoryPage;
+
+
    /**
     * {@inheritdoc}
     */
@@ -37,18 +41,17 @@ class IctvVirusNameLookupBlock extends BlockBase {
          '#markup' => $this->t("<div id=\"ictv_virus_name_lookup_container\" class=\"ictv-custom\"></div>"),
          '#attached' => [
                'library' => [
-                  'ictv_virus_name_lookup/ICTV_VirusNameLookup',
-               ],
-               'library' => [
-                  'ictv_virus_name_lookup/virusNameLookup',
+                  'ictv_virus_name_lookup/ICTV_FindTheSpecies',
+                  'ictv_virus_name_lookup/findTheSpecies'
                ],
          ],
       ];
 
-      // Populate drupalSettings with variables needed by the VirusNameLookup object.
+      // Populate drupalSettings with variables needed by the Find the Species object.
       $build['#attached']['drupalSettings']['currentMslRelease'] = $this->currentMslRelease;
       $build['#attached']['drupalSettings']['currentVMR'] = $this->currentVMR;
       $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
+      $build['#attached']['drupalSettings']['taxonHistoryPage'] = $this->taxonHistoryPage;
       
       return $build;
    }
@@ -75,6 +78,7 @@ class IctvVirusNameLookupBlock extends BlockBase {
       $this->currentMslRelease = 0;
       $this->currentVMR = "";
       $this->drupalWebServiceURL = "";
+      $this->taxonHistoryPage = "";
 
       // Get ICTV settings
       $sql = 
@@ -86,7 +90,10 @@ class IctvVirusNameLookupBlock extends BlockBase {
          ) AS currentVMR,
          ( 
             SELECT VALUE FROM ictv_settings WHERE NAME = 'drupalWebServiceURL' LIMIT 1
-         ) AS drupalWebServiceURL;";
+         ) AS drupalWebServiceURL,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'taxonHistoryPage' LIMIT 1
+         ) AS taxonHistoryPage; ";
 
       $query = $database->query($sql);
       if (!$query) { \Drupal::logger('ictv_virus_name_lookup')->error("Invalid query object"); }
@@ -97,6 +104,7 @@ class IctvVirusNameLookupBlock extends BlockBase {
       $this->currentMslRelease = $settings["currentMslRelease"];
       $this->currentVMR = $settings["currentVMR"];
       $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
+      $this->taxonHistoryPage = $settings["taxonHistoryPage"];
    }
 
 }

@@ -21,8 +21,7 @@ class ProposalValidator {
       $jobStatus = null;
       $stdError = null;
       $stdOut = null;
-      $fileSummaries;
-      $totals;
+      $fileSummaries = null;
 
       $descriptorspec = array(
          0 => array("pipe", "r"), // Read from stdin (not used)
@@ -41,7 +40,7 @@ class ProposalValidator {
          $process = proc_open($command, $descriptorspec, $pipes, $workingDirectory);
 
          // Validate the process
-         if (!is_resource($process)) { throw new Exception("Process is not a resource"); }
+         if (!is_resource($process)) { throw new \Exception("Process is not a resource"); }
 
          // $pipes now looks like this:
          // 0 => writeable handle connected to child stdin (we aren't using stdin)
@@ -91,14 +90,14 @@ class ProposalValidator {
       if ($jobStatus == null) { $jobStatus = JobStatus::crashed; } 
 
       // If stdout isn't empty, write it to a text file in the working directory.
-      $stdOutFile = fopen($resultsPath.$stdOutFilename, "w");
+      $stdOutFile = fopen($resultsPath.ProposalValidator::$stdOutFilename, "w");
       if ($stdOutFile !== false) {
          fwrite($stdOutFile, $stdOut);
          fclose($stdOutFile);
       }
       
       // If stderr isn't empty, write it to a text file in the working directory.
-      $stdErrorFile = fopen($resultsPath.$stdErrorFilename, "w");
+      $stdErrorFile = fopen($resultsPath.ProposalValidator::$stdErrorFilename, "w");
       if ($stdErrorFile !== false) {
          fwrite($stdErrorFile, $stdError);
          fclose($stdErrorFile);

@@ -1,6 +1,6 @@
-name: ICTV Virus Name Lookup
+name: ICTV Find the Species
 type: module
-description: 'A custom module that provides a UI for the virus name lookup service'
+description: 'A custom module that provides a UI for Find the Species'
 package: ICTV
 configure: ictv_virus_name_lookup.settings
 core_version_requirement: ^9 || ^10 || ^11

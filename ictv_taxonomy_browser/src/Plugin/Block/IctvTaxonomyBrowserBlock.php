@@ -70,10 +70,8 @@ class IctvTaxonomyBrowserBlock extends BlockBase {
         '#markup' => $this->t("<div id='taxonomy_browser_container' class='ictv-custom'></div>"),
         '#attached' => [
             'library' => [
-                'ictv_taxonomy_browser/ICTV',
-            ],
-            'library' => [
-              'ictv_taxonomy_browser/taxonomyBrowser',
+               'ictv_taxonomy_browser/ICTV',
+               'ictv_taxonomy_browser/taxonomyBrowser'
             ],
         ],
     ];

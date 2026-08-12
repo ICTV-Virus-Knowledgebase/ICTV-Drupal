@@ -33,7 +33,7 @@ ictv_taxonomy_browser/assets/js/!taxonomyBrowser.js
 
 ictv_virus_name_lookup/assets/css/*
 ictv_virus_name_lookup/assets/js/*
-ictv_virus_name_lookup/assets/js/!virusNameLookup.js
+ictv_virus_name_lookup/assets/js/!findTheSpecies.js
 
 ui/dist/
 ui/node_modules/

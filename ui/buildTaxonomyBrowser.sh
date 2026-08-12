@@ -20,6 +20,11 @@ printf "\n"
 printf "Building the Taxonomy Browser component \n\n"
 "${webpack}" --config "$componentPath/TaxonomyBrowser/webpack.config.js"
 
+# Check that the build completed successfully before continuing
+if [ $? -ne 0 ]; then
+   exit 1
+fi
+
 printf "\n\n"
 
 #------------------------------------------------------------------------------

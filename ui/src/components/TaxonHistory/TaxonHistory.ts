@@ -8,11 +8,11 @@ import { Identifiers } from "../../models/Identifiers";
 import { LookupReleaseAction, LookupReleaseActionDefinition, GetTaxonomyRankLabel, IctvRank, ReleaseAction, WebStorageKey } from "../../global/Types";
 import { TaxonDetails } from "../TaxonDetails";
 import { TaxonomyHistoryService } from "../../services/TaxonomyHistoryService";
-//import { TooltipBuilder } from "../../helpers/TooltipBuilder";
+import { TooltipBuilder } from "../../helpers/TooltipBuilder";
 import { Utils } from "../../helpers/Utils";
 
 // TEST
-//import { Props, ReferenceElement } from 'tippy.js';
+import { Props, ReferenceElement } from 'tippy.js';
 
 // "Forward declarations" for external JavaScript libraries.
 declare var jQuery: any;
@@ -121,13 +121,15 @@ export class TaxonHistory {
    taxonDetails: TaxonDetails = null;
 
    // TODO: uncomment this when taxonomy browser can accept taxnodeID as a URL parameter.
-   //tooltipBuilder: TooltipBuilder;
+   tooltipBuilder: TooltipBuilder;
 
    // The style can be customized.
    useCustomStyle = false;
 
 
-   // C-tor
+   /**
+    * C-tor
+    */
    constructor(containerSelector_: string, currentMslRelease_: number, taxonDetails_?: TaxonDetails) {
 
       if (!containerSelector_) { throw new Error("Invalid container selector"); }
@@ -170,8 +172,9 @@ export class TaxonHistory {
       // Get the window's base URL: The protocol, host name, and port (optional) without subdirectories, page names, or query parameters.
       this.baseURL = Utils.getBaseURL();
 
-      // TODO: uncomment this when taxonomy browser can accept taxnodeID as a URL parameter.
-      //this.tooltipBuilder = new TooltipBuilder("[data-taxid]", this.createLineageTooltipHTML.bind(this));
+      // The tooltip builder will display a custom tooltip when the user hovers over an element that has a data-taxid attribute. 
+      // The tooltip will display the taxon's rank and name, and provide links to the taxonomy browser and taxon details page.
+      this.tooltipBuilder = new TooltipBuilder("[data-taxid]", this.createLineageTooltipHTML.bind(this));
    }
 
    addEventHandlers() {
@@ -221,7 +224,9 @@ export class TaxonHistory {
       })
    }
 
-   // Append a release panel under the "releases" container Element.
+   /**
+    * Append a release panel under the "releases" container Element.
+    */
    addReleasePanel(release_: IRelease) {
 
       // Replace the semicolons with line breaks.
@@ -248,8 +253,9 @@ export class TaxonHistory {
       this.elements.releases.appendChild(releaseEl);
    }
 
-   /*
-   // Add the selected taxon to the page.
+   /**
+    * Add the selected taxon to the page.
+    */
    addSelectedTaxon(mostRecentMSL_: number, mostRecentYear_: string, taxon_: ITaxon) {
 
       let title = "";
@@ -297,9 +303,11 @@ export class TaxonHistory {
       selectedNameEl.innerHTML = taxon_.name;
 
       return;
-   }*/
+   }
 
-   // Add the taxon, a summary of its changes, and its lineage to the associated release.
+   /**
+    * Add the taxon, a summary of its changes, and its lineage to the associated release.
+    */
    addTaxonChanges(index_: number, parentEl_: HTMLElement, taxon_: ITaxon) {
 
       let html = "";
@@ -354,8 +362,10 @@ export class TaxonHistory {
       parentEl_.append(taxonChangesEl);
    }
 
-   // Copy the text to the clipboard.
-   // Info: https://caniuse.com/?search=clipboard
+   /**
+    * Copy the text to the clipboard.
+    * Info: https://caniuse.com/?search=clipboard
+    */
    copyToClipboard(text_: string, taxNodeID_: string) {
 
       navigator.clipboard.writeText(text_).then(() => {
@@ -373,7 +383,11 @@ export class TaxonHistory {
       })
    }
 
-   // Create a summary of changes to a taxon.
+   /**
+    * Creates a formatted summary of changes for a given taxon.
+    * @param taxon_ The taxon for which to create a change summary
+    * @returns The formatted change summary string
+    */
    createChangeSummary(taxon_: ITaxon): string {
 
       let actions: ReleaseAction[] = [];
@@ -498,11 +512,21 @@ export class TaxonHistory {
       return summary;
    }
 
-   // Create a link to the taxon details page for this taxon.
+   /**
+    * Creates a URL to the taxon details page for a given taxon.
+    * @param taxnodeID_ The ID of the taxon node
+    * @param taxonName_ The name of the taxon
+    * @returns The formatted URL string
+    */
    createLineageURL(taxnodeID_: string, taxonName_: string): string {
       return `${this.baseURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${taxnodeID_}&taxon_name=${taxonName_}"`;
    }
 
+   /**
+    * Creates a panel for displaying release proposals.
+    * @param prevProposal_ The previous proposal string
+    * @returns The formatted proposal panel HTML
+    */
    createProposalPanel(prevProposal_: string) {
 
       prevProposal_ = Utils.safeTrim(prevProposal_);
@@ -554,7 +578,10 @@ export class TaxonHistory {
       </div>`;
    }
 
-   // Create HTML for the export settings dialog.
+   /**
+    * Creates HTML for the export settings dialog.
+    * @returns The formatted dialog HTML
+    */
    createSettingsDialogHTML() {
       
       // Which export format should be selected?
@@ -601,8 +628,11 @@ export class TaxonHistory {
       </div>`;
    }
 
-   /* TODO: uncomment this when taxonomy browser can accept taxnodeID as a URL parameter.
-   // Create HTML to display in the lineage tooltip.
+   /**
+    * Creates HTML to display in the lineage tooltip.
+    * @param el_ The element for which to create tooltip HTML
+    * @returns The formatted tooltip HTML string
+    */
    createLineageTooltipHTML(el_: ReferenceElement<Props>): string {
 
       let rankName = Utils.safeTrim(el_.getAttribute("data-rank"));
@@ -626,9 +656,13 @@ export class TaxonHistory {
             <a href="${this.baseURL}/taxonomy/taxondetails?taxnode_id=${taxnodeID}&taxon_name=${taxonName}" target="_blank">View taxon details</a>
          </div>
       </div>`;
-   }*/
+   }
 
-   // Display an HTML message in the message panel.
+   /**
+    * Displays an HTML message in the message panel.
+    * @param message_ The message to display
+    * @returns false to prevent default event handling (if used in an event handler)
+    */
    displayMessage(message_: string) {
 
       // Populate and show the message panel.
@@ -637,7 +671,11 @@ export class TaxonHistory {
       return false;
    }
 
-   // Open a dialog to download the text as the filename provided.
+   /**
+    * Opens a dialog to download the text as the filename provided.
+    * @param filename_ The name of the file to download
+    * @param text_ The text to download
+    */
    download(filename_: string, text_: string) {
 
       const linkEl = document.createElement('a');
@@ -653,7 +691,11 @@ export class TaxonHistory {
       }
    }
 
-   // Export the selected lineage.
+   /**
+    * Exports the selected lineage.
+    * @param action_ The export action to perform
+    * @param taxon_ Lineage will be exported for this taxon
+    */
    exportLineage(action_: ExportAction, taxon_: ITaxon) {
 
       // Format the lineage for export, possibly including rank names.
@@ -685,7 +727,11 @@ export class TaxonHistory {
       return;
    }
 
-   // Format the action to include a tooltip.
+   /** 
+    * Format the action to include a tooltip.
+    * @param action_ The release action to be formatted
+    * @returns an element with a label for the action (with a tooltip)
+    * */ 
    formatAction(action_: ReleaseAction) {
 
       let label = LookupReleaseAction(action_);
@@ -694,7 +740,11 @@ export class TaxonHistory {
       return `<span class=\"change ${action_} has-tooltip\">${label}<span class="tooltip">${definition}</span></span>`;
    }
 
-   // Format the lineage as HTML, adding "taxon details" links to each taxon name.
+   /**
+    * Format the lineage as HTML, adding "taxon details" links to each taxon name.
+    * @param taxon_ The taxon whose lineage will be displayed
+    * @returns the formatted lineage HTML
+    */
    formatLineage(taxon_: ITaxon): string {
 
       let html = "";
@@ -751,7 +801,11 @@ export class TaxonHistory {
       return html;
    }
 
-   // Format the lineage for export, possibly including rank names.
+   /** 
+    * Format the lineage for export, possibly including rank names.
+    * @param taxon_ The taxon whose lineage will be formatted for export
+    * @returns the formatted lineage
+    **/ 
    formatLineageForExport(taxon_: ITaxon): string {
 
       // Initialize the delimiter and final result.
@@ -821,8 +875,12 @@ export class TaxonHistory {
       return `${rankLine}${nameLine}\n`;
    }
 
-   // Format the comma-delimited list of previous names so that each name is italicized and the 
-   // last comma is followed by " and ".
+   /**
+    * Format the comma-delimited list of previous names so that each name is italicized
+    * and the last comma is followed by " and "
+    * @param previousNames_ 
+    * @returns 
+    */
    formatPreviousNames(previousNames_: string) {
 
       let previousNames = Utils.safeTrim(previousNames_);
@@ -857,8 +915,12 @@ export class TaxonHistory {
       return `${formattedNames}`; 
    }
 
-   // Return the formatted rank and taxon name of the taxon's previous parent.
-   formatPreviousParent(taxon_: ITaxon) {
+   /**
+    * Return the formatted rank and taxon name of the taxon's previous parent.
+    * @param taxon_ 
+    * @returns The formatted rank and taxon name as HTML
+    */
+   formatPreviousParent(taxon_: ITaxon): string {
 
       // Validate the previous lineage name and rank arrays.
       if (!taxon_.prevLineageNameArray || taxon_.prevLineageNameArray.length < 2) { return ""; }
@@ -876,7 +938,11 @@ export class TaxonHistory {
       return ` from <span class="subtle-rank-name">${parentRank}</span> <span class="subtle-taxon-name">${parentName}</span>`;
    }
 
-   // Format the page's "Taxon name" title text using this taxon.
+   /**
+    * Format the page's "Taxon name" title text using this taxon.
+    * @param taxon_
+    * @returns the taxon's rank, name, and release info as HTML
+    */
    formatTaxonForPageTitle(taxon_: ITaxon): string {
 
       let name = Utils.italicizeTaxonName(taxon_.name);
@@ -890,7 +956,9 @@ export class TaxonHistory {
       return `<span class="title-rank">${taxon_.rankName}</span>: <span class="title-name">${name}</span> <span class="title-release">(${releaseText})</span>`;
    }
 
-   // Get the history of taxa with this ictv_id over all releases.
+   /**
+    * Get the history of taxa with this ictv_id over all releases.
+    */
    async getByIctvID() {
 
       // Validate the ICTV ID.
@@ -909,7 +977,9 @@ export class TaxonHistory {
       return this.processHistory();
    }
 
-   // Get the history of the taxon with this taxnode_id over all releases.
+   /**
+    * Get the history of the taxon with this taxnode_id over all releases.
+    */
    async getByTaxNodeID() {
 
       // Validate the tax node ID.
@@ -928,7 +998,9 @@ export class TaxonHistory {
       return this.processHistory();
    }
 
-   // Get the history of taxa with this name over all releases.
+   /**
+    * Get the history of taxa with this name over all releases.
+    */
    async getByTaxonName() {
 
       // Validate the tax node ID.
@@ -947,7 +1019,9 @@ export class TaxonHistory {
       return this.processHistory();
    }
 
-   // Get the history of taxa with this vmr_id over all releases.
+   /**
+    * Get the history of taxa with this vmr_id over all releases.
+    */
    async getByVmrID() {
 
       // Validate the VMR ID.
@@ -966,7 +1040,9 @@ export class TaxonHistory {
       return this.processHistory();
    }
 
-   // Get taxa from the current release. Note that this is only used by the taxon details component.
+   /**
+    * Get taxa from the current release. Note that this is only used by the taxon details component.
+    */
    getCurrentTaxa(): ITaxon[] {
 
       if (!this.data || !this.data.taxa || this.data.taxa.length === 0) {
@@ -987,7 +1063,11 @@ export class TaxonHistory {
       return currentTaxa;
    }
 
-   // Get the icon class that matches the filename's extension.
+   /**
+    * Get the icon class that matches the filename's extension.
+    * @param filename_
+    * @returns icon HTML
+    */
    getFileIconClass(filename_: string): string {
 
       if (!filename_) { return ""; }
@@ -1007,7 +1087,11 @@ export class TaxonHistory {
       }
    }
 
-   // Get a taxon's rank from a previous release.
+   /**
+    * Get a taxon's rank from a previous release.
+    * @param taxon_
+    * @returns the previous rank
+    */
    getPreviousRank(taxon_: ITaxon): string {
 
       if (!taxon_.prevLineageRankArray || taxon_.prevLineageRankArray.length < 1) { return ""; }
@@ -1015,7 +1099,9 @@ export class TaxonHistory {
       return taxon_.prevLineageRankArray[taxon_.prevLineageRankArray.length - 1];
    }
 
-   // Return a DIV that contains the spinner icon and optional text.
+   /**
+    * Return a DIV that contains the spinner icon and optional text.
+    */
    getSpinnerHTML(spinnerText_?: string): string {
 
       const spinnerText = !spinnerText_ ? "" : ` ${spinnerText_}`;
@@ -1023,7 +1109,9 @@ export class TaxonHistory {
       return `<div class="spinner-ctrl"><i class="${this.icons.spinner}"></i>${spinnerText}</div>`;
    }
 
-   // Highlight all changed taxa with this ICTV ID as a data attribute.
+   /**
+    * Highlight all changed taxa with this ICTV ID as a data attribute.
+    */
    highlightSelectedLineage(selectedIctvID_: number) {
 
       // Only highlight changed taxa if there are enough distinct ICTV IDs.
@@ -1089,7 +1177,7 @@ export class TaxonHistory {
       this.elements.settingsDialog = this.elements.container.querySelector("#export_settings_dialog");
       if (!this.elements.settingsDialog) { throw new Error("Invalid settings dialog element"); }
 
-      
+      // Handle a click on the settings dialog.
       this.elements.settingsDialog.addEventListener("click", (event_) => {
          
          const target = (event_.target) as HTMLElement;
@@ -1144,13 +1232,17 @@ export class TaxonHistory {
       return await AlertBuilder.displayError("No valid parameters were provided.");
    }
 
-   // Open the lineage export settings dialog.
+   /**
+    * Open the lineage export settings dialog.
+    */
    openSettingsDialog() {
       this.elements.settingsDialog.style.display = "block";
       return;
    }
 
-   // Process and display the data returned from the web service.
+   /**
+    * Process and display the data returned from the web service.
+    */
    processHistory() {
 
       // Validate the releases
@@ -1267,7 +1359,9 @@ export class TaxonHistory {
       this.highlightSelectedLineage(this.selectedTaxon.ictvID);
    }
 
-   // Add metadata to the taxon (for convenience).
+   /**
+    * Add metadata to the taxon (for convenience).
+    */
    processTaxon(taxon_: ITaxon): ITaxon {
 
       // Remove trailing semicolons.
@@ -1301,7 +1395,9 @@ export class TaxonHistory {
       return taxon_;
    }
 
-   // Re-evaluate lineage names tagged for re-evaluation to see if they should be converted to links.
+   /**
+    * Re-evaluate lineage names tagged for re-evaluation to see if they should be converted to links.
+    */
    reevaluateCurrentNames() {
 
       // We wil only re-evaluate lineage names if the selected taxon is from an older release.
@@ -1327,7 +1423,11 @@ export class TaxonHistory {
       })
    }
 
-   // Remove a trailing semicolon from a delimited list.
+   /**
+    * Remove a trailing semicolon from a delimited list.
+    * @param value_ A semicolon-delimited list
+    * @returns the list without a trailing semicolon
+    */
    removeTrailingSemicolon(value_: string) {
       value_ = Utils.safeTrim(value_);
       if (value_.endsWith(";")) { value_ = value_.substring(0, value_.length - 1); }

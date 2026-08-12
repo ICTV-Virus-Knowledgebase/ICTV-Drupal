@@ -1,8 +1,7 @@
 d3TaxonomyVisualization:
-  version: 20260608v2.1
+  version: 20260812
   css:
     theme:
-      assets/css/font-awesome.min.css: {}
       assets/css/jquery.dataTables.min.css: {}
       assets/css/select2.min.css: {}
       assets/css/stylesheet.css: {}
