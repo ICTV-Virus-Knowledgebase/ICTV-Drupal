@@ -34,7 +34,7 @@
 
             
             // The DOM selector of the container Element added to the page.
-            const containerSelector = "#release_history_taxonomy_browser_container";
+            const containerSelector = "#taxonomy_browser_container";
             
             const controlKey = "releaseHistoryTaxonomyBrowser";
             const ctrlSettings = {

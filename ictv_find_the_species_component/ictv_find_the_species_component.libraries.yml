@@ -1,11 +1,8 @@
 findTheSpeciesComponent:
-  version: 20260812_1621
+  version: 20260817_1620
   css:
     theme:
-      assets/css/dataTables.dataTables.min.css: {}
       assets/css/FindTheSpecies.css: {}
-      assets/css/tippy.css:  {attributes:{type: "text/html"}}
-      assets/css/light-border.css: {}
   js:
     assets/js/ICTV_FindTheSpecies.js: { preprocess: false }
     assets/js/findTheSpeciesComponent.js: { preprocess: false }
