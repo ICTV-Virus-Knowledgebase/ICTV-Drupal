@@ -14,20 +14,20 @@
             initialized = true;
             
             //----------------------------------------------------------------------------------------
-            // Initialize the ICTV_VirusNameLookup AppSettings using drupalSettings
+            // Initialize the ICTV_FindTheSpecies AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
             // The application URL
-            window.ICTV_VirusNameLookup.AppSettings.applicationURL = settings_.applicationURL;
+            window.ICTV_FindTheSpecies.AppSettings.applicationURL = settings_.applicationURL;
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_virus_name_lookup_container";
 
-            // Create a new VirusNameLookup component instance.
-            const virusNameLookup = new window.ICTV_VirusNameLookup.VirusNameLookup(containerSelector);
+            // Create a new FindTheSpecies component instance.
+            const findTheSpecies = new window.ICTV_FindTheSpecies.FindTheSpecies(containerSelector);
 
             // Initialize and display the UI.
-            virusNameLookup.initializeMinimalComponent();
+            findTheSpecies.initializeMinimalComponent();
         }
     };
     

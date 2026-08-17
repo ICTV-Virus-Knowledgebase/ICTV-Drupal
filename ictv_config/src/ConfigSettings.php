@@ -8,7 +8,7 @@ use Drupal\ictv_common\Utils;
 
 class ConfigSettings {
 
-   // The ICTV URL
+   // The website URL
    public string $applicationURL;
 
    // The base URL for web services.
@@ -17,13 +17,19 @@ class ConfigSettings {
    // The current Master Species List (MSL) release number.
    public int $currentMslRelease;
 
+   // The current virus metadata resource (VMR) identifier.
+   public string $currentVMR;
+
+   // ???
+   public string $drupalWebServiceURL;
+
    // The location of release proposal files.
    public string $releaseProposalsURL;
 
    // The taxon details page URL.
    public string $taxonHistoryPage;
 
-   
+
    /**
     * Create a new ConfigSettings instance.
     */
@@ -55,6 +61,12 @@ class ConfigSettings {
          (
             SELECT value
             FROM ictv_settings
+            WHERE name = 'currentVMR'
+            LIMIT 1
+         ) AS currentVMR,
+         (
+            SELECT value
+            FROM ictv_settings
             WHERE name = 'releaseProposalsURL'
             LIMIT 1
          ) AS releaseProposalsURL,
@@ -76,6 +88,9 @@ class ConfigSettings {
 
       if (!is_numeric($result->currentMslRelease)) { throw new \Exception("Invalid currentMslRelease config setting"); }
       $this->currentMslRelease = intval($result->currentMslRelease);
+
+      $this->currentVMR = $result->currentVMR;
+      if (Utils::isNullOrEmpty($this->currentVMR)) { throw new \Exception("Invalid currentVMR config setting"); }
 
       $this->releaseProposalsURL = $result->releaseProposalsURL;
       if (Utils::isNullOrEmpty($this->releaseProposalsURL)) { throw new \Exception("Invalid releaseProposalsURL config setting"); }
