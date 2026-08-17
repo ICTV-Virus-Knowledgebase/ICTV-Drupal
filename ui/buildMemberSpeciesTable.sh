@@ -36,9 +36,6 @@ printf "Copying CSS files to ictv_member_species_table/assets/css\n\n"
 
 cp ./css/MemberSpeciesTable.css ../ictv_member_species_table/assets/css/
 cp ./css/ICTV.css ../ictv_member_species_table/assets/css/
-cp ./css/fa-regular.css ../ictv_member_species_table/assets/css/
-cp ./css/fa-solid.css ../ictv_member_species_table/assets/css/
-cp ./css/fontawesome.css ../ictv_member_species_table/assets/css/
 cp ./css/dataTables.dataTables.min.css ../ictv_member_species_table/assets/css/
 cp ./css/light-border.css ../ictv_member_species_table/assets/css/
 cp ./css/tippy.css ../ictv_member_species_table/assets/css/

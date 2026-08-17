@@ -421,6 +421,8 @@ export class TaxonomyBrowser {
 
          return false;
       })
+
+      return;
    }
 
    // Create HTML for a single taxon and add it to the page.
@@ -521,7 +523,7 @@ export class TaxonomyBrowser {
          parentEl_ = this.elements.taxonomyBrowser.querySelector(`.tc-children[data-id="${taxNodeID_}"]`) as HTMLElement;
          if (!parentEl_) { throw new Error("Invalid parent element in expandCollapse"); }
       }
-
+      
       let animationDuration = animate_ ? this.animationDuration : 0;
 
       const iconEl = this.elements.taxonomyBrowser.querySelector(`.tc-ctrl[data-id="${taxNodeID_}"]`);
@@ -763,7 +765,7 @@ export class TaxonomyBrowser {
       });
 
       // Expand the parent to display the newly-added child taxa.
-      this.expandCollapse(response.parentTaxnodeID, true, parentEl);
+      await this.expandCollapse(response.parentTaxnodeID, true, parentEl);
 
       // Update the tippy instance.
       tippy(".has-tooltip");
@@ -1176,6 +1178,12 @@ export class TaxonomyBrowser {
             event_.preventDefault();
             event_.stopPropagation();
 
+            // Don't try to expand or collapse a species node.
+            if (nodeEl.hasAttribute("data-rank")) {
+               const rankName = nodeEl.getAttribute("data-rank");
+               if (rankName === "species") { return false; }
+            }
+
             return await this.expandCollapse(taxNodeID, true);
          }
       })
@@ -1230,7 +1238,7 @@ export class TaxonomyBrowser {
          }
 
       } catch (error_: any) {
-         console.error("error when choosing display mode: ", error_)
+         console.error("Error when choosing display mode: ", error_)
          await AlertBuilder.displayError(error_);
       }
       // Load the release and its taxonomy by default.
@@ -1245,7 +1253,7 @@ export class TaxonomyBrowser {
       let resultCount: number = 0;
 
       let html: string =
-         `<table class="cell-border compact stripe hover">
+         `<table class="dataTable cell-border compact stripe hover">
             <thead>
                <th>Year</th>
                <th>Release Info</th>
@@ -1288,7 +1296,7 @@ export class TaxonomyBrowser {
       // Convert the table into a DataTable instance.
       this.dataTable = new DataTables(`${this.selectors.container} ${this.selectors.releaseHistory} table`, {
          autoWidth: false,
-         dom: "t",
+         columnDefs: [{ orderable: false, targets: 0 }],
          order: [],
          paging: false,
          searching: false,
@@ -1311,11 +1319,9 @@ export class TaxonomyBrowser {
          // Reset the flag.
          this.scrollToReleaseAfterLoading = false;
 
-         // Scroll to focus on the release panel.
-         const releasePanelEl = this.elements.container.querySelector(this.cssClasses.releasePanel) as HTMLElement;
-         if (releasePanelEl) { 
-            Utils.scrollToElement(releasePanelEl);
-         }
+         // Scroll to the release panel if it's valid.
+         if (!this.elements.releasePanel) { throw new Error("Invalid release panel in processReleaseTaxa"); }
+         Utils.scrollToElement(this.elements.releasePanel);
       }
 
       return;
@@ -1336,7 +1342,6 @@ export class TaxonomyBrowser {
       if (!parentEl) { throw new Error("Invalid parent element"); }
 
       parentEl.style.display = "block";
-      //jQuery(`.tc-children[data-id="${parentID_}"]`).show();
 
       if (this.displaySettings.useParentTaxonForReleaseRankCount) {
 

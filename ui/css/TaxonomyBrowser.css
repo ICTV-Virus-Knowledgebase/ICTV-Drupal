@@ -748,6 +748,23 @@
 }
 
 
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   Taxonomy browser: Release history
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#taxonomy_browser_container .release-history {
+   margin: 15px 0 30px 0;
+}
+
+#taxonomy_browser_container .release-history .release-ctrl {
+   color: #03a9f4;
+   cursor: pointer;
+   text-decoration: underline;
+}
+
+#taxonomy_browser_container .release-history .release-notes {
+   width: 130px;
+}
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
     Overriding DataTables CSS
