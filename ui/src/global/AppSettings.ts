@@ -1,30 +1,34 @@
 
 import { WebServiceKey } from "../global/Types";
+import { Utils } from "../helpers/Utils";
 
 
 export class _AppSettings {
 
-   // The website's base URL.
-   applicationURL: string = null;
+   // The URL for web services on the app server.
+   appServerURL: string = null;
 
-   // The base URL for C# web services.
-   baseWebServiceURL: string = null;
+   // The JWT authentication token for the app server.
+   authToken: string = null;
 
    // The current MSL release number.
    currentMslRelease: number = null;
 
-   // The current VMR.
+   // A display label for the current VMR.
    currentVMR: string = null;
-
-   // The URL for Drupal web services.
-   drupalWebServiceURL: string = null;
 
    // The location of release proposal files. 
    releaseProposalsURL: string = null;
 
-   // The taxon history page name.
-   taxonHistoryPage: string = null;
+   // The taxon details page name.
+   taxonDetailsPage: string = null;
    
+   // The base URL for local web services.
+   webServiceURL: string = null;
+
+   // The website's base URL.
+   websiteURL: string = null;
+
    // A lookup from web service keys to web service URLs (not including the full path).
    webServiceLookup: {[key_ in WebServiceKey]: string } = {
 
@@ -54,22 +58,27 @@ export class _AppSettings {
       uploadSequences: "upload-sequences",
 
       // Taxonomy
-      getByReleasePreExpanded: "get-by-release-pre-expanded",
-      getChildTaxa: "get-child-taxa",
-      getMslRelease: "get-msl-release",
-      getReleaseHistory: "get-release-history",
-      getTaxaByName: "get-taxa-by-name",
-      getTaxon: "get-taxon",
-      getTaxonDetails: "get-taxon-details",
-      getTreeExpandedToNode: "get-tree-expanded-to-node",
-      getUnassignedChildTaxaByName: "get-unassigned-child-taxa-by-name",
-      searchTaxonomy: "search-taxonomy",
+      getByReleasePreExpanded: "api/get-by-release-pre-expanded",
+      getChildTaxa: "api/get-child-taxa",
+      getMslRelease: "api/get-msl-release",
+      getReleaseHistory: "api/get-release-history",
+      getTaxaByName: "api/get-taxa-by-name",
+      getTaxon: "api/get-taxon",
+      getTaxonDetails: "api/get-taxon-details",
+      getTreeExpandedToNode: "api/get-tree-expanded-to-node",
+      getUnassignedChildTaxaByName: "api/get-unassigned-child-taxa-by-name",
+      searchTaxonomy: "api/search-taxonomy",
 
       // Taxonomy history
       taxonomyHistory: "get-taxon-history",
       
       // Member species table
       virusIsolate: "get-virus-isolates"
+   }
+
+   // C-tor
+   constructor() {
+      this.websiteURL = Utils.getBaseURL();
    }
 }
 

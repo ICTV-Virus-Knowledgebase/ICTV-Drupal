@@ -19,7 +19,7 @@ export class _VirusIsolateService {
          taxon_name: Utils.safeTrim(taxonName_)
       }
 
-      const responseData = await WebService.get<IVirusIsolate[]>(WebServiceKey.virusIsolate, data);
+      const responseData = await WebService.requestData<IVirusIsolate[]>(WebServiceKey.virusIsolate, data);
       return responseData;
    }
 

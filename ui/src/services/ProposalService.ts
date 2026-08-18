@@ -22,7 +22,7 @@ export class _ProposalService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<IResult>(WebServiceKey.getProposalJobs, authToken_, data);
+      return await WebService.requestData<IResult>(WebServiceKey.getProposalJobs, data);
    }
 
 
@@ -42,7 +42,7 @@ export class _ProposalService {
       };
 
       // Get and return the validation summary
-      return await WebService.drupalPost<IValidationSummary>(WebServiceKey.getProposalValidationSummary, authToken_, data);
+      return await WebService.requestData<IValidationSummary>(WebServiceKey.getProposalValidationSummary, data);
    }
 
 
@@ -62,7 +62,7 @@ export class _ProposalService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<IUploadResult>(WebServiceKey.uploadProposals, authToken_, data);
+      return await WebService.requestData<IUploadResult>(WebServiceKey.uploadProposals, data);
    }
 
 }

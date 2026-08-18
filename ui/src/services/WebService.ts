@@ -1,18 +1,169 @@
 
 import { AppSettings } from "../global/AppSettings";
 import axios, { AxiosResponse } from "axios";
-import { WebServiceKey } from "../global/Types";
-
-// HTTP request methods
-enum RequestMethod {
-   GET = "GET",
-   POST = "POST",
-   POST_JSON = "POST_JSON"
-}
-
+import { HttpMethod, IWebServiceDefinition, WebServiceKey } from "../global/Types";
 
 export class _WebService {
 
+
+   // Get a CSRF token from the app server.
+   async getCsrfToken(): Promise<string> {
+
+      let csrfToken = "";
+
+      if (!AppSettings.authToken) { throw new Error("Invalid auth token"); }
+
+      // Get the app server URL from the AppSettings.
+      let url = AppSettings.appServerURL;
+      if (!url) { throw new Error("Invalid app server URL"); }
+
+      if (!url.endsWith("/")) { url += "/"; }
+
+      // Get the name of the CSRF service.
+      const csrfService = AppSettings.webServiceLookup[WebServiceKey.csrfToken];
+      if (!csrfService) { throw new Error(`Unrecognized web service key ${WebServiceKey.csrfToken}`); }
+
+      // Combine the app server URL with the CSRF web service.
+      const csrfURL = `${url}${csrfService}`;
+
+      try {
+         // Call the CSRF web service and wait for a response.
+         let response: AxiosResponse = await axios.get(csrfURL, {
+            headers: {
+               ["Authorization"]: `Bearer ${AppSettings.authToken}`
+            },
+            params: null
+         })
+
+         // Validate the Axios response.
+         if (!response || !response.data) { throw new Error("Invalid HTTP Response"); }
+
+         csrfToken = response.data as string;
+      }
+      catch (error_) {
+         const message = `Unable to retrieve CSRF token: ${error_}`;
+         console.error(message);
+         throw new Error(message);
+      }
+
+      return csrfToken;
+   }
+
+   // Choose the appropriate web service URL based on the web service key provided.
+   getWebServiceDefinition(webServiceKey_: WebServiceKey): IWebServiceDefinition {
+
+      // Set default values for the web service definition.
+      let definition = {
+         isDataJSON: false,
+         method: HttpMethod.GET,
+         url: "",
+         useAuthToken: false,
+         useCsrfToken: false
+      } as IWebServiceDefinition;
+      
+      // The web service key determines the definition's attributes.
+      switch(webServiceKey_) {
+
+         // Proposal service endpoints
+         case WebServiceKey.getProposalJobs:
+         case WebServiceKey.getProposalValidationSummary:
+         case WebServiceKey.uploadProposals:
+
+         // TaxaBLAST endpoints
+         case WebServiceKey.downloadTaxaBlastFile:
+         case WebServiceKey.getTaxaBlastOutputFile:
+         case WebServiceKey.getTaxaBlastJob:
+         case WebServiceKey.searchTaxaBlastJobs:
+         case WebServiceKey.uploadSequences:
+            definition.method = HttpMethod.POST;
+            definition.url = AppSettings.appServerURL;
+            definition.useAuthToken = true;
+            definition.useCsrfToken = true;
+            break;
+
+         default:
+            definition.url = AppSettings.webServiceURL;
+      }
+
+      if (!definition.url.endsWith("/")) { definition.url += "/"; }
+
+      let webService = AppSettings.webServiceLookup[webServiceKey_];
+      if (!webService) { throw new Error(`Unrecognized web service key ${webServiceKey_}`); }
+
+      definition.url += webService;
+      
+      return definition;
+   }
+
+
+   async requestData<T>(webserviceKey_: WebServiceKey, data_?: any): Promise<T> {
+
+      let headers: { [key: string]: string } = {};     
+
+      // Get the web service definition for the specified key.
+      const definition = this.getWebServiceDefinition(webserviceKey_); 
+
+      // Should we include an auth token?
+      if (definition.useAuthToken) {
+         if (!AppSettings.authToken) { throw new Error("Invalid auth token"); }
+         headers["Authorization"] = `Bearer ${AppSettings.authToken}`;
+      }
+
+      // Should we include a CSRF token?
+      if (definition.useCsrfToken) {
+         let csrfToken = await this.getCsrfToken();
+         if (!csrfToken) { throw new Error("Unable to retrieve CSRF token"); }
+
+         headers["X-CSRF-TOKEN"] = csrfToken;
+      }
+
+      let response: AxiosResponse = undefined;
+
+      switch(definition.method) {
+
+         case HttpMethod.GET:
+            response = await axios.get(definition.url, {
+               headers: headers,
+               params: data_
+            })
+
+            break;
+
+         case HttpMethod.POST:
+
+            let data: any | FormData = data_;
+
+            if (data_ && !definition.isDataJSON) {
+
+               // Initialize the form data.
+               data = new FormData();
+
+               // Convert the JSON data to form data.
+               Object.keys(data_).forEach((key_: string) => {
+                  const value = data_[key_];
+                  data.set(key_, value);
+               })
+            }
+
+            response = await axios.post(definition.url, data, {
+               headers: headers
+            })
+
+            break;
+            
+         default:
+            throw new Error(`Unsupported request method: ${definition.method}`);
+      }
+
+      // Validate the Axios response.
+      if (!response || !response.data) { throw new Error("Invalid HTTP Response"); }
+
+      return response.data as T;
+   }
+
+
+
+   /*
    // Make an HTTP GET request to the specified web service.
    async drupalGet<T>(webServiceKey_: WebServiceKey, authToken_: string, data_?: any): Promise<T> {
 
@@ -29,15 +180,14 @@ export class _WebService {
          result = await this.performRequest<T>(authToken_, RequestMethod.GET, url, data_);
       }
       catch (error_) {
-         // TODO: handle the exception!
-         //AlertBuilder.displayError(`Error in ${webServiceKey_} WebService: ${getErrorMessage(error_)}`);
+         console.error(`Error in ${webServiceKey_} WebService:`, error_);
          result = null;
       }
 
       return result;
-   }
+   }*/
 
-
+/*
    // Make an HTTP POST request to the specified web service.
    async drupalPost<T>(webServiceKey_: WebServiceKey, authToken_: string, data_?: any): Promise<T> {
 
@@ -79,9 +229,9 @@ export class _WebService {
 
       return result;
    }
+*/
 
-
-
+/*
    // Make an HTTP GET request to the specified web service.
    async get<T>(webServiceKey_: WebServiceKey, data_?: any): Promise<T> {
 
@@ -92,7 +242,7 @@ export class _WebService {
       if (!webService) { throw new Error(`Unrecognized web service key ${webServiceKey_}`); }
 
       // Combine the web service base URL with the web service.
-      const url = `${AppSettings.baseWebServiceURL}${webService}`;
+      const url = `${AppSettings.webServiceURL}${webService}`;
 
       try {
          result = await this.performRequest<T>(null, RequestMethod.GET, url, data_);
@@ -103,9 +253,9 @@ export class _WebService {
       }
 
       return result;
-   }
+   }*/
 
-
+/*
    // This is used by the get and post methods to make a web service request and return the results.
    protected async performRequest<T>(authToken_: string, method_: RequestMethod, 
       webServiceURL_: string, data_?: any, csrfToken_?: string): Promise<T> {
@@ -174,7 +324,9 @@ export class _WebService {
 
       return response.data as T;
    }
+*/
 
+/*
 
    // Make an HTTP POST request to the specified web service.
    async post<T>(webServiceKey_: WebServiceKey, data_?: any): Promise<T> {
@@ -186,7 +338,7 @@ export class _WebService {
       if (!webService) { throw new Error(`Unrecognized web service key ${webServiceKey_}`); }
 
       // Combine the web service base URL with the web service.
-      const url = `${AppSettings.baseWebServiceURL}${webService}`;
+      const url = `${AppSettings.webServiceURL}${webService}`;
 
       try {
          result = await this.performRequest<T>(null, RequestMethod.POST, url, data_);
@@ -198,8 +350,9 @@ export class _WebService {
 
       return result;
    }
+   */
 
-
+   /*
    public async postFiles<T>(authToken_: string, data_: any, files_: FileList, webServiceKey_: WebServiceKey): Promise<T> {
 
       if (!authToken_) { throw new Error("Unable to post files: Invalid auth token"); }
@@ -258,7 +411,7 @@ export class _WebService {
       if (!response || !response.data) { throw new Error("Invalid HTTP Response"); }
 
       return response.data as T;
-   }
+   }*/
 
 
 

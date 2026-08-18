@@ -519,7 +519,7 @@ export class TaxonHistory {
     * @returns The formatted URL string
     */
    createLineageURL(taxnodeID_: string, taxonName_: string): string {
-      return `${this.baseURL}/${AppSettings.taxonHistoryPage}?taxnode_id=${taxnodeID_}&taxon_name=${taxonName_}"`;
+      return `${this.baseURL}/${AppSettings.taxonDetailsPage}?taxnode_id=${taxnodeID_}&taxon_name=${taxonName_}"`;
    }
 
    /**

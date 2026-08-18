@@ -3,7 +3,7 @@
 namespace Drupal\ictv_find_the_species_component\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-
+use Drupal\ictv_config\ConfigSettings;
 
 /**
  * A Block for the stand-alone ICTV Find the Species UI component.
@@ -16,17 +16,33 @@ use Drupal\Core\Block\BlockBase;
  */
 class IctvFindTheSpeciesComponentBlock extends BlockBase {
 
-   // The application URL.
-   public $applicationURL;
-
-
+   
    /**
     * {@inheritdoc}
     */
    public function build() {
 
-      // Load ICTV settings from the database.
-      $this->loadData();
+      // Configuration settings
+      $settings;
+
+      // Use the default database instance.
+      $database = \Drupal::database();
+
+      try {
+         // Load ICTV settings from the database.
+         $settings = new ConfigSettings($database);
+      }
+      catch (\Throwable $error) {
+         
+         \Drupal::logger('ictv_d3_taxonomy_visualization')->error(
+            'Invalid ICTV configuration settings: @message',
+            ['@message' => $error->getMessage()]
+         );
+
+         return [
+            '#markup' => $this->t('The ICTV taxonomy visualization is unavailable because configuration settings are invalid.'),
+         ];
+      }
 
       $build = [
          '#markup' => $this->t("<div id=\"ictv_virus_name_lookup_container\" class=\"ictv-custom\"></div>"),
@@ -39,8 +55,9 @@ class IctvFindTheSpeciesComponentBlock extends BlockBase {
       ];
 
       // Populate drupalSettings with variables needed by the Find the Species object to create this component.
-      $build['#attached']['drupalSettings']['applicationURL'] = $this->applicationURL;
-      
+      $build['#attached']['drupalSettings']['currentMslRelease'] = $settings->currentMslRelease();
+      $build['#attached']['drupalSettings']['currentVMR'] = $settings->currentVMR();
+
       return $build;
    }
 
@@ -52,32 +69,5 @@ class IctvFindTheSpeciesComponentBlock extends BlockBase {
     */
    public function getCacheMaxAge() {
       return 2;
-   }
-
-
-   /**
-    * Load the ICTV settings from the database.
-    */
-    public function loadData() {
-
-      // Use the default database instance.
-      $database = \Drupal::database();
-
-      // Initialize the member variable.
-      $this->applicationURL = "";
-
-      // Get ICTV settings
-      $sql = 
-         "SELECT ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'applicationURL' LIMIT 1
-         ) AS applicationURL;";
-
-      $query = $database->query($sql);
-      if (!$query) { \Drupal::logger('ictv_find_the_species_component')->error("Invalid query object"); }
-
-      $settings = $query->fetchAssoc();
-      if (!$settings) { \Drupal::logger('ictv_find_the_species_component')->error("Invalid settings object"); }
-
-      $this->applicationURL = $settings["applicationURL"];
    }
 }

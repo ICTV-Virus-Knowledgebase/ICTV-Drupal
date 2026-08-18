@@ -87,12 +87,12 @@ export class VisualBrowser {
       if (!dataURL_) { throw new Error("Invalid data URL parameter"); }
       this.config.url.data = dataURL_;
 
-      this.config.url.taxonDetailsPage = AppSettings.taxonHistoryPage;
+      this.config.url.taxonDetailsPage = AppSettings.taxonDetailsPage;
       if (!this.config.url.taxonDetailsPage) { throw new Error("Invalid taxon details app setting"); }
       
       // Populate the taxonomy web service
       const taxonomyEndPoint = AppSettings.webServiceLookup[WebServiceKey.searchTaxonomy];
-      this.config.url.taxonomy = `${AppSettings.baseWebServiceURL}${taxonomyEndPoint}`;
+      this.config.url.taxonomy = `${AppSettings.webServiceURL}${taxonomyEndPoint}`;
 
       this.elements = {
          container: null,

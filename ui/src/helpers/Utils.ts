@@ -1,7 +1,8 @@
 
 import { AppSettings } from "../global/AppSettings";
 import { AllNonNtProteinCodes, NucleotideCodes, NucleotideAmbiguityCodes, OperatingSystem, ProteinCodes, 
-   ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType } from "../global/Types";
+   ProteinAmbiguityCodes, ProteinOnlyCodes, SequenceType
+} from "../global/Types";
 import { SequenceMetadata } from "../models/SequenceMetadata";
 
 
@@ -202,7 +203,7 @@ export class Utils {
    static createTaxonDetailsURL(id_: string, name_: string): string {
 
       name_ = Utils.safeTrim(name_);
-      let URL = `${AppSettings.taxonHistoryPage}?id=${id_}`;
+      let URL = `${AppSettings.taxonDetailsPage}?id=${id_}`;
       if (name_.length > 0) { URL += `&taxon_name=${name_}`}
       return URL;
    }

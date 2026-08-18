@@ -17,9 +17,9 @@
             // Initialize the ICTV_FindTheSpecies AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
-            // The application URL
-            window.ICTV_FindTheSpecies.AppSettings.applicationURL = settings_.applicationURL;
-
+            window.ICTV_FindTheSpecies.AppSettings.currentMslRelease = settings_.currentMslRelease;
+            window.ICTV_FindTheSpecies.AppSettings.currentVMR = settings_.currentVMR;
+            
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_virus_name_lookup_container";
 

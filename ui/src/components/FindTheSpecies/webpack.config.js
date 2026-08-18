@@ -1,6 +1,5 @@
 
 const path = require("path");
-const tsLoader = require("ts-loader");
 
 module.exports = {
    mode: "production",
@@ -11,7 +10,6 @@ module.exports = {
       ]
    },
    externals: {
-      datatables: "datatables.net-dt",
       jquery: 'jQuery'
    },
    module: {

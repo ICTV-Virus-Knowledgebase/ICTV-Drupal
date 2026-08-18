@@ -14,7 +14,7 @@ export class _FindTheSpeciesService {
          searchText: searchText_
       }
       
-      return await WebService.drupalGet<IIctvResult[]>(WebServiceKey.findTheSpecies, null, data);
+      return await WebService.requestData<IIctvResult[]>(WebServiceKey.findTheSpecies, data);
    }
 
 }

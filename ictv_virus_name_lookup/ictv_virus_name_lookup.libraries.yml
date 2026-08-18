@@ -1,5 +1,5 @@
 findTheSpecies:
-  version: 20260817_1626
+  version: 20260818_1114
   css:
     theme:
       assets/css/dataTables.dataTables.min.css: {}

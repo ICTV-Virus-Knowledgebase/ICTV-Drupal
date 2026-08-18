@@ -175,7 +175,7 @@ export function CreateNewSearchURL() {
 
 // Create a URL for the ICTV taxon details page.
 export function CreateTaxonDetailsURL(ictvID_: string, name_: string) {
-   const url = AppSettings.taxonHistoryPage;
+   const url = AppSettings.taxonDetailsPage;
    return `${url}?ictv_id=${ictvID_}&taxon_name=${name_}`;
 }
 

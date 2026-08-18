@@ -1172,7 +1172,7 @@ export class TaxonomyBrowser {
             // Remove the i Elements
             taxonName = taxonName.replace("<i>", "").replace("</i>", "");
 
-            window.open(`${AppSettings.taxonHistoryPage}?taxnode_id=${taxNodeID}&taxon_name=${taxonName}`, "_blank");
+            window.open(`${AppSettings.taxonDetailsPage}?taxnode_id=${taxNodeID}&taxon_name=${taxonName}`, "_blank");
 
          } else {
             event_.preventDefault();

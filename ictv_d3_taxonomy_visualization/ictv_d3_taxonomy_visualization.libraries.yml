@@ -1,5 +1,5 @@
 d3TaxonomyVisualization:
-  version: 20260817_1229
+  version: 20260818_1606
   css:
     theme:
       assets/css/dataTables.dataTables.min.css: {}

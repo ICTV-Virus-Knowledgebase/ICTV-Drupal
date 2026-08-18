@@ -28,7 +28,7 @@ export class _TaxonomyService {
          use_small_font: displaySettings_.useSmallFont
       }
 
-      const responseData = await WebService.get<any>(WebServiceKey.getByReleasePreExpanded, data);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getByReleasePreExpanded, data);
 
       let taxonomyHTML: string = null;
       if (responseData && responseData.taxonomyHTML) { taxonomyHTML = responseData.taxonomyHTML; }
@@ -42,7 +42,7 @@ export class _TaxonomyService {
          taxnode_id: taxNodeID_
       };
 
-      const responseData = await WebService.get<any>(WebServiceKey.getChildTaxa, data);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getChildTaxa, data);
 
       return responseData;
    }
@@ -55,7 +55,7 @@ export class _TaxonomyService {
          msl_release: releaseNumber_
       }
 
-      const responseData = await WebService.get<any>(WebServiceKey.getMslRelease, data);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getMslRelease, data);
       if (responseData && responseData.release) { mslRelease = responseData.release as IMslRelease }
 
       return mslRelease;
@@ -63,7 +63,7 @@ export class _TaxonomyService {
 
    async getReleaseHistory() {
 
-      const responseData = await WebService.get<any>(WebServiceKey.getReleaseHistory);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getReleaseHistory);
 
       return responseData;
    }
@@ -75,7 +75,7 @@ export class _TaxonomyService {
          taxon_name: taxonName_
       };
 
-      const responseData = await WebService.get<any>(WebServiceKey.getTaxaByName, data);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getTaxaByName, data);
 
       return responseData;
    }
@@ -89,7 +89,7 @@ export class _TaxonomyService {
          taxnode_id: taxNodeID_
       };
 
-      return await WebService.get<ITaxon>(WebServiceKey.getTaxon, data);
+      return await WebService.requestData<ITaxon>(WebServiceKey.getTaxon, data);
    }
 
    async getTaxonDetails(taxNodeID_: string): Promise<ITaxonDetailsResult> {
@@ -100,7 +100,7 @@ export class _TaxonomyService {
          taxnode_id: taxNodeID_
       };
 
-      const responseData = await WebService.get<ITaxonDetailsResult>(WebServiceKey.getTaxonDetails, data);
+      const responseData = await WebService.requestData<ITaxonDetailsResult>(WebServiceKey.getTaxonDetails, data);
 
       console.log(responseData);
 
@@ -126,7 +126,7 @@ export class _TaxonomyService {
          use_small_font: displaySettings_.useSmallFont
       }
 
-      const responseData = await WebService.get<any>(WebServiceKey.getTreeExpandedToNode, data);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getTreeExpandedToNode, data);
 
       return responseData;
    }
@@ -139,7 +139,7 @@ export class _TaxonomyService {
          taxon_name: taxonName_
       }
 
-      const responseData = await WebService.get<any>(WebServiceKey.getUnassignedChildTaxaByName, data);
+      const responseData = await WebService.requestData<any>(WebServiceKey.getUnassignedChildTaxaByName, data);
 
       return responseData;
    }
@@ -159,7 +159,7 @@ export class _TaxonomyService {
          selected_release: selectedRelease_
       };
 
-      return await WebService.get<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
+      return await WebService.requestData<ITaxonSearchResult[]>(WebServiceKey.searchTaxonomy, data);
    }
 
 }
