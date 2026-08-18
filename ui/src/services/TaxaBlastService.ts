@@ -26,7 +26,7 @@ export class _TaxaBlastService {
       };
 
       // Get and return the result files.
-      return await WebService.drupalPost<any>(WebServiceKey.downloadTaxaBlastFile, authToken_, data);
+      return await WebService.requestData<any>(WebServiceKey.downloadTaxaBlastFile, data);
    }
 
 
@@ -64,7 +64,7 @@ export class _TaxaBlastService {
       };
 
       // Get and return the sequence search result.
-      return await WebService.drupalPost<ITaxaBlastJob>(WebServiceKey.getTaxaBlastJob, authToken_, data);
+      return await WebService.requestData<ITaxaBlastJob>(WebServiceKey.getTaxaBlastJob, data);
    }
 
 
@@ -81,7 +81,7 @@ export class _TaxaBlastService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<ITaxaBlastJob[]>(WebServiceKey.searchTaxaBlastJobs, authToken_, data);
+      return await WebService.requestData<ITaxaBlastJob[]>(WebServiceKey.searchTaxaBlastJobs, data);
    }
 
 
@@ -99,7 +99,7 @@ export class _TaxaBlastService {
       };
 
       // Get and return the result files.
-      return await WebService.drupalPost<IOutputFile>(WebServiceKey.getTaxaBlastOutputFile, authToken_, data);
+      return await WebService.requestData<IOutputFile>(WebServiceKey.getTaxaBlastOutputFile, data);
    }
 
    
@@ -124,7 +124,7 @@ export class _TaxaBlastService {
          userUID: userUID_
       };
 
-      return await WebService.drupalPost<ISubmissionResult>(WebServiceKey.uploadSequences, authToken_, data);
+      return await WebService.requestData<ISubmissionResult>(WebServiceKey.uploadSequences, data);
    } 
 
 }

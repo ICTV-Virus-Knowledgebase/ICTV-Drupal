@@ -219,7 +219,7 @@ export class TaxonomySearchPanel {
             if (!taxonName) { throw new Error("Invalid taxon name"); }
 
             // Open a new tab containing the taxon history page.
-            window.open(`${AppSettings.taxonHistoryPage}?taxnode_id=${id}&taxon_name=${taxonName}`, "_blank");
+            window.open(`${AppSettings.taxonDetailsPage}?taxnode_id=${id}&taxon_name=${taxonName}`, "_blank");
 
          } else { return; }
 

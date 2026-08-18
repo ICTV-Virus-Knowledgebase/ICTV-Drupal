@@ -4,6 +4,7 @@ namespace Drupal\ictv_config\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\ictv_config\ConfigSettings;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -11,24 +12,41 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class ConfigForm extends FormBase {
 
    // Constants for the form field identifiers.
-   private $CONTROL_APPLICATION_URL = "applicationURL";
+   private $CONTROL_APP_SERVER_URL = "appServerURL";
    private $CONTROL_AUTH_TOKEN = "authToken";
-   private $CONTROL_BASE_WEB_SERVICE_URL = "baseWebServiceURL";
    private $CONTROL_CURRENT_MSL_RELEASE = "currentMslRelease";
    private $CONTROL_CURRENT_VMR = "currentVMR";
-   private $CONTROL_DRUPAL_WEB_SERVICE_URL = "drupalWebServiceURL";
    private $CONTROL_RELEASE_PROPOSALS_URL = "releaseProposalsURL";
-   private $CONTROL_TAXON_HISTORY_PAGE = "taxonHistoryPage";
+   private $CONTROL_TAXON_DETAILS_PAGE = "taxonDetailsPage";
+   private $CONTROL_WEB_SERVICE_URL = "webServiceURL";
 
+   
+   private ConfigSettings $settings;
+
+   /*
    // Variables to maintain form values populated from the database.
-   public $applicationURL;
-   public $authToken;
-   public $baseWebServiceURL;
-   public $currentMslRelease;
-   public $currentVMR;
-   public $drupalWebServiceURL;
-   public $releaseProposalsURL;
-   public $taxonHistoryPage;
+
+   // The URL for the ICTV web services on the app server.
+   public string $appServerURL;
+
+   // The JWT auth token for the app server web services.
+   public string $authToken;
+
+   // The current Master Species List (MSL) release number.
+   public int $currentMslRelease;
+
+   // The current virus metadata resource (VMR) identifier.
+   public string $currentVMR;
+
+   // The location of release proposal files.
+   public string $releaseProposalsURL;
+
+   // The taxon details page URL.
+   public string $taxonDetailsPage;
+
+   // The base URL for web services.
+   public string $webServiceURL;
+   */
 
    // The default database instance.
    public Connection $dbConnection;
@@ -68,30 +86,23 @@ class ConfigForm extends FormBase {
    public function buildForm(array $form, FormStateInterface $form_state) {
 
       // Load the default values from the database.
-      $this->loadData();
+      $this->settings = new ConfigSettings($this->dbConnection);
+      //$this->loadData();
 
-      // The website's base URL.
-      $form[$this->CONTROL_APPLICATION_URL] = array(
+      // The URL for web services on the app server.
+      $form[$this->CONTROL_APP_SERVER_URL] = array(
          '#type' => 'url',
-         '#title' => t('Application URL'),
+         '#title' => t('App server URL'),
          '#required' => FALSE,
-         '#default_value' => $this->applicationURL,
+         '#default_value' => $this->settings->appServerURL,
       );
 
-      // The JWT auth token used with the Drupal web services (the app server).
+      // The JWT auth token used with the app server web services.
       $form[$this->CONTROL_AUTH_TOKEN] = array(
          '#type' => 'textarea',
          '#title' => t('JWT auth token'),
          '#required' => FALSE,
-         '#default_value' => $this->authToken
-      );
-
-      // The base URL for web services.
-      $form[$this->CONTROL_BASE_WEB_SERVICE_URL] = array(
-         '#type' => 'url',
-         '#title' => t('Web service URL'),
-         '#required' => FALSE,
-         '#default_value' => $this->baseWebServiceURL
+         '#default_value' => $this->settings->authToken
       );
 
       // The current MSL release number.
@@ -100,7 +111,7 @@ class ConfigForm extends FormBase {
          '#step' => '1',
          '#title' => t('Current MSL release number'),
          '#required' => FALSE,
-         '#default_value' => $this->currentMslRelease
+         '#default_value' => $this->settings->currentMslRelease
       );
 
       // The current VMR.
@@ -109,15 +120,7 @@ class ConfigForm extends FormBase {
          '#step' => '1',
          '#title' => t('Current VMR'),
          '#required' => FALSE,
-         '#default_value' => $this->currentVMR
-      );
-
-      // The URL for Drupal web services (the app server).
-      $form[$this->CONTROL_DRUPAL_WEB_SERVICE_URL] = array(
-         '#type' => 'url',
-         '#title' => t('Drupal web service URL'),
-         '#required' => FALSE,
-         '#default_value' => $this->drupalWebServiceURL
+         '#default_value' => $this->settings->currentVMR
       );
 
       // The location of release proposal files.
@@ -125,15 +128,23 @@ class ConfigForm extends FormBase {
          '#type' => 'url',
          '#title' => t('Location of release proposal files'),
          '#required' => FALSE,
-         '#default_value' => $this->releaseProposalsURL
+         '#default_value' => $this->settings->releaseProposalsURL
       );
 
-      // The taxon history page name.
-      $form[$this->CONTROL_TAXON_HISTORY_PAGE] = array(
+      // The taxon details page name.
+      $form[$this->CONTROL_TAXON_DETAILS_PAGE] = array(
          '#type' => 'textfield',
-         '#title' => t('Taxon history page name'),
+         '#title' => t('Taxon details page name'),
          '#required' => FALSE,
-         '#default_value' => $this->taxonHistoryPage
+         '#default_value' => $this->settings->taxonDetailsPage
+      );
+
+      // The base URL for web services.
+      $form[$this->CONTROL_WEB_SERVICE_URL] = array(
+         '#type' => 'url',
+         '#title' => t('Web service URL'),
+         '#required' => TRUE,
+         '#default_value' => $this->settings->webServiceURL
       );
 
       $form['actions']['#type'] = 'actions';
@@ -150,20 +161,17 @@ class ConfigForm extends FormBase {
    /**
     * Load the ICTV settings from the database.
     */
-   public function loadData() {
+   /*public function loadData() {
 
       // Get all ictv_settings
       $query = $this->dbConnection->query(
          "SELECT  
          ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'applicationURL' LIMIT 1
-         ) AS applicationURL,
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'appServerURL' LIMIT 1
+         ) AS appServerURL,
          ( 
             SELECT VALUE FROM ictv_settings WHERE NAME = 'authToken' LIMIT 1
          ) AS authToken,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'baseWebServiceURL' LIMIT 1
-         ) AS baseWebServiceURL,
          ( 
             SELECT VALUE FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
          ) AS currentMslRelease,
@@ -171,28 +179,27 @@ class ConfigForm extends FormBase {
             SELECT VALUE FROM ictv_settings WHERE NAME = 'currentVMR' LIMIT 1
          ) AS currentVMR,
          ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'drupalWebServiceURL' LIMIT 1
-         ) AS drupalWebServiceURL,
-         ( 
             SELECT VALUE FROM ictv_settings WHERE NAME = 'releaseProposalsURL' LIMIT 1
          ) AS releaseProposalsURL,
          ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'taxonHistoryPage' LIMIT 1
-         ) AS taxonHistoryPage;");
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'taxonDetailsPage' LIMIT 1
+         ) AS taxonDetailsPage,
+         ( 
+            SELECT VALUE FROM ictv_settings WHERE NAME = 'webServiceURL' LIMIT 1
+         ) AS webServiceURL;");
 
       $settings = $query->fetchAssoc();
 
-      $this->applicationURL = $settings["applicationURL"];
+      $this->appServerURL = $settings["appServerURL"];
       $this->authToken = $settings["authToken"];
-      $this->baseWebServiceURL = $settings["baseWebServiceURL"];
       $this->currentMslRelease = $settings["currentMslRelease"];
       $this->currentVMR = $settings["currentVMR"];
-      $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
       $this->releaseProposalsURL = $settings["releaseProposalsURL"];
-      $this->taxonHistoryPage = $settings["taxonHistoryPage"];
+      $this->taxonDetailsPage = $settings["taxonDetailsPage"];
+      $this->webServiceURL = $settings["webServiceURL"];
 
       // TODO: validate!
-   }
+   }*/
 
 
   /**
@@ -236,10 +243,10 @@ class ConfigForm extends FormBase {
 
       // TODO: Instead of handling each control independently, iterate over a list of control keys!
       
-      // Get the application URL and save it.
-      $value = $form_state->getValue($this->CONTROL_APPLICATION_URL);
-      if (!$this->saveValue($this->CONTROL_APPLICATION_URL, $value)) {
-         $form_state->setErrorByName($this->CONTROL_APPLICATION_URL, $this->t('Unable to save application URL.'));
+      // Get the app server URL and save it.
+      $value = $form_state->getValue($this->CONTROL_APP_SERVER_URL);
+      if (!$this->saveValue($this->CONTROL_APP_SERVER_URL, $value)) {
+         $form_state->setErrorByName($this->CONTROL_APP_SERVER_URL, $this->t('Unable to save app server URL.'));
       }
    
       // Get the JWT auth token and save it.
@@ -249,9 +256,9 @@ class ConfigForm extends FormBase {
       }
 
       // Get the base web service URL and save it.
-      $value = $form_state->getValue($this->CONTROL_BASE_WEB_SERVICE_URL);
-      if (!$this->saveValue($this->CONTROL_BASE_WEB_SERVICE_URL, $value)) {
-         $form_state->setErrorByName($this->CONTROL_BASE_WEB_SERVICE_URL, $this->t('Unable to save base web service URL.'));
+      $value = $form_state->getValue($this->CONTROL_WEB_SERVICE_URL);
+      if (!$this->saveValue($this->CONTROL_WEB_SERVICE_URL, $value)) {
+         $form_state->setErrorByName($this->CONTROL_WEB_SERVICE_URL, $this->t('Unable to save web service URL.'));
       }
 
       // Get the current MSL release and save it.
@@ -265,12 +272,6 @@ class ConfigForm extends FormBase {
       if (!$this->saveValue($this->CONTROL_CURRENT_VMR, $value)) {
          $form_state->setErrorByName($this->CONTROL_CURRENT_VMR, $this->t('Unable to save current VMR.'));
       }
-
-      // Get the current Drupal web service URL and save it.
-      $value = $form_state->getValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL);
-      if (!$this->saveValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $value)) {
-         $form_state->setErrorByName($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $this->t('Unable to save current Drupal web service URL.'));
-      }
    
       // Get the release proposals URL and save it.
       $value = $form_state->getValue($this->CONTROL_RELEASE_PROPOSALS_URL);
@@ -278,10 +279,10 @@ class ConfigForm extends FormBase {
          $form_state->setErrorByName($this->CONTROL_RELEASE_PROPOSALS_URL, $this->t('Unable to save release proposals URL.'));
       }
    
-      // Get the taxon history page and save it.
-      $value = $form_state->getValue($this->CONTROL_TAXON_HISTORY_PAGE);
-      if (!$this->saveValue($this->CONTROL_TAXON_HISTORY_PAGE, $value)) {
-         $form_state->setErrorByName($this->CONTROL_TAXON_HISTORY_PAGE, $this->t('Unable to save taxon history page.'));
+      // Get the taxon details page and save it.
+      $value = $form_state->getValue($this->CONTROL_TAXON_DETAILS_PAGE);
+      if (!$this->saveValue($this->CONTROL_TAXON_DETAILS_PAGE, $value)) {
+         $form_state->setErrorByName($this->CONTROL_TAXON_DETAILS_PAGE, $this->t('Unable to save taxon details page.'));
       }
    }
 
@@ -292,41 +293,31 @@ class ConfigForm extends FormBase {
     */
    public function validateForm(array &$form, FormStateInterface $form_state) {
    
-      // The application URL
-      $value = $form_state->getValue($this->CONTROL_APPLICATION_URL);
+      // The app server URL
+      $value = $form_state->getValue($this->CONTROL_APP_SERVER_URL);
       $value = trim($value); 
       if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_APPLICATION_URL, $this->t('Please enter a valid application URL.'));
+         $form_state->setErrorByName($this->CONTROL_APP_SERVER_URL, $this->t('Please enter a valid URL.'));
       } else {
          // Replace the value with the trimmed version.
-         $form_state->setValue($this->CONTROL_APPLICATION_URL, $value);
+         $form_state->setValue($this->CONTROL_APP_SERVER_URL, $value);
       }
 
       // The JWT auth token
       $value = $form_state->getValue($this->CONTROL_AUTH_TOKEN);
       $value = trim($value); 
       if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_AUTH_TOKEN, $this->t('Please enter a valid JWT auth token.'));
+         $form_state->setErrorByName($this->CONTROL_AUTH_TOKEN, $this->t('Please enter a valid JWT auth token'));
       } else {
          // Replace the value with the trimmed version.
          $form_state->setValue($this->CONTROL_AUTH_TOKEN, $value);
-      }
-
-      // The base web service URL
-      $value = $form_state->getValue($this->CONTROL_BASE_WEB_SERVICE_URL);
-      $value = trim($value); 
-      if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_BASE_WEB_SERVICE_URL, $this->t('Please enter a valid base web service URL.'));
-      } else {
-         // Replace the value with the trimmed version.
-         $form_state->setValue($this->CONTROL_BASE_WEB_SERVICE_URL, $value);
       }
 
       // The current MSL release
       $value = $form_state->getValue($this->CONTROL_CURRENT_MSL_RELEASE);
       $value = trim($value); 
       if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_CURRENT_MSL_RELEASE, $this->t('Please enter a valid current MSL release.'));
+         $form_state->setErrorByName($this->CONTROL_CURRENT_MSL_RELEASE, $this->t('Please enter a valid integer'));
       } else {
          // Replace the value with the trimmed version.
          $form_state->setValue($this->CONTROL_CURRENT_MSL_RELEASE, $value);
@@ -336,40 +327,40 @@ class ConfigForm extends FormBase {
       $value = $form_state->getValue($this->CONTROL_CURRENT_VMR);
       $value = trim($value); 
       if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_CURRENT_VMR, $this->t('Please enter a valid current VMR.'));
+         $form_state->setErrorByName($this->CONTROL_CURRENT_VMR, $this->t('Please enter a valid current VMR'));
       } else {
          // Replace the value with the trimmed version.
          $form_state->setValue($this->CONTROL_CURRENT_VMR, $value);
-      }
-
-      // The Drupal web service URL
-      $value = $form_state->getValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL);
-      $value = trim($value); 
-      if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $this->t('Please enter a valid Drupal web service URL.'));
-      } else {
-         // Replace the value with the trimmed version.
-         $form_state->setValue($this->CONTROL_DRUPAL_WEB_SERVICE_URL, $value);
       }
 
       // The release proposals URL
       $value = $form_state->getValue($this->CONTROL_RELEASE_PROPOSALS_URL);
       $value = trim($value); 
       if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_RELEASE_PROPOSALS_URL, $this->t('Please enter a valid release proposals URL.'));
+         $form_state->setErrorByName($this->CONTROL_RELEASE_PROPOSALS_URL, $this->t('Please enter a valid URL'));
       } else {
          // Replace the value with the trimmed version.
          $form_state->setValue($this->CONTROL_RELEASE_PROPOSALS_URL, $value);
       }
 
-      // The taxon history page
-      $value = $form_state->getValue($this->CONTROL_TAXON_HISTORY_PAGE);
+      // The taxon details page
+      $value = $form_state->getValue($this->CONTROL_TAXON_DETAILS_PAGE);
       $value = trim($value); 
       if (is_null($value) || mb_strlen($value) < 1) {
-         $form_state->setErrorByName($this->CONTROL_TAXON_HISTORY_PAGE, $this->t('Please enter a valid taxon history page.'));
+         $form_state->setErrorByName($this->CONTROL_TAXON_DETAILS_PAGE, $this->t('Please enter a valid URL relative to the website root'));
       } else {
          // Replace the value with the trimmed version.
-         $form_state->setValue($this->CONTROL_TAXON_HISTORY_PAGE, $value);
+         $form_state->setValue($this->CONTROL_TAXON_DETAILS_PAGE, $value);
+      }
+
+      // The web service URL
+      $value = $form_state->getValue($this->CONTROL_WEB_SERVICE_URL);
+      $value = trim($value); 
+      if (is_null($value) || mb_strlen($value) < 1) {
+         $form_state->setErrorByName($this->CONTROL_WEB_SERVICE_URL, $this->t('Please enter a valid URL'));
+      } else {
+         // Replace the value with the trimmed version.
+         $form_state->setValue($this->CONTROL_WEB_SERVICE_URL, $value);
       }
    }
 

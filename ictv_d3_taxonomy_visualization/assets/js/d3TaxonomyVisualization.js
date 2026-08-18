@@ -24,7 +24,7 @@
             //----------------------------------------------------------------------------------------
 
             // The base web service URL.
-            window.ICTV.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
+            window.ICTV.AppSettings.webServiceURL = settings_.webServiceURL;
 
             // The current MSL release number.
             window.ICTV.AppSettings.currentMslRelease = settings_.currentMslRelease;
@@ -36,10 +36,12 @@
             const dataURL = settings_.assetPath;
 
             // The taxonomy details page/URL.
-            const taxonDetailsURL = settings_.taxonHistoryPage;
+            const taxonDetailsURL = settings_.taxonDetailsPage;
 
             // The taxonomy web service URL.
-            const taxonomyURL = `${window.ICTV.AppSettings.baseWebServiceURL}search-taxonomy`;
+            let taxonomyURL = window.ICTV.AppSettings.webServiceURL;
+            if (!taxonomyURL.endsWith("/")) { taxonomyURL += "/"; }
+            taxonomyURL += "api/search-taxonomy";
 
             // Load the releases metadata from the releases JSON file.
             $.getJSON(`${dataURL}/data/releases.json`).done((releases) => {

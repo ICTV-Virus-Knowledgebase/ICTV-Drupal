@@ -11,14 +11,14 @@ import { ProposalService } from "../../services/ProposalService";
 
 export class ProposalSubmission {
 
-   authToken: string;
+   authToken: string|null;
 
-   contactEmail = null;
+   contactEmail: string|null = null;
 
    // TODO: I'm thinking about using this to flag new results the user has not yet viewed.
    currentJobUID: string;
 
-   dataTable;
+   dataTable: any;
 
    elements: {
       container: HTMLElement,
@@ -400,7 +400,7 @@ export class ProposalSubmission {
       this.elements.fileInput = <HTMLInputElement>this.elements.container.querySelector("#file_input");
       if (!this.elements.fileInput) { throw new Error("Invalid file input Element"); }
 
-      this.elements.fileInput.addEventListener("change", async (event_: MouseEvent) => {
+      this.elements.fileInput.addEventListener("change", () => {
       
          if (!this.elements.fileInput.files || this.elements.fileInput.files.length < 1) {
                
@@ -449,7 +449,7 @@ export class ProposalSubmission {
    }
 
 
-   async readFileAsync(file_): Promise<string> {
+   async readFileAsync(file_: any): Promise<string> {
 
       return new Promise((resolve, reject) => {
          const reader = new FileReader();
@@ -570,7 +570,7 @@ export class ProposalSubmission {
          // Reload the jobs.
          await this.getJobs();
 
-      } catch (error_) {
+      } catch (error_: any) {
          return await AlertBuilder.displayError(error_, "Error");
       }
 

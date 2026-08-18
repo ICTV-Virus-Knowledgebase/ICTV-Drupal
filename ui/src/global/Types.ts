@@ -8,6 +8,12 @@ export enum CuratedNameType {
    other = "other"
 }
 
+// HTTP request methods
+export enum HttpMethod {
+   GET = "GET",
+   POST = "POST"
+}
+
 // The validation status of a FASTA record.
 export enum FastaStatus {
    empty = "empty",
@@ -875,3 +881,14 @@ export const ProteinOnlyCodes = new Set([
 */
 
 
+
+//----------------------------------------------------------------------------------------------------------------
+// Commonly-used interfaces
+//----------------------------------------------------------------------------------------------------------------
+export interface IWebServiceDefinition {
+   isDataJSON: boolean,
+   method: HttpMethod,
+   url: string,
+   useAuthToken?: boolean, 
+   useCsrfToken?: boolean
+}

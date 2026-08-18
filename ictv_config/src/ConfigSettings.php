@@ -8,11 +8,11 @@ use Drupal\ictv_common\Utils;
 
 class ConfigSettings {
 
-   // The website URL
-   public string $applicationURL;
+   // The URL for the ICTV web services on the app server.
+   public string $appServerURL;
 
-   // The base URL for web services.
-   public string $baseWebServiceURL;
+   // The JWT auth token for the app server web services.
+   public string $authToken;
 
    // The current Master Species List (MSL) release number.
    public int $currentMslRelease;
@@ -20,38 +20,41 @@ class ConfigSettings {
    // The current virus metadata resource (VMR) identifier.
    public string $currentVMR;
 
-   // ???
-   public string $drupalWebServiceURL;
-
    // The location of release proposal files.
    public string $releaseProposalsURL;
 
    // The taxon details page URL.
-   public string $taxonHistoryPage;
+   public string $taxonDetailsPage;
+
+   // The base URL for web services.
+   public string $webServiceURL;
+
+
+   public Connection $dbConnection;
 
 
    /**
     * Create a new ConfigSettings instance.
     */
-   public function __construct() {
+   public function __construct(Connection $dbConnection_) {
 
-      $database = \Drupal::database();
+      $this->dbConnection = $dbConnection_;
 
       // Get all ICTV settings as a single result.
-      $query = $database->query(
+      $query = $this->dbConnection->query(
          "SELECT
          (
             SELECT value
             FROM ictv_settings
-            WHERE name = 'applicationURL'
+            WHERE name = 'appServerURL'
             LIMIT 1
-         ) AS applicationURL,
+         ) AS appServerURL,
          (
             SELECT value
             FROM ictv_settings
-            WHERE name = 'baseWebServiceURL'
+            WHERE name = 'authToken'
             LIMIT 1
-         ) AS baseWebServiceURL,
+         ) AS authToken,
          (
             SELECT value
             FROM ictv_settings
@@ -73,18 +76,24 @@ class ConfigSettings {
          (
             SELECT value
             FROM ictv_settings
-            WHERE name = 'taxonHistoryPage'
+            WHERE name = 'taxonDetailsPage'
             LIMIT 1
-         ) AS taxonHistoryPage ");
+         ) AS taxonDetailsPage,
+         (
+            SELECT value
+            FROM ictv_settings
+            WHERE name = 'webServiceURL'
+            LIMIT 1
+         ) AS webServiceURL ");
 
       $result = $query->fetch();
-      if (!$result) { throw new \Exception("Failed to fetch ICTV settings from the database"); }
+      if (!$result) { throw new \Exception("Failed to fetch ICTV configuration settings from the database"); }
       
-      $this->applicationURL = $result->applicationURL;
-      if (Utils::isNullOrEmpty($this->applicationURL)) { throw new \Exception("Invalid applicationURL config setting"); }
+      $this->appServerURL = $result->appServerURL;
+      if (Utils::isNullOrEmpty($this->appServerURL)) { throw new \Exception("Invalid appServerURL config setting"); }
 
-      $this->baseWebServiceURL = $result->baseWebServiceURL;
-      if (Utils::isNullOrEmpty($this->baseWebServiceURL)) { throw new \Exception("Invalid baseWebServiceURL config setting"); }
+      $this->authToken = $result->authToken;
+      if (Utils::isNullOrEmpty($this->authToken)) { throw new \Exception("Invalid authToken config setting"); }
 
       if (!is_numeric($result->currentMslRelease)) { throw new \Exception("Invalid currentMslRelease config setting"); }
       $this->currentMslRelease = intval($result->currentMslRelease);
@@ -95,7 +104,10 @@ class ConfigSettings {
       $this->releaseProposalsURL = $result->releaseProposalsURL;
       if (Utils::isNullOrEmpty($this->releaseProposalsURL)) { throw new \Exception("Invalid releaseProposalsURL config setting"); }
 
-      $this->taxonHistoryPage = $result->taxonHistoryPage;
-      if (Utils::isNullOrEmpty($this->taxonHistoryPage)) { throw new \Exception("Invalid taxonHistoryPage config setting"); }
+      $this->taxonDetailsPage = $result->taxonDetailsPage;
+      if (Utils::isNullOrEmpty($this->taxonDetailsPage)) { throw new \Exception("Invalid taxonDetailsPage config setting"); }
+
+      $this->webServiceURL = $result->webServiceURL;
+      if (Utils::isNullOrEmpty($this->webServiceURL)) { throw new \Exception("Invalid webServiceURL config setting"); }
    }
 }  

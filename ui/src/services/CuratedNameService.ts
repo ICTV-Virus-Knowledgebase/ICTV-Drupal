@@ -17,7 +17,8 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalPost<IResult>(WebServiceKey.createCuratedName, authToken_, data);
+      return await WebService.requestData<IResult>(WebServiceKey.createCuratedName, data);
+      //return await WebService.drupalPost<IResult>(WebServiceKey.createCuratedName, authToken_, data);
    }
 
 
@@ -30,7 +31,8 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalPost<IResult>(WebServiceKey.deleteCuratedName, authToken_, data);
+      return await WebService.requestData<IResult>(WebServiceKey.deleteCuratedName, data);
+      //return await WebService.drupalPost<IResult>(WebServiceKey.deleteCuratedName, authToken_, data);
    }
 
 
@@ -43,7 +45,8 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalGet<ICuratedName>(WebServiceKey.getCuratedName, authToken_, data) as ICuratedName;
+      return await WebService.requestData<ICuratedName>(WebServiceKey.getCuratedName, data);
+      //return await WebService.drupalGet<ICuratedName>(WebServiceKey.getCuratedName, authToken_, data) as ICuratedName;
    }
 
 
@@ -55,7 +58,8 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalGet<ICuratedName[]>(WebServiceKey.getCuratedNames, authToken_, data) as ICuratedName[];
+      return await WebService.requestData<ICuratedName[]>(WebServiceKey.getCuratedNames, data);
+      //return await WebService.drupalGet<ICuratedName[]>(WebServiceKey.getCuratedNames, authToken_, data) as ICuratedName[];
    }
 
    
@@ -68,7 +72,8 @@ export class _CuratedNameService {
          userUID: userUID_
       }
 
-      return await WebService.drupalPost(WebServiceKey.updateCuratedName, authToken_, data) as IResult;
+      return await WebService.requestData<IResult>(WebServiceKey.updateCuratedName, data);
+      //return await WebService.drupalPost<IResult>(WebServiceKey.updateCuratedName, authToken_, data) as IResult;
    }
 
 }

@@ -18,7 +18,16 @@ printf "\n"
 # Build the TypeScript component.
 #------------------------------------------------------------------------------
 printf "Building the Find the species component \n\n"
-"${webpack}" --config "$componentPath/FindTheSpecies/webpack.config.js"
+webpackOutput=$("${webpack}" --config "$componentPath/FindTheSpecies/webpack.config.js" 2>&1)
+webpackStatus=$?
+
+# Check that the build completed successfully before continuing
+if [ $webpackStatus -ne 0 ]; then
+   printf "%s\n" "$webpackOutput" >&2
+   exit 1
+fi
+
+printf "%s\n" "$webpackOutput"
 
 printf "\n\n"
 
