@@ -1,6 +1,5 @@
 
 import { IFileData } from "../models/IFileData";
-import { IJob } from "../components/ProposalSubmission/IJob";
 import { IResult } from "../models/IResult";
 import { IUploadResult } from "../components/ProposalSubmission/IUploadResult";
 import { IValidationSummary } from "../components/ProposalSubmission/IValidationSummary";
@@ -27,7 +26,7 @@ export class _ProposalService {
 
 
    // Get the validation summary for a specific proposal file.
-   async getValidationSummary(authToken_: string, jobUID_: string, userEmail_: string, userUID_: number): Promise<IValidationSummary> {
+   async getValidationSummary(authToken_: string, jobUID_: string, userEmail_: string, userUID_: number): Promise<IResult> {
       
       // Validate the parameters
       if (!authToken_) { throw new Error("Invalid auth token"); }
@@ -41,8 +40,7 @@ export class _ProposalService {
          userUID: userUID_
       };
 
-      // Get and return the validation summary
-      return await WebService.requestData<IValidationSummary>(WebServiceKey.getProposalValidationSummary, data);
+      return await WebService.requestData<IResult>(WebServiceKey.getProposalValidationSummary, data);
    }
 
 

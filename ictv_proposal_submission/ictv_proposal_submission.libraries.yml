@@ -1,9 +1,8 @@
 proposalSubmission:
-  version: 20260812
+  version: 20260819_1151
   css:
     theme:
-      assets/css/jquery.dataTables.min.css: {}
-      assets/css/ICTV.css: {} 
+      assets/css/dataTables.dataTables.min.css: {}
       assets/css/ProposalSubmission.css: {} 
       assets/css/tippy.css: {attributes:{type: "text/html"}}
       assets/css/light-border.css: {}

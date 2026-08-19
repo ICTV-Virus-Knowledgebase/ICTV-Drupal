@@ -3,6 +3,7 @@
 namespace Drupal\ictv_release_history_taxonomy_browser\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Drupal\ictv_config\ConfigSettings;
 
 /**
  * A custom block to display the MSL Release History and a Taxonomy Browser.
@@ -18,67 +19,46 @@ class IctvReleaseHistoryTaxonomyBrowserBlock extends BlockBase {
   /**
    * {@inheritdoc}
    */
-  public function build() {
+   public function build() {
 
-    // Use the default database instance.
-    $database = \Drupal::database();
+      // Use the default database instance.
+      $database = \Drupal::database();
 
-    // Get all ictv_settings
-    // TODO: centralize this code somewhere else!
-    $query = $database->query("SELECT
-        (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'applicationURL'
-        ) AS applicationURL,
-        (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'baseWebServiceURL'
-        ) AS baseWebServiceURL,
-        (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'currentMslRelease'
-        ) AS currentMslRelease,
-        (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'releaseProposalsURL'
-        ) AS releaseProposalsURL,
-        (
-            SELECT ictv_settings.value
-            FROM {ictv_settings}
-            WHERE ictv_settings.name = 'taxonHistoryPage'
-        ) AS taxonHistoryPage ");
+      // Configuration settings
+      $settings = null;
 
-    $result = $query->fetchAll();
+      try {
+         // Get the ICTV configuration settings from the database.
+         $settings = new ConfigSettings($database);
+      }
+      catch (\Throwable $error) {
+         
+         \Drupal::logger('ictv_release_history_taxonomy_browser')->error(
+            'Invalid ICTV configuration settings: @message',
+            ['@message' => $error->getMessage()]
+         );
 
-    // TODO: validate result!
-    $applicationURL = $result[0]->applicationURL;
-    $baseWebServiceURL = $result[0]->baseWebServiceURL;
-    $currentMslRelease = $result[0]->currentMslRelease;
-    $releaseProposalsURL = $result[0]->releaseProposalsURL;
-    $taxonHistoryPage = $result[0]->taxonHistoryPage;
+         return [
+            '#markup' => $this->t('The ICTV release history taxonomy browser is unavailable because configuration settings are invalid.'),
+         ];
+      }
 
-    $build = [
-        '#markup' => $this->t("<div id='taxonomy_browser_container' class='ictv-custom'></div>"),
-        '#attached' => [
-            'library' => [
-               'ictv_release_history_taxonomy_browser/ICTV_TaxonomyBrowser',
-               'ictv_release_history_taxonomy_browser/releaseHistoryTaxonomyBrowser'
-            ],
-        ],
-    ];
+      $build = [
+         '#markup' => $this->t("<div id='taxonomy_browser_container' class='ictv-custom'></div>"),
+         '#attached' => [
+               'library' => [
+                  'ictv_release_history_taxonomy_browser/ICTV_TaxonomyBrowser',
+                  'ictv_release_history_taxonomy_browser/releaseHistoryTaxonomyBrowser'
+               ],
+         ],
+      ];
 
-    // Populate drupalSettings with the ICTV settings from the database.
-    $build['#attached']['drupalSettings']['applicationURL'] = $applicationURL;
-    $build['#attached']['drupalSettings']['baseWebServiceURL'] = $baseWebServiceURL;
-    $build['#attached']['drupalSettings']['currentMslRelease'] = $currentMslRelease;
-    $build['#attached']['drupalSettings']['releaseProposalsURL'] = $releaseProposalsURL;
-    $build['#attached']['drupalSettings']['taxonHistoryPage'] = $taxonHistoryPage;
-    
-    return $build;
-  }
+      // Populate drupalSettings with the ICTV settings from the database.
+      $build['#attached']['drupalSettings']['currentMslRelease'] = $settings->currentMslRelease;
+      $build['#attached']['drupalSettings']['taxonDetailsPage'] = $settings->taxonDetailsPage;
+      $build['#attached']['drupalSettings']['webServiceURL'] = $settings->webServiceURL;
+      
+      return $build;
+   }
 
 }

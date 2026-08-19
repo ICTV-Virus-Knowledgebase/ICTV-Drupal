@@ -1,5 +1,6 @@
 
 import { AlertBuilder } from "../../helpers/AlertBuilder";
+import { AppSettings } from "../../global/AppSettings";
 import DataTables from "datatables.net-dt";
 import { DateTime } from "luxon";
 import { decode } from "base64-arraybuffer";
@@ -7,6 +8,7 @@ import { IFileData } from "../../models/IFileData";
 import { IJob } from "./IJob";
 import { IJobFile } from "./IJobFile";
 import { ProposalService } from "../../services/ProposalService";
+import { IValidationSummary } from "./IValidationSummary";
 
 
 export class ProposalSubmission {
@@ -35,7 +37,6 @@ export class ProposalSubmission {
    icons: {
       browse: string,
       chevronDown: string,
-      chevronRight: string,
       close: string,
       download: string,
       validate: string
@@ -63,17 +64,17 @@ export class ProposalSubmission {
 
 
    // C-tor
-   constructor(authToken_: string, contactEmail_: string, containerSelector_: string, email_: string, 
-      name_: string, userUID_: number) {
+   constructor(contactEmail_: string, containerSelector_: string, email_: string, name_: string, userUID_: number) {
       
       // Validate parameters
-      if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in ProposalSubmission"); }
       if (!contactEmail_) { throw new Error("Invalid contact email"); }
       if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in ProposalSubmission"); }
       if (!email_ || email_.length < 1) { throw new Error("Invalid user email in ProposalSubmission"); }
       if (!name_ || name_.length < 1) { throw new Error("Invalid user name in ProposalSubmission"); }
 
-      this.authToken = authToken_;
+      this.authToken = AppSettings.authToken;
+      if (!this.authToken) { throw new Error("Invalid auth token in ProposalSubmission"); }
+
       this.contactEmail = contactEmail_;
       this.selectors.container = containerSelector_;
 
@@ -97,8 +98,7 @@ export class ProposalSubmission {
 
       this.icons = {
          browse: `<i class=\"fa fa-file\"></i>`,
-         chevronDown: `<i class=\"fa fa-chevron-circle-down expanded\"></i>`,
-         chevronRight: `<i class=\"fa fa-chevron-circle-right collapsed\"></i>`,
+         chevronDown: `<i class=\"fa fa-chevron-down\"></i>`,
          close: `<i class=\"fa fa-xmark\"></i>`,
          download: `<i class=\"fa fa-download\"></i>`,
          validate: `<i class=\"fa fa-upload\"></i>`
@@ -127,7 +127,6 @@ export class ProposalSubmission {
       return;
    }
 
-
    // Display all of this user's jobs.
    async displayJobs() {
 
@@ -136,22 +135,9 @@ export class ProposalSubmission {
          return;
       }
 
-      let html = `<div class="jobs-title">Previous Submissions</div>
-         <div class="jobs-help">Click on the download button to view an uploaded file's validation results.</div>
-         <table class="jobs-table">
-               <thead>
-                  <tr class="header-row">
-                     <th></th>
-                     <th class=\"download-column\">Results</th>
-                     <th class=\"upload-col\">Uploaded on</th>
-                     <th>Name</th>
-                     <th>Status</th>
-                     <th>Details</th>
-                     <th>UID</th>
-                  </tr>
-               </thead>
-               <tbody>`;
+      let jobsHTML = "";
 
+      // Create a table row for each job.
       this.jobs.forEach((job_: IJob, index_: number) => {
 
          // Alternate the CSS class every row.
@@ -159,8 +145,8 @@ export class ProposalSubmission {
 
          let createdOn = "";
 
-         // Move from UTC 0 to -5
-         if (!!job_.createdOn) { createdOn = DateTime.fromISO(job_.createdOn.replace(" ", "T")).minus({hours: 5}).toFormat("F"); }
+         // Move from UTC 0 to -5 (GMT to C*T)
+         if (!!job_.createdOn) { createdOn = DateTime.fromISO(job_.createdOn.replace(" ", "T")).minus({hours: 5}).toFormat("DD, t"); }
 
          // If there isn't a message, display an empty string.
          const message = !job_.message ? "" : job_.message;
@@ -168,23 +154,25 @@ export class ProposalSubmission {
          // If there isn't a name, display an empty string.
          const name = !job_.name ? "" : job_.name;
 
+         let controlIcon = (job_.files !== null && job_.files.length > 0) ? this.icons.chevronDown : "";
+
          // Create the job row.
-         html += 
-               `<tr class="${rowClass}" data-uid="${job_.uid}">
-                  <td class="child-control-column" 
-                     data-is-expanded="false"
-                     data-orderable="false"
-                     data-uid="${job_.uid}">${this.icons.chevronRight}
-                  </td>
-                  <td class="download-column" data-orderable="false">
-                     <button class="btn download-button" data-job-uid="${job_.uid}">${this.icons.download} Download</button>
-                  </td>
-                  <td>${createdOn}</td>
-                  <td>${name}</td>
-                  <td>${job_.status}</td>
-                  <td>${message}</td>
-                  <td>${job_.uid}</td>
-               </tr>`;
+         jobsHTML += 
+            `<tr class="${rowClass}" data-uid="${job_.uid}">
+               <td class="child-control-col" 
+                  data-is-expanded="false"
+                  data-orderable="false"
+                  data-uid="${job_.uid}">${controlIcon}
+               </td>
+               <td class="download-col" data-orderable="false">
+                  <button class="btn download-button" data-job-uid="${job_.uid}">${this.icons.download} Download</button>
+               </td>
+               <td class="created-col">${createdOn}</td>
+               <td class="name-col">${name}</td>
+               <td class="status-col">${job_.status}</td>
+               <td class="message-col">${message}</td>
+               <td class="uid-col">${job_.uid}</td>
+            </tr>`;
 
          if (job_.files !== null && job_.files.length > 0) {
 
@@ -193,10 +181,9 @@ export class ProposalSubmission {
                `<table class="job-files-table ${rowClass}">
                <thead>
                   <tr class="job-files-header-row ${job_.status}">
-                        <th>Filename</th>
-                        <th class="small">Status</th>
-                        <th>Details</th>
-                        <th>UID</th>     
+                     <th class="filename">Filename</th>
+                     <th class="status">Status</th>
+                     <th class="details">Details</th>   
                   </tr>
                </thead>
                <tbody>`;
@@ -208,10 +195,9 @@ export class ProposalSubmission {
 
                filesHTML += 
                   `<tr class="${innerRowClass}">
-                        <td>${jobFile_.filename}</td>
-                        <td>${jobFile_.status}</td>
-                        <td>${jobFile_.message}</td>
-                        <td>${jobFile_.uid}</td>
+                     <td>${jobFile_.filename}</td>
+                     <td>${jobFile_.status}</td>
+                     <td>${jobFile_.message}</td>
                   </tr>`;
             })
 
@@ -222,30 +208,55 @@ export class ProposalSubmission {
          }
       }) 
 
-      html += "</tbody></table>";
+      let html = `<div class="jobs-title">Previous Submissions</div>
+         <div class="jobs-help">Click on the download button to view an uploaded file's validation results.</div>
+         <div class="jobs-panel">
+            <table class="jobs-table">
+               <thead>
+                  <tr class="header-row">
+                     <th class=\"child-control-col\">View files</th>
+                     <th class=\"download-col\">Results</th>
+                     <th class=\"created-col\">Uploaded on</th>
+                     <th class=\"name-col\">Job name</th>
+                     <th class=\"status-col\">Status</th>
+                     <th class=\"message-col\">Details</th>
+                     <th class=\"uid-col\">Job UID</th>
+                  </tr>
+               </thead>
+               <tbody>${jobsHTML}</tbody>
+            </table>
+         </div>`;
 
       this.elements.jobs.innerHTML = html;
 
       // Create a DataTable instance using the table Element.
       this.dataTable = new DataTables(`${this.selectors.container} table.jobs-table`, {
+         autoWidth: false,
          columnDefs: [
-               { targets: [0,1], orderable: false },
-               { target: 2, orderable: true, type: "date" },
-               { targets: [3,4,5,6], orderable: true }
+            { targets: [0,1], orderable: false },
+            { target: 2, orderable: true, type: "date" },
+            { targets: [3,4,5,6], orderable: true }
          ],
          info: true,
+         language: {
+            info: "Showing _START_ - _END_ of _TOTAL_ proposal jobs",
+            lengthLabels: { "-1": "All"},
+            lengthMenu: "_MENU_ proposal jobs per page"
+         },
          layout: {
+            topStart: "pageLength",
+            topEnd: null,
+            bottomStart: "info",
             bottomEnd: {
-               paging: { buttons: 4}
+               paging: {
+                  buttons: 4
+               }
             }
          },
+         order: [[2, "desc"]],
          ordering: true,
          paging: true,
          searching: false
-         /*dom: "ltip",
-         order: [], // Important: If this isn't an empty array it will move the child rows to the end!
-         searching: false,
-         stripeClasses: []*/
       });
 
       // Handle an event that's triggered when a new child row is added to the DataTable.
@@ -299,16 +310,23 @@ export class ProposalSubmission {
       if (!jobUID_) { throw new Error("Unable to download summary: invalid job UID"); }
 
       // Get the proposal validator's summary for this job.
-      const summary = await ProposalService.getValidationSummary(this.authToken, jobUID_, this.user.email, this.user.uid);
-      console.log("In downloadSummary, validationSummary= ", summary)
+      const result = await ProposalService.getValidationSummary(this.authToken, jobUID_, this.user.email, this.user.uid);
+
+      if (!result) { return await AlertBuilder.displayError("An unknown error occurred downloading the validation summary"); }
+      if (!result.success) {
+         let message = result.message || "Unable to download the validation summary";
+         return await AlertBuilder.displayError(message);
+      }
+
+      const summary = result.data as IValidationSummary;
+      if (!summary) { return await AlertBuilder.displayError("The validation summary is invalid"); }
+      if (!summary.file) { return await AlertBuilder.displayError("The validation summary spreadsheet is invalid"); }
 
       // Download the file as a spreadsheet.
-      this.decodeAndDownload(summary.file, summary.filename);
-
-      return;
+      return await this.decodeAndDownload(summary.file, summary.filename);
    }
 
-
+   
    // Get this user's jobs from the web service.
    async getJobs() {
 
@@ -351,35 +369,30 @@ export class ProposalSubmission {
       // Add a click event listener to the jobs panel.
       this.elements.jobs.addEventListener("click", async (event_: MouseEvent) => {
 
-         const target = <HTMLElement>event_.target;
+         const target = event_.target as HTMLElement;
 
-         if (target.classList.contains("expanded") ||
-            target.classList.contains("collapsed") ||
-            target.classList.contains("child-control-column")) {
+         console.log("target = ", target)
 
-            // Get the associated "child control" column.
-            let columnEl = null;
-            if (target.classList.contains(".child-control-column")) {
-               columnEl = target;
-            } else {
-               columnEl = target.closest("td.child-control-column");
-            }
-            
+         if (target.classList.contains("child-control-col")) {
+
             // Get the job UID
-            const jobUID = columnEl.getAttribute("data-uid");
-            if (!jobUID) { throw new Error("Invalid data-uid attribute"); }
+            const jobUID = target.getAttribute("data-uid");
+            if (!jobUID) { throw new Error("Unable to expand/collapse: Invalid data-uid attribute"); }
+
+            const isExpanded = target.getAttribute("data-is-expanded");
+            if (isExpanded === "true") {
+               target.setAttribute("data-is-expanded", "false");
+            } else {
+               target.setAttribute("data-is-expanded", "true");
+            }
 
             // Show or hide the job row's child row.
             await this.updateChildRowVisibility(jobUID);
 
-         } else if (target.classList.contains("download-column") || target.classList.contains("download-button")) {
-
-            // Get the closest button Element to the target Element.
-            const buttonEl = target.closest(`button`);
-            if (!buttonEl) { return; }
+         } else if (target.classList.contains("download-button")) {
 
             // Get the job UID.
-            const jobUID = buttonEl.getAttribute("data-job-uid");
+            const jobUID = target.getAttribute("data-job-uid");
             if (!jobUID) { return false; }
 
             await this.downloadSummary(jobUID);

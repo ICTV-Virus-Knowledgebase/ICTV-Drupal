@@ -1,5 +1,5 @@
 memberSpeciesTable:
-  version: 20260813
+  version: 20260819_1118
   css:
     theme:
       assets/css/dataTables.dataTables.min.css: {}

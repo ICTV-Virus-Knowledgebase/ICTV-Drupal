@@ -17,21 +17,15 @@
             // Initialize the ICTV AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
-            // The website's base URL.
-            window.ICTV_TaxonomyBrowser.AppSettings.applicationURL = settings_.applicationURL;
-
-            // Set the base URL for web services.
-            window.ICTV_TaxonomyBrowser.AppSettings.baseWebServiceURL = settings_.baseWebServiceURL;
-
             // The current MSL release number.
             window.ICTV_TaxonomyBrowser.AppSettings.currentMslRelease = settings_.currentMslRelease;
 
-            // The location of release proposal files. 
-            window.ICTV_TaxonomyBrowser.AppSettings.releaseProposalsURL = settings_.releaseProposalsURL;
+            // The taxon details page name.
+            window.ICTV_TaxonomyBrowser.AppSettings.taxonDetailsPage = settings_.taxonDetailsPage;
 
-            // The taxon history page name.
-            window.ICTV_TaxonomyBrowser.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
-
+            // The web service URL
+            window.ICTV_TaxonomyBrowser.AppSettings.webServiceURL = settings_.webServiceURL;
+            
             
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#taxonomy_browser_container";

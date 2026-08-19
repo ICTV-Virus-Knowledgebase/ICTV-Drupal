@@ -1,5 +1,5 @@
 releaseHistoryTaxonomyBrowser:
-  version: 20260817_1550
+  version: 20260819_1601
   css:
     theme:
       assets/css/TaxonomyBrowser.css: {} 

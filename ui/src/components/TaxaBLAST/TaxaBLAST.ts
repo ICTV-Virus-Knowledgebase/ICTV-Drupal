@@ -234,7 +234,6 @@ export class TaxaBLAST {
 
    createPanelURL(targetPanel_: PanelKey) {
 
-      
       // Get the current URL with no parameters.
       let baseURL = window.location.href;
       const qIndex = baseURL.indexOf("?");

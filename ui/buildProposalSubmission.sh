@@ -35,3 +35,6 @@ cp ./dist/ICTV_ProposalSubmission.js ../ictv_proposal_submission/assets/js/
 printf "Copying CSS files to ictv_proposal_submission/assets/css\n\n"
 
 cp ./css/ProposalSubmission.css ../ictv_proposal_submission/assets/css/
+cp ./css/dataTables.dataTables.min.css ../ictv_proposal_submission/assets/css/
+cp ./css/light-border.css ../ictv_proposal_submission/assets/css/
+cp ./css/tippy.css ../ictv_proposal_submission/assets/css/
