@@ -13,7 +13,6 @@
 
             initialized = true;
             
-            const authToken = settings_.authToken;
             const contactEmail = "info@ictv.global";
             const userEmail = settings_.userEmail;
             const userName = settings_.userName;
@@ -24,13 +23,14 @@
             //----------------------------------------------------------------------------------------
 
             // The Drupal web service base URL.
-            window.ICTV_ProposalSubmission.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+            window.ICTV_ProposalSubmission.AppSettings.authToken = settings_.authToken;
+            window.ICTV_ProposalSubmission.AppSettings.appServerURL = settings_.appServerURL;
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_proposal_submission_container";
 
             // Create a new ProposalSubmission instance.
-            const proposalSubmission = new window.ICTV_ProposalSubmission.ProposalSubmission(authToken, contactEmail, 
+            const proposalSubmission = new window.ICTV_ProposalSubmission.ProposalSubmission(contactEmail, 
                 containerSelector, userEmail, userName, userUID);
 
             // Initialize and display the UI.

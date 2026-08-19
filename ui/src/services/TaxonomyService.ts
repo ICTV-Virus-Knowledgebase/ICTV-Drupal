@@ -1,6 +1,7 @@
 
 import { IDisplaySettings } from "../components/TaxonomyBrowser/IDisplaySettings";
 import { IMslRelease } from "../models/IMslRelease";
+import { IReleaseHistoryResult } from "../components/TaxonomyBrowser/IReleaseHistoryResult";
 import { ITaxon } from "../models/ITaxon";
 import { ITaxonDetailsResult } from "../models/ITaxonDetailsResult";
 import { ITaxonSearchResult } from "../models/ITaxonSearchResult";
@@ -61,11 +62,8 @@ export class _TaxonomyService {
       return mslRelease;
    }
 
-   async getReleaseHistory() {
-
-      const responseData = await WebService.requestData<any>(WebServiceKey.getReleaseHistory);
-
-      return responseData;
+   async getReleaseHistory(): Promise<IReleaseHistoryResult> {
+      return await WebService.requestData<IReleaseHistoryResult>(WebServiceKey.getReleaseHistory);
    }
 
    async getTaxaByName(releaseNumber_: string, taxonName_: string) {

@@ -70,10 +70,10 @@ export class _AppSettings {
       searchTaxonomy: "api/search-taxonomy",
 
       // Taxonomy history
-      taxonomyHistory: "get-taxon-history",
+      taxonomyHistory: "api/get-taxon-history",
       
       // Member species table
-      virusIsolate: "get-virus-isolates"
+      virusIsolate: "api/get-virus-isolates"
    }
 
    // C-tor

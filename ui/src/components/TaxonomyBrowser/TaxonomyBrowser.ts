@@ -5,6 +5,7 @@ declare var jQuery: any;
 import { AppSettings } from "../../global/AppSettings";
 import DataTables from 'datatables.net-dt';
 import { IMslRelease } from "../../models/IMslRelease";
+import { IReleaseHistoryResult } from "./IReleaseHistoryResult";
 import { ITaxon } from "../../models/ITaxon";
 import { Identifiers } from "../../models/Identifiers";
 import { IDisplaySettings } from "./IDisplaySettings";
@@ -817,9 +818,10 @@ export class TaxonomyBrowser {
       // Clear the search results and display the spinner.
       jQuery(this.selectors.releaseHistory).html(spinner);
 
-      const response = await TaxonomyService.getReleaseHistory();
-
-      this.processReleaseHistory(response.releases);
+      const result = await TaxonomyService.getReleaseHistory();
+      if (!result) { return await AlertBuilder.displayError("Unable to retrieve the release history"); }
+      
+      this.processReleaseHistory(result.releases);
 
       // Update the tippy instance.
       tippy(".has-tooltip");

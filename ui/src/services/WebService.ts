@@ -75,6 +75,7 @@ export class _WebService {
          case WebServiceKey.getTaxaBlastJob:
          case WebServiceKey.searchTaxaBlastJobs:
          case WebServiceKey.uploadSequences:
+            definition.isDataJSON = true;
             definition.method = HttpMethod.POST;
             definition.url = AppSettings.appServerURL;
             definition.useAuthToken = true;

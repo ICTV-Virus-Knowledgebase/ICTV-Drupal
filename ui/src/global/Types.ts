@@ -885,6 +885,7 @@ export const ProteinOnlyCodes = new Set([
 //----------------------------------------------------------------------------------------------------------------
 // Commonly-used interfaces
 //----------------------------------------------------------------------------------------------------------------
+
 export interface IWebServiceDefinition {
    isDataJSON: boolean,
    method: HttpMethod,

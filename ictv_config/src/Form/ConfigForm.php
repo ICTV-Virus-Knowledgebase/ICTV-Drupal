@@ -20,36 +20,11 @@ class ConfigForm extends FormBase {
    private $CONTROL_TAXON_DETAILS_PAGE = "taxonDetailsPage";
    private $CONTROL_WEB_SERVICE_URL = "webServiceURL";
 
-   
-   private ConfigSettings $settings;
-
-   /*
-   // Variables to maintain form values populated from the database.
-
-   // The URL for the ICTV web services on the app server.
-   public string $appServerURL;
-
-   // The JWT auth token for the app server web services.
-   public string $authToken;
-
-   // The current Master Species List (MSL) release number.
-   public int $currentMslRelease;
-
-   // The current virus metadata resource (VMR) identifier.
-   public string $currentVMR;
-
-   // The location of release proposal files.
-   public string $releaseProposalsURL;
-
-   // The taxon details page URL.
-   public string $taxonDetailsPage;
-
-   // The base URL for web services.
-   public string $webServiceURL;
-   */
-
    // The default database instance.
    public Connection $dbConnection;
+
+   // Variables to maintain form values populated from the database.
+   private ConfigSettings $settings;
 
 
    // C-tor
@@ -156,50 +131,6 @@ class ConfigForm extends FormBase {
 
       return $form;
    }
-
-
-   /**
-    * Load the ICTV settings from the database.
-    */
-   /*public function loadData() {
-
-      // Get all ictv_settings
-      $query = $this->dbConnection->query(
-         "SELECT  
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'appServerURL' LIMIT 1
-         ) AS appServerURL,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'authToken' LIMIT 1
-         ) AS authToken,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
-         ) AS currentMslRelease,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentVMR' LIMIT 1
-         ) AS currentVMR,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'releaseProposalsURL' LIMIT 1
-         ) AS releaseProposalsURL,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'taxonDetailsPage' LIMIT 1
-         ) AS taxonDetailsPage,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'webServiceURL' LIMIT 1
-         ) AS webServiceURL;");
-
-      $settings = $query->fetchAssoc();
-
-      $this->appServerURL = $settings["appServerURL"];
-      $this->authToken = $settings["authToken"];
-      $this->currentMslRelease = $settings["currentMslRelease"];
-      $this->currentVMR = $settings["currentVMR"];
-      $this->releaseProposalsURL = $settings["releaseProposalsURL"];
-      $this->taxonDetailsPage = $settings["taxonDetailsPage"];
-      $this->webServiceURL = $settings["webServiceURL"];
-
-      // TODO: validate!
-   }*/
 
 
   /**

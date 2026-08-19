@@ -1,6 +1,5 @@
 
 import DataTables from 'datatables.net-dt';
-import Api from 'datatables.net-dt';
 import { ITaxon } from '../../models/TaxonHistory/ITaxon';
 import { IVirusIsolate } from "../../models/IVirusIsolate";
 import { ComponentKey, TaxonDetails } from '../TaxonDetails';
@@ -322,7 +321,7 @@ export class MemberSpeciesTable {
       return;
    }
 
-   async loadTable(ictvID_: number, isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string | null) {
+   async loadTable(ictvID_: number, isolateID_: number, mslRelease_: number, onlyUnassigned_: boolean, taxnodeID_: number, taxonName_: string|null) {
 
       // Get the taxon's virus isolates.
       const isolates: IVirusIsolate[] = await VirusIsolateService.getIsolates(ictvID_, isolateID_, mslRelease_, onlyUnassigned_, taxnodeID_, taxonName_);
@@ -342,7 +341,8 @@ export class MemberSpeciesTable {
 
       let html = "";
 
-      // If an isolate ID parameter was provided, this is its display index in the result data. 
+      // If an isolate ID parameter was provided, this is its display index in the result data.
+      // TODO: This is for a future feature that will highlight the row for the provided isolate ID.
       let isolateIndex = NaN;
 
       isolates.forEach((isolate_: IVirusIsolate, index_: number) => {
@@ -408,5 +408,35 @@ export class MemberSpeciesTable {
          pagingType: "full_numbers", // simple, simple_numbers, full, full_numbers
          searching: false
       });
+   }
+
+   // When this object is used on a report chapter page, the taxon name is in the URL. This function extracts the 
+   // taxon name from the URL and loads the virus isolates table for that taxon.
+   async loadTableUsingPageName() {
+
+      const url = new URL(window.location.href);
+      console.log("url = ", url)
+
+      let pathName = url.pathname;
+      console.log("pathName = ", pathName)
+      
+      if (pathName.endsWith("/")) { pathName = pathName.substring(0, pathName.length - 1); }
+
+      const fragments = pathName.split("/");
+      if (!fragments || fragments.length < 1) { throw new Error("Unable to load the virus isolates table: Invalid URL"); }
+
+      // The taxon name should be to the right of the last slash in the pathname. If the taxon name is "unassigned", use 
+      // the fragment to the left of it.
+      let taxonName = fragments[fragments.length - 1];
+      if (taxonName === "unassigned") { taxonName = fragments[fragments.length - 2]; }
+
+      const ictvID = NaN;
+      const isolateID = NaN;
+      const mslRelease = NaN;
+      const onlyUnassigned = false;
+      const taxnodeID = NaN;
+
+      // Load the virus isolates table using the taxon name from the URL.
+      return this.loadTable(ictvID, isolateID, mslRelease, onlyUnassigned, taxnodeID, taxonName);
    }
 }

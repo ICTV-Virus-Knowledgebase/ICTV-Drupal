@@ -3,7 +3,7 @@
 if (!window.ICTV) { window.ICTV = {}; }
 
 window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallback_, resultsSelector_, searchPanelSelector_, 
-   taxonHistoryPage_, taxonomyURL_) {
+   taxonHistoryPage_, searchWebSvcURL_) {
 
    // Maintain a copy of "this" to avoid scope ambiguity.
    const self = this;
@@ -32,8 +32,8 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
    if (!taxonHistoryPage_) { throw new Error(`${this.errorPrefix} Invalid taxon history page parameter`); }
    this.taxonHistoryPage = taxonHistoryPage_;
 
-   if (!taxonomyURL_) { throw new Error(`${this.errorPrefix} Invalid taxonomy URL parameter`); }
-   this.taxonomyURL = taxonomyURL_;
+   if (!searchWebSvcURL_) { throw new Error(`${this.errorPrefix} Invalid search web service URL parameter`); }
+   this.searchWebSvcURL = searchWebSvcURL_;
 
    // Define the collection of DOM elements.
    this.elements = {
@@ -199,7 +199,7 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
          dataType: "json",
          processData: true,
          type: "GET",
-         url: self.taxonomyURL,
+         url: self.searchWebSvcURL,
          data: {
             current_release: self.releaseNumber.current,
             include_all_releases: includeAllReleases,

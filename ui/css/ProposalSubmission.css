@@ -3,20 +3,385 @@
    Proposal Submission Page CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+/* General purpose button styles */
+#ictv_proposal_submission_container button i {
+   margin-right: 0.25rem;
+}
+#ictv_proposal_submission_container button.download-button {
+   background-color: #0d6efd;
+   color: #fff;
+   cursor: pointer;
+   min-width: 100px;
+}
+#ictv_proposal_submission_container button.close-button {
+   background-color: #eee;
+   color: #000;
+   cursor: pointer;
+   min-width: 100px;
+}
+#ictv_proposal_submission_container button.close-button i {
+   color: #000;
+}
 
-/* TODO */
+#ictv_proposal_submission_container .odd-bg {
+   background-color: #f3f3f3;
+}
+#ictv_proposal_submission_container .even-bg {
+   background-color: #fefefe;
+}
 
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   User row and upload panel 
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_proposal_submission_container .user-row {
+   margin-bottom: 1.0rem;
+}
+
+#ictv_proposal_submission_container .upload-panel {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-start;
+   margin-bottom: 1.0rem;
+}
+
+#ictv_proposal_submission_container .file-control {
+   background-color: #0d6efd;
+   color: #fff;
+   margin-right: 1.0rem;
+}
+
+#ictv_proposal_submission_container #file_input {
+   opacity: 0;
+   position: absolute;
+   left: -1000px;
+}
+
+#ictv_proposal_submission_container .upload-panel .job-name-label {
+   margin-right: 0.5rem;
+}
+
+#ictv_proposal_submission_container .upload-panel .job-name {
+   margin-right: 1.0rem;
+}
+
+#ictv_proposal_submission_container .upload-panel button.validate-button {
+   background-color: #198754;
+   color: #fff;
+}
+
+#ictv_proposal_submission_container .upload-panel .hidden {
+   visibility: hidden;
+}
+
+#ictv_proposal_submission_container .upload-panel .visible {
+   visibility: visible;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The jobs panel 
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_proposal_submission_container .jobs {
+   font-size: 1.0rem;
+   margin-top: 3.0rem;
+   width: 95vw;
+}
+
+#ictv_proposal_submission_container .jobs-title {
+   font-size: 1.7rem;
+}
+
+#ictv_proposal_submission_container .jobs-help {
+   margin-bottom: 1.0rem;
+}
+
+/* Overriding tables.css (whatever that might be) */
+#ictv_proposal_submission_container table thead+tbody tr:first-child th,
+#ictv_proposal_submission_container table thead+tbody tr:first-child td {
+   border-bottom-left-radius: 0 !important;
+   padding-top: 0.5rem !important;
+}
+
+/* All tables in the proposal submission container */
+#ictv_proposal_submission_container table {
+   border-collapse: separate;
+}
+
+#ictv_proposal_submission_container table th,
+#ictv_proposal_submission_container table td {
+   border-bottom-left-radius: 0 !important;
+   border-style: solid;
+   /*border-bottom-color: rgb(164, 185, 195);
+   border-width: 0 0 1px 0;*/
+   box-sizing: border-box;
+   font-weight: normal;
+   text-align: left;
+}
+#ictv_proposal_submission_container table td {
+   border-style: solid;
+   border-width: 0 1px 1px 0;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The jobs table 
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_proposal_submission_container .jobs-panel {
+   width: 1600px;
+}
+#ictv_proposal_submission_container table.jobs-table {
+   margin-left: 0;
+}
+#ictv_proposal_submission_container table.jobs-table tr {
+   transition: all 0.25s ease-out;
+}
+#ictv_proposal_submission_container table.jobs-table tr.hidden {
+   display: none;
+}
+
+/* The jobs table header row */
+#ictv_proposal_submission_container table.jobs-table tr.header-row {
+   background-color: #757575 !important;
+}
+#ictv_proposal_submission_container table.jobs-table tr.header-row th {
+   background-color: #757575 !important;
+   border-left-width: 0 !important;
+   border-right-width: 0 !important;
+   color: #fff !important;
+   font-size: 0.9rem !important;
+   padding-left: 0.5rem;
+   text-align: left;
+}
+
+/* Columns */
+#ictv_proposal_submission_container table.jobs-table th.child-control-col {
+   width: 80px;
+   text-align: center !important;
+}
+#ictv_proposal_submission_container table.jobs-table td.child-control-col {
+   text-align: center;
+   width: fit-content;
+}
+#ictv_proposal_submission_container table.jobs-table td.child-control-col i {
+   color: #777;
+   cursor: pointer;
+   font-size: 1.0rem;
+   pointer-events: none;
+   transition: ease .3s transform;
+}
+#ictv_proposal_submission_container table.jobs-table td.child-control-col[data-is-expanded="true"] i {
+   transform: rotate(-180deg);
+}
+
+#ictv_proposal_submission_container table.jobs-table th.download-col {
+   width: 120px !important;
+}
+#ictv_proposal_submission_container table.jobs-table td.download-col {
+   text-align: center;
+   /*width: 160px;*/
+}
+
+#ictv_proposal_submission_container table.jobs-table th.created-col {
+   width: 160px;
+}
+
+#ictv_proposal_submission_container table.jobs-table th.name-col {
+   width: 300px;
+}
+#ictv_proposal_submission_container table.jobs-table th.status-col {
+   width: 80px;
+}
+#ictv_proposal_submission_container table.jobs-table th.message-col {
+   width: 200px;
+}
+#ictv_proposal_submission_container table.jobs-table th.uid-col {
+   width: 120px;
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The job files container and table
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#ictv_proposal_submission_container .job-files-container .column-0 {
+   border-right-color: rgba(0, 0, 0, 0);
+}
+
+#ictv_proposal_submission_container .job-files-container .column-1 {
+   border-left-color: rgba(0, 0, 0, 0);
+   padding: 1rem 1rem 1rem 0;
+}
+
+#ictv_proposal_submission_container table.job-files-table {
+   margin-bottom: unset !important;
+}
+
+/* The job files header row */
+#ictv_proposal_submission_container .job-files-header-row.crashed,
+#ictv_proposal_submission_container .job-files-header-row.invalid {
+   background-color: #dc3545;
+}
+
+#ictv_proposal_submission_container .job-files-header-row.crashed th,
+#ictv_proposal_submission_container .job-files-header-row.invalid th {
+   color: #fff;
+}
+
+#ictv_proposal_submission_container .job-files-header-row.pending {
+   background-color: #ffc107;
+   /*border-color: #ffc107;*/
+}
+
+#ictv_proposal_submission_container .job-files-header-row.pending th {
+   color: #212529;
+}
+
+#ictv_proposal_submission_container .job-files-header-row.valid {
+   background-color: #218838;
+   border-color: #1e7e34;
+}
+
+#ictv_proposal_submission_container .job-files-header-row.valid th {
+   color: #fff;
+}
+
+#ictv_proposal_submission_container .job-files-header-row th {
+   font-size: 0.9rem !important;
+   text-align: left !important;
+}
+
+#ictv_proposal_submission_container .job-files-header-row th.filename {
+   width: 600px;
+}
+#ictv_proposal_submission_container .job-files-header-row th.status {
+   width: 160px;
+}
+#ictv_proposal_submission_container .job-files-header-row th.details {
+   width: auto;
+}
+
+#ictv_proposal_submission_container .job-files-header-row .small {
+   width: 70px;
+}
+
+#ictv_proposal_submission_container .job-files-table th,
+#ictv_proposal_submission_container .job-files-table td {
+   padding: 0.5rem;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------
+   The status dialog
+-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#ictv_proposal_submission_container .modal-background {
+   align-items: center;
+   background-attachment: scroll;
+   background-clip: border-box;
+   background-color: rgba(0, 0, 0, 0.4);
+   background-image: none;
+   background-origin: padding-box;
+   background-position-x: 0%;
+   background-position-y: 0%;
+   background-size: auto;
+   bottom: 0px;
+   box-sizing: border-box;
+   display: flex;
+   justify-content: center;
+   left: 0px;
+   line-height: 24px;
+   overflow-x: hidden;
+   overflow-y: auto;
+   padding: 10px;
+   position: fixed;
+   right: 0px;
+   text-align: center;
+   top: 0px;
+   transition-delay: 0s;
+   transition-duration: 0.1s;
+   transition-property: background-color;
+   transition-timing-function: ease;
+   z-index: 1060;
+}
+
+#ictv_proposal_submission_container .modal-dialog {
+   background-color: rgb(255, 255, 255);
+   background-size: auto;
+   border-color: rgb(84, 84, 84);
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   box-sizing: border-box;
+   display: flex;
+   flex-flow: column nowrap;
+   height: auto;
+   max-width: 100%;
+   padding: 20px;
+   pointer-events: all !important;
+   width: 700px;
+}
+
+#ictv_proposal_submission_container .modal-title {
+   font-size: 1.5rem;
+   margin: 0 0 1.0rem;
+}
+
+#ictv_proposal_submission_container .modal-body {
+   font-size: 1.0rem;
+   text-align: left;
+}
+
+#ictv_proposal_submission_container .modal-contact {
+   font-size: 1.0rem;
+   margin-top: 1.0rem;
+}
+
+#ictv_proposal_submission_container .modal-instructions {
+   font-size: 1.0rem;
+   margin: 1.0rem 0;
+}
+
+#ictv_proposal_submission_container .modal-controls {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: space-around;
+}
+
+#ictv_proposal_submission_container .modal-button-row {
+   align-items: center;
+   display: flex;
+   flex-flow: row nowrap;
+   justify-content: flex-end;
+}
+
+#ictv_proposal_submission_container .modal-button-row .close-button {
+   background-color: #eee;
+   border-color: #999;
+   border-radius: 5px;
+   border-style: solid;
+   border-width: 1px;
+   color: #000;
+   cursor: pointer;
+   font-size: 0.9rem;
+   min-width: 100px;
+}
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------
     Overriding DataTables CSS
 -------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* The "Showing x of y entries" text */
+#ictv_proposal_submission_container .dt-info {
+   font-size: 0.9rem;
+   margin-bottom: 0.25rem;
+}
 
 /* The "Show ___ entries" row above the table */
 #ictv_proposal_submission_container .dt-length {
    display: flex;
    flex-flow: row nowrap;
-   margin-bottom: 1.0rem;
+   margin-bottom: 0.5rem;
 }
 #ictv_proposal_submission_container .dt-length label {
    align-items: center;
@@ -29,16 +394,22 @@
    border: 1px solid #aaa;
    border-radius: 5px;
    display: inline-block;
-   font-size: 0.8rem;
-   padding: 0 0 0 3px !important;
+   font-size: 0.9rem;
+   padding: 3px !important;
    margin: 0 0.25rem;
    text-align: left;
-   width: 50px;
+   width: 60px;
 }
 #ictv_proposal_submission_container .dt-paging .dt-paging-button {
    border-color: #aaa;
+   border-style: solid;
+   border-radius: 0;
    border-width: 1px;
+   margin-right: 0.25rem;
 }
 #ictv_proposal_submission_container .dt-type-numeric {
    padding: 3px 6px;
+}
+#ictv_proposal_submission_container .dt-layout-row .dt-layout-end {
+   text-align: right;
 }
