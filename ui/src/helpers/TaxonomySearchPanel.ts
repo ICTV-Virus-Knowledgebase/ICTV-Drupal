@@ -190,7 +190,10 @@ export class TaxonomySearchPanel {
          
          // Get the taxnode ID.
          let id = buttonEl.getAttribute("data-id");
-         if (!id) { throw new Error("Unable to select search result: Empty ID"); }
+         if (!id) { 
+            // This is a button unrelated to taxonomy search results.
+            return true;
+         }
 
          if (buttonEl.classList.contains("view-search-result-button")) {
 

@@ -13,7 +13,6 @@
 
             initialized = true;
             
-            const authToken = settings_.authToken;
             let userEmail = settings_.userEmail;
             let userName = settings_.userName;
             let userUID = settings_.userUID;
@@ -22,17 +21,20 @@
             // Initialize the ICTV AppSettings using drupalSettings
             //----------------------------------------------------------------------------------------
 
-            // The Drupal web service base URL.
-            window.ICTV_TaxaBLAST.AppSettings.drupalWebServiceURL = settings_.drupalWebServiceURL;
+            // The app server (web service) URL.
+            window.ICTV_TaxaBLAST.AppSettings.appServerURL = settings_.appServerURL;
 
-            // The taxonomy details/history page.
-            window.ICTV_TaxaBLAST.AppSettings.taxonHistoryPage = settings_.taxonHistoryPage;
+            // The JWT auth token
+            window.ICTV_TaxaBLAST.AppSettings.authToken = settings_.authToken;
+
+            // The taxonomy details page.
+            window.ICTV_TaxaBLAST.AppSettings.taxonDetailsPage = settings_.taxonDetailsPage;
 
             // The DOM selector of the container Element added to the page.
             const containerSelector = "#ictv_taxablast_container";
 
             // Create a new TaxaBLAST instance.
-            const taxaBLAST = new window.ICTV_TaxaBLAST.TaxaBLAST(authToken, containerSelector, userEmail, userName, userUID);
+            const taxaBLAST = new window.ICTV_TaxaBLAST.TaxaBLAST(containerSelector, userEmail, userName, userUID);
 
             // If the settings have info icon data, add it to the taxaBLAST instance.
             if (settings_.infoIcons) { taxaBLAST.infoIcons = JSON.parse(settings_.infoIcons); }

@@ -147,9 +147,8 @@ export class JobHistoryPanel implements ITaxaBlastPanel {
     async search() {
 
         const searchText = Utils.safeTrim(this.elements.searchText.value);
-        console.log("TODO: searching for ", searchText)
 
-        this.jobs = await TaxaBlastService.searchJobs(this.parent.authToken, searchText, this.parent.user.uid);
+        this.jobs = await TaxaBlastService.searchJobs(searchText, this.parent.user.uid);
 
         if (!Array.isArray(this.jobs) || this.jobs.length < 1) {
             this.elements.jobsPanel.innerHTML = `<div class="no-data">You have no submitted jobs</div>`;

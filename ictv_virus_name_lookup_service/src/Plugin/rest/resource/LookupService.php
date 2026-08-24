@@ -319,14 +319,6 @@ class LookupService extends ResourceBase {
          $ictvResults[$resultKey] = $ictvResult;
       }
 
-      // NOTE: this is where the search results could be sorted by the custom score.
-      /*usort($searchResults, function(SearchResult $a, SearchResult $b) {
-         if ($a->orderedPairCount == $b->orderedPairCount) {
-            return 0;
-         }
-         return ($a->orderedPairCount < $b->orderedPairCount) ? 1 : -1;
-      });*/
-
       // Create an array of normalized search results.
       $normalizedResults = [];
 

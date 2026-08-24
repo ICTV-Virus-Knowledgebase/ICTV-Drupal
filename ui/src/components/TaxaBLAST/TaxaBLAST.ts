@@ -6,7 +6,6 @@ import { decode } from "base64-arraybuffer";
 import { InfoIcon } from "../../helpers/InfoIcon";
 import { InfoIconType, JobStatus, WebStorageKey } from "../../global/Types";
 import { ITaxaBlastJob } from "./ITaxaBlastJob";
-
 import * as pako from "pako";
 import { TaxaBlastService } from "../../services/TaxaBlastService";
 import { Utils } from "../../helpers/Utils";
@@ -20,9 +19,6 @@ import { MessagePanel } from "./panels/MessagePanel";
 
 
 export class TaxaBLAST {
-
-   // The authentication token that will be used when making API calls.
-   authToken: string;
 
    // The CSS selector for the container element where the TaxaBLAST UI will be rendered.
    containerSelector: string = null;
@@ -42,9 +38,6 @@ export class TaxaBLAST {
 
    // A TaxaBLAST job
    job: ITaxaBlastJob = null;
-
-   // This keeps track of a submitted job and its status.
-   //jobSubmission: JobSubmission = null;
 
    // The collection of panels used by this component.
    panels: Map<PanelKey, ITaxaBlastPanel>;
@@ -76,17 +69,14 @@ export class TaxaBLAST {
 
    
    // C-tor
-   constructor(authToken_: string, containerSelector_: string, email_: string, 
-      name_: string, userUID_: string) {
+   constructor(containerSelector_: string, email_: string, name_: string, userUID_: string) {
       
       // Validate parameters
-      if (!authToken_ || authToken_.length < 1) { throw new Error("Invalid auth token in TaxaBLAST"); }
       if (!containerSelector_ || containerSelector_.length < 1) { throw new Error("Invalid container selector in TaxaBLAST"); }
       if (!email_ || email_.length < 1) { email_ = Constants.NO_EMAIL; }
       if (!name_ || name_.length < 1) { name_ = "Anonymous user"; }
       userUID_ = Utils.safeTrim(userUID_);
 
-      this.authToken = authToken_;
       this.containerSelector = containerSelector_;
 
       this.user = {
@@ -325,7 +315,7 @@ export class TaxaBLAST {
       let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
 
       // Get the output file and its metadata.
-      const outputFile = await TaxaBlastService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
+      const outputFile = await TaxaBlastService.getOutputFile(filename_, this.state.jobUID, userUID);
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The CSV file is invalid"); }
 
       // Decompress the CSV file, if necessary.
@@ -370,7 +360,7 @@ export class TaxaBLAST {
       if (!this.state.jobUID) { return await AlertBuilder.displayError("No job UID provided"); }
 
       // Get the job data from the server.
-      this.job = await TaxaBlastService.getJob(this.authToken, this.state.jobUID);
+      this.job = await TaxaBlastService.getJob(this.state.jobUID);
 
       return;
    }
@@ -632,7 +622,7 @@ export class TaxaBLAST {
       let userUID = !this.user.urlUID ? this.user.uid : this.user.urlUID;
 
       // Get the output file and its metadata.
-      const outputFile = await TaxaBlastService.getOutputFile(this.authToken, filename_, this.state.jobUID, userUID);
+      const outputFile = await TaxaBlastService.getOutputFile(filename_, this.state.jobUID, userUID);
       if (!outputFile || !outputFile.contents) { return await AlertBuilder.displayError("The HTML file is invalid"); }
 
       // Decompress the HTML file, if necessary.

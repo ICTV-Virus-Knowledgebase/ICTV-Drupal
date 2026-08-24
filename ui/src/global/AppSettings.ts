@@ -65,6 +65,7 @@ export class _AppSettings {
       getTaxaByName: "api/get-taxa-by-name",
       getTaxon: "api/get-taxon",
       getTaxonDetails: "api/get-taxon-details",
+      getTaxonLineageIDs: "api/get-taxon-lineage-ids",
       getTreeExpandedToNode: "api/get-tree-expanded-to-node",
       getUnassignedChildTaxaByName: "api/get-unassigned-child-taxa-by-name",
       searchTaxonomy: "api/search-taxonomy",

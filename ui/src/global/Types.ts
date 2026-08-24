@@ -303,6 +303,7 @@ export enum WebServiceKey {
    getTaxaByName = "getTaxaByName",
    getTaxon = "getTaxon",
    getTaxonDetails = "getTaxonDetails",
+   getTaxonLineageIDs = "getTaxonLineageIDs",
    getTreeExpandedToNode = "getTreeExpandedToNode",
    getUnassignedChildTaxaByName = "getUnassignedChildTaxaByName",
    searchTaxonomy = "searchTaxonomy",
@@ -887,7 +888,7 @@ export const ProteinOnlyCodes = new Set([
 //----------------------------------------------------------------------------------------------------------------
 
 export interface IWebServiceDefinition {
-   isDataJSON: boolean,
+   jsonParameters: boolean,
    method: HttpMethod,
    url: string,
    useAuthToken?: boolean, 

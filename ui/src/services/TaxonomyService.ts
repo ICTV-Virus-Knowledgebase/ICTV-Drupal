@@ -4,6 +4,7 @@ import { IMslRelease } from "../models/IMslRelease";
 import { IReleaseHistoryResult } from "../components/TaxonomyBrowser/IReleaseHistoryResult";
 import { ITaxon } from "../models/ITaxon";
 import { ITaxonDetailsResult } from "../models/ITaxonDetailsResult";
+import { ITaxonLineageIDs } from "../models/ITaxonLineageIDs";
 import { ITaxonSearchResult } from "../models/ITaxonSearchResult";
 import { WebService } from "./WebService";
 import { IctvRank, WebServiceKey } from "../global/Types";
@@ -46,6 +47,16 @@ export class _TaxonomyService {
       const responseData = await WebService.requestData<any>(WebServiceKey.getChildTaxa, data);
 
       return responseData;
+   }
+
+   // Get a comma-delimited list of taxnode_ids in a taxon's lineage.
+   async getTaxonLineageIDs(taxNodeID_: string): Promise<ITaxonLineageIDs> {
+
+      const data = {
+         taxnode_id: taxNodeID_
+      };
+
+      return await WebService.requestData<ITaxonLineageIDs>(WebServiceKey.getTaxonLineageIDs, data);
    }
 
    async getMslRelease(releaseNumber_: string): Promise<IMslRelease> {

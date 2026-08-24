@@ -3,7 +3,7 @@
 namespace Drupal\ictv_virus_name_lookup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-
+use Drupal\ictv_config\ConfigSettings;
 
 /**
  * A Block for the ICTV Virus Name Lookup UI.
@@ -16,26 +16,30 @@ use Drupal\Core\Block\BlockBase;
  */
 class IctvVirusNameLookupBlock extends BlockBase {
 
-   // The current MSL release.
-   public $currentMslRelease;
-
-   // The current VMR.
-   public $currentVMR;
-
-   // The URL of the Drupal web service.
-   public $drupalWebServiceURL;
-
-   // The URL of the taxon details/history page.
-   public $taxonHistoryPage;
-
-
    /**
     * {@inheritdoc}
     */
    public function build() {
 
-      // Load ICTV settings from the database.
-      $this->loadData();
+      // Use the default database instance.
+      $database = \Drupal::database();
+
+      // Configuration settings
+      $settings = null;
+
+      try {
+         // Get the ICTV configuration settings from the database.
+         $settings = new ConfigSettings($database);
+      }
+      catch (\Throwable $error) {
+         \Drupal::logger('ictv_virus_name_lookup')->error(
+            'Invalid ICTV configuration settings: @message',
+            ['@message' => $error->getMessage()]
+         );
+         return [
+            '#markup' => $this->t('The Find the Species page is unavailable because configuration settings are invalid.'),
+         ];
+      }
 
       $build = [
          '#markup' => $this->t("<div id=\"ictv_virus_name_lookup_container\" class=\"ictv-custom\"></div>"),
@@ -48,10 +52,10 @@ class IctvVirusNameLookupBlock extends BlockBase {
       ];
 
       // Populate drupalSettings with variables needed by the Find the Species object.
-      $build['#attached']['drupalSettings']['currentMslRelease'] = $this->currentMslRelease;
-      $build['#attached']['drupalSettings']['currentVMR'] = $this->currentVMR;
-      $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
-      $build['#attached']['drupalSettings']['taxonHistoryPage'] = $this->taxonHistoryPage;
+      $build['#attached']['drupalSettings']['currentMslRelease'] = $settings->currentMslRelease;
+      $build['#attached']['drupalSettings']['currentVMR'] = $settings->currentVMR;
+      $build['#attached']['drupalSettings']['taxonDetailsPage'] = $settings->taxonDetailsPage;
+      $build['#attached']['drupalSettings']['webServiceURL'] = $settings->webServiceURL;
       
       return $build;
    }
@@ -65,46 +69,4 @@ class IctvVirusNameLookupBlock extends BlockBase {
    public function getCacheMaxAge() {
       return 2;
    }
-
-   /**
-    * Load the ICTV settings from the database.
-    */
-   public function loadData() {
-
-      // Use the default database instance.
-      $database = \Drupal::database();
-
-      // Initialize the member variables.
-      $this->currentMslRelease = 0;
-      $this->currentVMR = "";
-      $this->drupalWebServiceURL = "";
-      $this->taxonHistoryPage = "";
-
-      // Get ICTV settings
-      $sql = 
-         "SELECT ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentMslRelease' LIMIT 1
-         ) AS currentMslRelease,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'currentVMR' LIMIT 1
-         ) AS currentVMR,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'drupalWebServiceURL' LIMIT 1
-         ) AS drupalWebServiceURL,
-         ( 
-            SELECT VALUE FROM ictv_settings WHERE NAME = 'taxonHistoryPage' LIMIT 1
-         ) AS taxonHistoryPage; ";
-
-      $query = $database->query($sql);
-      if (!$query) { \Drupal::logger('ictv_virus_name_lookup')->error("Invalid query object"); }
-
-      $settings = $query->fetchAssoc();
-      if (!$settings) { \Drupal::logger('ictv_virus_name_lookup')->error("Invalid settings object"); }
-
-      $this->currentMslRelease = $settings["currentMslRelease"];
-      $this->currentVMR = $settings["currentVMR"];
-      $this->drupalWebServiceURL = $settings["drupalWebServiceURL"];
-      $this->taxonHistoryPage = $settings["taxonHistoryPage"];
-   }
-
 }

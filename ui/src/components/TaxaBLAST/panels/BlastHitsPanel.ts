@@ -4,12 +4,11 @@ import { BlastStatus, BlastTask, ButtonClass, Constants,
    PanelKey } from "../Common";
 import DataTables from "datatables.net-dt";
 import { IBlastHit } from "../IBlastHit";
-import { GetTaxonomyRankLabel, IctvRank } from "../../../global/Types";
+import { GetTaxonomyRankLabel, IctvRank, JobStatus } from "../../../global/Types";
 import { BlastHSP } from "../BlastHSP";
 import { BlastIsolate } from "../BlastIsolate";
 import { BlastSpecies } from "../BlastSpecies";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
-import { JobStatus, SequenceType } from "../../CuratedNameManager";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";

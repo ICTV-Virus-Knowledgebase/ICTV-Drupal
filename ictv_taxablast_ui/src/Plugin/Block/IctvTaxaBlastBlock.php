@@ -2,9 +2,10 @@
 
 namespace Drupal\ictv_taxablast_ui\Plugin\Block;
 
-use Drupal\Core\Block\BlockBase;
-use Drupal\Core\Extension\ModuleHandlerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Drupal\Core\Block\BlockBase;
+use Drupal\ictv_config\ConfigSettings;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Symfony\Component\Yaml\Yaml;
 
 
@@ -18,16 +19,6 @@ use Symfony\Component\Yaml\Yaml;
  * )
  */
 class IctvTaxaBlastBlock extends BlockBase {
-
-   // The JWT auth token for the Drupal web service.
-   public $authToken;
-
-   // The URL of the Drupal web service.
-   public $drupalWebServiceURL;
-
-   // The name of the taxon details/history page.
-   public $taxonHistoryPage;
-
 
    /**
     * {@inheritdoc}
@@ -47,13 +38,30 @@ class IctvTaxaBlastBlock extends BlockBase {
       // Make sure the user has permission to access content.
       if (!$user->hasPermission('access content')) { throw new AccessDeniedHttpException(); }
 
-      // Load the authToken and drupalWebServiceURL from the database.
-      $this->loadData();
-
       // Get the current user's email, name, and UID.
       $email = $user->get('mail')->value;
       $name = $user->get('name')->value;
       $userUID = $user->get('uid')->value;
+
+      // Use the default database instance.
+      $database = \Drupal::database();
+
+      // Configuration settings
+      $settings = null;
+
+      try {
+         // Get the ICTV configuration settings from the database.
+         $settings = new ConfigSettings($database);
+      }
+      catch (\Throwable $error) {
+         \Drupal::logger('ictv_taxablast_ui')->error(
+            'Invalid ICTV configuration settings: @message',
+            ['@message' => $error->getMessage()]
+         );
+         return [
+            '#markup' => $this->t('The TaxaBLAST page is unavailable because configuration settings are invalid.'),
+         ];
+      }
 
       $build = [
          '#markup' => $this->t("<div id=\"ictv_taxablast_container\" class=\"ictv-custom\"></div>"),
@@ -69,10 +77,10 @@ class IctvTaxaBlastBlock extends BlockBase {
       $infoIcons = $this->loadInfoIcons();
 
       // Populate drupalSettings with variables needed by the ICTV_TaxaBLAST object.
-      $build['#attached']['drupalSettings']['authToken'] = $this->authToken;
-      $build['#attached']['drupalSettings']['drupalWebServiceURL'] = $this->drupalWebServiceURL;
+      $build['#attached']['drupalSettings']['authToken'] = $settings->authToken;
+      $build['#attached']['drupalSettings']['appServerURL'] = $settings->appServerURL;
       $build['#attached']['drupalSettings']['infoIcons'] = $infoIcons;
-      $build['#attached']['drupalSettings']['taxonHistoryPage'] = $this->taxonHistoryPage;
+      $build['#attached']['drupalSettings']['taxonDetailsPage'] = $settings->taxonDetailsPage;
       $build['#attached']['drupalSettings']['userEmail'] = $email;
       $build['#attached']['drupalSettings']['userName'] = $name;
       $build['#attached']['drupalSettings']['userUID'] = $userUID;
@@ -122,52 +130,4 @@ class IctvTaxaBlastBlock extends BlockBase {
 
       return $json;
    }
-
-   public function loadData() {
-
-      // Use the default database instance.
-      $database = \Drupal::database();
-
-      // Initialize the member variables.
-      $this->authToken = "";
-      $this->drupalWebServiceURL = "";
-
-      // Get authToken and drupalWebServiceURL from the ictv_settings table.
-      $sql = 
-         "SELECT (".
-         "  SELECT a.value ".
-         "  FROM {ictv_settings} a ".
-         "  WHERE a.name = 'authToken' ".
-         "  LIMIT 1 ".
-         ") AS authToken, ".
-         "(".
-         "  SELECT d.value ".
-         "  FROM {ictv_settings} d ".
-         "  WHERE d.name = 'drupalWebServiceURL' ".
-         "  LIMIT 1 ".
-         ") AS drupalWebServiceURL, ".
-         "(".
-         "  SELECT t.value ".
-         "  FROM {ictv_settings} t ".
-         "  WHERE t.name = 'taxonHistoryPage' ".
-         "  LIMIT 1 ".
-         ") AS taxonHistoryPage ";
-
-      $query = $database->query($sql);
-      if (!$query) { \Drupal::logger('ictv_taxablast_ui')->error("Invalid query object"); }
-
-      $result = $query->fetchAll();
-      if (!$result) { \Drupal::logger('ictv_taxablast_ui')->error("Invalid result object"); }
-
-      foreach ($result as $setting) {
-
-         // Populate member variables
-         $this->authToken = $setting->authToken;
-         $this->drupalWebServiceURL = $setting->drupalWebServiceURL;
-         $this->taxonHistoryPage = $setting->taxonHistoryPage;
-      }
-
-      // TODO: validate?
-   }
-
 }

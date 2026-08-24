@@ -1,8 +1,8 @@
 d3TaxonomyVisualization:
-  version: 20260818_1606
+  version: 20260824_1339
   css:
     theme:
-      assets/css/dataTables.dataTables.min.css: {}
+      assets/css/jquery.dataTables.min.css: {}
       assets/css/select2.min.css: {}
       assets/css/stylesheet.css: {}
       assets/css/tippy.css: {}
@@ -13,6 +13,7 @@ d3TaxonomyVisualization:
     assets/js/popper.min.js: { preprocess: false }
     assets/js/select2.min.js: { preprocess: false }
     assets/js/tippy-bundle.umd.min.js: { preprocess: false }
+    assets/js/jquery.dataTables.min.js: { preprocess: false }
     assets/js/searchPanel.js: { preprocess: false }
     assets/js/script.js: { preprocess: false }
   dependencies:

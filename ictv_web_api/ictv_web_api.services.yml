@@ -76,3 +76,9 @@ services:
     arguments: ['@current_user']
     tags:
       - { name: 'rest.resource' }
+
+  ictv_web_api.getTaxonLineageIDs:
+    class: '\Drupal\ictv_web_api\Plugin\rest\resource\GetTaxonLineageIDs'
+    arguments: ['@current_user']
+    tags:
+      - { name: 'rest.resource' }

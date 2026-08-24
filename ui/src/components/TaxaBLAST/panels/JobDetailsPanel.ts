@@ -7,7 +7,7 @@ import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { TaxaBLAST } from "../TaxaBLAST";
 import tippy from "tippy.js";
 import { Utils } from "../../../helpers/Utils";
-import { JobStatus } from "../../CuratedNameManager";
+import { JobStatus } from "../../../global/Types";
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 
 

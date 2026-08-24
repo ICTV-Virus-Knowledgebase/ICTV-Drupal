@@ -464,7 +464,6 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    align-items: center;
    display: flex;
    justify-content: space-around;
-   padding: 4px;
 }
 #d3_taxonomy_vis_container .search-results-table .controls-column button {
    border: 1px solid rgba(0, 0, 0, .075);
@@ -669,8 +668,15 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    padding-bottom: 0.20rem;
 }
 
-.ictv-tax-viz-tooltip .history {
+.ictv-tax-viz-tooltip .link-row {
+   font-size: 1.0rem;
    margin-top: 0.5rem;
+}
+.ictv-tax-viz-tooltip .link-row a {
+   color: var(--ictv-link-color);
+}
+.ictv-tax-viz-tooltip .link-row a:hover {
+   color: var(--ictv-link-hover-color);
 }
 
 .ictv-tax-viz-tooltip .child-count {

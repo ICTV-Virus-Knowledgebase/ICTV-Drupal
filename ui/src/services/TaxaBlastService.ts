@@ -13,8 +13,9 @@ import { SequenceType, WebServiceKey } from "../global/Types";
 export class _TaxaBlastService {
 
    
+   /* This might be used in the future...
    // Download a binary (zip) file from a TaxaBLAST job.
-   async downloadFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<any> {
+   async downloadFile(filename_: string, jobUID_: string, userUID_: string): Promise<any> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }
       if (!jobUID_) { throw new Error("Invalid job UID"); }
@@ -27,7 +28,7 @@ export class _TaxaBlastService {
 
       // Get and return the result files.
       return await WebService.requestData<any>(WebServiceKey.downloadTaxaBlastFile, data);
-   }
+   }*/
 
 
    // Call the NCBI Entrez EFetch web service to retrive FASTA for one or more accessions.
@@ -38,7 +39,7 @@ export class _TaxaBlastService {
 
       let db = sequenceType_ === SequenceType.nucleotide ? "nuccore" : "protein";
       const email = "info@ictv.global";
-      const tool = "TaxaBLAST";
+      const tool = "ICTV.TaxaBLAST";
 
       let uri = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=${db}&id=${accessions_}&rettype=fasta&retmode=text&tool=${tool}&email=${email}`;
 
@@ -52,14 +53,12 @@ export class _TaxaBlastService {
    }
 
    // Get the specified job and result metadata.
-   async getJob(authToken_: string, jobUID_: string): Promise<ITaxaBlastJob> {
+   async getJob(jobUID_: string): Promise<ITaxaBlastJob> {
       
-      // Validate the parameters
-      if (!authToken_) { throw new Error("Invalid auth token"); }
+      // Validate the parameter(s)
       if (!jobUID_) { throw new Error("Invalid job UID"); }
 
       const data = {
-         authToken: authToken_,
          jobUID: jobUID_
       };
 
@@ -69,14 +68,12 @@ export class _TaxaBlastService {
 
 
    // Search the user's TaxaBLAST jobs.
-   async searchJobs(authToken_: string, searchText_: string, userUID_: string): Promise<ITaxaBlastJob[]> {
+   async searchJobs(searchText_: string, userUID_: string): Promise<ITaxaBlastJob[]> {
       
-      // Validate the parameters
-      if (!authToken_) { throw new Error("Invalid auth token"); }
+      // Validate the parameter(s)
       if (!userUID_) { throw new Error("Invalid user UID"); }
 
       const data = {
-         authToken: authToken_,
          searchText: searchText_,
          userUID: userUID_
       };
@@ -86,7 +83,7 @@ export class _TaxaBlastService {
 
 
    // Get an output file from a TaxaBLAST job.
-   async getOutputFile(authToken_: string, filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
+   async getOutputFile(filename_: string, jobUID_: string, userUID_: string): Promise<IOutputFile> {
 
       if (!filename_) { throw new Error("The filename parameter is invalid"); }
       if (!jobUID_) { throw new Error("Invalid job UID"); }
@@ -104,17 +101,15 @@ export class _TaxaBlastService {
 
    
    // Upload one or more sequences for processing.
-   async uploadSequences(authToken_: string, blastParams_: BlastParams, files_: IFileData[], jobName_: string, userEmail_: string, 
+   async uploadSequences(blastParams_: BlastParams, files_: IFileData[], jobName_: string, userEmail_: string, 
       userUID_: string): Promise<ISubmissionResult> {
 
       // Validate parameters
-      if (!authToken_) { throw new Error("Invalid auth token"); }
       if (!files_ || files_.length < 1) { throw new Error("There are no files to upload"); }
       if (!userEmail_) { throw new Error("The user email parameter is invalid"); }
       if (!userUID_) { throw new Error("The user UID parameter is invalid"); }
 
       const data = {
-         authToken: authToken_,
          files: files_,
          jobName: jobName_,
          maxHSPS: blastParams_.maxHSPS,

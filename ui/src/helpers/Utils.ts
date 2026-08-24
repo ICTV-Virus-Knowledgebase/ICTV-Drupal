@@ -464,16 +464,12 @@ export class Utils {
       }
    }
 
-   static showWithTransition(el_: HTMLElement, duration_?: number, display_?: string) {
+   static async showWithTransition(el_: HTMLElement, duration_?: number, display_?: string): Promise<void> {
       
       // Set defaults for optional parameters.
-      if (isNaN(duration_)) { duration_ = 300; }
+      if (duration_ === undefined || isNaN(duration_)) { duration_ = 300; }
       if (!display_) { display_ = "block"; }
       
-      //const style = window.getComputedStyle(el_);
-      // If it's already visible, don't bother.
-      //if (style.display !== "none") return;
-
       el_.style.display = display_;
 
       const fullHeight = `${el_.scrollHeight}px`;
@@ -495,10 +491,27 @@ export class Utils {
       el_.style.paddingBottom = "";
 
       // Cleanup after the transition.
-      setTimeout(() => {
-         el_.classList.remove("show-transition");
-         el_.style.height = "";
-         el_.style.transitionDuration = "";
-      }, duration_);
+      await new Promise<void>((resolve) => {
+         setTimeout(resolve, duration_);
+      });
+
+      el_.classList.remove("show-transition");
+      el_.style.height = "";
+      el_.style.transitionDuration = "";
+   }
+
+   static async showWithoutTransition(el_: HTMLElement, display_?: string): Promise<void> {
+      
+      // Set defaults for optional parameters.
+      if (!display_) { display_ = "block"; }
+      
+      el_.style.display = display_;
+      el_.style.opacity = "1";
+      el_.style.height = "";
+      el_.style.marginTop = "";
+      el_.style.marginBottom = "";
+      el_.style.paddingTop = "";
+      el_.style.paddingBottom = "";
+      el_.style.transitionDuration = "";
    }
 }
