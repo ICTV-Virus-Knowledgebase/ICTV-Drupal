@@ -38,10 +38,14 @@
             // The taxonomy details page/URL.
             const taxonDetailsURL = settings_.taxonDetailsPage;
 
+            // The taxonomy browser page/URL.
+            // TODO: Should this be a configuration setting, instead?
+            const taxonomyBrowserURL = "/taxonomy";
+
             // The taxonomy web service URL.
-            let taxonomyURL = window.ICTV.AppSettings.webServiceURL;
-            if (!taxonomyURL.endsWith("/")) { taxonomyURL += "/"; }
-            taxonomyURL += "api/search-taxonomy";
+            let taxonomyWebSvcURL = window.ICTV.AppSettings.webServiceURL;
+            if (!taxonomyWebSvcURL.endsWith("/")) { taxonomyWebSvcURL += "/"; }
+            taxonomyWebSvcURL += "api/search-taxonomy";
 
             // Load the releases metadata from the releases JSON file.
             $.getJSON(`${dataURL}/data/releases.json`).done((releases) => {
@@ -50,7 +54,7 @@
 
                // Initialize the D3 Taxonomy Visualization function.
                window.ICTV.d3TaxonomyVisualization(containerSelector, window.ICTV.AppSettings.currentMslRelease,
-                  dataURL, releases, taxonDetailsURL, taxonomyURL); 
+                  dataURL, releases, taxonDetailsURL, taxonomyBrowserURL, taxonomyWebSvcURL); 
             });
         }
     };

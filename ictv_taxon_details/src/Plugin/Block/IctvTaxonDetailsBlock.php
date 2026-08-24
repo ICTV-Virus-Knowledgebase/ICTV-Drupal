@@ -3,7 +3,7 @@
 namespace Drupal\ictv_taxon_details\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-use Drupal\ictv_taxon_details\Plugin\Block\ConfigSettings;
+use Drupal\ictv_config\ConfigSettings;
 
 /**
  * 
@@ -20,7 +20,25 @@ class IctvTaxonDetailsBlock extends BlockBase {
     */
    public function build() {
 
-      $settings = new ConfigSettings();
+      // Use the default database instance.
+      $database = \Drupal::database();
+
+      // Configuration settings
+      $settings = null;
+
+      try {
+         // Get the ICTV configuration settings from the database.
+         $settings = new ConfigSettings($database);
+      }
+      catch (\Throwable $error) {
+         \Drupal::logger('ictv_taxon_details')->error(
+            'Invalid ICTV configuration settings: @message',
+            ['@message' => $error->getMessage()]
+         );
+         return [
+            '#markup' => $this->t('The taxon details page is unavailable because configuration settings are invalid.'),
+         ];
+      }
 
       $build = [
          '#markup' => $this->t("<div id='taxon_details_container' class='ictv-custom'></div>"),
@@ -33,11 +51,10 @@ class IctvTaxonDetailsBlock extends BlockBase {
       ];
 
       // Populate drupalSettings with the ICTV settings from the database.
-      $build['#attached']['drupalSettings']['applicationURL'] = $settings->applicationURL;
-      $build['#attached']['drupalSettings']['baseWebServiceURL'] = $settings->baseWebServiceURL;
       $build['#attached']['drupalSettings']['currentMslRelease'] = $settings->currentMslRelease;
       $build['#attached']['drupalSettings']['releaseProposalsURL'] = $settings->releaseProposalsURL;
-      $build['#attached']['drupalSettings']['taxonHistoryPage'] = $settings->taxonHistoryPage;
+      $build['#attached']['drupalSettings']['taxonDetailsPage'] = $settings->taxonDetailsPage;
+      $build['#attached']['drupalSettings']['webServiceURL'] = $settings->webServiceURL;
       
       return $build;
    }

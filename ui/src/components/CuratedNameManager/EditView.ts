@@ -139,7 +139,7 @@ export class EditView {
          result = await this.manager.deleteName(this.curatedName.uid);
          if (!result) { result = { message: "An unknown error occurred", success: false }; }
       }
-      catch (error_) {
+      catch (error_: any) {
          result = { message: error_, success: false };
       }
 
@@ -401,7 +401,7 @@ export class EditView {
             result = { message: `Unhandled view mode ${this.viewMode}`, success: false };
          }
       }
-      catch (error_) {
+      catch (error_: any) {
          result = { message: error_, success: false };
       }
 

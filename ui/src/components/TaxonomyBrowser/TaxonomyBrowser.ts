@@ -5,7 +5,6 @@ declare var jQuery: any;
 import { AppSettings } from "../../global/AppSettings";
 import DataTables from 'datatables.net-dt';
 import { IMslRelease } from "../../models/IMslRelease";
-import { IReleaseHistoryResult } from "./IReleaseHistoryResult";
 import { ITaxon } from "../../models/ITaxon";
 import { Identifiers } from "../../models/Identifiers";
 import { IDisplaySettings } from "./IDisplaySettings";
@@ -316,6 +315,7 @@ export class TaxonomyBrowser {
       return;
    }
 
+   
    // Display a release and its taxonomy, and expand to highlight a selected taxon (its taxnode_id 
    // will be provided as a URL parameter).
    async displayTaxonomyWithSelectedTaxon(): Promise<boolean> {
@@ -326,7 +326,7 @@ export class TaxonomyBrowser {
          return false;
       }
 
-      await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), null, taxon.levelName, taxon.mslReleaseNum.toString());
+      await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), taxon.levelName, taxon.mslReleaseNum.toString());
       return true;
    }
 
@@ -563,10 +563,70 @@ export class TaxonomyBrowser {
          parentEl_.dataset.expanded = "true";
 
          // Display the children
-         Utils.showWithTransition(parentEl_, animationDuration);
+         await Utils.showWithTransition(parentEl_, animationDuration);
       }
 
       return true;
+   }
+
+   
+   // Automatically expand the tree to display and highlight the specified taxon.
+   async expandToTaxon(taxNodeID_: string) {
+
+      // Get the taxon's parent lineage.
+      const result = await TaxonomyService.getTaxonLineageIDs(taxNodeID_);
+      if (!result) { console.error(`No lineage available for taxnode ID ${taxNodeID_}`); return; }
+
+      const lineageIDs = result.lineageIDs.split(",");
+      lineageIDs.forEach(async (lineageID_, index_) => {
+         
+         // Get the node with this taxnode ID.
+         const nodeEl = this.elements.taxonomyBrowser.querySelector(`.tc-node[data-id="${lineageID_}"]`) as HTMLElement;
+         if (!nodeEl) { throw new Error(`Invalid node element for ${lineageID_} in expandToTaxon`); }
+
+         // Get the child container with this taxnode ID.
+         const containerEl = this.elements.taxonomyBrowser.querySelector(`.tc-children[data-id="${lineageID_}"]`) as HTMLElement;
+         if (!containerEl) { throw new Error(`Invalid container element for ${lineageID_} in expandToTaxon`); }
+
+         // If the node has already been populated and expanded, skip to the next rank.
+         if (containerEl.dataset.expanded === "true" && containerEl.dataset.populated === "true") { return; }
+
+         if (containerEl.dataset.populated !== "true") {
+
+            // Get the node's child taxa
+            const response = await TaxonomyService.getChildTaxa(lineageID_);
+            if (!response) { throw new Error(`Unable to get child taxa in expandToTaxon for taxnode_id ${lineageID_}`); }
+
+            //if (!response.parentTaxnodeID) { throw new Error("Invalid parent ID in expandToTaxon"); }
+            if (!response.taxonomy) { throw new Error("Invalid child taxa in expandToTaxon"); }
+
+            // Display all child taxa.
+            response.taxonomy.forEach((taxon_: ITaxon) => {
+               this.displayTaxon(taxon_, containerEl);
+            })
+
+            // Update the container as "populated".
+            containerEl.dataset.populated = "true";
+         }
+        
+         if (containerEl.dataset.expanded !== "true") {
+
+            // Get and validate the icon element.
+            const iconEl = this.elements.taxonomyBrowser.querySelector(`.tc-ctrl[data-id="${lineageID_}"]`);
+            if (!iconEl) { throw new Error("Invalid iconEl in expandToTaxon"); }
+
+            // Toggle the icon
+            iconEl.innerHTML = this.icons.collapse;
+
+            // Force the node to be expanded.
+            containerEl.dataset.expanded = "true";
+         }
+
+         // Display the node's children.
+         return await Utils.showWithoutTransition(containerEl);
+      })
+
+      return;
    }
 
    // TODO: This could be made a LOT simpler.
@@ -748,6 +808,7 @@ export class TaxonomyBrowser {
       return;
    }
 
+   // Get all immediate child taxa of the specified taxon.
    async getChildTaxa(taxNodeID_: string) {
 
       const response = await TaxonomyService.getChildTaxa(taxNodeID_);
@@ -831,9 +892,7 @@ export class TaxonomyBrowser {
 
    // Return a DIV that contains the spinner icon and optional text.
    getSpinnerHTML(spinnerText_: string): string {
-
       if (!spinnerText_) { spinnerText_ = ""; }
-
       return `<div class="spinner-ctrl">${this.icons.spinner} ${spinnerText_}</div>`;
    }
 
@@ -901,8 +960,7 @@ export class TaxonomyBrowser {
          releaseNumber_, taxNodeID_);
 
       // Display the updated taxonomy tree.
-      await this.processTreeExpandedToNode(response.parentTaxNodeID, response.subTreeHTML, response.taxNodeID,
-         response.taxonomyHTML);
+      await this.processTreeExpandedToNode(response.taxNodeID, response.taxonomyHTML);
 
       // Update the tippy instance.
       tippy(".has-tooltip");
@@ -1008,7 +1066,7 @@ export class TaxonomyBrowser {
    }
 
    // This callback function is provided to the taxonomy search panel (child component) to handle a search result selection.
-   async handleSearchResultSelection(taxNodeID_: string, lineage_: string, rank_: string, releaseNumber_: string) {
+   async handleSearchResultSelection(taxNodeID_: string, rank_: string, releaseNumber_: string) {
 
       // Get the specified release
       await this.getRelease(releaseNumber_);
@@ -1228,9 +1286,16 @@ export class TaxonomyBrowser {
          // Determine how to display the release, taxonomy, and possibly the release history.
          if (this.initialData.displayType === TaxonomyDisplayType.display_all && !isNaN(this.identifiers.taxNodeID)) {
 
-            // Display the taxonomy from the selected taxon's release and pre-expand to the taxon. If we encounter errors, we will 
-            // use the default load/display behavior below.
-            if (this.displayTaxonomyWithSelectedTaxon()) { return; }
+            // Display the taxonomy from the selected taxon's release and pre-expand to the taxon. If we encounter 
+            // errors, we will use the default load/display behavior below.
+            let taxon: ITaxon = await TaxonomyService.getTaxon(this.identifiers.taxNodeID.toString());
+            if (!taxon) { 
+               return await AlertBuilder.displayError("The taxnode_id URL parameter is invalid");
+            }
+            //if (this.displayTaxonomyWithSelectedTaxon()) { return; }
+
+            // Display the specified taxon.
+            await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), taxon.levelName, taxon.mslReleaseNum.toString());
 
          } else if (this.initialData.displayType == TaxonomyDisplayType.display_all) {
             return this.displayTaxonomy();
@@ -1372,7 +1437,7 @@ export class TaxonomyBrowser {
       return this.expandCollapse(taxNodeID_, false, containerEl);
    }
 
-   async processTreeExpandedToNode(parentTaxNodeID_: string, subTreeHTML_: string, taxNodeID_: string, taxonomyHTML_: string) {
+   async processTreeExpandedToNode(taxNodeID_: string, taxonomyHTML_: string) {
 
       if (!taxonomyHTML_) {
          this.elements.taxonomyBrowser.innerHTML = "No results";
@@ -1384,30 +1449,23 @@ export class TaxonomyBrowser {
       // Populate the page with the pre-generated HTML.
       this.elements.taxonomyBrowser.innerHTML = taxonomyHTML_;
 
-      // Were a parent taxnode ID and subtree HTML provided?
-      if (parentTaxNodeID_ && subTreeHTML_) {
+      // Expand the taxon's lineage nodes and highlight the taxon's node.
+      await this.expandToTaxon(taxNodeID_);
 
-         // Update the node as being populated, and add the subTree HTML as its child nodes.
-         const containerEl = document.querySelector(`.tc-children[data-id="${parentTaxNodeID_}"]`) as HTMLElement;
-         if (!containerEl) { throw new Error("Invalid child container Element"); }
+      await new Promise<void>((resolve) => {
+         setTimeout(resolve, 500);
+      });
 
-         containerEl.dataset.populated = "true";
-         containerEl.innerHTML = subTreeHTML_;
+      // Get the node element that will be highlighted.
+      const targetEl = this.elements.taxonomyBrowser.querySelector(`.tc-node[data-id="${taxNodeID_}"]`) as HTMLElement; // ${this.cssClasses.node}
+      if (!targetEl) { throw new Error(`Invalid node element for taxnode ID ${taxNodeID_}`); }
 
-         // Expand it
-         await this.expandCollapse(parentTaxNodeID_, false, containerEl);
-      }
+      // Highlight the target node.
+      targetEl.classList.add("highlighted-node");
 
-      // Get the search result element that has the specified taxnode ID.
-      const searchResultEl = this.elements.container.querySelector(`.${this.cssClasses.node}[data-id="${taxNodeID_}"]`) as HTMLElement;
-      if (!searchResultEl) { throw new Error(`Invalid search result element for taxnode ID ${taxNodeID_}`); }
-
-      // Highlight the search result node.
-      searchResultEl.classList.add("highlighted-node");
-
-      // Scroll down to the search result in the tree.
-      Utils.scrollToElement(searchResultEl);
-
+      // Scroll down to the target node in the tree.
+      Utils.scrollToElement(targetEl);
+      
       return;
    }
 

@@ -2,15 +2,13 @@
 import { AlertBuilder } from "../../../helpers/AlertBuilder";
 import { BlastParams } from "../BlastParams";
 import { BlastTask, ButtonClass, Constants, GetBlastTaskDescription,
-   GetBlastTaskInfo, GetBlastTaskLabel, Icon, PanelKey, 
-   ReadFileAsync } from "../Common";
+   GetBlastTaskLabel, Icon, PanelKey, ReadFileAsync } from "../Common";
 import { DialogBuilder } from "../../../helpers/DialogBuilder";
 import { FastaFile } from "../../../models/FastaFile";
 import { FastaStatus, JobStatus, SequenceType } from "../../../global/Types";
 import { InfoIcon } from "../../../helpers/InfoIcon";
 import { ITaxaBlastPanel } from "./ITaxaBlastPanel";
 import { ISubmissionResult } from "../ISubmissionResult";
-import { JobSubmission } from "../JobSubmission";
 import { SelectedFiles } from "../SelectedFiles";
 import { TaxaBLAST } from "../TaxaBLAST";
 import { TaxaBlastService } from "../../../services/TaxaBlastService";
@@ -213,6 +211,8 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
    }
 
    /*
+   TODO: This is a work-in-progress for a requested feature.
+
    // Create HTML for the GenBank accession lookup dialog.
    createLookupDialogHTML() {
       
@@ -322,7 +322,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       } catch (error_) {
          AlertBuilder.displayErrorSync(error_);
       }
-      
       return;
    }*/
 
@@ -591,8 +590,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       const jobDetailsURL = this.parent.createPanelURL(PanelKey.jobDetails);
       history.replaceState(null, "", jobDetailsURL);
       
-      //this.parent.updateUrlFromState();
-
       // Navigate to the job details panel.
       this.parent.displayPanel(PanelKey.jobDetails);
       
@@ -799,8 +796,6 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
       //this.elements.lookupAccDialog = this.elements.container.querySelector("#lookup_dialog");
       //if (!this.elements.fastaDialog) { throw new Error("Invalid FASTA dialog"); }
 
-
-
       // The file input control
       this.elements.fileInput = this.elements.container.querySelector("#file_input") as HTMLInputElement;
       if (!this.elements.fileInput) { throw new Error("Invalid file input element"); }
@@ -820,14 +815,11 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
 
       this.elements.enterFastaButton.addEventListener("click", () => this.openFastaDialog());
 
-
       // The "Lookup accessions" button
       //this.elements.lookupAccButton = this.elements.container.querySelector(`.${ButtonClass.lookupAccessions}`);
       //if (!this.elements.lookupAccButton) { throw new Error("Invalid \"Lookup accessions\" button element"); }
 
       //this.elements.lookupAccButton.addEventListener("click", () => this.openLookupDialog());
-
-
 
       // NOTE: We're only doing this to make sure they exist.
       const blastTaskRadios = this.elements.container.querySelectorAll('input[name="blast-task"]') as NodeListOf<HTMLInputElement>;
@@ -1047,7 +1039,7 @@ export class JobSubmissionPanel implements ITaxaBlastPanel {
          const files = this.selectedFiles.getValidFiles();
          
          // Upload the FASTA file(s) to the web service for processing.
-         const result = await TaxaBlastService.uploadSequences(this.parent.authToken, blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
+         const result = await TaxaBlastService.uploadSequences(blastParams, files, jobName, this.parent.user.email, this.parent.user.uid);
 
          // Handle the upload result and display the correct sub-panel.
          await this.handleSubmissionResult(result);

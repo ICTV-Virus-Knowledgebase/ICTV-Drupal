@@ -3,7 +3,7 @@
 # https://devhints.io/bash
 
 #------------------------------------------------------------------------------
-# Run webpack for the Find the species component.
+# Run webpack for the Find the Species components.
 #------------------------------------------------------------------------------
 
 # The subdirectory for ICTV components.
@@ -17,7 +17,7 @@ printf "\n"
 #------------------------------------------------------------------------------
 # Build the TypeScript component.
 #------------------------------------------------------------------------------
-printf "Building the Find the species component \n\n"
+printf "Building Find the Species \n\n"
 webpackOutput=$("${webpack}" --config "$componentPath/FindTheSpecies/webpack.config.js" 2>&1)
 webpackStatus=$?
 

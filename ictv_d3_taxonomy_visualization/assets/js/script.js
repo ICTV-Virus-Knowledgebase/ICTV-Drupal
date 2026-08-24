@@ -22,7 +22,8 @@ window.ICTV.d3TaxonomyVisualization = function (
    dataURL_,
    releases_,
    taxonDetailsURL_,
-   taxonomyURL_
+   taxonomyBrowserURL_,
+   taxonomyWebSvcURL_
 ) {
 
    // Validate input parameters
@@ -41,8 +42,11 @@ window.ICTV.d3TaxonomyVisualization = function (
    if (!taxonDetailsURL_) { throw new Error("Invalid taxon details URL"); }
    const taxonDetailsURL = taxonDetailsURL_;
 
-   if (!taxonomyURL_) { throw new Error("Invalid taxonomy web service URL"); }
-   const taxonomyURL = taxonomyURL_;
+   if (!taxonomyBrowserURL_) { throw new Error("Invalid taxonomy browser URL"); }
+   const taxonomyBrowserURL = taxonomyBrowserURL_;
+
+   if (!taxonomyWebSvcURL_) { throw new Error("Invalid taxonomy web service URL"); }
+   const taxonomyWebSvcURL = taxonomyWebSvcURL_;
 
 
    // Configuration settings (to replace hard-coded values below)
@@ -153,7 +157,7 @@ window.ICTV.d3TaxonomyVisualization = function (
 
    // Create an instance of the search panel object and initialize it.
    const searchPanel = new window.ICTV.SearchPanel(currentReleaseNumber, selectSearchResult, `${containerSelector} .search-results-panel`,
-      `${containerSelector} .search-panel`, taxonDetailsURL, taxonomyURL);
+      `${containerSelector} .search-panel`, taxonDetailsURL, taxonomyWebSvcURL);
 
    searchPanel.initialize();
 
@@ -2651,8 +2655,11 @@ window.ICTV.d3TaxonomyVisualization = function (
                         `<div class="ictv-tax-viz-tooltip">
                            <div class="rank-and-name">${rankName}&nbsp;<i>${name}</i></div>
                            <div class="child-count">${childHTML}</div>
-                           <div class="history">
-                                 <a href="${taxonDetailsURL}?taxnode_id=${taxNodeID}&taxon_name=${name}" target="_blank">View taxon history</a>
+                           <div class="link-row">
+                              <a href="${taxonomyBrowserURL}?taxnode_id=${taxNodeID}&taxon_name=${name}" target="_blank">View in the taxonomy browser</a>
+                           </div>
+                           <div class="link-row">
+                              <a href="${taxonDetailsURL}?taxnode_id=${taxNodeID}&taxon_name=${name}" target="_blank">View taxon details</a>
                            </div>
                         </div>`;
 
