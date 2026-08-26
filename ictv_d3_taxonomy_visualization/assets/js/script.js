@@ -2644,11 +2644,14 @@ window.ICTV.d3TaxonomyVisualization = function (
 
                      // Get the name, rank, and taxnode ID attributes from the node data.
                      const name = instance.reference.__data__.data.name;
-                     const rankName = instance.reference.__data__.data.rankName;
+                     let rankName = instance.reference.__data__.data.rankName;
                      const taxNodeID = instance.reference.__data__.data.taxNodeID;
 
                      // Validate the attributes
                      if (!name || !rankName || !taxNodeID) { return instance.disable(); }
+
+                     // Make the first character uppercase.
+                     rankName = `${rankName[0].toUpperCase()}${rankName.slice(1)}`;
 
                      // The HTML content to display in the tooltip.
                      const html =

@@ -204,6 +204,10 @@
 #ictv_taxablast_container table .odd-row {
    background-color: var(--ictv-table-row-bg-odd);
 }
+#ictv_taxablast_container table td {
+   border-style: solid;
+   border-width: 1px !important;
+}
 
 /* Button styles */
 /*#ictv_taxablast_container button.btn-generic:not(:last-child) {
@@ -666,6 +670,8 @@ to provide more contrast in the HSP table. */
 #ictv_taxablast_container .isolate-group table.hsp-table th, 
 #ictv_taxablast_container .isolate-group table.hsp-table td { 
    box-sizing: border-box; 
+   border-style: solid;
+   border-width: 1px !important;
    overflow: hidden; 
    text-overflow: ellipsis; 
    white-space: nowrap; 
@@ -679,64 +685,11 @@ to provide more contrast in the HSP table. */
    text-align: center;
 }
 #ictv_taxablast_container .isolate-group table.hsp-table td {
+   border-style: solid;
+   border-width: 1px !important;
    padding: 3px 6px;
    text-align: center;
 }
-
-/* HSP table columns */
-/* TESTING
-#ictv_taxablast_container .isolate-group table.hsp-table th.hit-index,
-#ictv_taxablast_container .isolate-group table.hsp-table td.hit-index {
-   max-width: 30px !important;
-   text-align: right;
-   width: 30px !important;
-}
-#ictv_taxablast_container .isolate-group .hsp-table th.bitscore {
-	width: 100px !important;
-}
-#ictv_taxablast_container .isolate-group .hsp-table td.bitscore {
-   text-align: right;
-}
-
-#ictv_taxablast_container .isolate-group .hsp-table th.length {
-   width: 80px !important;
-}
-#ictv_taxablast_container .isolate-group .hsp-table td.length {
-   text-align: right;
-   width: 80px !important;
-}
-
-#ictv_taxablast_container .isolate-group .hsp-table th.pident {
-   width: 80px !important;
-}
-#ictv_taxablast_container .isolate-group .hsp-table td.pident {
-   text-align: right;
-   width: 80px !important;
-}
-
-#ictv_taxablast_container .isolate-group .hsp-table th.protein-id,
-#ictv_taxablast_container .isolate-group .hsp-table td.protein-id {
-	width: 160px !important;
-}
-#ictv_taxablast_container .isolate-group .hsp-table th.product,
-#ictv_taxablast_container .isolate-group .hsp-table td.product {
-	width: 260px !important;
-}
-#ictv_taxablast_container .isolate-group .hsp-table th.ppos,
-#ictv_taxablast_container .isolate-group .hsp-table td.ppos {
-	width: 80px !important;
-}*/
-/*#ictv_taxablast_container .isolate-group .hsp-table td.note {
-	width: auto;
-}*/
-/*#ictv_taxablast_container .isolate-group .hsp-table .alignment {
-   text-align: center;
-}
-
-#ictv_taxablast_container .isolate-group .hsp-table .start-or-end {
-   text-align: center;
-   width: 100px;
-}*/
 
 
 /* Panel views */

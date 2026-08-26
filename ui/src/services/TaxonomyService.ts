@@ -6,6 +6,7 @@ import { ITaxon } from "../models/ITaxon";
 import { ITaxonDetailsResult } from "../models/ITaxonDetailsResult";
 import { ITaxonLineageIDs } from "../models/ITaxonLineageIDs";
 import { ITaxonSearchResult } from "../models/ITaxonSearchResult";
+import { ITreeExpandedToNode } from "../models/ITreeExpandedToNode";
 import { WebService } from "./WebService";
 import { IctvRank, WebServiceKey } from "../global/Types";
 
@@ -117,27 +118,18 @@ export class _TaxonomyService {
    }
 
 
-   async getTreeExpandedToNode(displaySettings_: IDisplaySettings, hideAboveRank_: IctvRank, preExpandToRank_: IctvRank,
-      releaseNumber_: string, taxNodeID_: string) {
+   // Get HTML for (the visible portion of) the entire taxonomy that contains this taxnode ID. This includes
+   // all top-level nodes (whose direct parent is the tree/root node), the lineage of the selected taxon, and
+   // the immediate child nodes of the lineage nodes (with redundancies removed).
+   async getTreeExpandedToNode(taxNodeID_: string): Promise<ITreeExpandedToNode> {
 
-      if (!releaseNumber_) { throw new Error("Invalid releaseNumber in getTreeExpandedToNode"); }
       if (!taxNodeID_) { throw new Error("Invalid taxNodeID in getTreeExpandedToNode"); }
 
       const data = {
-         display_child_count: displaySettings_.displayChildCount,
-         display_history_controls: displaySettings_.displayHistoryCtrls,
-         display_member_of_controls: displaySettings_.displayMemberOfCtrls,
-         left_align_all: displaySettings_.leftAlignAll,
-         msl_release: releaseNumber_,
-         pre_expand_to_rank: preExpandToRank_,
-         taxnode_id: taxNodeID_,
-         top_level_rank: hideAboveRank_,
-         use_small_font: displaySettings_.useSmallFont
+         taxnode_id: taxNodeID_
       }
 
-      const responseData = await WebService.requestData<any>(WebServiceKey.getTreeExpandedToNode, data);
-
-      return responseData;
+      return await WebService.requestData<ITreeExpandedToNode>(WebServiceKey.getTreeExpandedToNode, data);
    }
 
 

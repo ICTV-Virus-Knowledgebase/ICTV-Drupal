@@ -1,11 +1,5 @@
 <?php
 
-// PHP api call:
-// https://logan1.ictv.global/api/get-tree-expanded-to-node?taxnode_id=202404739&msl_release=40&pre_expand_to_rank=family&top_level_rank=realm&display_child_count=true&display_history_controls=true&display_member_of_controls=true&left_align_all=false&use_small_font=false
-
-// C# api call:
-// https://dev.ictv.global/ICTV/api/taxonomy.ashx?action_code=get_tree_expanded_to_node&taxnode_id=202404739&msl_release=40&pre_expand_to_rank="family"&top_level_rank="realm"&display_child_count=true&display_history_controls=true&display_member_of_controls=true&left_align_all=false&use_small_font=false
-
 namespace Drupal\ictv_web_api\Plugin\rest\resource;
 
 use Drupal\Core\Database\Connection;
@@ -32,7 +26,6 @@ use Drupal\ictv_web_api\helpers\TaxonomyHelper;
  *   }
  * )
  */
-
 class GetTreeExpandedToNode extends ResourceBase {
 
   protected Connection $connection;
@@ -64,107 +57,35 @@ class GetTreeExpandedToNode extends ResourceBase {
   /**
    * Handle GET requests to /api/get-tree-expanded-to-node
    */
+   public function get(Request $request): ResourceResponse {
 
-  public function get(Request $request): ResourceResponse {
-
-    // Parse parameters from the request
-    $displayChildCount    = $this->getBoolParam($request, 'display_child_count', true);
-    $displayHistoryCtrls  = $this->getBoolParam($request, 'display_history_controls', true);
-    $displayMemberOfCtrls = $this->getBoolParam($request, 'display_member_of_controls', true);
-    $leftAlignAll         = $this->getBoolParam($request, 'left_align_all', false);
-    $useSmallFont         = $this->getBoolParam($request, 'use_small_font', false);
-
-    // taxNodeID
-    $strTaxNodeID = $request->get('taxnode_id');
-    if (Utils::isNullOrEmpty($strTaxNodeID) || !is_numeric($strTaxNodeID)) {
+      $html = "";
+      
+      // taxNodeID
+      $strTaxNodeID = $request->get('taxnode_id');
+      if (Utils::isNullOrEmpty($strTaxNodeID) || !is_numeric($strTaxNodeID)) {
       throw new BadRequestHttpException("Invalid tax node ID");
-    }
-    $taxNodeID = (int) $strTaxNodeID;
+      }
+      $taxNodeID = (int) $strTaxNodeID;
 
-    // preExpandToRank
-    $preExpandToRank = $request->get('pre_expand_to_rank');
-    if (Utils::isNullOrEmpty($preExpandToRank)) {
-      $preExpandToRank = null;
-    }
+      // Get all top-level nodes (whose direct parent is the tree/root node), the selected taxon, 
+      // its lineage, and the immediate child nodes of the lineage nodes (with redundancies removed).
+      $taxa = TaxonomyHelper::getLineageAndTopLevelNodes($this->connection, $taxNodeID);
+      if (!empty($taxa)) {
+         // Format the taxa as HTML.
+         $html = TaxonomyHelper::formatTaxaAsHTML($taxa);
+      }
 
-    // releaseNumber
-    $strMslRelease = $request->get('msl_release');
-    $releaseNumber = null;
-    if (!Utils::isNullOrEmpty($strMslRelease) && is_numeric($strMslRelease)) { $releaseNumber = (int)$strMslRelease; }
+      $data = [
+         "taxNodeID"       => $taxNodeID,
+         "taxonomyHTML"    => $html
+      ];
 
-    // topLevelRank
-    $topLevelRank = $request->get('top_level_rank');
-    if (Utils::isNullOrEmpty($topLevelRank)) { $topLevelRank = null; }
-
-    // Build the "pre-expanded" taxonomy HTML
-    // (i.e. replicate C# getByReleasePreExpanded(...) => htmlResults_)
-    // Call a method in TaxonomyHelper, e.g. buildPreExpandedHtml.
-    $htmlResults = TaxonomyHelper::buildPreExpandedHtml(
-      $this->connection,
-      $displayChildCount,
-      $displayHistoryCtrls,
-      $displayMemberOfCtrls,
-      $leftAlignAll,
-      $preExpandToRank,
-      $releaseNumber,
-      $topLevelRank,
-      $useSmallFont
-    );
-
-    // Get the sub-tree containing $taxNodeID
-    // (i.e. replicate getSubTreeContainingNode => we get the parentTaxNodeID, sub-tree taxa, etc.)
-    $subTreeData = TaxonomyHelper::getSubTreeContainingNodeData(
-      $this->connection,
-      $preExpandToRank,
-      $releaseNumber,
-      $taxNodeID,
-      $topLevelRank
-    );
-    // That returns something like:
-    // [
-    //   'parentTaxNodeID'   => ?int,
-    //   'selectedLevelID'   => int,
-    //   'taxa'              => array of Taxon,
-    //   'topLevelRankID'    => int,
-    //   'preExpandToRankID' => int,
-    // ]
-
-    $parentTaxnodeID  = $subTreeData['parentTaxNodeID'];
-    $selectedLevelID  = $subTreeData['selectedLevelID'];
-    $taxa             = $subTreeData['taxa'];
-    $topLevelRankID   = $subTreeData['topLevelRankID'];
-    $preExpandRankID  = $subTreeData['preExpandToRankID'];
-
-    //    Format that sub-tree => subTreeHTML
-    //    i.e. replicate C# formatSubTreeContainingNode(...).
-    //    You presumably have it in TaxonomyHelper as well:
-    $subTreeHTML = TaxonomyHelper::formatSubTreeContainingNode(
-      $displayChildCount,
-      $displayHistoryCtrls,
-      $displayMemberOfCtrls,
-      $leftAlignAll,
-      $preExpandRankID,    // preExpandToRankID
-      $releaseNumber,
-      $selectedLevelID,
-      $taxa,
-      $taxNodeID,
-      $topLevelRankID,
-      $useSmallFont
-    );
-
-    // Return final structure
-    $data = [
-      'parentTaxNodeID' => $parentTaxnodeID,
-      'taxNodeID'       => $taxNodeID,
-      'taxonomyHTML'    => $htmlResults,
-      'subTreeHTML'     => $subTreeHTML,
-    ];
-
-    $response = new ResourceResponse($data);
-    $response->headers->set('Access-Control-Allow-Origin', '*');
-    $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
-    return $response;
-  }
+      $response = new ResourceResponse($data);
+      $response->headers->set('Access-Control-Allow-Origin', '*');
+      $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
+      return $response;
+   }
 
   /**
     * {@inheritdoc}

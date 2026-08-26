@@ -673,10 +673,10 @@ body ._none:has(.block-ictv-d3-taxonomy-visualization) .block-ictv-d3-taxonomy-v
    margin-top: 0.5rem;
 }
 .ictv-tax-viz-tooltip .link-row a {
-   color: var(--ictv-link-color);
+   color: #0066cc;
 }
 .ictv-tax-viz-tooltip .link-row a:hover {
-   color: var(--ictv-link-hover-color);
+   color: #004999;
 }
 
 .ictv-tax-viz-tooltip .child-count {
