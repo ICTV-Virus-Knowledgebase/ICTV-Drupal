@@ -376,7 +376,7 @@ class TaxonomyHelper {
     return (int)$row['id'];
   }
 
-    /**
+   /**
    * This replicates the logic of the createTaxonHTML(...) method in the C# code.
    *
    * @param bool $displayChildCount Whether to display child count
@@ -389,7 +389,6 @@ class TaxonomyHelper {
    *
    * @return string HTML snippet for this taxon
    */
-
   public static function createTaxonHTML(bool $displayChildCount, bool $displayHistoryCtrls, bool $displayMemberOfCtrls, bool $leftAlignAll,
     Taxon $taxon, int $topLevelRankID, bool $useSmallFont): string {
 
@@ -403,7 +402,6 @@ class TaxonomyHelper {
     $collapsedIcon = '<i class="fas fa-plus"></i>';
     $expandedIcon  = '<i class="fas fa-minus"></i>';
     $starIcon      = '<i class="fas fa-star"></i>';
-    // $infoIcon = '<i class="fa fa-info-circle"></i>';
 
     // Populate the control HTML
     if ($taxon->levelName === 'species') {
@@ -519,282 +517,119 @@ class TaxonomyHelper {
     return $html;
   }
 
-  public static function formatSubTreeContainingNode(bool $displayChildCount, bool $displayHistoryCtrls, bool $displayMemberOfCtrls,
-    bool $leftAlignAll, int $preExpandToRankID, ?int $releaseNumber, int $selectedLevelID, array $taxa, int $taxNodeID,
-    int $topLevelRankID, bool $useSmallFont): string {
+   // Format the array of Taxon objects as HTML.
+   public static function formatTaxaAsHTML(array $taxa): string {
 
-    // If there's nothing to process, return empty.
-    if (empty($taxa)) {
-      return '';
-    }
-
-    $finalHTML = '';
-    $html = '';
-    $levelStack = [];            // store LevelInfo objects here.
-    $mostRecentTopLevelID = -1;
-
-    // Loop over each taxon in the list (like the foreach in C#).
-    foreach ($taxa as $taxon) {
-      $foundParentInStack = false;
-
-      // Generate the fragment of HTML for this taxon (one node).
-      $taxonHTML = self::createTaxonHTML(
-        $displayChildCount,
-        $displayHistoryCtrls,
-        $displayMemberOfCtrls,
-        $leftAlignAll,
-        $taxon,
-        $topLevelRankID,
-        $useSmallFont
-      );
-
-      // Check if the top of the stack is the parent of this node.
-      while (!$foundParentInStack && !empty($levelStack)) {
-        // Peek at the top (end) of the stack
-        /** @var LevelInfo $levelInfo */
-        $levelInfo = end($levelStack);
-        
-        // If the parent's taxNodeID matches, the parent is found.
-        if ($taxon->parentID === $levelInfo->taxNodeID) {
-          $foundParentInStack = true;
-          // Append this node's HTML as a child of the current HTML chunk.
-          $html .= $taxonHTML;
-
-          // Push a new LevelInfo for this taxon,
-          // since it might have children of its own.
-          $levelStack[] = new LevelInfo(
-            $taxon->nodeDepth,
-            $taxon->levelID,
-            (int)$taxon->parentID,
-            $taxon->taxnodeID
-          );
-
-        } else {
-          // Not the parent => pop from the stack and close off HTML.
-          array_pop($levelStack);
-          $html .= "</div></div>";
-        }
+      // If there's nothing to process, return empty.
+      if (empty($taxa)) {
+         return '';
       }
 
-      // If parent is not found in the stack, it's a new top-level node.
-      if (!$foundParentInStack) {
-        // If building a previous top-level node, finalize it.
-        if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
-          $finalHTML .= $html;
-        }
+      $finalHTML = '';
+      $html = '';
 
-        $mostRecentTopLevelID = $taxon->taxnodeID;
-        $html = $taxonHTML;
+      // A stack of LevelInfo objects
+      $levelStack = [];            
+      $mostRecentTopLevelID = -1;
 
-        // Reset the stack with this node as the new top-level.
-        $levelStack = [new LevelInfo($taxon->nodeDepth, $taxon->levelID, (int)$taxon->parentID, $taxon->taxnodeID)];
+      // Loop over each taxon in the array.
+      foreach ($taxa as $taxon) {
+
+         $foundParentInStack = false;
+
+         // Generate the fragment of HTML for this taxon (one node).
+         $taxonHTML = self::createTaxonHTML(
+            1, //$displayChildCount
+            1, //$displayHistoryCtrls
+            1, //$displayMemberOfCtrls
+            0, //$leftAlignAll
+            $taxon,
+            120, //$topLevelRankID
+            0 //$useSmallFont
+         );
+
+         // Check if the top of the stack is the parent of this node.
+         while (!$foundParentInStack && !empty($levelStack)) {
+
+            // Peek at the top (end) of the stack
+            /** @var LevelInfo $levelInfo */
+            $levelInfo = end($levelStack);
+         
+            // If the parent's taxNodeID matches, the parent is found.
+            if ($taxon->parentID === $levelInfo->taxNodeID) {
+               $foundParentInStack = true;
+
+               // Append this node's HTML as a child of the current HTML chunk.
+               $html .= $taxonHTML;
+
+               // Push a new LevelInfo for this taxon,
+               // since it might have children of its own.
+               $levelStack[] = new LevelInfo(
+                  $taxon->nodeDepth,
+                  $taxon->levelID,
+                  (int)$taxon->parentID,
+                  $taxon->taxnodeID
+               );
+
+            } else {
+               // Not the parent => pop from the stack and close off HTML.
+               array_pop($levelStack);
+               $html .= "</div></div>";
+            }
+         }
+
+         // If parent is not found in the stack, it's a new top-level node.
+         if (!$foundParentInStack) {
+
+            // If building a previous top-level node, finalize it.
+            if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
+               $finalHTML .= $html;
+            }
+
+            $mostRecentTopLevelID = $taxon->taxnodeID;
+            $html = $taxonHTML;
+
+            // Reset the stack with this node as the new top-level.
+            $levelStack = [new LevelInfo($taxon->nodeDepth, $taxon->levelID, (int)$taxon->parentID, $taxon->taxnodeID)];
+         }
       }
-    }
 
-    // Once done with all taxa, pop any remaining open nodes.
-    if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
-      while (!empty($levelStack)) {
-        array_pop($levelStack);
-        $html .= "</div></div>";
+      // Once done with all taxa, pop any remaining open nodes.
+      if ($mostRecentTopLevelID > 0 && mb_strlen($html) > 0) {
+         while (!empty($levelStack)) {
+            array_pop($levelStack);
+            $html .= "</div></div>";
+         }
+         $finalHTML .= $html;
       }
-      $finalHTML .= $html;
-    }
 
-    return $finalHTML;
-  }
-
-  /**
-   * Replicates getSubTreeContainingNode(...) from C#,
-   * returning an array of 'taxa' (Taxon[]), plus
-   * 'parentTaxNodeID', 'selectedLevelID', 'topLevelRankID', 'preExpandToRankID'.
-   *
-   * @param Connection $connection
-   *   The DB connection
-   * @param ?string $preExpandToRank
-   * @param ?int $releaseNumber
-   * @param int $taxNodeID
-   * @param ?string $topLevelRank
-   *
-   * @return array {
-   *   'parentTaxNodeID'     => ?int,
-   *   'selectedLevelID'     => int,
-   *   'taxa'                => Taxon[],
-   *   'topLevelRankID'      => int,
-   *   'preExpandToRankID'   => int
-   * }
-   */
-
-  public static function getSubTreeContainingNodeData(Connection $connection, ?string $preExpandToRank, ?int $releaseNumber, int $taxNodeID,
-    ?string $topLevelRank): array {
-
-    // Validate rank inputs
-    if (empty($preExpandToRank)) { throw new \Exception("Invalid preExpandToRank"); }
-    if (empty($topLevelRank)) { throw new \Exception("Invalid topLevelRank"); }
-
-    // get treeID
-    $treeID = self::fetchTreeID($connection, $releaseNumber);
-
-    // get topLevelID
-    $topLevelID = self::fetchTaxonomyLevelID($connection, $topLevelRank);
-
-    // preExpandToLevelID
-    $preExpandToLevelID = self::fetchTaxonomyLevelID($connection, $preExpandToRank);
-
-    // get the selectedLevelID for $taxNodeID (i.e. the rank of that node)
-    // Also get the left_idx for that node
-    // Then build the partial query that references:
-    //   - "parent_level_id = parent.level_id"
-    //   - "visible_parent = CASE WHEN parent.level_id < @topLevelID THEN 0 ELSE 1 END"
-    //   - "is_expanded = CASE WHEN ... THEN 1 ELSE 0 END"
-    // plus your generatePartialQuery
-
-    // For T-SQL, we see multiple DECLARE statements. We'll replicate them with subselects or multiple queries in MySQL.
-
-    // fetch selectedLevelID and selectedLeftIdx for that node
-    $sqlSelected = "
-      SELECT
-        level_id    AS selectedLevelID,
-        left_idx    AS selectedLeftIdx
-      FROM taxonomy_node
-      WHERE taxnode_id = :taxNodeID
-      LIMIT 1
-    ";
-
-    $rowSelected = $connection->query($sqlSelected, [':taxNodeID' => $taxNodeID])->fetchAssoc();
-
-    if (!$rowSelected) {
-
-      // if node not found
-      throw new \Exception("Taxnode ID not found: $taxNodeID");
-    }
-
-    $selectedLevelID = (int)$rowSelected['selectedLevelID'];
-    $selectedLeftIdx = (int)$rowSelected['selectedLeftIdx'];
-
-    // Replicate your partial query with is_expanded logic
-    $partial = self::generatePartialQuery(); // the large snippet
-    // Inject the "parent_level_id = parent.level_id, ... is_expanded = CASE WHEN ..."
-
-    // Because we have "and tn.level_id <= @selectedLevelID", we can add that as well
-    $sqlSubTree = "
-      SELECT
-        parent.level_id AS parent_level_id,
-        parent_level.name AS parent_level_name,
-        CASE WHEN parent.level_id < :topLevelID THEN 0 ELSE 1 END AS visible_parent,
-        CASE
-          WHEN (tn.level_id >= :topLevelID AND tn.level_id < :preExpandToLevelID) THEN 1
-          WHEN (tn.level_id >= :preExpandToLevelID AND :selectedLeftIdx BETWEEN tn.left_idx AND tn.right_idx AND tn.taxnode_id <> :taxNodeID)
-               THEN 1
-          ELSE 0
-        END AS is_expanded,
-        $partial
-      JOIN taxonomy_node parent ON parent.taxnode_id = tn.parent_id
-      JOIN taxonomy_level parent_level ON parent_level.id = parent.level_id
-      WHERE tn.tree_id = :treeID
-        AND tn.is_hidden = 0
-        AND tn.is_deleted = 0
-        AND parent.taxnode_id IN (
-          SELECT ancestor_node.taxnode_id
-          FROM taxonomy_node ancestor_node
-          JOIN taxonomy_node target_node ON (
-            target_node.left_idx BETWEEN ancestor_node.left_idx AND ancestor_node.right_idx
-            AND target_node.tree_id = ancestor_node.tree_id
-          )
-          WHERE target_node.taxnode_id = :taxNodeID
-            AND ancestor_node.level_id >= :preExpandToLevelID
-        )
-        AND tn.level_id <= :selectedLevelID
-      ORDER BY
-        tn.left_idx,
-        CASE WHEN tn.start_num_sort IS NULL THEN COALESCE(tn.name, 'ZZZZ')
-             ELSE LEFT(tn.name, tn.start_num_sort)
-        END,
-        CASE WHEN tn.start_num_sort IS NULL THEN NULL
-             ELSE FLOOR(LTRIM(SUBSTRING(tn.name, tn.start_num_sort + 1, 50)))
-        END
-    ";
-
-    $paramsSubTree = [
-      ':taxNodeID'         => $taxNodeID,
-      ':selectedLeftIdx'   => $selectedLeftIdx,
-      ':treeID'            => $treeID,
-      ':topLevelID'        => $topLevelID,
-      ':preExpandToLevelID'=> $preExpandToLevelID,
-      ':selectedLevelID'   => $selectedLevelID
-    ];
-
-    $stmt = $connection->query($sqlSubTree, $paramsSubTree);
-    $dbRows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-    $taxa = [];
-    foreach ($dbRows as $r) {
-
-      $taxon = Taxon::fromArray($r);
-      $taxon->process();
-
-      // memberOf is calculated from the lineage column in the DB
-      $taxon->memberOf = $taxon->getMemberOf();
-      $taxa[] = $taxon;
-
-      
-      // $taxa[] = $taxon->normalize();
-    }
-
-    // get topLevelRankID, preExpandToRankID, plus parent_taxnode_id, selected_level_id from the second result set
-    // In T-SQL, you had a second SELECT returning "top_level_id, pre_expand_to_level_id, parent_taxnode_id, selected_level_id".
-    // So we do the same in MySQL:
-    $sqlSecond = "
-      SELECT
-        :topLevelID AS top_level_id,
-        :preExpandToLevelID AS pre_expand_to_level_id,
-        (
-          SELECT ancestor_node.taxnode_id
-          FROM taxonomy_node ancestor_node
-          JOIN taxonomy_node target_node ON (
-            target_node.left_idx BETWEEN ancestor_node.left_idx AND ancestor_node.right_idx
-            AND target_node.tree_id = ancestor_node.tree_id
-          )
-          WHERE target_node.taxnode_id = :taxNodeID
-            AND ancestor_node.level_id >= :preExpandToLevelID
-          ORDER BY ancestor_node.level_id ASC
-          LIMIT 1
-        ) AS parent_taxnode_id,
-        :selectedLevelID AS selected_level_id
-    ";
-
-    $paramsSecond = [
-      ':taxNodeID'          => $taxNodeID,
-      ':topLevelID'         => $topLevelID,
-      ':preExpandToLevelID' => $preExpandToLevelID,
-      ':selectedLevelID'    => $selectedLevelID
-    ];
-
-    $row2 = $connection->query($sqlSecond, $paramsSecond)->fetchAssoc();
-
-    // If the second query returned no row, provide a fallback:
-    if (!$row2) {
-    // NOTE: The fallback array keys should match the column names,
-    //       not placeholders like ":taxNodeID"...
-    $row2 = [
-      'top_level_id'             => $topLevelID,
-      'pre_expand_to_level_id'   => $preExpandToLevelID,
-      'parent_taxnode_id'        => null,
-      'selected_level_id'        => $selectedLevelID
-      ];
+      return $finalHTML;
    }
 
-    $topLevelRankID  = (int)$row2['top_level_id'];
-    $preExpandToRankID = (int)$row2['pre_expand_to_level_id'];
-    $parentTaxNodeID = $row2['parent_taxnode_id'] === null ? null : (int)$row2['parent_taxnode_id'];
-    $selectedLevelID = (int)$row2['selected_level_id'];
+   // Get all top-level nodes (whose direct parent is the tree/root node), the selected taxon, 
+   // its lineage, and the immediate child nodes of the lineage nodes (with redundancies removed).
+   public static function getLineageAndTopLevelNodes(Connection $connection, int $taxNodeID): array {
 
-    return [
-      'parentTaxNodeID'     => $parentTaxNodeID,
-      'selectedLevelID'     => $selectedLevelID,
-      'taxa'                => $taxa,
-      'topLevelRankID'      => $topLevelRankID,
-      'preExpandToRankID'   => $preExpandToRankID,
-    ];
-  }
+      $sql = "CALL GetTreeExpandedToNode(:taxnodeID)";
+   
+      // Call the stored procedure and get the result rows.
+      $stmt = $connection->query($sql, [':taxnodeID' => $taxNodeID]);
+      $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
+      $taxa = [];
+
+      foreach ($rows as $row) {
+
+         // Convert each row to a Taxon 
+         $taxon = Taxon::fromArray($row);
+         $taxon->process();
+
+         // memberOf is calculated from the lineage column in the DB
+         $taxon->memberOf = $taxon->getMemberOf();
+
+         $taxa[] = $taxon;
+      }
+
+      return $taxa;
+   }
 }

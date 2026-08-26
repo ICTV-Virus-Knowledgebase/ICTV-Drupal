@@ -887,6 +887,11 @@ export const ProteinOnlyCodes = new Set([
 // Commonly-used interfaces
 //----------------------------------------------------------------------------------------------------------------
 
+// An interface for a function called when selecting a taxon from search results, etc.
+export interface ITaxonSelectionHandler {
+   (taxNodeID_: string|null, rank_: string|null, releaseNumber_: string, name_?: string|null): Promise<void>
+}
+
 export interface IWebServiceDefinition {
    jsonParameters: boolean,
    method: HttpMethod,

@@ -1,7 +1,5 @@
 
-// "Forward declarations" for external JavaScript libraries.
-declare var jQuery: any;
-
+import { AlertBuilder } from "../../helpers/AlertBuilder";
 import { AppSettings } from "../../global/AppSettings";
 import DataTables from 'datatables.net-dt';
 import { IMslRelease } from "../../models/IMslRelease";
@@ -9,12 +7,12 @@ import { ITaxon } from "../../models/ITaxon";
 import { Identifiers } from "../../models/Identifiers";
 import { IDisplaySettings } from "./IDisplaySettings";
 import { SearchContext, TaxonomySearchPanel } from "../../helpers/TaxonomySearchPanel";
-import { GetTaxonomyRankLabel, GetTaxonomyRankByIndex, GetTaxonomyRankIndex, IctvRank, OrderedRanks, 
-   TaxonomyDisplayType } from "../../global/Types";
+import { GetTaxonomyRankLabel, GetTaxonomyRankByIndex, GetTaxonomyRankIndex, IctvRank, 
+   ITaxonSelectionHandler, OrderedRanks, TaxonomyDisplayType } from "../../global/Types";
 import { TaxonomyService } from "../../services/TaxonomyService";
-import tippy, { Props, ReferenceElement } from "tippy.js";
+import tippy from "tippy.js";
 import { Utils } from "../../helpers/Utils";
-import { AlertBuilder } from "../../helpers/AlertBuilder";
+
 
 // The initial data provided to the taxonomy browser.
 interface IInitialData {
@@ -326,6 +324,7 @@ export class TaxonomyBrowser {
          return false;
       }
 
+      console.log("taxon = ", taxon)
       await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), taxon.levelName, taxon.mslReleaseNum.toString());
       return true;
    }
@@ -569,7 +568,6 @@ export class TaxonomyBrowser {
       return true;
    }
 
-   
    // Automatically expand the tree to display and highlight the specified taxon.
    async expandToTaxon(taxNodeID_: string) {
 
@@ -583,6 +581,8 @@ export class TaxonomyBrowser {
          // Get the node with this taxnode ID.
          const nodeEl = this.elements.taxonomyBrowser.querySelector(`.tc-node[data-id="${lineageID_}"]`) as HTMLElement;
          if (!nodeEl) { throw new Error(`Invalid node element for ${lineageID_} in expandToTaxon`); }
+
+         console.log(`Found ${nodeEl.dataset.rank} ${nodeEl.dataset.name} (index ${index_})`)
 
          // Get the child container with this taxnode ID.
          const containerEl = this.elements.taxonomyBrowser.querySelector(`.tc-children[data-id="${lineageID_}"]`) as HTMLElement;
@@ -877,7 +877,7 @@ export class TaxonomyBrowser {
       let spinner = this.getSpinnerHTML("Loading...");
 
       // Clear the search results and display the spinner.
-      jQuery(this.selectors.releaseHistory).html(spinner);
+      this.elements.releaseHistory.innerHTML = spinner;
 
       const result = await TaxonomyService.getReleaseHistory();
       if (!result) { return await AlertBuilder.displayError("Unable to retrieve the release history"); }
@@ -911,56 +911,38 @@ export class TaxonomyBrowser {
       return;
    }
 
-   async getTreeExpandedToNode(rank_: IctvRank|string, releaseNumber_: string, taxNodeID_: string) {
+   async getTreeExpandedToNode(taxNodeID_: string) {
 
-      if (!rank_) { throw new Error("Invalid rank in getTreeExpandedToNode"); }
-      if (!releaseNumber_) { throw new Error("Invalid releaseNumber in getTreeExpandedToNode"); }
       if (!taxNodeID_) { throw new Error("Invalid taxNodeID in getTreeExpandedToNode"); }
 
-      // The spinner icon
-      const spinner = this.getSpinnerHTML("Loading...");
-
       // Clear the taxonomy control and display the spinner.
-      this.elements.taxonomyBrowser.innerHTML = spinner;
+      this.elements.taxonomyBrowser.innerHTML = this.getSpinnerHTML("Loading...");
 
       // Scroll down to the top of the taxonomy browser (currently displaying the spinner icon).
       Utils.scrollToElement(this.elements.taxonomyBrowser);
 
-      // Get the selected taxon's rank.
-      let rankIndex = GetTaxonomyRankIndex(rank_ as IctvRank);
+      // Get HTML for (the visible portion of) the entire taxonomy that contains this taxnode ID. 
+      // This includes all top-level nodes (whose direct parent is the tree/root node), the lineage 
+      // of the selected taxon, and the immediate child nodes of the lineage nodes (with redundancies removed).
+      const response = await TaxonomyService.getTreeExpandedToNode(taxNodeID_);
 
-      // Default the "pre-expand to" rank to this rank.
-      let preExpandIndex: number = rankIndex;
-
-      // Don't pre-expand any lower than family.
-      let familyIndex = GetTaxonomyRankIndex(IctvRank.family);
-      if (preExpandIndex > familyIndex) { preExpandIndex = familyIndex; }
-
-      // Should we adjust the "hide above" rank?
-      let hideAboveIndex = GetTaxonomyRankIndex(this.localData.hideAboveRank);
-      if (hideAboveIndex >= preExpandIndex) {
-
-         let defaultHideAboveIndex = GetTaxonomyRankIndex(this.defaults.hideAboveRank);
-         if (rankIndex < defaultHideAboveIndex) {
-            hideAboveIndex = GetTaxonomyRankIndex(IctvRank.realm);
-         } else {
-            hideAboveIndex = defaultHideAboveIndex;
-         }
+      if (!response || !response.taxonomyHTML) {
+         this.elements.taxonomyBrowser.innerHTML = "No results";
+         return false;
       }
 
-      // Determine the ranks associated with these indices.
-      let hideAboveRank = GetTaxonomyRankByIndex(hideAboveIndex);
-      let preExpandToRank = GetTaxonomyRankByIndex(preExpandIndex);
+      // Populate the page with the pre-generated HTML.
+      this.elements.taxonomyBrowser.innerHTML = response.taxonomyHTML;
 
-      // The validate method will also populate local data and persist it.
-      this.validateLocalData(hideAboveRank, preExpandToRank, true);
+      // Get the node element that will be highlighted.
+      const targetEl = this.elements.taxonomyBrowser.querySelector(`.tc-node[data-id="${taxNodeID_}"]`) as HTMLElement; // ${this.cssClasses.node}
+      if (!targetEl) { throw new Error(`Invalid node element for taxnode ID ${taxNodeID_}`); }
 
-      // Get the tree data expanded to the selected node.
-      const response = await TaxonomyService.getTreeExpandedToNode(this.displaySettings, hideAboveRank, preExpandToRank,
-         releaseNumber_, taxNodeID_);
+      // Highlight the target node.
+      targetEl.classList.add("highlighted-node");
 
-      // Display the updated taxonomy tree.
-      await this.processTreeExpandedToNode(response.taxNodeID, response.taxonomyHTML);
+      // Scroll down to the target node in the tree.
+      Utils.scrollToElement(targetEl);
 
       // Update the tippy instance.
       tippy(".has-tooltip");
@@ -1044,19 +1026,14 @@ export class TaxonomyBrowser {
          this.elements.preExpandToRankControl.removeEventListener("change", async () => {
             return await this.handlePreExpandChange();
          })
-         //jQuery(this.selectors.preExpandToRankControl).off("change");
 
          // Update the control.
          this.elements.preExpandToRankControl.value = preExpandToRank;
-         //jQuery(this.selectors.preExpandToRankControl).val(preExpandToRank);
 
          // Re-add the change handler.
          this.elements.preExpandToRankControl.addEventListener("change", async () => {
             return await this.handlePreExpandChange();
          })
-         /*jQuery(this.selectors.preExpandToRankControl).change(() => {
-             this.handlePreExpandChange(jQuery(this));
-         });*/
       }
 
       // Set the pre-expand rank in local storage, validate the hide-above, and save both in web storage.
@@ -1066,7 +1043,8 @@ export class TaxonomyBrowser {
    }
 
    // This callback function is provided to the taxonomy search panel (child component) to handle a search result selection.
-   async handleSearchResultSelection(taxNodeID_: string, rank_: string, releaseNumber_: string) {
+   handleSearchResultSelection: ITaxonSelectionHandler = async (
+      taxNodeID_: string, rank_: string, releaseNumber_: string) => {
 
       // Get the specified release
       await this.getRelease(releaseNumber_);
@@ -1078,12 +1056,11 @@ export class TaxonomyBrowser {
 
       } else {
          // Get the tree expanded to the selected node.
-         await this.getTreeExpandedToNode(rank_, releaseNumber_, taxNodeID_);
+         await this.getTreeExpandedToNode(taxNodeID_);
       }
 
       // Update the tippy instance.
       tippy(".has-tooltip");
-
       return;
    }
 
@@ -1191,13 +1168,6 @@ export class TaxonomyBrowser {
       this.elements.taxonomyBrowser = this.elements.container.querySelector(`.${this.cssClasses.taxonomyBrowser}`);
       if (!this.elements.taxonomyBrowser) { throw new Error("Invalid taxonomyBrowser element"); }
 
-      // The toolTip and its text
-      //this.elements.toolTip = this.elements.container.querySelector(`.${this.cssClasses.toolTip}`);
-      //if (!this.elements.toolTip) { throw new Error("Invalid toolTip element"); }
-
-      //this.elements.toolTipText = this.elements.container.querySelector(`.${this.cssClasses.toolTipText}`);
-      //if (!this.elements.toolTipText) { throw new Error("Invalid toolTipText element"); }
-      
 
       // Initialize page components.
       if (this.displaySettings.displaySearchPanel) {
@@ -1288,14 +1258,7 @@ export class TaxonomyBrowser {
 
             // Display the taxonomy from the selected taxon's release and pre-expand to the taxon. If we encounter 
             // errors, we will use the default load/display behavior below.
-            let taxon: ITaxon = await TaxonomyService.getTaxon(this.identifiers.taxNodeID.toString());
-            if (!taxon) { 
-               return await AlertBuilder.displayError("The taxnode_id URL parameter is invalid");
-            }
-            //if (this.displayTaxonomyWithSelectedTaxon()) { return; }
-
-            // Display the specified taxon.
-            await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), taxon.levelName, taxon.mslReleaseNum.toString());
+            if (this.displayTaxonomyWithSelectedTaxon()) { return; }
 
          } else if (this.initialData.displayType == TaxonomyDisplayType.display_all) {
             return this.displayTaxonomy();
@@ -1308,6 +1271,7 @@ export class TaxonomyBrowser {
          console.error("Error when choosing display mode: ", error_)
          await AlertBuilder.displayError(error_);
       }
+
       // Load the release and its taxonomy by default.
       await this.getRelease(this.initialData.releaseNumber);
       await this.getByReleasePreExpanded();
@@ -1435,38 +1399,6 @@ export class TaxonomyBrowser {
 
       // Expand it
       return this.expandCollapse(taxNodeID_, false, containerEl);
-   }
-
-   async processTreeExpandedToNode(taxNodeID_: string, taxonomyHTML_: string) {
-
-      if (!taxonomyHTML_) {
-         this.elements.taxonomyBrowser.innerHTML = "No results";
-         return false;
-      }
-
-      if (!taxNodeID_) { throw new Error("Invalid taxnode ID"); }
-
-      // Populate the page with the pre-generated HTML.
-      this.elements.taxonomyBrowser.innerHTML = taxonomyHTML_;
-
-      // Expand the taxon's lineage nodes and highlight the taxon's node.
-      await this.expandToTaxon(taxNodeID_);
-
-      await new Promise<void>((resolve) => {
-         setTimeout(resolve, 500);
-      });
-
-      // Get the node element that will be highlighted.
-      const targetEl = this.elements.taxonomyBrowser.querySelector(`.tc-node[data-id="${taxNodeID_}"]`) as HTMLElement; // ${this.cssClasses.node}
-      if (!targetEl) { throw new Error(`Invalid node element for taxnode ID ${taxNodeID_}`); }
-
-      // Highlight the target node.
-      targetEl.classList.add("highlighted-node");
-
-      // Scroll down to the target node in the tree.
-      Utils.scrollToElement(targetEl);
-      
-      return;
    }
 
    // Use web storage to persist local data for this TaxonomyControl instance.

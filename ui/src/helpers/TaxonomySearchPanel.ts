@@ -2,6 +2,7 @@
 import { AppSettings } from "../global/AppSettings";
 import DataTable from "datatables.net-dt";
 import { ITaxonSearchResult } from "../models/ITaxonSearchResult";
+import { ITaxonSelectionHandler } from "../global/Types";
 import { TaxonomyService } from "../services/TaxonomyService";
 import tippy from "tippy.js";
 
@@ -57,7 +58,7 @@ export class TaxonomySearchPanel {
    selectedRelease: number;
 
    // A callback function that handles the selection of a search result.
-   selectionHandler: Function; //ISelectionHandler = null;
+   selectionHandler: ITaxonSelectionHandler; //ISelectionHandler = null;
 
    // Icons
    icons: { [key: string]: string; } = {
@@ -70,7 +71,7 @@ export class TaxonomySearchPanel {
 
 
    // C-tor
-   constructor(containerSelector_: string, searchContext_: SearchContext, selectionHandler_: Function) {
+   constructor(containerSelector_: string, searchContext_: SearchContext, selectionHandler_: ITaxonSelectionHandler) {
       this.containerSelector = containerSelector_;
       this.searchContext = searchContext_;
       this.selectionHandler = selectionHandler_;
@@ -165,7 +166,7 @@ export class TaxonomySearchPanel {
          
          if ((<HTMLInputElement>event_.target).checked) { return; }
          
-         return this.selectionHandler(null, null, null, AppSettings.currentMslRelease);
+         return this.selectionHandler(null, null, AppSettings.currentMslRelease.toString());
       });
 
       // Clicking the search control triggers the search.
@@ -204,15 +205,16 @@ export class TaxonomySearchPanel {
             let strRelease = buttonEl.getAttribute("data-release");
             let release = null;
 
-            if (!!strRelease) {
+            if (strRelease) {
+               // Validate as an integer
                release = parseInt(strRelease);
                if (Number.isNaN(release)) { release = null; } 
             }
 
             if (this.searchContext === SearchContext.CuratedNames) {
-               await this.selectionHandler(id, name, rankName, release);
+               await this.selectionHandler(id, rankName, strRelease, name);
             } else {
-               await this.selectionHandler(id, lineage, rankName, release);
+               await this.selectionHandler(id, rankName, strRelease);
             }
 
          } else if (buttonEl.classList.contains("view-details-button")) {

@@ -55,8 +55,8 @@ class IctvFindTheSpeciesComponentBlock extends BlockBase {
       ];
 
       // Populate drupalSettings with variables needed by the Find the Species object to create this component.
-      $build['#attached']['drupalSettings']['currentMslRelease'] = $settings->currentMslRelease();
-      $build['#attached']['drupalSettings']['currentVMR'] = $settings->currentVMR();
+      $build['#attached']['drupalSettings']['currentMslRelease'] = $settings->currentMslRelease;
+      $build['#attached']['drupalSettings']['currentVMR'] = $settings->currentVMR;
 
       return $build;
    }
