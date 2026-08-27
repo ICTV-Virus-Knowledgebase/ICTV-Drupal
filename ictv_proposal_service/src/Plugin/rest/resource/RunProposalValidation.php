@@ -29,6 +29,7 @@
    *
    */
 
+use Drupal\ictv_proposal_service\Plugin\rest\resource\Common;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\ictv_common\Types\JobStatus;
@@ -47,6 +48,7 @@ $scriptName = "curtish/ictv_proposal_processor";
 
 // The script version defaults to "latest" unless overridden.
 $scriptVersion = "latest";
+
 
 try {
    //-------------------------------------------------------------------------------------------------------
@@ -114,7 +116,7 @@ try {
    if (!$result) { throw new \Exception("Invalid validation result"); }
    
    $jobStatus = $result["jobStatus"];
-   if (!$jobStatus) { throw new \Exception("Result.jobStatus is invalid"); }
+   if ($jobStatus === null) { throw new \Exception("Result.jobStatus is invalid"); }
 
    $fileSummaries = $result["fileSummaries"];
    if (!$fileSummaries || sizeof($fileSummaries) < 1) { throw new \Exception("Result.fileSummaries is invalid"); }
@@ -130,19 +132,31 @@ try {
    // Iterate over the file summaries.
    foreach (array_values($fileSummaries) as $fileSummary) {
 
-      if (!$fileSummary) { 
+      if ($fileSummary == null) { 
          \Drupal::logger('ictv_proposal_service')->error("Unable to update job_file: Invalid file summary"); 
          continue;
       }
 
+      \Drupal::logger('ictv_proposal_service')->info("jobUID = ".$jobUID." and fileSummary = ".json_encode($fileSummary));
+
       // Update a job file based on the contents of the summary TSV file.
-      $parameters = [":errors" => $fileSummary->errors, ":filename" => $fileSummary->filename, ":notes" => $fileSummary->notes, 
-         ":jobUID" => $jobUID, ":successes" => $fileSummary->successes, ":warnings" => $fileSummary->warnings];
+      $parameters = [
+         ':errors' => $fileSummary->errors, 
+         ':filename' => $fileSummary->filename, 
+         ':notes' => $fileSummary->notes, 
+         ':jobUID' => $jobUID, 
+         ':successes' => $fileSummary->successes, 
+         ':warnings' => $fileSummary->warnings];
 
-      $sql = "CALL updateJobFile(:errors, :filename, :notes, :jobUID, :successes, :warnings);";
-
-      $fileQuery = $connection->query($sql, $parameters);
-      $fileResult = $fileQuery->execute();
+      try {
+         $sql = "CALL updateJobFile(:errors, :filename, :notes, :jobUID, :successes, :warnings);";
+         $fileQuery = $connection->query($sql, $parameters);
+         $fileResult = $fileQuery->execute();
+      }
+      catch (\Throwable $e) {
+         $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);
+         \Drupal::logger('ictv_proposal_service')->error($errorMessage);
+      }
    }
 
    //-------------------------------------------------------------------------------------------------------

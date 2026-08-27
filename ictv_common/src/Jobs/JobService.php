@@ -143,14 +143,15 @@ class JobService {
       $jobID = null;
       $jobUID = null;
 
-      if (Utils::isEmptyElseTrim($jobName)) {
-         $jobName = "NULL";
-      } else {
-         $jobName = "'{$jobName}'";
-      }
+      $parameters = [
+         ':jobName' => $jobName,
+         ':jobType' => $jobType->value,
+         ':userEmail' => $userEmail,
+         ':userUID' => $userUID
+      ];
 
       // Generate SQL to call the "createJob" stored procedure and return the job ID and UID.
-      $sql = "CALL createJob({$jobName}, '{$jobType->value}', '{$userEmail}', '{$userUID}');";
+      $sql = "CALL createJob(:jobName, :jobType, :userEmail, :userUID);";
 
       $query = $connection->query($sql);
       $result = $query->fetchAll();
@@ -171,11 +172,18 @@ class JobService {
 
       $jobFileUID = null;
 
+      $parameters = [
+         ':fileName' => $fileName,
+         ':jobID' => $jobID,
+         ':uploadOrder' => $uploadOrder
+      ];
+
       // Generate SQL to call the "createJobFile" stored procedure.
-      $sql = "CALL createJobFile('{$fileName}', {$jobID}, {$uploadOrder});";
+      $sql = "CALL createJobFile(:fileName, :jobID, :uploadOrder);";
 
       // Run the stored procedure and retrieve the job file UID that's returned.
-      $query = $connection->query($sql);
+      $query = $connection->query($sql, $parameters);
+
       $result = $query->fetchAll();
       if ($result && $result[0] !== null) {
          $jobFileUID = $result[0]->jobFileUID;
@@ -207,12 +215,17 @@ class JobService {
     */ 
    public function getJobs(Connection $connection, JobType $jobType, string $userEmail, string $userUID) {
 
-      // Generate SQL to return JSON for each of the user's jobs.
-      $sql = "CALL getJobs('{$jobType->value}', '{$userEmail}', '{$userUID}');";
+      $parameters = [
+         ':jobType' => $jobType->value,
+         ':userEmail' => $userEmail,
+         ':userUID' => $userUID
+      ];
 
-      // Execute the query and process the results.
-      $result = $connection->query($sql);
-      $jobsJSON = $result->fetchField(0);
+      // Generate SQL to return JSON for each of the user's jobs.
+      $sql = "CALL getJobs(:jobType, :userEmail, :userUID);";
+
+      $query = $connection->query($sql, $parameters);
+      $jobsJSON = $query->fetchField(0);
 
       return $jobsJSON;
    }
@@ -294,11 +307,14 @@ class JobService {
    // Populate job.json for the specified job, and job_file.json for all of the job's job_files.
    public function populateJobJSON(Connection $connection, int $jobID) {
 
-      // Generate SQL
-      $sql = "CALL populateJobJSON({$jobID});";
+      $parameters = [
+         ':jobID' => $jobID
+      ];
 
-      // Execute the query and process the results.
-      $result = $connection->query($sql);
+      $sql = "CALL populateJobJSON(:jobID);";
+
+      $query = $connection->query($sql, $parameters);
+      //$result = $query->execute();
 
       return $result;
    }
@@ -307,43 +323,36 @@ class JobService {
    // Update the job record in the database.
    public static function updateJob(Connection $connection, string $errorMessage, string $jobUID, JobStatus $status, string $userUID) {
 
-      if (Utils::isEmptyElseTrim($errorMessage)) {
-         $errorMessage = "NULL";
-      } else {
-         $errorMessage = "'{$errorMessage}'";
-      }
+      $parameters = [
+         ':jobStatus' => $status->value, 
+         ':errorMessage' => $errorMessage,
+         ':jobUID' => $jobUID, 
+         ':userUID' => $userUID
+      ];
 
-      // Generate SQL to call the "updateJob" stored procedure.
-      $sql = "CALL updateJob('{$status->value}', {$errorMessage}, '{$jobUID}', '{$userUID}');";
+      $sql = "CALL updateJob(:jobStatus, :errorMessage, :jobUID, :userUID);";
 
-      $query = $connection->query($sql);
-      $result = $query->fetchAll();
+      $query = $connection->query($sql, $parameters);
+      //$result = $query->execute();
    }
 
 
    // Update the job's JSON 
    public function updateJobJSON(Connection $connection, int $jobID, ?string $json, ?string $message, JobStatus $status) {
 
-      try {
-         
+      try {        
          if (!is_numeric($jobID)) { throw new \Exception("Job ID is invalid"); }
 
-         if (Utils::isEmptyElseTrim($json)) {
-            $json = "NULL";
-         } else {
-            $json = "'".$json."'";
-         }
+         $parameters = [
+            ':jobID' => $jobID, 
+            ':json' => $json,
+            ':message' => $message, 
+            ':status' => $status->value
+         ];
 
-         if (Utils::isEmptyElseTrim($message)) {
-            $message = "NULL";
-         } else {
-            $message = "'".$message."'";
-         }
+         $sql = "CALL updateJobJSON(:jobID, :json, :message, :status);";
 
-         // Generate SQL to call the "updateJobJSON" stored procedure.
-         $sql = "CALL updateJobJSON({$jobID}, {$json}, {$message}, '{$status->value}');";
-
-         $query = $connection->query($sql);
+         $query = $connection->query($sql, $parameters);
          $result = $query->fetchAll();
 
       } catch (\Throwable $e) {
