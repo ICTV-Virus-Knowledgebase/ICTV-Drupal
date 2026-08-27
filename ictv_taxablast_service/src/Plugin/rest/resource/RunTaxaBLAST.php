@@ -232,7 +232,7 @@ try {
             AND filename = '".$file["filename"]."' ";
 
          $fileQuery = $connection->query($sql);
-         $fileResult = $fileQuery->execute();
+         //$fileResult = $fileQuery->execute();
       }  
       
    } catch (\Throwable $ex) {
@@ -248,7 +248,7 @@ try {
          WHERE job_id = (SELECT id FROM job WHERE uid = '".$jobUID."' LIMIT 1)";
 
       $fileQuery = $connection->query($sql);
-      $fileResult = $fileQuery->execute();
+      //$fileResult = $fileQuery->execute();
    }
    
 } catch (\Throwable $e) {
