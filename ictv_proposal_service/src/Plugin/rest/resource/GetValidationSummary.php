@@ -176,8 +176,6 @@ class GetValidationSummary extends ResourceBase {
          // Get the job folder's output subdirectory.
          $outputPath = Common::getOutputPath($this->jobsPath, $jobUID, $this->outputDirName);
 
-         \Drupal::logger(Common::$MODULE_NAME)->info("GetValidationSummary: outputPath = ".$outputPath.", summaryFilename = ".$this->summaryFilename);
-
          // Get the summary file for the specified job.
          $summary = Common::getOutputFile($this->summaryFilename, $jobUID, $this->validationSummaryPrefix, $outputPath);
          
@@ -243,8 +241,6 @@ class GetValidationSummary extends ResourceBase {
 
          // Get the job folder's output subdirectory.
          $outputPath = Common::getOutputPath($this->jobsPath, $jobUID, $this->outputDirName);
-
-         \Drupal::logger(Common::$MODULE_NAME)->info("GetValidationSummary: outputPath = ".$outputPath.", summaryFilename = ".$this->summaryFilename);
 
          // Get the summary file for the specified job.
          $summary = Common::getOutputFile($this->summaryFilename, $jobUID, $this->validationSummaryPrefix, $outputPath);

@@ -443,6 +443,7 @@
    cursor: pointer;
 }
 
+/* NOTE: I don't think these .taxonomy-tool-tip styles are being used anywhere. */
 #taxonomy_browser_container .taxonomy-browser .taxonomy-tool-tip {
    background: #646464;
    border-radius: 4px;
@@ -473,7 +474,6 @@
    bottom: -5px;
    left: 5px;
 }
-
 
 /* Rank controls */
 #taxonomy_browser_container .rank-controls-container {

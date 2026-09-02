@@ -37,7 +37,6 @@ use Drupal\ictv_common\Types\JobType;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalFileSummary;
 use Drupal\ictv_proposal_service\Plugin\rest\resource\ProposalValidator;
 use Symfony\Component\HttpFoundation\Request;
-use Drupal\ictv_proposal_service\Plugin\rest\resource\Utils;
 
 
 // Moving the scope of this variable.
@@ -151,7 +150,6 @@ try {
       try {
          $sql = "CALL updateJobFile(:errors, :filename, :notes, :jobUID, :successes, :warnings);";
          $fileQuery = $connection->query($sql, $parameters);
-         $fileResult = $fileQuery->execute();
       }
       catch (\Throwable $e) {
          $errorMessage = method_exists($e, "getMessage") ? $e->getMessage() : get_class($e);

@@ -37,46 +37,24 @@ class TaxonSearchResult {
    public ?string $treeName;
 
 
-
-   // C-tor
-   // public function __construct(?int $displayOrder = NULL, ?int $ictvID = NULL, ?string $lineage = NULL, ?string $name = NULL, 
-   //    ?int $parentTaxnodeID = NULL, ?string $rankName = NULL, ?int $releaseNumber = NULL, ?string $searchText = NULL, ?int $taxnodeID = NULL, 
-   //    ?string $taxnodeLineage = NULL, ?int $treeID = NULL, ?string $treeName = NULL) {
-
-   //    $this->displayOrder = $displayOrder;
-   //    $this->ictvID = $ictvID;
-   //    $this->lineage = $lineage;
-   //    $this->lineageHTML = $lineageHTML;
-   //    $this->name = $name;
-   //    $this->parentTaxnodeID = $parentTaxnodeID;
-   //    $this->rankName = $rankName;
-   //    $this->releaseNumber = $releaseNumber;
-   //    $this->searchText = $searchText;
-   //    $this->taxnodeID = $taxnodeID;
-   //    $this->taxnodeLineage = $taxnodeLineage;
-   //    $this->treeID = $treeID;
-   //    $this->treeName = $treeName;
-   // }
-
-   // This is called after filling the object from DB row, 
-   // to replicate "process()" in C# that sets lineageHTML + name
+   // This is called after filling the object from DB row to set lineageHTML and name.
    public function process(): void {
 
-   // If lineage is not empty, call formatLineage(...) 
-   if (!empty($this->lineage)) {
-      $tempName = null; // reference param
+      // If lineage is not empty, call formatLineage(...) 
+      if (!empty($this->lineage)) {
+         $tempName = null; // reference param
 
-      $this->lineageHTML = Common::formatLineage(
-      $this->lineage,
-      Common::LINEAGE_RESULT_DELIMITER, // " &#8250; "
-      $this->searchText,
-      Common::LINEAGE_DB_DELIMITER,     // ">"
-      $tempName
-    );
-    
-    $this->name = $tempName;
-  }
- }
+         $this->lineageHTML = Common::formatLineage(
+            $this->lineage,
+            Common::LINEAGE_RESULT_DELIMITER, // " &#8250; "
+            $this->searchText,
+            Common::LINEAGE_DB_DELIMITER,     // ">"
+            $tempName
+         );
+      
+         $this->name = $tempName;
+      }
+   }
 
 
    // Method to populate the object from an associative array

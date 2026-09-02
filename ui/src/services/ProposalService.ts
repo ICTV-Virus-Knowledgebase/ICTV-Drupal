@@ -2,7 +2,6 @@
 import { IFileData } from "../models/IFileData";
 import { IResult } from "../models/IResult";
 import { IUploadResult } from "../components/ProposalSubmission/IUploadResult";
-import { IValidationSummary } from "../components/ProposalSubmission/IValidationSummary";
 import { WebService } from "./WebService";
 import { WebServiceKey } from "../global/Types";
 

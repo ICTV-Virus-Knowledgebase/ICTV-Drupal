@@ -58,11 +58,10 @@ export class TaxonomySearchPanel {
    selectedRelease: number;
 
    // A callback function that handles the selection of a search result.
-   selectionHandler: ITaxonSelectionHandler; //ISelectionHandler = null;
+   selectionHandler: ITaxonSelectionHandler;
 
    // Icons
    icons: { [key: string]: string; } = {
-      search: "TODO",
       spinner: "<i class='fas fa-spinner fa-spin'></i>"
    }
 
@@ -107,7 +106,7 @@ export class TaxonomySearchPanel {
                <button class="btn ${this.cssClasses.clearSearchControl}" type="button"><i class="fas fa-times"></i> Reset</button>
             </div>
             <div class="all-releases-row">
-               <input type="checkbox" class="${this.cssClasses.includeAllReleasesCtrl}" />
+               <input type="checkbox" class="${this.cssClasses.includeAllReleasesCtrl}" checked />
                <label>Select to search across all ICTV releases</label>
             </div>
             <div class="${this.cssClasses.searchResults}"></div>
