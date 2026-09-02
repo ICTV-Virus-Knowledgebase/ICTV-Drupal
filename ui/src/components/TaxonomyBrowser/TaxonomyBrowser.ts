@@ -49,8 +49,6 @@ export class TaxonomyBrowser {
       releaseTitle: "release-title",
       searchPanelContainer: "search-panel-container",
       taxonomyBrowser: "taxonomy-browser",
-      toolTip: "taxonomy-tool-tip",
-      toolTipText: "text",
       treeNode: "tree-node"
    }
 
@@ -89,9 +87,7 @@ export class TaxonomyBrowser {
       releaseTaxaStats: HTMLElement,
       releaseTitle: HTMLElement,
       searchPanelContainer: HTMLElement,
-      taxonomyBrowser: HTMLElement,
-      toolTip: HTMLElement,
-      toolTipText: HTMLElement
+      taxonomyBrowser: HTMLElement
    }
 
    // Icons
@@ -132,9 +128,7 @@ export class TaxonomyBrowser {
       releasePanel: null,
       releaseTaxaStats: null,
       releaseTitle: null,
-      taxonomyBrowser: null,
-      toolTip: null,
-      toolTipText: null
+      taxonomyBrowser: null
    }
 
    // Should we scroll down to the release info after it loads?
@@ -202,46 +196,12 @@ export class TaxonomyBrowser {
          releaseTaxaStats: null,
          releaseTitle: null,
          searchPanelContainer: null,
-         taxonomyBrowser: null,
-         toolTip: null,
-         toolTipText: null
+         taxonomyBrowser: null
       }
 
 
-      /*
-      //--------------------------------------------------------------------------------------------------------------
-      // Create CSS selectors using the container and standard CSS class names.
-      //--------------------------------------------------------------------------------------------------------------
-
-      // The dialog container
-      this.selectors.dialogContainer = `${this.selectors.container} .${this.cssClasses.dialogContainer}`;
-
-      // The release history
-      this.selectors.releaseHistory = `${this.selectors.container} .${this.cssClasses.releaseHistory}`;
-      */
       // The search panel
       this.selectors.searchPanelContainer = `${this.selectors.container} .${this.cssClasses.searchPanelContainer}`;
-
-      /*
-      // The MSL release info
-      this.selectors.releasePanel = `${this.selectors.container} .${this.cssClasses.releasePanel}`;
-      this.selectors.releaseTitle = `${this.selectors.releasePanel} .${this.cssClasses.releaseTitle}`;
-      this.selectors.releaseDescription = `${this.selectors.releasePanel} .${this.cssClasses.releaseDescription}`;
-      this.selectors.releaseTaxaStats = `${this.selectors.releasePanel} .${this.cssClasses.releaseTaxaStats}`;
-
-      // The taxonomy browser
-      this.selectors.taxonomyBrowser = `${this.selectors.container} .${this.cssClasses.taxonomyBrowser}`;
-
-      // Rank controls
-      this.selectors.rankControlsContainer = `${this.selectors.container} .${this.cssClasses.rankControlsContainer}`;
-      this.selectors.hideAboveRankControl = `${this.selectors.rankControlsContainer} .${this.cssClasses.hideAboveRankControl}`;
-      this.selectors.preExpandToRankControl = `${this.selectors.rankControlsContainer} .${this.cssClasses.preExpandToRankControl}`;
-      this.selectors.filterRanksControl = `${this.selectors.rankControlsContainer} .${this.cssClasses.filterRanksControl}`;
-
-      // The toolTip and its text
-      this.selectors.toolTip = `${this.selectors.container} .${this.cssClasses.toolTip}`;
-      this.selectors.toolTipText = `${this.selectors.toolTip} .${this.cssClasses.toolTipText}`;
-      */
 
       // Create the web storage key from the current URL and control key.
       this.webStorageKey = `${window.location.href}__${this.controlKey}`;
@@ -258,10 +218,6 @@ export class TaxonomyBrowser {
          this.searchPanel = new TaxonomySearchPanel(this.selectors.searchPanelContainer, SearchContext.TaxonomyBrowser,
             this.handleSearchResultSelection.bind(this));
       }
-
-      // Get the container element.
-      //this.elements.container = document.querySelector(this.selectors.container);
-      //if (!this.elements.container) { throw new Error("Invalid container element"); }
    }
 
    // Create the "hide above" rank control, "pre-expand to" rank control, and the "go" button that retrieves the taxonomy data.
@@ -324,7 +280,6 @@ export class TaxonomyBrowser {
          return false;
       }
 
-      console.log("taxon = ", taxon)
       await this.handleSearchResultSelection(this.identifiers.taxNodeID.toString(), taxon.levelName, taxon.mslReleaseNum.toString());
       return true;
    }
@@ -582,8 +537,6 @@ export class TaxonomyBrowser {
          const nodeEl = this.elements.taxonomyBrowser.querySelector(`.tc-node[data-id="${lineageID_}"]`) as HTMLElement;
          if (!nodeEl) { throw new Error(`Invalid node element for ${lineageID_} in expandToTaxon`); }
 
-         console.log(`Found ${nodeEl.dataset.rank} ${nodeEl.dataset.name} (index ${index_})`)
-
          // Get the child container with this taxnode ID.
          const containerEl = this.elements.taxonomyBrowser.querySelector(`.tc-children[data-id="${lineageID_}"]`) as HTMLElement;
          if (!containerEl) { throw new Error(`Invalid container element for ${lineageID_} in expandToTaxon`); }
@@ -803,7 +756,9 @@ export class TaxonomyBrowser {
       this.processReleaseTaxa(taxonomyHTML);
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
 
       return;
    }
@@ -830,7 +785,9 @@ export class TaxonomyBrowser {
       await this.expandCollapse(response.parentTaxnodeID, true, parentEl);
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
 
       return;
    }
@@ -885,7 +842,9 @@ export class TaxonomyBrowser {
       this.processReleaseHistory(result.releases);
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
 
       return;
    }
@@ -906,7 +865,9 @@ export class TaxonomyBrowser {
       this.processTaxaByName(response.parentID, response.taxa, response.taxNodeID);
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
 
       return;
    }
@@ -945,7 +906,9 @@ export class TaxonomyBrowser {
       Utils.scrollToElement(targetEl);
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
 
       return;
    }
@@ -1060,7 +1023,10 @@ export class TaxonomyBrowser {
       }
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
+
       return;
    }
 
@@ -1395,7 +1361,9 @@ export class TaxonomyBrowser {
       containerEl.dataset.populated = "true";
 
       // Update the tippy instance.
-      tippy(".has-tooltip");
+      tippy(".has-tooltip", {
+         theme: "light-border"
+      });
 
       // Expand it
       return this.expandCollapse(taxNodeID_, false, containerEl);

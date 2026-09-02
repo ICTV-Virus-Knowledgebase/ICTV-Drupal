@@ -307,14 +307,9 @@ class JobService {
    // Populate job.json for the specified job, and job_file.json for all of the job's job_files.
    public function populateJobJSON(Connection $connection, int $jobID) {
 
-      $parameters = [
-         ':jobID' => $jobID
-      ];
-
       $sql = "CALL populateJobJSON(:jobID);";
 
-      $query = $connection->query($sql, $parameters);
-      //$result = $query->execute();
+      $query = $connection->query($sql, [':jobID' => $jobID]);
 
       return $result;
    }
@@ -333,7 +328,6 @@ class JobService {
       $sql = "CALL updateJob(:jobStatus, :errorMessage, :jobUID, :userUID);";
 
       $query = $connection->query($sql, $parameters);
-      //$result = $query->execute();
    }
 
 

@@ -87,7 +87,7 @@ window.ICTV.SearchPanel = function (currentReleaseNumber_, resultSelectionCallba
             <button class="btn search-button"><i class="fa fa-search"></i> Search</button>
          </div>
          <div class="all-releases-row">
-            <input type="checkbox" class="include-all-releases" />
+            <input type="checkbox" class="include-all-releases" checked />
             <label>Include all ICTV releases</label></div>
          </div>`;
 

@@ -548,6 +548,7 @@
 }
 #ictv_taxablast_container .blast-hits .species-accordion-label .right-side .bitscore-label {
    font-size: 0.9rem;
+   text-wrap-mode: nowrap;
 }
 #ictv_taxablast_container .blast-hits .species-accordion-label .right-side .bitscore {
    font-size: 1.5rem;
