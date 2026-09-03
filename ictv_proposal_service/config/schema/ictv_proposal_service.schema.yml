@@ -5,6 +5,9 @@ ictv_proposal_service.settings:
     databaseName:
       type: string
       label: 'The database name'
+    dockerImage:
+      type: string
+      label: 'The name of the docker image that contains the proposal processor script'
     drupalRoot:
       type: string
       label: 'The Drupal website root'

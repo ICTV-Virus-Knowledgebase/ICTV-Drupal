@@ -43,6 +43,9 @@ class UploadProposals extends ResourceBase {
    // The name of the database used by this web service.
    protected ?string $databaseName;
 
+   // The image name of the Docker container used to run the proposal validation script.
+   protected ?string $dockerImage;
+
    // The path of the Drupal installation.
    protected string $drupalRoot;
 
@@ -111,6 +114,10 @@ class UploadProposals extends ResourceBase {
          $this->databaseName = $config->get("databaseName");
          if (Utils::isNullOrEmpty($this->databaseName)) { throw new \Exception("The databaseName setting is empty"); }
          
+         // Get the Docker image name.
+         $this->dockerImage = $config->get("dockerImage");
+         if (Utils::isNullOrEmpty($this->dockerImage)) { throw new \Exception("The dockerImage setting is empty"); }
+
          // Get the Drupal root.
          $this->drupalRoot = $config->get("drupalRoot");
          if (Utils::isNullOrEmpty($this->drupalRoot)) { throw new \Exception("The drupalRoot setting is empty"); }
@@ -352,6 +359,9 @@ class UploadProposals extends ResourceBase {
             // The name of the MySQL database (probably "ictv_apps").
             "dbName={$this->databaseName} ".
       
+            // The name of the Docker image for the proposal validation script.
+            "dockerImage={$this->dockerImage} ".
+
             // The path of the Drupal installation (Ex. "/var/www/drupal/site").
             "drupalRoot={$this->drupalRoot} ".
             

@@ -42,12 +42,6 @@ use Symfony\Component\HttpFoundation\Request;
 // Moving the scope of this variable.
 $resultsPath = "";
 
-// The name of the validator script.
-$scriptName = "curtish/ictv_proposal_processor";
-
-// The script version defaults to "latest" unless overridden.
-$scriptVersion = "latest";
-
 
 try {
    //-------------------------------------------------------------------------------------------------------
@@ -60,6 +54,9 @@ try {
    // Get and validate the command line arguments.
    $dbName = $_GET["dbName"];
    if (!$dbName) { throw new \Exception("Invalid dbName parameter"); }
+
+   $dockerImage = $_GET["dockerImage"];
+   if (!$dockerImage) { throw new \Exception("Invalid dockerImage parameter"); }
 
    $drupalRoot = $_GET["drupalRoot"];
    if (!$drupalRoot) { throw new \Exception("Invalid drupalRoot parameter"); }
@@ -109,7 +106,7 @@ try {
    //-------------------------------------------------------------------------------------------------------
    // Validate the proposal(s)
    //-------------------------------------------------------------------------------------------------------
-   $result = ProposalValidator::runValidation($proposalsPath, $resultsPath, $scriptName.":".$scriptVersion, $jobPath);
+   $result = ProposalValidator::runValidation($dockerImage, $proposalsPath, $resultsPath, $jobPath);
 
    // Validate the validation result object and its properties.
    if (!$result) { throw new \Exception("Invalid validation result"); }
