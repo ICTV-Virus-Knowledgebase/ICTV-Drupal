@@ -14,7 +14,7 @@ class ProposalValidator {
    public static string $stdOutFilename = "stdout.txt";
 
    
-   public static function runValidation(string $proposalsPath, string $resultsPath, string $scriptName, string $workingDirectory) {
+   public static function runValidation(string $dockerImage, string $proposalsPath, string $resultsPath, string $workingDirectory) {
 
       // Declare variables used in the try/catch block.
       $exitCode = 0;
@@ -33,7 +33,7 @@ class ProposalValidator {
       $command = "docker run ".
          "-v \"{$proposalsPath}:/proposalsTest\":ro ".
          "-v \"{$resultsPath}:/results\" ".
-         $scriptName." ".
+         $dockerImage." ".
          "/merge_proposal_zips.R -v ";
 
       try {

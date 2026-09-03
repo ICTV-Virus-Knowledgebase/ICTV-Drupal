@@ -1,5 +1,5 @@
 taxonomyBrowser:
-  version: 20260820_1121
+  version: 20260902_1457
   css:
     theme:
       assets/css/TaxonomyBrowser.css: {} 
