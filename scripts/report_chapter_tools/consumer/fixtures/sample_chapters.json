@@ -1,0 +1,63 @@
+[
+  {
+    "node_id": 901,
+    "html": "<p>Synthetic chapter: café &amp; 🧬.</p><h2>Main</h2><p>Overview</p><h3>Details</h3><p>Quoted ' text</p><h4>Nested</h4><p>Nested content</p><h3>Empty section</h3>",
+    "path_alias": "/report/chapter/example-one",
+    "taxon_name": "example-one",
+    "images": null,
+    "private_images": null,
+    "sections": [
+      {
+        "heading": "Introduction",
+        "html": "<p>Synthetic chapter: café &amp; 🧬.</p>",
+        "subheadings": []
+      },
+      {
+        "heading": "Main",
+        "html": "<p>Overview</p>",
+        "subheadings": [
+          {
+            "heading": "Details",
+            "html": "<p>Quoted ' text</p>",
+            "subheadings": [
+              {
+                "heading": "Nested",
+                "html": "<p>Nested content</p>",
+                "subheadings": []
+              }
+            ]
+          },
+          {
+            "heading": "Empty section",
+            "html": "",
+            "subheadings": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "node_id": 902,
+    "html": "",
+    "path_alias": "/report/chapter/example-two",
+    "taxon_name": null,
+    "images": [],
+    "private_images": [],
+    "sections": [
+      {
+        "heading": null,
+        "html": null,
+        "subheadings": []
+      }
+    ]
+  },
+  {
+    "node_id": 903,
+    "html": "",
+    "path_alias": "/report/chapter/example-three",
+    "taxon_name": "example-three",
+    "images": null,
+    "private_images": null,
+    "sections": []
+  }
+]

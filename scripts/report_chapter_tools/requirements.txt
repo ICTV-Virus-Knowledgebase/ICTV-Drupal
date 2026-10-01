@@ -1,0 +1,5 @@
+beautifulsoup4==4.15.0
+mariadb==1.1.14
+packaging==26.3
+soupsieve==2.9.2
+typing_extensions==4.16.0
