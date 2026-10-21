@@ -13,6 +13,11 @@ class PageType(str, Enum):
    authors = "authors"
    citation = "citation"
    citations = "citations"
+
+   # "default" is used for pages that don't have a specific type, e.g. the main page for a taxon.
+   # There won't be a path alias that ends in "/default".
+   default = "default" 
+
    diagrams = "diagrams"
    editors = "editors"
    files = "files"

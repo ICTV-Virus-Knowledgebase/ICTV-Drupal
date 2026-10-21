@@ -10,6 +10,8 @@ import { IJobFile } from "./IJobFile";
 import { ProposalService } from "../../services/ProposalService";
 import { IValidationSummary } from "./IValidationSummary";
 
+// "Forward declarations" for external JavaScript libraries.
+declare var jQuery: any;
 
 export class ProposalSubmission {
 
@@ -131,7 +133,7 @@ export class ProposalSubmission {
    async displayJobs() {
 
       if (!this.jobs || this.jobs.length < 1) {
-         this.elements.jobs.innerHTML = "No proposals submitted";
+         this.elements.jobs.innerHTML = "No proposals have been submitted";
          return;
       }
 
@@ -259,8 +261,13 @@ export class ProposalSubmission {
          searching: false
       });
 
+      // TESTING
+      this.elements.jobs.addEventListener("childRow.dt", (e_: Event) => {
+         console.log("just handled the childRow.dt event on the jobs-table: ", e_)
+      })
+
       // Handle an event that's triggered when a new child row is added to the DataTable.
-      jQuery(`${this.selectors.container} table.jobs-table`).on("childRow.dt", (e_, show_: boolean, parentRow_) => {
+      jQuery(`${this.selectors.container} table.jobs-table`).on("childRow.dt", (e_: any, show_: boolean, parentRow_: any) => {
 
          if (!show_) { return; }
 
@@ -331,12 +338,21 @@ export class ProposalSubmission {
    async getJobs() {
 
       const result = await ProposalService.getJobs(this.authToken, this.user.email, this.user.uid);
-      if (result.success && result.data) { 
-         result.data = result.data.replace("\u0022", "\""); 
-         this.jobs = JSON.parse(result.data) as IJob[];
+      console.log("result = ", result)
+
+      if (result.success) {
+
+         if (result.data) { 
+            result.data = result.data.replace("\u0022", "\""); 
+            this.jobs = JSON.parse(result.data) as IJob[];
+         }
       } else { 
          this.jobs = null;
-         await AlertBuilder.displayError(`Unable to get jobs: ${result.message}`);
+         let message = "An error occurred retrieving your submitted proposals";
+         if (result.message) { 
+            message += `: ${result.message}`; 
+         }
+         await AlertBuilder.displayError(message);
       }
 
       return await this.displayJobs();

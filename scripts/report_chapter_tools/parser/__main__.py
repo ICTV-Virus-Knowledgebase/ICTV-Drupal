@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-from datetime import datetime
-from .db_settings import DbSettings
+#from datetime import datetime
+from ..models.db_settings import DbSettings
 from getpass import getpass
 import json
 from .parser import ReportChapterParser

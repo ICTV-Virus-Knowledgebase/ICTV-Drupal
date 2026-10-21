@@ -2,24 +2,21 @@
 from dataclasses import asdict
 from .chapter_section import ChapterSection
 from .image import Image
-#from .enums import PageType
-import sys
+from ..enums import PageType
 from urllib.parse import urlparse
 from ..utils import Utils
 
 
 class SearchResult:
    """
-   The results of searching HTML for one or more terms. If a heading was specified in the search, 
-   the HTML will be constrained to that heading (H2 tag) and any non-H2 tags that follow.
-
-   NOTE: I'm extending this so it can be used for page results (kind of the same thing)
+   The result of a search for report chapter pages and sections. Each SearchResult corresponds to a single 
+   report chapter page, which may contain multiple sections.
    """
    html: str
    images: list[Image]|None
    node_id: int
    path_alias: str
-   page_type: str|None # Consider using the PageType enum here.
+   page_type: PageType|None
    private_images: list[Image]|None
    sections: list[ChapterSection]
    taxon_name: str|None
@@ -29,21 +26,32 @@ class SearchResult:
       self.images = []
       self.node_id = node_id
       self.path_alias = Utils.safe_trim(path_alias)
+      self.page_type = None
       self.private_images = []
       self.sections = []
       self.taxon_name = None
 
-      # Get the taxon name from the path alias.
+      # Parse the path alias as a URL and try to extract the taxon name.
       parsed_path = urlparse(path_alias)
       path = parsed_path.path
 
-      # TODO: Figure out how to include these files instead of exiting.
       # Remove path nodes on the right that aren't the taxon name.
-      if path.endswith(('/authors', '/citation', '/references', '/resources')):
-         sys.stderr.write("Pages ending in authors, citation, references, or resources are not supported\n")
-         return
+      if path.endswith(('/abbreviations', '/acknowledgments', '/authors', '/citation', '/citations', \
+                        '/diagrams', '/editors', '/files', '/fulltree', '/further_reading', '/help', \
+                        '/introduction', '/references', '/resources', '/speciesnames', '/virus_properties')):
+         try:
+            self.page_type = PageType(path.rsplit("/", 1)[1])
+         except ValueError:
+            pass
 
-      # The right-most node in the path should now be the taxon name.
+         path = path.rsplit("/", 1)[0]
+
+      if self.page_type is None:
+         # If the path alias doesn't end with a known page 
+         # type, assume it's the main page for a taxon.
+         self.page_type = PageType.default
+
+      # The right-most node in the path *should* now be the taxon name.
       self.taxon_name = path.rsplit("/", 1)[1]
 
 
@@ -61,6 +69,7 @@ class SearchResult:
          "node_id": self.node_id,
          "html": self.html,
          "images": images,
+         "page_type": self.page_type.value if self.page_type is not None else None,
          "path_alias": self.path_alias,
          "private_images": private_images,
          "sections": [asdict(section) for section in self.sections],
